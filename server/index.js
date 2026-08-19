@@ -7,7 +7,7 @@ const db = require('./db');
 const cursos = require('./cursos');
 
 const app = express();
-const PORT = Number(process.env.PORT) || 3000;
+const PORT = Number(process.env.PORT) || 80;
 
 const UNIDADES = [
   'Barra Funda',
@@ -24,9 +24,20 @@ const UNIDADES = [
   'Santana',
 ];
 
-const pool = db.createPool();
+const pool = (() => {
+  try {
+    return db.createPool();
+  } catch (err) {
+    console.error(err.message);
+    return null;
+  }
+})();
 
 app.use(express.json({ limit: '20kb' }));
+
+app.get('/health', (req, res) => {
+  res.status(200).json({ ok: true });
+});
 
 function nowInSaoPaulo() {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -196,11 +207,25 @@ app.use((err, req, res, next) => {
 });
 
 async function start() {
-  await db.ensureSchema(pool);
-  await db.seedAlunoIfEmpty(pool);
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Portal do Aluno disponível em http://localhost:${PORT}`);
+  await new Promise((resolve, reject) => {
+    const server = app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Portal do Aluno escutando em 0.0.0.0:${PORT}`);
+      resolve(server);
+    });
+    server.on('error', reject);
   });
+
+  if (!pool) {
+    console.error('Servidor no ar sem banco: confira DATABASE_* no Environment do EasyPanel.');
+    return;
+  }
+
+  try {
+    await db.ensureSchema(pool);
+    await db.seedAlunoIfEmpty(pool);
+  } catch (err) {
+    console.error('Banco indisponível no boot:', err.message);
+  }
 }
 
 start().catch((err) => {
