@@ -1,0 +1,57 @@
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #f8fafc;
+}
+
+.bg-cruzeiro {
+  background-color: #004a99;
+}
+
+.text-cruzeiro {
+  color: #004a99;
+}
+
+.border-cruzeiro {
+  border-color: #004a99;
+}
+
+.curso-suggestions {
+  display: none;
+  position: absolute;
+  z-index: 50;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  max-height: 240px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 6px 0;
+  list-style: none;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+}
+
+.curso-suggestions.is-open {
+  display: block;
+}
+
+.curso-suggestion {
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #1f2937;
+  text-align: left;
+}
+
+.curso-suggestion.is-active,
+.curso-suggestion:hover {
+  background: #eff6ff;
+  color: #004a99;
+}
+
+.curso-suggestion.curso-empty {
+  color: #6b7280;
+  cursor: default;
+}

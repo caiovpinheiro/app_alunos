@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Área do Aluno | Cruzeiro do Sul Educacional</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css?v=3">
+</head>
+<body>
+
+    <!-- APP CONTAINER -->
+    <div id="app">
+
+        <!-- 1. TELA DE LOGIN -->
+        <section id="login-page" class="min-h-screen flex items-center justify-center p-4">
+            <div class="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+                <div class="text-center mb-8">
+                    <div class="flex justify-center mb-4">
+                        <div class="bg-cruzeiro text-white p-3 rounded-xl">
+                            <i data-lucide="graduation-cap" class="w-10 h-10"></i>
+                        </div>
+                    </div>
+                    <h1 class="text-2xl font-bold text-gray-800">Área do Aluno</h1>
+                    <p class="text-gray-500 text-sm">Cruzeiro do Sul Educacional</p>
+                </div>
+
+                <div id="login-error" class="hidden mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3" role="alert"></div>
+
+                <form id="login-form" class="space-y-5">
+                    <div>
+                        <label for="f_login_identifier" class="block text-sm font-medium text-gray-700 mb-1">RGM ou E-mail</label>
+                        <input type="text" id="f_login_identifier" required autocomplete="username" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition" placeholder="Digite seu acesso">
+                    </div>
+                    <div>
+                        <label for="f_login_password" class="block text-sm font-medium text-gray-700 mb-1">Senha</label>
+                        <input type="password" id="f_login_password" required autocomplete="current-password" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition" placeholder="••••••••">
+                    </div>
+                    <button type="submit" id="btn-login" class="w-full bg-cruzeiro hover:bg-blue-800 text-white font-semibold py-3 rounded-lg transition duration-300 transform active:scale-95 shadow-lg disabled:opacity-70 disabled:cursor-not-allowed">
+                        Entrar
+                    </button>
+                </form>
+                <p class="mt-6 text-center text-xs text-gray-400">Esqueci minha senha | Primeiro acesso</p>
+            </div>
+        </section>
+
+        <!-- 2. DASHBOARD -->
+        <section id="dashboard-page" class="hidden min-h-screen">
+            <!-- Header -->
+            <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="bg-cruzeiro p-1.5 rounded-lg">
+                            <i data-lucide="graduation-cap" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <span class="font-bold text-gray-800 hidden sm:block">Cruzeiro do Sul <span class="text-blue-600">Virtual</span></span>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="text-right hidden sm:block">
+                            <p class="text-sm font-semibold text-gray-800" id="user-display-name">Aluno</p>
+                            <p class="text-xs text-gray-500">Graduação</p>
+                        </div>
+                        <button onclick="logout()" class="p-2 text-gray-400 hover:text-red-500 transition" title="Sair">
+                            <i data-lucide="log-out" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <main class="max-w-7xl mx-auto px-4 py-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Bem-vindo(a)!</h2>
+
+                <!-- Grid de Funcionalidades -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Card: Gerar Certificado -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow group">
+                        <div class="w-12 h-12 bg-blue-50 text-cruzeiro rounded-xl flex items-center justify-center mb-4 group-hover:bg-cruzeiro group-hover:text-white transition-colors">
+                            <i data-lucide="award" class="w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-800 mb-2">Gerar Certificado</h3>
+                        <p class="text-gray-500 text-sm mb-6 leading-relaxed">Gere seu certificado de participação na Aula Inaugural de forma rápida e segura.</p>
+                        <button onclick="showScreen('form-page')" class="w-full flex items-center justify-center gap-2 bg-gray-50 text-cruzeiro font-semibold py-2.5 rounded-lg hover:bg-cruzeiro hover:text-white transition">
+                            Gerar certificado
+                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+
+                    <!-- Placeholder para futuras funções -->
+                    <div class="bg-gray-50 p-6 rounded-2xl border border-dashed border-gray-300 flex flex-col items-center justify-center text-center opacity-60">
+                        <i data-lucide="plus-circle" class="w-8 h-8 text-gray-400 mb-2"></i>
+                        <p class="text-gray-500 font-medium italic">Novas funcionalidades em breve</p>
+                    </div>
+                </div>
+            </main>
+        </section>
+
+        <!-- 3. FORMULÁRIO -->
+        <section id="form-page" class="hidden min-h-screen py-10 px-4">
+            <div class="max-w-2xl mx-auto">
+                <button onclick="showScreen('dashboard-page')" class="flex items-center gap-2 text-gray-500 hover:text-cruzeiro mb-6 transition">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar ao Dashboard
+                </button>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+                    <div class="p-8 border-b border-gray-50">
+                        <h1 class="text-2xl font-bold text-gray-800">Gerar Certificado da Aula Inaugural</h1>
+                        <p class="text-gray-500 mt-2">Preencha corretamente as informações abaixo. Os dados informados serão utilizados para gerar seu certificado.</p>
+                    </div>
+
+                    <form id="cert-form" class="p-8 space-y-6" novalidate>
+                        <div id="form-alert" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3" role="alert"></div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="md:col-span-2">
+                                <label for="f_email" class="block text-sm font-semibold text-gray-700 mb-1">E-mail*</label>
+                                <input type="email" id="f_email" required class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="exemplo@email.com">
+                                <p class="text-xs text-red-500 mt-1 hidden" id="err_email">Insira um e-mail válido.</p>
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <label for="f_nome" class="block text-sm font-semibold text-gray-700 mb-1">Nome Completo*</label>
+                                <p class="text-xs text-gray-400 mb-2">Este nome será exibido no certificado.</p>
+                                <input type="text" id="f_nome" required class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Seu nome completo">
+                                <p class="text-xs text-red-500 mt-1 hidden" id="err_nome">O nome é obrigatório.</p>
+                            </div>
+
+                            <div>
+                                <label for="f_rgm" class="block text-sm font-semibold text-gray-700 mb-1">RGM*</label>
+                                <input type="text" id="f_rgm" required class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="000.000-0">
+                                <p class="text-xs text-red-500 mt-1 hidden" id="err_rgm">O RGM é obrigatório.</p>
+                            </div>
+
+                            <div>
+                                <label for="f_data" class="block text-sm font-semibold text-gray-700 mb-1">Data da Aula Inaugural*</label>
+                                <input type="date" id="f_data" required class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none">
+                                <p class="text-xs text-red-500 mt-1 hidden" id="err_data_aula_inaugural">Informe uma data válida.</p>
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <label for="f_curso" class="block text-sm font-semibold text-gray-700 mb-1">Qual curso você está matriculado?*</label>
+                                <p class="text-xs text-gray-400 mb-2">Digite para buscar e selecione o curso da lista.</p>
+                                <div class="relative">
+                                    <input type="text" id="f_curso" required autocomplete="off" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ex: Administração" aria-autocomplete="list" aria-controls="curso-suggestions">
+                                    <ul id="curso-suggestions" class="curso-suggestions" role="listbox" hidden></ul>
+                                </div>
+                                <p class="text-xs text-red-500 mt-1 hidden" id="err_curso">Selecione um curso da lista.</p>
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <label for="f_unidade" class="block text-sm font-semibold text-gray-700 mb-1">Qual unidade você está matriculado?*</label>
+                                <select id="f_unidade" required class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                                    <option value="">Selecione uma unidade</option>
+                                    <option value="Barra Funda">Barra Funda</option>
+                                    <option value="Taboão da Serra - Jd. Mituzi">Taboão da Serra - Jd. Mituzi</option>
+                                    <option value="Taboão da Serra - Centro">Taboão da Serra - Centro</option>
+                                    <option value="Campinas - Jd. Cristina">Campinas - Jd. Cristina</option>
+                                    <option value="Itapira">Itapira</option>
+                                    <option value="Capivari">Capivari</option>
+                                    <option value="Sapopemba (Vila Ema)">Sapopemba (Vila Ema)</option>
+                                    <option value="Freguesia do Ó">Freguesia do Ó</option>
+                                    <option value="Morumbi">Morumbi</option>
+                                    <option value="Vila Prudente">Vila Prudente</option>
+                                    <option value="Ibirapuera">Ibirapuera</option>
+                                    <option value="Santana">Santana</option>
+                                </select>
+                                <p class="text-xs text-red-500 mt-1 hidden" id="err_unidade">Selecione uma unidade.</p>
+                            </div>
+                        </div>
+
+                        <div class="pt-6">
+                            <button type="submit" id="btn-submit" class="w-full bg-cruzeiro text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-800 transition duration-300 flex items-center justify-center gap-3 disabled:cursor-not-allowed">
+                                <span id="btn-text">Gerar meu certificado</span>
+                                <div id="btn-loader" class="hidden animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. SUCESSO E DOWNLOAD -->
+        <section id="success-page" class="hidden min-h-screen py-10 px-4 bg-gray-50">
+            <div class="max-w-4xl mx-auto text-center">
+                <div class="mb-8">
+                    <div class="inline-flex items-center justify-center w-16 h-16 bg-green-100 text-green-600 rounded-full mb-4">
+                        <i data-lucide="check-circle" class="w-10 h-10"></i>
+                    </div>
+                    <h1 class="text-3xl font-bold text-gray-800">Certificado gerado com sucesso!</h1>
+                    <p class="text-gray-500 mt-2">Você já pode visualizar, imprimir ou baixar seu documento abaixo.</p>
+                    <p class="text-xs text-gray-400 mt-1" id="cert-protocol"></p>
+                </div>
+
+                <!-- Preview do PDF real gerado -->
+                <div class="bg-white p-4 rounded-xl shadow-inner border border-gray-200 mb-8">
+                    <iframe id="preview-frame" title="Pré-visualização do certificado" class="w-full rounded-lg border border-gray-100 bg-gray-100" style="height: 70vh;"></iframe>
+                </div>
+
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                    <button onclick="downloadPDF()" class="flex items-center gap-2 bg-cruzeiro text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-800 transition shadow-md w-full sm:w-auto">
+                        <i data-lucide="download" class="w-5 h-5"></i> Baixar em PDF
+                    </button>
+                    <button onclick="printCert()" class="flex items-center gap-2 bg-white text-gray-700 border border-gray-300 px-8 py-3 rounded-lg font-semibold hover:bg-gray-50 transition w-full sm:w-auto">
+                        <i data-lucide="printer" class="w-5 h-5"></i> Imprimir
+                    </button>
+                    <button onclick="showScreen('dashboard-page')" class="flex items-center gap-2 text-gray-500 hover:text-cruzeiro font-medium px-8 py-3 w-full sm:w-auto transition">
+                        Voltar para área do aluno
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </div> <!-- Fim App Container -->
+
+    <!-- Bibliotecas PDF (locais) -->
+    <script src="/vendor/pdf-lib.min.js"></script>
+    <script src="/vendor/fontkit.umd.min.js"></script>
+
+    <!-- Módulos da aplicação -->
+    <script src="/js/config.js?v=3"></script>
+    <script src="/js/auth.js?v=3"></script>
+    <script src="/js/api.js?v=3"></script>
+    <script src="/js/validation.js?v=3"></script>
+    <script src="/js/cursos.js?v=3"></script>
+    <script src="/js/certificate.js?v=3"></script>
+    <script src="/js/ui.js?v=3"></script>
+    <script src="/js/app.js?v=3"></script>
+</body>
+</html>

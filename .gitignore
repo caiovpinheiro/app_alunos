@@ -1,0 +1,9 @@
+node_modules/
+.env
+.env.*
+!.env.example
+data/
+tools/output/
+tools/test-login.json
+*.log
+.DS_Store

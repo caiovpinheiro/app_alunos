@@ -1,0 +1,209 @@
+require('dotenv').config();
+
+const crypto = require('node:crypto');
+const path = require('node:path');
+const express = require('express');
+const db = require('./db');
+const cursos = require('./cursos');
+
+const app = express();
+const PORT = Number(process.env.PORT) || 3000;
+
+const UNIDADES = [
+  'Barra Funda',
+  'Taboão da Serra - Jd. Mituzi',
+  'Taboão da Serra - Centro',
+  'Campinas - Jd. Cristina',
+  'Itapira',
+  'Capivari',
+  'Sapopemba (Vila Ema)',
+  'Freguesia do Ó',
+  'Morumbi',
+  'Vila Prudente',
+  'Ibirapuera',
+  'Santana',
+];
+
+const pool = db.createPool();
+
+app.use(express.json({ limit: '20kb' }));
+
+function nowInSaoPaulo() {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false,
+  }).formatToParts(new Date());
+  const get = (t) => parts.find((p) => p.type === t).value;
+  return `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}:${get('second')}-03:00`;
+}
+
+function todayInSaoPaulo() {
+  return nowInSaoPaulo().slice(0, 10);
+}
+
+function normalizeSpaces(value) {
+  return String(value ?? '').replace(/\s+/g, ' ').trim();
+}
+
+function validateCertificatePayload(body) {
+  const errors = {};
+  const email = normalizeSpaces(body.email);
+  const nome = normalizeSpaces(body.nome);
+  const rgm = normalizeSpaces(body.rgm);
+  const dataAula = normalizeSpaces(body.data_aula_inaugural);
+  const curso = normalizeSpaces(body.curso);
+  const unidade = normalizeSpaces(body.unidade);
+
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) errors.email = 'E-mail inválido.';
+  if (!nome) errors.nome = 'Nome é obrigatório.';
+  if (!rgm) errors.rgm = 'RGM é obrigatório.';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dataAula) || Number.isNaN(Date.parse(`${dataAula}T00:00:00-03:00`))) {
+    errors.data_aula_inaugural = 'Data inválida.';
+  } else if (dataAula > todayInSaoPaulo()) {
+    errors.data_aula_inaugural = 'A data não pode ser futura.';
+  }
+  if (!curso) errors.curso = 'Selecione um curso da lista.';
+  if (!UNIDADES.includes(unidade)) errors.unidade = 'Unidade inválida.';
+
+  return {
+    valid: Object.keys(errors).length === 0,
+    errors,
+    sanitized: { email, nome, rgm, data_aula_inaugural: dataAula, curso, unidade },
+  };
+}
+
+async function authMiddleware(req, res, next) {
+  const header = req.headers.authorization || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : null;
+  try {
+    const aluno = await db.getSessionAluno(pool, token);
+    if (!aluno) {
+      return res.status(401).json({ success: false, message: 'Sessão inválida ou expirada.' });
+    }
+    req.aluno = aluno;
+    req.token = token;
+    return next();
+  } catch (err) {
+    console.error('Falha ao validar sessão:', err.message);
+    return res.status(500).json({ success: false, message: 'Erro interno.' });
+  }
+}
+
+app.get('/api/config', (req, res) => {
+  res.json({
+    certificateApiUrl: process.env.CERTIFICATE_API_URL || '/api/certificates',
+  });
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  const identifier = normalizeSpaces(req.body?.identifier);
+  const password = String(req.body?.password ?? '');
+
+  if (!identifier || !password) {
+    return res.status(401).json({ success: false, message: 'Credenciais inválidas.' });
+  }
+
+  try {
+    const aluno = await db.findAlunoByIdentifier(pool, identifier);
+    const ok = await db.verifyPassword(aluno, password);
+    if (!aluno || !ok || !aluno.ativo) {
+      return res.status(401).json({ success: false, message: 'Credenciais inválidas.' });
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+    await db.createSession(pool, aluno.id, token);
+    return res.json({
+      success: true,
+      token,
+      user: { name: aluno.nome, email: aluno.email, rgm: aluno.rgm },
+    });
+  } catch (err) {
+    console.error('Falha no login:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível entrar. Tente novamente em instantes.' });
+  }
+});
+
+app.post('/api/auth/logout', authMiddleware, async (req, res) => {
+  try {
+    await db.deleteSession(pool, req.token);
+  } catch (err) {
+    console.error('Falha no logout:', err.message);
+  }
+  res.json({ success: true });
+});
+
+app.get('/api/cursos', authMiddleware, async (req, res) => {
+  const q = normalizeSpaces(req.query.q).slice(0, 80);
+  try {
+    const names = await cursos.searchCourses(q);
+    return res.json({ success: true, cursos: names });
+  } catch (err) {
+    console.error('Falha ao buscar cursos:', err.message);
+    return res.status(502).json({ success: false, message: 'Não foi possível carregar os cursos.' });
+  }
+});
+
+app.post('/api/certificates', authMiddleware, async (req, res) => {
+  const { valid, errors, sanitized } = validateCertificatePayload(req.body || {});
+  if (!valid) {
+    return res.status(422).json({ success: false, message: 'Dados inválidos.', errors });
+  }
+
+  try {
+    const known = await cursos.isKnownCourse(sanitized.curso);
+    if (!known) {
+      return res.status(422).json({
+        success: false,
+        message: 'Dados inválidos.',
+        errors: { curso: 'Selecione um curso da lista.' },
+      });
+    }
+    const catalog = await cursos.loadCourseNames();
+    sanitized.curso = cursos.canonicalCourseName(sanitized.curso, catalog);
+  } catch (err) {
+    console.error('Falha ao validar curso:', err.message);
+    return res.status(502).json({ success: false, message: 'Não foi possível validar o curso.' });
+  }
+
+  const createdAt = nowInSaoPaulo();
+  const certificateId = `CSU-${createdAt.slice(0, 4)}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+
+  try {
+    await db.insertCertificate(pool, req.aluno.id, {
+      certificate_id: certificateId,
+      created_at: createdAt,
+      ...sanitized,
+    });
+  } catch (err) {
+    console.error('Falha ao registrar emissão:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível registrar a emissão.' });
+  }
+
+  return res.json({ success: true, certificate_id: certificateId, created_at: createdAt });
+});
+
+app.use(express.static(path.join(__dirname, '..', 'public')));
+
+app.use('/api', (req, res) => {
+  res.status(404).json({ success: false, message: 'Recurso não encontrado.' });
+});
+
+app.use((err, req, res, next) => {
+  console.error('Erro não tratado:', err.message);
+  res.status(500).json({ success: false, message: 'Erro interno.' });
+});
+
+async function start() {
+  await db.ensureSchema(pool);
+  await db.seedAlunoIfEmpty(pool);
+  app.listen(PORT, () => {
+    console.log(`Portal do Aluno disponível em http://localhost:${PORT}`);
+  });
+}
+
+start().catch((err) => {
+  console.error('Não foi possível iniciar o servidor:', err.message);
+  process.exit(1);
+});

@@ -1,0 +1,26 @@
+{
+  "name": "app_alunos",
+  "version": "1.0.0",
+  "description": "Portal do Aluno — certificados da Aula Inaugural",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "analyze": "node tools/analyze-pdf.mjs",
+    "test:certificate": "node tools/test-certificate.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@pdf-lib/fontkit": "^1.1.1",
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "pdf-lib": "^1.17.1",
+    "pg": "^8.23.0"
+  },
+  "devDependencies": {
+    "pdfjs-dist": "^6.2.108"
+  }
+}
