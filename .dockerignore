@@ -1,0 +1,12 @@
+node_modules
+.git
+.env
+.env.*
+!.env.example
+data
+tools
+*.log
+AGENT.md
+ai_studio_code.html
+.dockerignore
+Dockerfile

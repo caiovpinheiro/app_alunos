@@ -198,7 +198,7 @@ app.use((err, req, res, next) => {
 async function start() {
   await db.ensureSchema(pool);
   await db.seedAlunoIfEmpty(pool);
-  app.listen(PORT, () => {
+  app.listen(PORT, '0.0.0.0', () => {
     console.log(`Portal do Aluno disponível em http://localhost:${PORT}`);
   });
 }
