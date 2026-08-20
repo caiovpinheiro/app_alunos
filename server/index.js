@@ -45,8 +45,28 @@ const matriculadosPool = (() => {
 
 app.use(express.json({ limit: '20kb' }));
 
-app.get('/health', (req, res) => {
-  res.status(200).json({ ok: true });
+app.get('/health', async (req, res) => {
+  const body = { ok: true, database: null, matriculados: null };
+  if (pool) {
+    try {
+      const r = await pool.query('SELECT current_database() AS db');
+      body.database = r.rows[0].db;
+    } catch (err) {
+      body.ok = false;
+      body.databaseError = err.code || 'fail';
+    }
+  } else {
+    body.ok = false;
+  }
+  if (matriculadosPool) {
+    try {
+      const r = await matriculadosPool.query('SELECT current_database() AS db');
+      body.matriculados = r.rows[0].db;
+    } catch (err) {
+      body.matriculadosError = err.code || 'fail';
+    }
+  }
+  res.status(body.ok ? 200 : 503).json(body);
 });
 
 function nowInSaoPaulo() {
@@ -131,20 +151,31 @@ app.post('/api/auth/login', async (req, res) => {
   }
 
   try {
+    await db.ensureSchema(pool);
+  } catch (err) {
+    console.error('Falha ao garantir schema no login:', err.code || '', err.message);
+    return res.status(503).json({ success: false, message: 'Serviço de dados indisponível.' });
+  }
+
+  try {
     let aluno = null;
 
     if (matriculadosPool) {
-      const matriculado = await matriculados.findByIdentifier(matriculadosPool, identifier);
-      if (matriculado) {
-        const expected = matriculados.derivedPassword(matriculado.nome);
-        if (matriculados.passwordMatches(expected, password)) {
-          aluno = await db.upsertAlunoFromMatricula(pool, {
-            email: matriculado.email,
-            rgm: matriculado.rgm,
-            nome: matriculado.nome,
-            password,
-          });
+      try {
+        const matriculado = await matriculados.findByIdentifier(matriculadosPool, identifier);
+        if (matriculado) {
+          const expected = matriculados.derivedPassword(matriculado.nome);
+          if (matriculados.passwordMatches(expected, password)) {
+            aluno = await db.upsertAlunoFromMatricula(pool, {
+              email: matriculado.email,
+              rgm: matriculado.rgm,
+              nome: matriculado.nome,
+              password,
+            });
+          }
         }
+      } catch (err) {
+        console.error('Falha ao consultar matriculados:', err.code || '', err.message);
       }
     }
 
@@ -168,13 +199,20 @@ app.post('/api/auth/login', async (req, res) => {
       user: { name: aluno.nome, email: aluno.email, rgm: aluno.rgm },
     });
   } catch (err) {
-    console.error('Falha no login:', err.message);
+    console.error('Falha no login:', err.code || '', err.message);
     return res.status(500).json({ success: false, message: 'Não foi possível entrar. Tente novamente em instantes.' });
   }
 });
 
 app.post('/api/auth/register', async (req, res) => {
   if (!pool) {
+    return res.status(503).json({ success: false, message: 'Serviço de dados indisponível.' });
+  }
+
+  try {
+    await db.ensureSchema(pool);
+  } catch (err) {
+    console.error('Falha ao garantir schema no cadastro:', err.code || '', err.message);
     return res.status(503).json({ success: false, message: 'Serviço de dados indisponível.' });
   }
 

@@ -15,7 +15,7 @@ function createPool() {
     throw new Error(`Variáveis de banco ausentes: ${missing.join(', ')}`);
   }
 
-  return new Pool({
+  const pool = new Pool({
     host: process.env.DATABASE_HOST,
     port: Number(process.env.DATABASE_PORT),
     database: process.env.MATRICULADOS_DATABASE || 'disparos',
@@ -26,6 +26,10 @@ function createPool() {
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 15000,
   });
+  pool.on('error', (err) => {
+    console.error('Erro inesperado no pool de matriculados:', err.code || '', err.message);
+  });
+  return pool;
 }
 
 function normalizeRgm(value) {
@@ -35,8 +39,7 @@ function normalizeRgm(value) {
 function derivedPassword(nome) {
   const first = String(nome ?? '').trim().split(/\s+/).filter(Boolean)[0];
   if (!first) return null;
-  const titled =
-    first.charAt(0).toLocaleUpperCase('pt-BR') + first.slice(1).toLocaleLowerCase('pt-BR');
+  const titled = first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
   return `${titled}123@`;
 }
 

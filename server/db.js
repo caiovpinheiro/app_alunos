@@ -13,7 +13,7 @@ function createPool() {
     throw new Error(`Variáveis de banco ausentes: ${missing.join(', ')}`);
   }
 
-  return new Pool({
+  const pool = new Pool({
     host: process.env.DATABASE_HOST,
     port: Number(process.env.DATABASE_PORT),
     database: process.env.DATABASE_NAME,
@@ -24,6 +24,10 @@ function createPool() {
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 15000,
   });
+  pool.on('error', (err) => {
+    console.error('Erro inesperado no pool Postgres:', err.code || '', err.message);
+  });
+  return pool;
 }
 
 async function ensureSchema(pool) {

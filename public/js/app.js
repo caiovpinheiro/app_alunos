@@ -67,7 +67,7 @@
     } catch (err) {
       UI.showLoginError(err.status === 401
         ? 'Credenciais inválidas. Verifique seu acesso e tente novamente.'
-        : 'Não foi possível entrar. Tente novamente em instantes.');
+        : (err.message || 'Não foi possível entrar. Tente novamente em instantes.'));
     } finally {
       UI.setLoginLoading(false);
     }
