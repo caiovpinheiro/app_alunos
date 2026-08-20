@@ -85,6 +85,14 @@ async function ensureSchema(pool) {
     ALTER TABLE csu_sync_state
     ADD COLUMN IF NOT EXISTS revoked_count INTEGER
   `);
+  await pool.query(`
+    ALTER TABLE csu_alunos
+    ADD COLUMN IF NOT EXISTS curso TEXT
+  `);
+  await pool.query(`
+    ALTER TABLE csu_alunos
+    ADD COLUMN IF NOT EXISTS unidade TEXT
+  `);
 }
 
 function normalizeIdentifier(value) {
@@ -147,7 +155,7 @@ async function upsertAlunoFromMatricula(pool, { email, rgm, nome, password }) {
   return inserted.rows[0];
 }
 
-async function upsertAcessoDerived(pool, { email, rgm, nome }) {
+async function upsertAcessoDerived(pool, { email, rgm, nome, curso, unidade }) {
   const existing = await pool.query(
     `SELECT id, email, rgm, nome, pw_hash, ativo
      FROM csu_alunos
@@ -161,20 +169,31 @@ async function upsertAcessoDerived(pool, { email, rgm, nome }) {
     const row = existing.rows[0];
     await pool.query(
       `UPDATE csu_alunos
-       SET email = $1, rgm = $2, nome = $3, ativo = TRUE
+       SET email = $1, rgm = $2, nome = $3, ativo = TRUE, curso = $5, unidade = $6
        WHERE id = $4`,
-      [email, rgm, nome, row.id],
+      [email, rgm, nome, row.id, curso || null, unidade || null],
     );
     return { id: row.id, email, rgm, nome, ativo: true, created: false };
   }
 
   const inserted = await pool.query(
-    `INSERT INTO csu_alunos (email, rgm, nome, pw_hash)
-     VALUES ($1, $2, $3, $4)
+    `INSERT INTO csu_alunos (email, rgm, nome, pw_hash, curso, unidade)
+     VALUES ($1, $2, $3, $4, $5, $6)
      RETURNING id, email, rgm, nome, ativo`,
-    [email, rgm, nome, DERIVED_PW_MARKER],
+    [email, rgm, nome, DERIVED_PW_MARKER, curso || null, unidade || null],
   );
   return { ...inserted.rows[0], created: true };
+}
+
+async function getAlunoForCertificate(pool, alunoId) {
+  const result = await pool.query(
+    `SELECT id, email, rgm, nome, ativo, curso, unidade
+     FROM csu_alunos
+     WHERE id = $1
+     LIMIT 1`,
+    [alunoId],
+  );
+  return result.rows[0] || null;
 }
 
 async function findAlunoByIdentifier(pool, identifier) {
@@ -354,6 +373,7 @@ module.exports = {
   seedAlunoIfEmpty,
   upsertAlunoFromMatricula,
   upsertAcessoDerived,
+  getAlunoForCertificate,
   findAlunoByIdentifier,
   verifyPassword,
   createSession,

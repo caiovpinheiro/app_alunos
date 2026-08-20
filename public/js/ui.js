@@ -53,6 +53,24 @@ window.UI = (function () {
     document.getElementById('register-error').classList.add('hidden');
   }
 
+  function setDashboardCertLoading(loading) {
+    var btn = document.getElementById('btn-gerar-certificado');
+    var text = document.getElementById('btn-gerar-certificado-text');
+    if (!btn || !text) return;
+    btn.disabled = loading;
+    text.textContent = loading ? 'Gerando certificado...' : 'Gerar certificado';
+  }
+
+  function showDashboardCertError(message) {
+    var el = document.getElementById('dashboard-cert-error');
+    el.textContent = message;
+    el.classList.remove('hidden');
+  }
+
+  function hideDashboardCertError() {
+    document.getElementById('dashboard-cert-error').classList.add('hidden');
+  }
+
   function setSubmitLoading(loading) {
     var btn = document.getElementById('btn-submit');
     var text = document.getElementById('btn-text');
@@ -109,6 +127,9 @@ window.UI = (function () {
     setRegisterLoading: setRegisterLoading,
     showRegisterError: showRegisterError,
     hideRegisterError: hideRegisterError,
+    setDashboardCertLoading: setDashboardCertLoading,
+    showDashboardCertError: showDashboardCertError,
+    hideDashboardCertError: hideDashboardCertError,
     setSubmitLoading: setSubmitLoading,
     clearFieldErrors: clearFieldErrors,
     showFieldErrors: showFieldErrors,

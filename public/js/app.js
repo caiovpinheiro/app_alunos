@@ -110,6 +110,43 @@
     return mapped;
   }
 
+  async function generateCertificateNow() {
+    var UI = window.UI;
+    UI.hideDashboardCertError();
+    UI.setDashboardCertLoading(true);
+    try {
+      var confirmation = await window.Api.emitCertificate({});
+      if (!confirmation || !confirmation.success) throw new Error('emissão não confirmada');
+
+      var assets = await loadAssets();
+      var pdfBytes = await window.CertificateGenerator.generateCertificate({
+        nome: confirmation.nome,
+        rgm: confirmation.rgm,
+        unidade: confirmation.unidade,
+        dataAulaISO: confirmation.data_aula_inaugural,
+        emissaoISO: confirmation.created_at,
+      }, assets);
+
+      releaseCurrentPdf();
+      var blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      currentPdf.blobUrl = URL.createObjectURL(blob);
+      currentPdf.fileName = 'Certificado_Aula_Inaugural_' + sanitizeFileName(confirmation.nome) + '.pdf';
+
+      UI.showPreview(currentPdf.blobUrl, confirmation.certificate_id);
+      UI.showScreen('success-page');
+    } catch (err) {
+      if (err.status === 401) {
+        window.Auth.clear();
+        UI.showScreen('login-page');
+        UI.showLoginError('Sua sessão expirou. Entre novamente.');
+      } else {
+        UI.showDashboardCertError(err.message || GENERIC_ERROR);
+      }
+    } finally {
+      UI.setDashboardCertLoading(false);
+    }
+  }
+
   async function handleGenerate(event) {
     event.preventDefault();
     var UI = window.UI;
@@ -264,6 +301,7 @@
 
   window.handleLogin = handleLogin;
   window.handleGenerate = handleGenerate;
+  window.generateCertificateNow = generateCertificateNow;
   window.downloadPDF = downloadPDF;
   window.printCert = printCert;
   window.logout = logout;

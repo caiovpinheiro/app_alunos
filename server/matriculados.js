@@ -69,6 +69,8 @@ function mapRow(data) {
     rgm,
     email: email || emailAcad,
     situacao,
+    curso: String(data?.Curso ?? '').replace(/\s+/g, ' ').trim(),
+    unidade: String(data?.Polo ?? data?.Instituição ?? '').replace(/\s+/g, ' ').trim(),
   };
 }
 

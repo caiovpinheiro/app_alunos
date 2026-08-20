@@ -48,7 +48,13 @@ async function loadLatestEmCurso(sourcePool) {
     if (!aluno.nome || !aluno.email) continue;
     if (!matriculados.derivedPassword(aluno.nome)) continue;
     if (byRgm.has(aluno.rgm) || emails.has(aluno.email)) continue;
-    byRgm.set(aluno.rgm, { nome: aluno.nome, rgm: aluno.rgm, email: aluno.email });
+    byRgm.set(aluno.rgm, {
+      nome: aluno.nome,
+      rgm: aluno.rgm,
+      email: aluno.email,
+      curso: String(row.data?.Curso ?? '').replace(/\s+/g, ' ').trim(),
+      unidade: String(row.data?.Polo ?? row.data?.Instituição ?? '').replace(/\s+/g, ' ').trim(),
+    });
     emails.add(aluno.email);
   }
 

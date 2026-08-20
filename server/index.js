@@ -35,6 +35,20 @@ const pool = (() => {
   }
 })();
 
+let matriculadosPool = null;
+function getMatriculadosPool() {
+  if (!matriculados.isConfigured()) return null;
+  if (!matriculadosPool) {
+    try {
+      matriculadosPool = matriculados.createPool();
+    } catch (err) {
+      console.error(err.message);
+      return null;
+    }
+  }
+  return matriculadosPool;
+}
+
 app.post('/api/admin/sync-acessos', express.json({ limit: '8mb' }), async (req, res) => {
   const secret = process.env.IMPORT_SECRET;
   if (!secret || req.get('x-import-secret') !== secret) {
@@ -296,42 +310,74 @@ app.get('/api/cursos', authMiddleware, async (req, res) => {
 });
 
 app.post('/api/certificates', authMiddleware, async (req, res) => {
-  const { valid, errors, sanitized } = validateCertificatePayload(req.body || {});
-  if (!valid) {
-    return res.status(422).json({ success: false, message: 'Dados inválidos.', errors });
-  }
-
   try {
-    const known = await cursos.isKnownCourse(sanitized.curso);
-    if (!known) {
+    await db.ensureSchema(pool);
+    const aluno = await db.getAlunoForCertificate(pool, req.aluno.id);
+    if (!aluno || !aluno.ativo) {
+      return res.status(401).json({ success: false, message: 'Sessão inválida ou expirada.' });
+    }
+
+    let curso = normalizeSpaces(aluno.curso);
+    let unidade = normalizeSpaces(aluno.unidade);
+    const sourcePool = getMatriculadosPool();
+    if (sourcePool) {
+      try {
+        const matriculado = await matriculados.findByIdentifier(sourcePool, aluno.rgm || aluno.email);
+        if (matriculado) {
+          curso = normalizeSpaces(matriculado.curso) || curso;
+          unidade = normalizeSpaces(matriculado.unidade) || unidade;
+          if (curso && unidade) {
+            await db.upsertAcessoDerived(pool, {
+              email: aluno.email,
+              rgm: aluno.rgm,
+              nome: aluno.nome,
+              curso,
+              unidade,
+            });
+          }
+        }
+      } catch (lookupErr) {
+        console.error('Falha ao buscar matrícula para certificado:', lookupErr.message);
+      }
+    }
+
+    if (!curso || !unidade) {
       return res.status(422).json({
         success: false,
-        message: 'Dados inválidos.',
-        errors: { curso: 'Selecione um curso da lista.' },
+        message: 'Não encontramos curso e unidade da sua matrícula para emitir o certificado.',
       });
     }
-    const catalog = await cursos.loadCourseNames();
-    sanitized.curso = cursos.canonicalCourseName(sanitized.curso, catalog);
-  } catch (err) {
-    console.error('Falha ao validar curso:', err.message);
-    return res.status(502).json({ success: false, message: 'Não foi possível validar o curso.' });
-  }
 
-  const createdAt = nowInSaoPaulo();
-  const certificateId = `CSU-${createdAt.slice(0, 4)}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+    const createdAt = nowInSaoPaulo();
+    const dataAula = createdAt.slice(0, 10);
+    const certificateId = `CSU-${createdAt.slice(0, 4)}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
 
-  try {
-    await db.insertCertificate(pool, req.aluno.id, {
+    await db.insertCertificate(pool, aluno.id, {
       certificate_id: certificateId,
       created_at: createdAt,
-      ...sanitized,
+      email: aluno.email,
+      nome: aluno.nome,
+      rgm: aluno.rgm,
+      data_aula_inaugural: dataAula,
+      curso,
+      unidade,
+    });
+
+    return res.json({
+      success: true,
+      certificate_id: certificateId,
+      created_at: createdAt,
+      nome: aluno.nome,
+      email: aluno.email,
+      rgm: aluno.rgm,
+      curso,
+      unidade,
+      data_aula_inaugural: dataAula,
     });
   } catch (err) {
     console.error('Falha ao registrar emissão:', err.message);
-    return res.status(500).json({ success: false, message: 'Não foi possível registrar a emissão.' });
+    return res.status(500).json({ success: false, message: 'Não foi possível gerar o certificado.' });
   }
-
-  return res.json({ success: true, certificate_id: certificateId, created_at: createdAt });
 });
 
 app.use(express.static(path.join(__dirname, '..', 'public')));

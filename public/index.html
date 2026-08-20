@@ -143,6 +143,7 @@
 
             <main class="max-w-7xl mx-auto px-4 py-8">
                 <h2 class="text-2xl font-bold text-gray-800 mb-6">Bem-vindo(a)!</h2>
+                <div id="dashboard-cert-error" class="hidden mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3" role="alert"></div>
 
                 <!-- Grid de Funcionalidades -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -153,9 +154,8 @@
                         </div>
                         <h3 class="text-lg font-bold text-gray-800 mb-2">Gerar Certificado</h3>
                         <p class="text-gray-500 text-sm mb-6 leading-relaxed">Gere seu certificado de participação na Aula Inaugural de forma rápida e segura.</p>
-                        <button onclick="showScreen('form-page')" class="w-full flex items-center justify-center gap-2 bg-gray-50 text-cruzeiro font-semibold py-2.5 rounded-lg hover:bg-cruzeiro hover:text-white transition">
-                            Gerar certificado
-                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                        <button type="button" id="btn-gerar-certificado" onclick="generateCertificateNow()" class="w-full flex items-center justify-center gap-2 bg-gray-50 text-cruzeiro font-semibold py-2.5 rounded-lg hover:bg-cruzeiro hover:text-white transition disabled:opacity-70 disabled:cursor-not-allowed">
+                            <span id="btn-gerar-certificado-text">Gerar certificado</span>
                         </button>
                     </div>
 
@@ -296,7 +296,7 @@
     <script src="/js/validation.js?v=4"></script>
     <script src="/js/cursos.js?v=4"></script>
     <script src="/js/certificate.js?v=4"></script>
-    <script src="/js/ui.js?v=4"></script>
-    <script src="/js/app.js?v=6"></script>
+    <script src="/js/ui.js?v=7"></script>
+    <script src="/js/app.js?v=7"></script>
 </body>
 </html>
