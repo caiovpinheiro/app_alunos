@@ -5,6 +5,7 @@ const path = require('node:path');
 const express = require('express');
 const db = require('./db');
 const cursos = require('./cursos');
+const matriculados = require('./matriculados');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 80;
@@ -27,6 +28,15 @@ const UNIDADES = [
 const pool = (() => {
   try {
     return db.createPool();
+  } catch (err) {
+    console.error(err.message);
+    return null;
+  }
+})();
+
+const matriculadosPool = (() => {
+  try {
+    return matriculados.createPool();
   } catch (err) {
     console.error(err.message);
     return null;
@@ -115,11 +125,38 @@ app.post('/api/auth/login', async (req, res) => {
   if (!identifier || !password) {
     return res.status(401).json({ success: false, message: 'Credenciais inválidas.' });
   }
+  if (!pool) {
+    return res.status(500).json({ success: false, message: 'Não foi possível entrar. Tente novamente em instantes.' });
+  }
 
   try {
-    const aluno = await db.findAlunoByIdentifier(pool, identifier);
-    const ok = await db.verifyPassword(aluno, password);
-    if (!aluno || !ok || !aluno.ativo) {
+    let aluno = null;
+
+    if (matriculadosPool) {
+      const matriculado = await matriculados.findByIdentifier(matriculadosPool, identifier);
+      if (matriculado) {
+        const expected = matriculados.derivedPassword(matriculado.nome);
+        if (!matriculados.passwordMatches(expected, password)) {
+          return res.status(401).json({ success: false, message: 'Credenciais inválidas.' });
+        }
+        aluno = await db.upsertAlunoFromMatricula(pool, {
+          email: matriculado.email,
+          rgm: matriculado.rgm,
+          nome: matriculado.nome,
+          password,
+        });
+      }
+    }
+
+    if (!aluno) {
+      aluno = await db.findAlunoByIdentifier(pool, identifier);
+      const ok = await db.verifyPassword(aluno, password);
+      if (!aluno || !ok) {
+        return res.status(401).json({ success: false, message: 'Credenciais inválidas.' });
+      }
+    }
+
+    if (!aluno.ativo) {
       return res.status(401).json({ success: false, message: 'Credenciais inválidas.' });
     }
 
@@ -225,6 +262,10 @@ async function start() {
     await db.seedAlunoIfEmpty(pool);
   } catch (err) {
     console.error('Banco indisponível no boot:', err.message);
+  }
+
+  if (!matriculadosPool) {
+    console.error('Login de matriculados desligado: confira MATRICULADOS_DATABASE no Environment.');
   }
 }
 

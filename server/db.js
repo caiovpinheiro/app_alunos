@@ -94,6 +94,37 @@ async function seedAlunoIfEmpty(pool) {
   return true;
 }
 
+async function upsertAlunoFromMatricula(pool, { email, rgm, nome, password }) {
+  const existing = await pool.query(
+    `SELECT id, email, rgm, nome, pw_hash, ativo
+     FROM csu_alunos
+     WHERE rgm = $1 OR lower(email) = lower($2)
+     ORDER BY CASE WHEN rgm = $1 THEN 0 ELSE 1 END
+     LIMIT 1`,
+    [rgm, email],
+  );
+
+  if (existing.rows[0]) {
+    const row = existing.rows[0];
+    await pool.query(
+      `UPDATE csu_alunos
+       SET email = $1, rgm = $2, nome = $3
+       WHERE id = $4`,
+      [email, rgm, nome, row.id],
+    );
+    return { id: row.id, email, rgm, nome, ativo: row.ativo };
+  }
+
+  const pwHash = await bcrypt.hash(String(password), BCRYPT_ROUNDS);
+  const inserted = await pool.query(
+    `INSERT INTO csu_alunos (email, rgm, nome, pw_hash)
+     VALUES ($1, $2, $3, $4)
+     RETURNING id, email, rgm, nome, ativo`,
+    [email, rgm, nome, pwHash],
+  );
+  return inserted.rows[0];
+}
+
 async function findAlunoByIdentifier(pool, identifier) {
   const id = normalizeIdentifier(identifier);
   if (!id) return null;
@@ -174,6 +205,7 @@ module.exports = {
   createPool,
   ensureSchema,
   seedAlunoIfEmpty,
+  upsertAlunoFromMatricula,
   findAlunoByIdentifier,
   verifyPassword,
   createSession,
