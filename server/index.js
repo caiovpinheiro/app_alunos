@@ -34,19 +34,56 @@ const pool = (() => {
   }
 })();
 
-const matriculadosPool = (() => {
-  try {
-    return matriculados.createPool();
-  } catch (err) {
-    console.error(err.message);
-    return null;
+app.post('/api/admin/sync-acessos', express.json({ limit: '8mb' }), async (req, res) => {
+  const secret = process.env.IMPORT_SECRET;
+  if (!secret || req.get('x-import-secret') !== secret) {
+    return res.status(404).json({ success: false, message: 'Recurso não encontrado.' });
   }
-})();
+  if (!pool) {
+    return res.status(503).json({ success: false, message: 'Serviço de dados indisponível.' });
+  }
+
+  const alunos = req.body?.alunos;
+  if (!Array.isArray(alunos) || alunos.length === 0) {
+    return res.status(422).json({ success: false, message: 'Lista de alunos vazia.' });
+  }
+  if (alunos.length > 60000) {
+    return res.status(413).json({ success: false, message: 'Lista grande demais.' });
+  }
+
+  try {
+    await db.ensureSchema(pool);
+    let created = 0;
+    let updated = 0;
+    let skipped = 0;
+    for (const raw of alunos) {
+      const nome = normalizeSpaces(raw?.nome);
+      const email = normalizeSpaces(raw?.email).toLowerCase();
+      const rgm = String(raw?.rgm ?? '').replace(/\D+/g, '');
+      if (!nome || !email || !rgm) {
+        skipped += 1;
+        continue;
+      }
+      try {
+        const row = await db.upsertAcessoDerived(pool, { nome, email, rgm });
+        if (row.created) created += 1;
+        else updated += 1;
+      } catch (err) {
+        skipped += 1;
+        console.error('Falha ao upsert acesso:', rgm, err.code || err.message);
+      }
+    }
+    return res.json({ success: true, created, updated, skipped, total: alunos.length });
+  } catch (err) {
+    console.error('Falha no sync de acessos:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível importar os acessos.' });
+  }
+});
 
 app.use(express.json({ limit: '20kb' }));
 
 app.get('/health', async (req, res) => {
-  const body = { ok: true, database: null, matriculados: null };
+  const body = { ok: true, database: null };
   if (pool) {
     try {
       const r = await pool.query('SELECT current_database() AS db');
@@ -57,14 +94,6 @@ app.get('/health', async (req, res) => {
     }
   } else {
     body.ok = false;
-  }
-  if (matriculadosPool) {
-    try {
-      const r = await matriculadosPool.query('SELECT current_database() AS db');
-      body.matriculados = r.rows[0].db;
-    } catch (err) {
-      body.matriculadosError = err.code || 'fail';
-    }
   }
   res.status(body.ok ? 200 : 503).json(body);
 });
@@ -152,42 +181,15 @@ app.post('/api/auth/login', async (req, res) => {
 
   try {
     await db.ensureSchema(pool);
-  } catch (err) {
-    console.error('Falha ao garantir schema no login:', err.code || '', err.message);
-    return res.status(503).json({ success: false, message: 'Serviço de dados indisponível.' });
-  }
-
-  try {
-    let aluno = null;
-
-    if (matriculadosPool) {
-      try {
-        const matriculado = await matriculados.findByIdentifier(matriculadosPool, identifier);
-        if (matriculado) {
-          const expected = matriculados.derivedPassword(matriculado.nome);
-          if (matriculados.passwordMatches(expected, password)) {
-            aluno = await db.upsertAlunoFromMatricula(pool, {
-              email: matriculado.email,
-              rgm: matriculado.rgm,
-              nome: matriculado.nome,
-              password,
-            });
-          }
-        }
-      } catch (err) {
-        console.error('Falha ao consultar matriculados:', err.code || '', err.message);
-      }
+    const aluno = await db.findAlunoByIdentifier(pool, identifier);
+    if (!aluno || !aluno.ativo) {
+      return res.status(401).json({ success: false, message: 'Credenciais inválidas.' });
     }
 
-    if (!aluno) {
-      aluno = await db.findAlunoByIdentifier(pool, identifier);
-      const ok = await db.verifyPassword(aluno, password);
-      if (!aluno || !ok) {
-        return res.status(401).json({ success: false, message: 'Credenciais inválidas.' });
-      }
-    }
-
-    if (!aluno.ativo) {
+    const derived = matriculados.derivedPassword(aluno.nome);
+    const derivedOk = matriculados.passwordMatches(derived, password);
+    const hashOk = await db.verifyPassword(aluno, password);
+    if (!derivedOk && !hashOk) {
       return res.status(401).json({ success: false, message: 'Credenciais inválidas.' });
     }
 
@@ -343,10 +345,6 @@ async function start() {
     await db.seedAlunoIfEmpty(pool);
   } catch (err) {
     console.error('Banco indisponível no boot:', err.message);
-  }
-
-  if (!matriculadosPool) {
-    console.error('Login de matriculados desligado: confira MATRICULADOS_DATABASE no Environment.');
   }
 }
 

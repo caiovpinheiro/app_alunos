@@ -4,6 +4,7 @@ const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 
 const BCRYPT_ROUNDS = 12;
+const DERIVED_PW_MARKER = 'DERIVED';
 const TOKEN_TTL_MS = 8 * 60 * 60 * 1000;
 
 function createPool() {
@@ -129,13 +130,45 @@ async function upsertAlunoFromMatricula(pool, { email, rgm, nome, password }) {
   return inserted.rows[0];
 }
 
+async function upsertAcessoDerived(pool, { email, rgm, nome }) {
+  const existing = await pool.query(
+    `SELECT id, email, rgm, nome, pw_hash, ativo
+     FROM csu_alunos
+     WHERE rgm = $1 OR lower(email) = lower($2)
+     ORDER BY CASE WHEN rgm = $1 THEN 0 ELSE 1 END
+     LIMIT 1`,
+    [rgm, email],
+  );
+
+  if (existing.rows[0]) {
+    const row = existing.rows[0];
+    await pool.query(
+      `UPDATE csu_alunos
+       SET email = $1, rgm = $2, nome = $3
+       WHERE id = $4`,
+      [email, rgm, nome, row.id],
+    );
+    return { id: row.id, email, rgm, nome, ativo: row.ativo, created: false };
+  }
+
+  const inserted = await pool.query(
+    `INSERT INTO csu_alunos (email, rgm, nome, pw_hash)
+     VALUES ($1, $2, $3, $4)
+     RETURNING id, email, rgm, nome, ativo`,
+    [email, rgm, nome, DERIVED_PW_MARKER],
+  );
+  return { ...inserted.rows[0], created: true };
+}
+
 async function findAlunoByIdentifier(pool, identifier) {
   const id = normalizeIdentifier(identifier);
   if (!id) return null;
   const result = await pool.query(
     `SELECT id, email, rgm, nome, pw_hash, ativo
      FROM csu_alunos
-     WHERE lower(email) = lower($1) OR rgm = $1
+     WHERE lower(email) = lower($1)
+        OR rgm = $1
+        OR regexp_replace(rgm, '\\D', '', 'g') = regexp_replace($1, '\\D', '', 'g')
      LIMIT 1`,
     [id],
   );
@@ -239,6 +272,7 @@ module.exports = {
   ensureSchema,
   seedAlunoIfEmpty,
   upsertAlunoFromMatricula,
+  upsertAcessoDerived,
   findAlunoByIdentifier,
   verifyPassword,
   createSession,
