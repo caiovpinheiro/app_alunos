@@ -11,6 +11,7 @@ function mapAluno(data) {
     rgm: String(data?.RGM ?? '').replace(/\D+/g, ''),
     email: String(data?.Email ?? '').replace(/\s+/g, ' ').trim().toLowerCase()
       || String(data?.['Email acadêmico'] ?? '').replace(/\s+/g, ' ').trim().toLowerCase(),
+    situacao: String(data?.['Situação Matrícula'] ?? '').replace(/\s+/g, ' ').trim().toUpperCase(),
   };
 }
 
@@ -29,21 +30,29 @@ async function loadLatestEmCurso(sourcePool) {
     SELECT data
     FROM public.matriculados_rows
     WHERE snapshot_id = $1
-      AND upper(btrim(COALESCE(data->>'Situação Matrícula', ''))) = 'EM CURSO'
     `,
     [snap.id],
   );
 
   const byRgm = new Map();
   const emails = new Set();
+  const emCurso = new Set();
+  const allRgms = new Set();
+
   for (const row of rows.rows) {
     const aluno = mapAluno(row.data);
-    if (!aluno.nome || !aluno.rgm || !aluno.email) continue;
+    if (!aluno.rgm) continue;
+    allRgms.add(aluno.rgm);
+    if (aluno.situacao !== 'EM CURSO') continue;
+    emCurso.add(aluno.rgm);
+    if (!aluno.nome || !aluno.email) continue;
     if (!matriculados.derivedPassword(aluno.nome)) continue;
     if (byRgm.has(aluno.rgm) || emails.has(aluno.email)) continue;
-    byRgm.set(aluno.rgm, aluno);
+    byRgm.set(aluno.rgm, { nome: aluno.nome, rgm: aluno.rgm, email: aluno.email });
     emails.add(aluno.email);
   }
+
+  const revokeRgms = [...allRgms].filter((rgm) => !emCurso.has(rgm));
 
   return {
     snapshot_id: snap.id,
@@ -51,6 +60,7 @@ async function loadLatestEmCurso(sourcePool) {
     file_name: snap.file_name,
     row_count: snap.row_count,
     alunos: [...byRgm.values()],
+    revokeRgms,
   };
 }
 
@@ -94,6 +104,7 @@ async function syncFromMatriculados(destPool, { force = false } = {}) {
       && previous
       && previous.snapshot_id === payload.snapshot_id
       && Number(previous.row_count) === Number(payload.row_count)
+      && previous.revoked_count != null
     ) {
       return {
         skippedRun: true,
@@ -102,10 +113,12 @@ async function syncFromMatriculados(destPool, { force = false } = {}) {
         created: 0,
         updated: 0,
         skipped: 0,
+        revoked: 0,
       };
     }
 
     const result = await applyAcessos(destPool, payload.alunos);
+    const revoked = await db.deactivateAlunosByRgm(destPool, payload.revokeRgms);
     await db.saveSyncState(destPool, {
       snapshot_id: payload.snapshot_id,
       snapshot_at: payload.snapshot_at,
@@ -114,17 +127,20 @@ async function syncFromMatriculados(destPool, { force = false } = {}) {
       created_count: result.created,
       updated_count: result.updated,
       skipped_count: result.skipped,
+      revoked_count: revoked,
     });
     console.log(
       'Sync de acessos:',
       `novos=${result.created}`,
       `atualizados=${result.updated}`,
+      `revogados=${revoked}`,
       `snapshot=${payload.file_name}`,
     );
     return {
       skippedRun: false,
       snapshot_id: payload.snapshot_id,
       file_name: payload.file_name,
+      revoked,
       ...result,
     };
   } finally {

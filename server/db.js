@@ -77,8 +77,13 @@ async function ensureSchema(pool) {
       created_count INTEGER,
       updated_count INTEGER,
       skipped_count INTEGER,
+      revoked_count INTEGER,
       synced_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
+  `);
+  await pool.query(`
+    ALTER TABLE csu_sync_state
+    ADD COLUMN IF NOT EXISTS revoked_count INTEGER
   `);
 }
 
@@ -156,11 +161,11 @@ async function upsertAcessoDerived(pool, { email, rgm, nome }) {
     const row = existing.rows[0];
     await pool.query(
       `UPDATE csu_alunos
-       SET email = $1, rgm = $2, nome = $3
+       SET email = $1, rgm = $2, nome = $3, ativo = TRUE
        WHERE id = $4`,
       [email, rgm, nome, row.id],
     );
-    return { id: row.id, email, rgm, nome, ativo: row.ativo, created: false };
+    return { id: row.id, email, rgm, nome, ativo: true, created: false };
   }
 
   const inserted = await pool.query(
@@ -278,9 +283,36 @@ async function insertCertificate(pool, alunoId, record) {
   );
 }
 
+async function deactivateAlunosByRgm(pool, rgms) {
+  const unique = [...new Set((rgms || []).filter(Boolean))];
+  if (!unique.length) return 0;
+  const seedRgm = String(process.env.SEED_ALUNO_RGM || '').replace(/\D+/g, '');
+  const toRevoke = seedRgm ? unique.filter((rgm) => rgm !== seedRgm) : unique;
+  if (!toRevoke.length) return 0;
+
+  let revoked = 0;
+  const chunkSize = 500;
+  for (let i = 0; i < toRevoke.length; i += chunkSize) {
+    const chunk = toRevoke.slice(i, i + chunkSize);
+    const updated = await pool.query(
+      `UPDATE csu_alunos
+       SET ativo = FALSE
+       WHERE ativo = TRUE AND rgm = ANY($1::text[])
+       RETURNING id`,
+      [chunk],
+    );
+    const ids = updated.rows.map((row) => row.id);
+    revoked += ids.length;
+    if (ids.length) {
+      await pool.query('DELETE FROM csu_sessoes WHERE aluno_id = ANY($1::int[])', [ids]);
+    }
+  }
+  return revoked;
+}
+
 async function getSyncState(pool, id = 'matriculados') {
   const result = await pool.query(
-    'SELECT snapshot_id, snapshot_at, file_name, row_count, created_count, updated_count, skipped_count, synced_at FROM csu_sync_state WHERE id = $1',
+    'SELECT snapshot_id, snapshot_at, file_name, row_count, created_count, updated_count, skipped_count, revoked_count, synced_at FROM csu_sync_state WHERE id = $1',
     [id],
   );
   return result.rows[0] || null;
@@ -289,8 +321,8 @@ async function getSyncState(pool, id = 'matriculados') {
 async function saveSyncState(pool, state, id = 'matriculados') {
   await pool.query(
     `INSERT INTO csu_sync_state
-      (id, snapshot_id, snapshot_at, file_name, row_count, created_count, updated_count, skipped_count, synced_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now())
+      (id, snapshot_id, snapshot_at, file_name, row_count, created_count, updated_count, skipped_count, revoked_count, synced_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, now())
      ON CONFLICT (id) DO UPDATE SET
        snapshot_id = EXCLUDED.snapshot_id,
        snapshot_at = EXCLUDED.snapshot_at,
@@ -299,6 +331,7 @@ async function saveSyncState(pool, state, id = 'matriculados') {
        created_count = EXCLUDED.created_count,
        updated_count = EXCLUDED.updated_count,
        skipped_count = EXCLUDED.skipped_count,
+       revoked_count = EXCLUDED.revoked_count,
        synced_at = now()`,
     [
       id,
@@ -309,6 +342,7 @@ async function saveSyncState(pool, state, id = 'matriculados') {
       state.created_count,
       state.updated_count,
       state.skipped_count,
+      state.revoked_count || 0,
     ],
   );
 }
@@ -327,6 +361,7 @@ module.exports = {
   deleteSession,
   createAluno,
   insertCertificate,
+  deactivateAlunosByRgm,
   getSyncState,
   saveSyncState,
 };
