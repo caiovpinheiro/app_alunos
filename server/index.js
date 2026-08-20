@@ -6,6 +6,7 @@ const express = require('express');
 const db = require('./db');
 const cursos = require('./cursos');
 const matriculados = require('./matriculados');
+const syncAcessos = require('./sync-acessos');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 80;
@@ -77,6 +78,24 @@ app.post('/api/admin/sync-acessos', express.json({ limit: '8mb' }), async (req, 
   } catch (err) {
     console.error('Falha no sync de acessos:', err.message);
     return res.status(500).json({ success: false, message: 'Não foi possível importar os acessos.' });
+  }
+});
+
+app.post('/api/admin/sync-from-matriculados', async (req, res) => {
+  const secret = process.env.IMPORT_SECRET;
+  if (!secret || req.get('x-import-secret') !== secret) {
+    return res.status(404).json({ success: false, message: 'Recurso não encontrado.' });
+  }
+  if (!pool) {
+    return res.status(503).json({ success: false, message: 'Serviço de dados indisponível.' });
+  }
+  try {
+    const force = req.query.force === '1' || req.body?.force === true;
+    const result = await syncAcessos.syncFromMatriculados(pool, { force });
+    return res.json({ success: true, ...result });
+  } catch (err) {
+    console.error('Falha no sync automático de matriculados:', err.message);
+    return res.status(500).json({ success: false, message: err.message });
   }
 });
 
@@ -346,6 +365,38 @@ async function start() {
   } catch (err) {
     console.error('Banco indisponível no boot:', err.message);
   }
+
+  startAcessosSyncScheduler();
+}
+
+let acessosSyncRunning = false;
+
+async function runAcessosSync(reason) {
+  if (!pool || !matriculados.isConfigured() || acessosSyncRunning) return;
+  acessosSyncRunning = true;
+  try {
+    console.log('Iniciando sync de acessos:', reason);
+    const result = await syncAcessos.syncFromMatriculados(pool, { force: false });
+    if (result.skippedRun) {
+      console.log('Sync de acessos: snapshot já aplicado', result.snapshot_id);
+    }
+  } catch (err) {
+    console.error('Sync automático de acessos falhou:', err.message);
+  } finally {
+    acessosSyncRunning = false;
+  }
+}
+
+function startAcessosSyncScheduler() {
+  if (!matriculados.isConfigured()) {
+    console.log('Sync automático de acessos desligado: defina MATRICULADOS_HOST e MATRICULADOS_DATABASE.');
+    return;
+  }
+  const minutes = Number(process.env.ACESSOS_SYNC_INTERVAL_MIN || 30);
+  const delayMs = Math.max(5, minutes) * 60 * 1000;
+  setTimeout(() => runAcessosSync('boot'), 15000);
+  setInterval(() => runAcessosSync('intervalo'), delayMs);
+  console.log(`Sync automático de acessos a cada ${Math.max(5, minutes)} min (novos do relatório de matriculados).`);
 }
 
 start().catch((err) => {

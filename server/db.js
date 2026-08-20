@@ -67,6 +67,18 @@ async function ensureSchema(pool) {
     CREATE INDEX IF NOT EXISTS idx_csu_alunos_rgm ON csu_alunos (rgm);
     CREATE INDEX IF NOT EXISTS idx_csu_sessoes_expires ON csu_sessoes (expires_at);
     CREATE INDEX IF NOT EXISTS idx_csu_certificados_rgm ON csu_certificados (rgm);
+
+    CREATE TABLE IF NOT EXISTS csu_sync_state (
+      id TEXT PRIMARY KEY,
+      snapshot_id TEXT,
+      snapshot_at TIMESTAMPTZ,
+      file_name TEXT,
+      row_count INTEGER,
+      created_count INTEGER,
+      updated_count INTEGER,
+      skipped_count INTEGER,
+      synced_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
   `);
 }
 
@@ -266,6 +278,41 @@ async function insertCertificate(pool, alunoId, record) {
   );
 }
 
+async function getSyncState(pool, id = 'matriculados') {
+  const result = await pool.query(
+    'SELECT snapshot_id, snapshot_at, file_name, row_count, created_count, updated_count, skipped_count, synced_at FROM csu_sync_state WHERE id = $1',
+    [id],
+  );
+  return result.rows[0] || null;
+}
+
+async function saveSyncState(pool, state, id = 'matriculados') {
+  await pool.query(
+    `INSERT INTO csu_sync_state
+      (id, snapshot_id, snapshot_at, file_name, row_count, created_count, updated_count, skipped_count, synced_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now())
+     ON CONFLICT (id) DO UPDATE SET
+       snapshot_id = EXCLUDED.snapshot_id,
+       snapshot_at = EXCLUDED.snapshot_at,
+       file_name = EXCLUDED.file_name,
+       row_count = EXCLUDED.row_count,
+       created_count = EXCLUDED.created_count,
+       updated_count = EXCLUDED.updated_count,
+       skipped_count = EXCLUDED.skipped_count,
+       synced_at = now()`,
+    [
+      id,
+      state.snapshot_id,
+      state.snapshot_at,
+      state.file_name,
+      state.row_count,
+      state.created_count,
+      state.updated_count,
+      state.skipped_count,
+    ],
+  );
+}
+
 module.exports = {
   TOKEN_TTL_MS,
   createPool,
@@ -280,4 +327,6 @@ module.exports = {
   deleteSession,
   createAluno,
   insertCertificate,
+  getSyncState,
+  saveSyncState,
 };

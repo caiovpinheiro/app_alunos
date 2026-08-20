@@ -8,20 +8,24 @@ const SITUACAO_ATIVA = 'EM CURSO';
 
 let cachedSnapshot = { id: null, at: 0 };
 
+function isConfigured() {
+  return Boolean(process.env.MATRICULADOS_HOST || process.env.MATRICULADOS_DATABASE);
+}
+
 function createPool() {
-  const required = ['DATABASE_HOST', 'DATABASE_PORT', 'DATABASE_USER', 'DATABASE_PASSWORD'];
-  const missing = required.filter((key) => !process.env[key]);
-  if (missing.length) {
-    throw new Error(`Variáveis de banco ausentes: ${missing.join(', ')}`);
+  if (!isConfigured()) {
+    throw new Error('MATRICULADOS_HOST ou MATRICULADOS_DATABASE não configurado');
   }
 
   const pool = new Pool({
-    host: process.env.DATABASE_HOST,
-    port: Number(process.env.DATABASE_PORT),
+    host: process.env.MATRICULADOS_HOST || process.env.DATABASE_HOST,
+    port: Number(process.env.MATRICULADOS_PORT || process.env.DATABASE_PORT || 5432),
     database: process.env.MATRICULADOS_DATABASE || 'disparos',
-    user: process.env.DATABASE_USER,
-    password: process.env.DATABASE_PASSWORD,
-    ssl: process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : false,
+    user: process.env.MATRICULADOS_USER || process.env.DATABASE_USER,
+    password: process.env.MATRICULADOS_PASSWORD || process.env.DATABASE_PASSWORD,
+    ssl: (process.env.MATRICULADOS_SSL || process.env.DATABASE_SSL) === 'true'
+      ? { rejectUnauthorized: false }
+      : false,
     max: 8,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 15000,
@@ -122,6 +126,7 @@ async function findByIdentifier(pool, identifier) {
 }
 
 module.exports = {
+  isConfigured,
   createPool,
   derivedPassword,
   passwordMatches,
