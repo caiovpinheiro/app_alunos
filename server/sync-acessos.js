@@ -6,13 +6,7 @@ const matriculados = require('./matriculados');
 const CONCURRENCY = 8;
 
 function mapAluno(data) {
-  return {
-    nome: String(data?.Nome ?? '').replace(/\s+/g, ' ').trim(),
-    rgm: String(data?.RGM ?? '').replace(/\D+/g, ''),
-    email: String(data?.Email ?? '').replace(/\s+/g, ' ').trim().toLowerCase()
-      || String(data?.['Email acadêmico'] ?? '').replace(/\s+/g, ' ').trim().toLowerCase(),
-    situacao: String(data?.['Situação Matrícula'] ?? '').replace(/\s+/g, ' ').trim().toUpperCase(),
-  };
+  return matriculados.mapRow(data);
 }
 
 async function loadLatestEmCurso(sourcePool) {
@@ -52,8 +46,8 @@ async function loadLatestEmCurso(sourcePool) {
       nome: aluno.nome,
       rgm: aluno.rgm,
       email: aluno.email,
-      curso: String(row.data?.Curso ?? '').replace(/\s+/g, ' ').trim(),
-      unidade: String(row.data?.Polo ?? row.data?.Instituição ?? '').replace(/\s+/g, ' ').trim(),
+      curso: aluno.curso,
+      unidade: aluno.unidade,
     });
     emails.add(aluno.email);
   }

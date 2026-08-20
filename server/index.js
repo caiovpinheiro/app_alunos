@@ -317,15 +317,20 @@ app.post('/api/certificates', authMiddleware, async (req, res) => {
       return res.status(401).json({ success: false, message: 'Sessão inválida ou expirada.' });
     }
 
-    let curso = normalizeSpaces(aluno.curso);
-    let unidade = normalizeSpaces(aluno.unidade);
+    let curso = matriculados.formatCurso(aluno.curso);
+    let unidade = matriculados.formatPolo(aluno.unidade);
     const sourcePool = getMatriculadosPool();
     if (sourcePool) {
       try {
-        const matriculado = await matriculados.findByIdentifier(sourcePool, aluno.rgm || aluno.email);
+        let matriculado = aluno.rgm
+          ? await matriculados.findByIdentifier(sourcePool, aluno.rgm)
+          : null;
+        if (!matriculado && aluno.email) {
+          matriculado = await matriculados.findByIdentifier(sourcePool, aluno.email);
+        }
         if (matriculado) {
-          curso = normalizeSpaces(matriculado.curso) || curso;
-          unidade = normalizeSpaces(matriculado.unidade) || unidade;
+          curso = matriculado.curso || curso;
+          unidade = matriculado.unidade || unidade;
           if (curso && unidade) {
             await db.upsertAcessoDerived(pool, {
               email: aluno.email,

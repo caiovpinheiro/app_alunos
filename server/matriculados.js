@@ -40,6 +40,69 @@ function normalizeRgm(value) {
   return String(value ?? '').replace(/\D+/g, '');
 }
 
+const TITLE_PARTICLES = new Set([
+  'a', 'as', 'o', 'os', 'e', 'da', 'das', 'de', 'do', 'dos',
+  'em', 'na', 'nas', 'no', 'nos', 'por', 'para', 'com', 'ou', 'ao', 'aos',
+]);
+
+function collapseSpaces(value) {
+  return String(value ?? '').replace(/\s+/g, ' ').trim();
+}
+
+function particleKey(word) {
+  return word.toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function formatToken(word, isFirst, keepAcronyms) {
+  if (!word) return word;
+  const lead = (word.match(/^[^A-Za-zÀ-ÿ0-9]+/) || [''])[0];
+  const trail = (word.match(/[^A-Za-zÀ-ÿ0-9]+$/) || [''])[0];
+  const core = word.slice(lead.length, word.length - trail.length);
+  if (!core) return word;
+
+  const lower = core.toLocaleLowerCase('pt-BR');
+  const key = particleKey(core);
+  const hasDiacritic = core.normalize('NFD').replace(/[\u0300-\u036f]/g, '') !== core.normalize('NFD');
+  if (!isFirst && TITLE_PARTICLES.has(key) && !hasDiacritic) return lead + lower + trail;
+
+  if (keepAcronyms && /^[A-Z]{2,3}$/.test(core) && !TITLE_PARTICLES.has(key)) {
+    return lead + core + trail;
+  }
+
+  const titled = lower.charAt(0).toLocaleUpperCase('pt-BR') + lower.slice(1);
+  return lead + titled + trail;
+}
+
+function titleCasePt(text, keepAcronyms) {
+  return collapseSpaces(text)
+    .split(' ')
+    .filter(Boolean)
+    .map((raw, index) => raw
+      .split('-')
+      .map((part, partIndex) => formatToken(part, index === 0 && partIndex === 0, keepAcronyms))
+      .join('-'))
+    .join(' ');
+}
+
+function formatPolo(raw) {
+  let value = collapseSpaces(raw);
+  if (!value) return '';
+  value = value.replace(/^\d+\s*[-–]\s*/, '');
+  value = value.replace(/^CEB\s+/i, '');
+  value = value.replace(/^POLO[_-\s]+/i, '');
+  value = value.replace(/^[A-Z]{2}[_-\s]+/i, '');
+  value = value.replace(/_/g, ' - ');
+  return titleCasePt(value, false);
+}
+
+function formatCurso(raw) {
+  const value = collapseSpaces(raw)
+    .replace(/^\d+\s*[-–]\s*/, '')
+    .replace(/\([^)]*\)/g, '');
+  if (!value) return '';
+  return titleCasePt(value, true);
+}
+
 function derivedPassword(nome) {
   const first = String(nome ?? '').trim().split(/\s+/).filter(Boolean)[0];
   if (!first) return null;
@@ -59,18 +122,18 @@ function passwordMatches(expected, given) {
 }
 
 function mapRow(data) {
-  const nome = String(data?.Nome ?? '').replace(/\s+/g, ' ').trim();
-  const rgm = normalizeRgm(data?.RGM);
-  const email = String(data?.Email ?? '').replace(/\s+/g, ' ').trim().toLowerCase();
-  const emailAcad = String(data?.['Email acadêmico'] ?? '').replace(/\s+/g, ' ').trim().toLowerCase();
-  const situacao = String(data?.['Situação Matrícula'] ?? '').replace(/\s+/g, ' ').trim().toUpperCase();
+  const nome = collapseSpaces(data?.Nome);
+  const rgm = normalizeRgm(data?.RGM) || normalizeRgm(data?.RGM_erp_matricula);
+  const email = collapseSpaces(data?.Email).toLowerCase();
+  const emailAcad = collapseSpaces(data?.['Email acadêmico']).toLowerCase();
+  const situacao = collapseSpaces(data?.['Situação Matrícula']).toUpperCase();
   return {
     nome,
     rgm,
     email: email || emailAcad,
     situacao,
-    curso: String(data?.Curso ?? '').replace(/\s+/g, ' ').trim(),
-    unidade: String(data?.Polo ?? data?.Instituição ?? '').replace(/\s+/g, ' ').trim(),
+    curso: formatCurso(data?.Curso),
+    unidade: formatPolo(data?.Polo) || formatPolo(data?.Instituição),
   };
 }
 
@@ -111,7 +174,10 @@ async function findByIdentifier(pool, identifier) {
           lower(btrim(COALESCE(data->>'Email', ''))) = $2
           OR lower(btrim(COALESCE(data->>'Email acadêmico', ''))) = $2
         ))
-        OR ($3::text <> '' AND regexp_replace(COALESCE(data->>'RGM', ''), '\\D', '', 'g') = $3)
+        OR ($3::text <> '' AND (
+          regexp_replace(COALESCE(data->>'RGM', ''), '\\D', '', 'g') = $3
+          OR regexp_replace(COALESCE(data->>'RGM_erp_matricula', ''), '\\D', '', 'g') = $3
+        ))
       )
     ORDER BY CASE
       WHEN upper(btrim(COALESCE(data->>'Situação Matrícula', ''))) = 'EM CURSO' THEN 0
@@ -123,7 +189,7 @@ async function findByIdentifier(pool, identifier) {
   );
 
   const aluno = mapRow(result.rows[0]?.data);
-  if (!aluno.nome || !aluno.rgm || !aluno.email || aluno.situacao !== SITUACAO_ATIVA) return null;
+  if (!aluno.nome || !aluno.email || aluno.situacao !== SITUACAO_ATIVA) return null;
   return aluno;
 }
 
@@ -133,4 +199,7 @@ module.exports = {
   derivedPassword,
   passwordMatches,
   findByIdentifier,
+  mapRow,
+  formatPolo,
+  formatCurso,
 };
