@@ -73,6 +73,43 @@
     }
   }
 
+  async function handleRegister(event) {
+    event.preventDefault();
+    var UI = window.UI;
+    UI.hideRegisterError();
+    UI.clearFieldErrors();
+
+    var payload = {
+      nome: document.getElementById('f_reg_nome').value,
+      email: document.getElementById('f_reg_email').value,
+      rgm: document.getElementById('f_reg_rgm').value,
+      password: document.getElementById('f_reg_password').value,
+      confirmPassword: document.getElementById('f_reg_confirm').value,
+    };
+
+    UI.setRegisterLoading(true);
+    try {
+      var res = await window.Api.register(payload);
+      window.Auth.setSession(res.token, res.user);
+      UI.setUserName(window.Auth.getUserName());
+      document.getElementById('register-form').reset();
+      UI.showScreen('dashboard-page');
+    } catch (err) {
+      if (err.details) UI.showFieldErrors(mapRegisterErrors(err.details));
+      UI.showRegisterError(err.message || 'Não foi possível concluir o cadastro. Tente novamente.');
+    } finally {
+      UI.setRegisterLoading(false);
+    }
+  }
+
+  function mapRegisterErrors(details) {
+    var mapped = {};
+    Object.keys(details).forEach(function (key) {
+      mapped['reg_' + key] = details[key];
+    });
+    return mapped;
+  }
+
   async function handleGenerate(event) {
     event.preventDefault();
     var UI = window.UI;
@@ -195,6 +232,7 @@
     document.getElementById('f_data').max = today;
 
     document.getElementById('login-form').addEventListener('submit', handleLogin);
+    document.getElementById('register-form').addEventListener('submit', handleRegister);
     document.getElementById('cert-form').addEventListener('submit', handleGenerate);
     window.CursoAutocomplete.init();
 

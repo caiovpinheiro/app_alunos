@@ -2,8 +2,8 @@
 window.UI = (function () {
   'use strict';
 
-  var SCREENS = ['login-page', 'dashboard-page', 'form-page', 'success-page'];
-  var PUBLIC_SCREENS = ['login-page'];
+  var SCREENS = ['login-page', 'first-access-page', 'dashboard-page', 'form-page', 'success-page'];
+  var PUBLIC_SCREENS = ['login-page', 'first-access-page'];
 
   function showScreen(screenId) {
     if (PUBLIC_SCREENS.indexOf(screenId) === -1 && !window.Auth.isAuthenticated()) {
@@ -13,6 +13,7 @@ window.UI = (function () {
       document.getElementById(id).classList.add('hidden');
     });
     document.getElementById(screenId).classList.remove('hidden');
+    if (window.lucide) window.lucide.createIcons();
     window.scrollTo(0, 0);
   }
 
@@ -34,6 +35,22 @@ window.UI = (function () {
 
   function hideLoginError() {
     document.getElementById('login-error').classList.add('hidden');
+  }
+
+  function setRegisterLoading(loading) {
+    var btn = document.getElementById('btn-register');
+    btn.disabled = loading;
+    btn.textContent = loading ? 'Criando acesso...' : 'Criar acesso';
+  }
+
+  function showRegisterError(message) {
+    var el = document.getElementById('register-error');
+    el.textContent = message;
+    el.classList.remove('hidden');
+  }
+
+  function hideRegisterError() {
+    document.getElementById('register-error').classList.add('hidden');
   }
 
   function setSubmitLoading(loading) {
@@ -89,6 +106,9 @@ window.UI = (function () {
     setLoginLoading: setLoginLoading,
     showLoginError: showLoginError,
     hideLoginError: hideLoginError,
+    setRegisterLoading: setRegisterLoading,
+    showRegisterError: showRegisterError,
+    hideRegisterError: hideRegisterError,
     setSubmitLoading: setSubmitLoading,
     clearFieldErrors: clearFieldErrors,
     showFieldErrors: showFieldErrors,

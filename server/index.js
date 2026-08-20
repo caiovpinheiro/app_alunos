@@ -109,6 +109,10 @@ app.get('/api/config', (req, res) => {
 });
 
 app.post('/api/auth/login', async (req, res) => {
+  if (!pool) {
+    return res.status(503).json({ success: false, message: 'Serviço de dados indisponível.' });
+  }
+
   const identifier = normalizeSpaces(req.body?.identifier);
   const password = String(req.body?.password ?? '');
 
@@ -133,6 +137,49 @@ app.post('/api/auth/login', async (req, res) => {
   } catch (err) {
     console.error('Falha no login:', err.message);
     return res.status(500).json({ success: false, message: 'Não foi possível entrar. Tente novamente em instantes.' });
+  }
+});
+
+app.post('/api/auth/register', async (req, res) => {
+  if (!pool) {
+    return res.status(503).json({ success: false, message: 'Serviço de dados indisponível.' });
+  }
+
+  const email = normalizeSpaces(req.body?.email);
+  const nome = normalizeSpaces(req.body?.nome);
+  const rgm = normalizeSpaces(req.body?.rgm);
+  const password = String(req.body?.password ?? '');
+  const confirm = String(req.body?.confirmPassword ?? '');
+  const errors = {};
+
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) errors.email = 'Insira um e-mail válido.';
+  if (!nome) errors.nome = 'O nome completo é obrigatório.';
+  if (!rgm) errors.rgm = 'O RGM é obrigatório.';
+  if (password.length < 6) errors.password = 'A senha deve ter no mínimo 6 caracteres.';
+  if (password !== confirm) errors.confirmPassword = 'As senhas não coincidem.';
+
+  if (Object.keys(errors).length) {
+    return res.status(422).json({ success: false, message: 'Dados inválidos.', errors });
+  }
+
+  try {
+    const aluno = await db.createAluno(pool, { email, nome, rgm, password });
+    const token = crypto.randomBytes(32).toString('hex');
+    await db.createSession(pool, aluno.id, token);
+    return res.status(201).json({
+      success: true,
+      token,
+      user: { name: aluno.nome, email: aluno.email, rgm: aluno.rgm },
+    });
+  } catch (err) {
+    if (err.code === 'DUPLICATE' || err.code === '23505') {
+      const errorsDup = err.field === 'rgm'
+        ? { rgm: 'Este RGM já possui cadastro. Use Entrar.' }
+        : { email: 'Este e-mail já possui cadastro. Use Entrar.' };
+      return res.status(409).json({ success: false, message: 'Aluno já cadastrado.', errors: errorsDup });
+    }
+    console.error('Falha no primeiro acesso:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível concluir o cadastro. Tente novamente.' });
   }
 });
 

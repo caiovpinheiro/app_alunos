@@ -35,6 +35,14 @@ window.Api = (function () {
     });
   }
 
+  async function register(payload) {
+    return request('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  }
+
   async function logout() {
     try {
       await request('/api/auth/logout', { method: 'POST', headers: authHeaders() });
@@ -55,5 +63,5 @@ window.Api = (function () {
     return request('/api/cursos?q=' + q, { headers: authHeaders() });
   }
 
-  return { login: login, logout: logout, emitCertificate: emitCertificate, searchCursos: searchCursos };
+  return { login: login, register: register, logout: logout, emitCertificate: emitCertificate, searchCursos: searchCursos };
 })();

@@ -150,6 +150,35 @@ async function deleteSession(pool, token) {
   await pool.query('DELETE FROM csu_sessoes WHERE token = $1', [token]);
 }
 
+async function createAluno(pool, data) {
+  const email = normalizeIdentifier(data.email).toLowerCase();
+  const rgm = normalizeIdentifier(data.rgm);
+  const nome = normalizeIdentifier(data.nome);
+  const password = String(data.password ?? '');
+
+  const existing = await pool.query(
+    `SELECT email, rgm FROM csu_alunos
+     WHERE lower(email) = lower($1) OR rgm = $2
+     LIMIT 1`,
+    [email, rgm],
+  );
+  if (existing.rows[0]) {
+    const err = new Error('Aluno já cadastrado.');
+    err.code = 'DUPLICATE';
+    err.field = existing.rows[0].rgm === rgm ? 'rgm' : 'email';
+    throw err;
+  }
+
+  const pwHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+  const result = await pool.query(
+    `INSERT INTO csu_alunos (email, rgm, nome, pw_hash)
+     VALUES ($1, $2, $3, $4)
+     RETURNING id, email, rgm, nome, ativo`,
+    [email, rgm, nome, pwHash],
+  );
+  return result.rows[0];
+}
+
 async function insertCertificate(pool, alunoId, record) {
   await pool.query(
     `INSERT INTO csu_certificados
@@ -179,5 +208,6 @@ module.exports = {
   createSession,
   getSessionAluno,
   deleteSession,
+  createAluno,
   insertCertificate,
 };
