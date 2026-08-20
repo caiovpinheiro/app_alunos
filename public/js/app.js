@@ -221,6 +221,23 @@
     }
   }
 
+  function bindPasswordToggles() {
+    document.querySelectorAll('[data-password-toggle]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var input = document.getElementById(btn.getAttribute('data-password-toggle'));
+        if (!input) return;
+        var visible = input.type === 'password';
+        input.type = visible ? 'text' : 'password';
+        btn.setAttribute('aria-pressed', visible ? 'true' : 'false');
+        btn.setAttribute('aria-label', visible ? 'Ocultar senha' : 'Mostrar senha');
+        btn.innerHTML = visible
+          ? '<i data-lucide="eye-off" class="w-5 h-5"></i>'
+          : '<i data-lucide="eye" class="w-5 h-5"></i>';
+        if (window.lucide) window.lucide.createIcons();
+      });
+    });
+  }
+
   function init() {
     lucide.createIcons();
     window.AppConfig.load();
@@ -231,6 +248,7 @@
     }).format(new Date());
     document.getElementById('f_data').max = today;
 
+    bindPasswordToggles();
     document.getElementById('login-form').addEventListener('submit', handleLogin);
     document.getElementById('register-form').addEventListener('submit', handleRegister);
     document.getElementById('cert-form').addEventListener('submit', handleGenerate);
