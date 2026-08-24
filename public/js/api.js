@@ -63,5 +63,48 @@ window.Api = (function () {
     return request('/api/cursos?q=' + q, { headers: authHeaders() });
   }
 
-  return { login: login, register: register, logout: logout, emitCertificate: emitCertificate, searchCursos: searchCursos };
+  async function listAvisos() {
+    return request('/api/avisos', { headers: authHeaders() });
+  }
+
+  async function countAvisosNaoLidas() {
+    return request('/api/avisos/nao-lidas', { headers: authHeaders() });
+  }
+
+  async function markAvisoRead(id) {
+    return request('/api/avisos/' + encodeURIComponent(id) + '/lida', {
+      method: 'POST',
+      headers: authHeaders(),
+    });
+  }
+
+  async function listTutoriais() {
+    return request('/api/tutoriais', { headers: authHeaders() });
+  }
+
+  async function getAtendimento() {
+    return request('/api/atendimento', { headers: authHeaders() });
+  }
+
+  async function createIndicacao(payload) {
+    return request('/api/indicacoes', {
+      method: 'POST',
+      headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+      body: JSON.stringify(payload),
+    });
+  }
+
+  return {
+    login: login,
+    register: register,
+    logout: logout,
+    emitCertificate: emitCertificate,
+    searchCursos: searchCursos,
+    listAvisos: listAvisos,
+    countAvisosNaoLidas: countAvisosNaoLidas,
+    markAvisoRead: markAvisoRead,
+    listTutoriais: listTutoriais,
+    getAtendimento: getAtendimento,
+    createIndicacao: createIndicacao,
+  };
 })();

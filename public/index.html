@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/styles.css?v=4">
+    <link rel="stylesheet" href="/css/styles.css?v=7">
 </head>
 <body>
 
@@ -19,8 +19,8 @@
             <div class="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
                 <div class="text-center mb-8">
                     <div class="flex justify-center mb-4">
-                        <div class="bg-cruzeiro text-white p-3 rounded-xl">
-                            <i data-lucide="graduation-cap" class="w-10 h-10"></i>
+                        <div class="bg-cruzeiro rounded-xl overflow-hidden w-16 h-16">
+                            <img src="/assets/logo-login.jpg" alt="Cruzeiro do Sul Educacional" class="w-full h-full object-cover">
                         </div>
                     </div>
                     <h1 class="text-2xl font-bold text-gray-800">Área do Aluno</h1>
@@ -38,8 +38,13 @@
                         <label for="f_login_password" class="block text-sm font-medium text-gray-700 mb-1">Senha</label>
                         <input type="password" id="f_login_password" required autocomplete="current-password" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition" placeholder="••••••••">
                     </div>
-                    <button type="submit" id="btn-login" class="w-full bg-cruzeiro hover:bg-blue-800 text-white font-semibold py-3 rounded-lg transition duration-300 transform active:scale-95 shadow-lg disabled:opacity-70 disabled:cursor-not-allowed">
-                        Entrar
+                    <button type="submit" id="btn-login" class="cube-flip-btn" aria-label="Entrar">
+                        <span class="cube-flip-scene" aria-hidden="true">
+                            <span class="cube-flip-cube">
+                                <span class="cube-flip-face cube-flip-front" data-cube-front>Entrar</span>
+                                <span class="cube-flip-face cube-flip-second" data-cube-second>Acessar</span>
+                            </span>
+                        </span>
                     </button>
                 </form>
                 <p class="mt-6 text-center text-sm text-gray-500">
@@ -111,9 +116,22 @@
                         </div>
                         <span class="font-bold text-gray-800 hidden sm:block">Cruzeiro do Sul <span class="text-blue-600">Virtual</span></span>
                     </div>
-                    <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="notif-wrap relative">
+                            <button type="button" class="notif-bell p-2 text-gray-500 hover:text-cruzeiro transition" data-notif-toggle aria-label="Avisos">
+                                <i data-lucide="bell" class="w-5 h-5"></i>
+                                <span class="notif-badge hidden" data-notif-badge>0</span>
+                            </button>
+                            <div class="notif-dropdown hidden">
+                                <div class="notif-dropdown-head">
+                                    <strong>Avisos</strong>
+                                    <button type="button" onclick="showScreen('avisos-page')">Ver todos</button>
+                                </div>
+                                <div class="notif-dropdown-list"></div>
+                            </div>
+                        </div>
                         <div class="text-right hidden sm:block">
-                            <p class="text-sm font-semibold text-gray-800" id="user-display-name">Aluno</p>
+                            <p class="text-sm font-semibold text-gray-800" data-user-name>Aluno</p>
                             <p class="text-xs text-gray-500">Graduação</p>
                         </div>
                         <button onclick="logout()" class="p-2 text-gray-400 hover:text-red-500 transition" title="Sair">
@@ -141,11 +159,226 @@
                         </button>
                     </div>
 
-                    <!-- Placeholder para futuras funções -->
-                    <div class="bg-gray-50 p-6 rounded-2xl border border-dashed border-gray-300 flex flex-col items-center justify-center text-center opacity-60">
-                        <i data-lucide="plus-circle" class="w-8 h-8 text-gray-400 mb-2"></i>
-                        <p class="text-gray-500 font-medium italic">Novas funcionalidades em breve</p>
+                    <!-- Card: Avisos -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                        <div class="flex items-start justify-between gap-3 mb-4">
+                            <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
+                                <i data-lucide="megaphone" class="w-6 h-6"></i>
+                            </div>
+                            <button type="button" onclick="showScreen('avisos-page')" class="text-sm font-semibold text-cruzeiro hover:underline">Ver todos</button>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-800 mb-2">Avisos importantes</h3>
+                        <p class="text-gray-500 text-sm mb-4">Comunicados da instituição, prazos e recados do seu polo.</p>
+                        <div id="dashboard-avisos-list" class="space-y-3"></div>
                     </div>
+
+                    <!-- Card: Tutoriais -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow group">
+                        <div class="w-12 h-12 bg-violet-50 text-violet-700 rounded-xl flex items-center justify-center mb-4">
+                            <i data-lucide="play-circle" class="w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-800 mb-2">Tutoriais</h3>
+                        <p class="text-gray-500 text-sm mb-6 leading-relaxed">Videoaulas para Área do Aluno, Blackboard, provas, boleto e documentos.</p>
+                        <button onclick="showScreen('tutoriais-page')" class="w-full flex items-center justify-center gap-2 bg-gray-50 text-cruzeiro font-semibold py-2.5 rounded-lg hover:bg-cruzeiro hover:text-white transition">
+                            Ver tutoriais
+                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+
+                    <!-- Card: Atendimento -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow group">
+                        <div class="w-12 h-12 bg-green-50 text-green-700 rounded-xl flex items-center justify-center mb-4">
+                            <i data-lucide="headset" class="w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-800 mb-2">Atendimento</h3>
+                        <p class="text-gray-500 text-sm mb-6 leading-relaxed">Suporte acadêmico, comercial e indicação de novos alunos no WhatsApp.</p>
+                        <button onclick="showScreen('atendimento-page')" class="w-full flex items-center justify-center gap-2 bg-gray-50 text-cruzeiro font-semibold py-2.5 rounded-lg hover:bg-cruzeiro hover:text-white transition">
+                            Falar com a equipe
+                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            </main>
+        </section>
+
+        <!-- 2b. AVISOS -->
+        <section id="avisos-page" class="hidden min-h-screen">
+            <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="bg-cruzeiro p-1.5 rounded-lg">
+                            <i data-lucide="graduation-cap" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <span class="font-bold text-gray-800 hidden sm:block">Cruzeiro do Sul <span class="text-blue-600">Virtual</span></span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="notif-wrap relative">
+                            <button type="button" class="notif-bell p-2 text-gray-500 hover:text-cruzeiro transition" data-notif-toggle aria-label="Avisos">
+                                <i data-lucide="bell" class="w-5 h-5"></i>
+                                <span class="notif-badge hidden" data-notif-badge>0</span>
+                            </button>
+                            <div class="notif-dropdown hidden">
+                                <div class="notif-dropdown-head">
+                                    <strong>Avisos</strong>
+                                    <button type="button" onclick="showScreen('avisos-page')">Ver todos</button>
+                                </div>
+                                <div class="notif-dropdown-list"></div>
+                            </div>
+                        </div>
+                        <div class="text-right hidden sm:block">
+                            <p class="text-sm font-semibold text-gray-800" data-user-name>Aluno</p>
+                            <p class="text-xs text-gray-500">Graduação</p>
+                        </div>
+                        <button onclick="logout()" class="p-2 text-gray-400 hover:text-red-500 transition" title="Sair">
+                            <i data-lucide="log-out" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+            <main class="max-w-3xl mx-auto px-4 py-8">
+                <button onclick="showScreen('dashboard-page')" class="flex items-center gap-2 text-gray-500 hover:text-cruzeiro mb-6 transition">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar ao Dashboard
+                </button>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Avisos</h2>
+                <p class="text-gray-500 text-sm mb-6">Comunicados ativos para o seu perfil. Marque como lida para limpar o sino.</p>
+                <div id="avisos-page-list" class="space-y-4"></div>
+            </main>
+        </section>
+
+        <!-- 2c. TUTORIAIS -->
+        <section id="tutoriais-page" class="hidden min-h-screen">
+            <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="bg-cruzeiro p-1.5 rounded-lg">
+                            <i data-lucide="graduation-cap" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <span class="font-bold text-gray-800 hidden sm:block">Cruzeiro do Sul <span class="text-blue-600">Virtual</span></span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="notif-wrap relative">
+                            <button type="button" class="notif-bell p-2 text-gray-500 hover:text-cruzeiro transition" data-notif-toggle aria-label="Avisos">
+                                <i data-lucide="bell" class="w-5 h-5"></i>
+                                <span class="notif-badge hidden" data-notif-badge>0</span>
+                            </button>
+                            <div class="notif-dropdown hidden">
+                                <div class="notif-dropdown-head">
+                                    <strong>Avisos</strong>
+                                    <button type="button" onclick="showScreen('avisos-page')">Ver todos</button>
+                                </div>
+                                <div class="notif-dropdown-list"></div>
+                            </div>
+                        </div>
+                        <div class="text-right hidden sm:block">
+                            <p class="text-sm font-semibold text-gray-800" data-user-name>Aluno</p>
+                            <p class="text-xs text-gray-500">Graduação</p>
+                        </div>
+                        <button onclick="logout()" class="p-2 text-gray-400 hover:text-red-500 transition" title="Sair">
+                            <i data-lucide="log-out" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+            <main class="max-w-6xl mx-auto px-4 py-8">
+                <button onclick="showScreen('dashboard-page')" class="flex items-center gap-2 text-gray-500 hover:text-cruzeiro mb-6 transition">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar ao Dashboard
+                </button>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Tutoriais</h2>
+                <p class="text-gray-500 text-sm mb-6">Assista só quando quiser: o vídeo carrega ao clicar no card.</p>
+                <input id="tutoriais-search" type="search" class="w-full mb-4 px-4 py-3 rounded-xl border border-gray-200" placeholder="Buscar tutorial...">
+                <div id="tutoriais-filters" class="flex flex-wrap gap-2 mb-6"></div>
+                <div id="tutoriais-grid" class="tutorial-grid"></div>
+            </main>
+        </section>
+
+        <!-- 2d. ATENDIMENTO -->
+        <section id="atendimento-page" class="hidden min-h-screen">
+            <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="bg-cruzeiro p-1.5 rounded-lg">
+                            <i data-lucide="graduation-cap" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <span class="font-bold text-gray-800 hidden sm:block">Cruzeiro do Sul <span class="text-blue-600">Virtual</span></span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="notif-wrap relative">
+                            <button type="button" class="notif-bell p-2 text-gray-500 hover:text-cruzeiro transition" data-notif-toggle aria-label="Avisos">
+                                <i data-lucide="bell" class="w-5 h-5"></i>
+                                <span class="notif-badge hidden" data-notif-badge>0</span>
+                            </button>
+                            <div class="notif-dropdown hidden">
+                                <div class="notif-dropdown-head">
+                                    <strong>Avisos</strong>
+                                    <button type="button" onclick="showScreen('avisos-page')">Ver todos</button>
+                                </div>
+                                <div class="notif-dropdown-list"></div>
+                            </div>
+                        </div>
+                        <div class="text-right hidden sm:block">
+                            <p class="text-sm font-semibold text-gray-800" data-user-name>Aluno</p>
+                            <p class="text-xs text-gray-500">Graduação</p>
+                        </div>
+                        <button onclick="logout()" class="p-2 text-gray-400 hover:text-red-500 transition" title="Sair">
+                            <i data-lucide="log-out" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+            <main class="max-w-3xl mx-auto px-4 py-8">
+                <button onclick="showScreen('dashboard-page')" class="flex items-center gap-2 text-gray-500 hover:text-cruzeiro mb-6 transition">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar ao Dashboard
+                </button>
+                <h2 class="text-2xl font-bold text-gray-800 mb-1">Atendimento</h2>
+                <p id="atendimento-polo" class="text-sm text-gray-500 mb-6"></p>
+
+                <div class="bg-white rounded-2xl border border-gray-100 p-6 mb-4">
+                    <h3 class="text-lg font-bold mb-2">Suporte acadêmico</h3>
+                    <p class="text-sm text-gray-500 mb-4">Abre o WhatsApp já com seu nome, RGM e polo.</p>
+                    <a id="btn-whatsapp-academico" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center w-full bg-green-600 text-white font-semibold py-3 rounded-xl">Abrir WhatsApp acadêmico</a>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-gray-100 p-6 mb-4">
+                    <h3 class="text-lg font-bold mb-2">Comercial</h3>
+                    <p class="text-sm text-gray-500 mb-4">Fale com o comercial do seu polo ou indique alguém.</p>
+                    <div class="grid sm:grid-cols-2 gap-3">
+                        <a id="btn-whatsapp-comercial" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center bg-cruzeiro text-white font-semibold py-3 rounded-xl">Falar com comercial</a>
+                        <button type="button" onclick="document.getElementById('indicacao-card').scrollIntoView({behavior:'smooth'})" class="bg-gray-50 text-cruzeiro font-semibold py-3 rounded-xl">Indicar alguém</button>
+                    </div>
+                </div>
+
+                <div id="indicacao-card" class="bg-white rounded-2xl border border-gray-100 p-6">
+                    <h3 class="text-lg font-bold mb-1">Indicar alguém</h3>
+                    <p class="text-sm text-gray-500 mb-4">Seus dados já entram automaticamente. Preencha só os dados da pessoa indicada.</p>
+                    <div id="indicacao-alert" class="hidden mb-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3"></div>
+                    <div id="indicacao-ok" class="hidden mb-3 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-3"></div>
+                    <form id="indicacao-form" class="space-y-4" novalidate>
+                        <div>
+                            <label class="block text-sm font-medium mb-1" for="f_ind_nome">Nome*</label>
+                            <input id="f_ind_nome" required class="w-full px-4 py-2.5 rounded-lg border">
+                            <p class="text-xs text-red-500 mt-1 hidden" id="err_ind_nome"></p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1" for="f_ind_whatsapp">WhatsApp*</label>
+                            <input id="f_ind_whatsapp" required class="w-full px-4 py-2.5 rounded-lg border" placeholder="11999999999">
+                            <p class="text-xs text-red-500 mt-1 hidden" id="err_ind_whatsapp"></p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1" for="f_ind_email">E-mail (opcional)</label>
+                            <input id="f_ind_email" type="email" class="w-full px-4 py-2.5 rounded-lg border">
+                            <p class="text-xs text-red-500 mt-1 hidden" id="err_ind_email"></p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1" for="f_ind_curso">Curso de interesse (opcional)</label>
+                            <input id="f_ind_curso" class="w-full px-4 py-2.5 rounded-lg border">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1" for="f_ind_obs">Observação (opcional)</label>
+                            <textarea id="f_ind_obs" rows="3" class="w-full px-4 py-2.5 rounded-lg border"></textarea>
+                            <p class="text-xs text-red-500 mt-1 hidden" id="err_ind_obs"></p>
+                        </div>
+                        <button id="btn-indicacao" type="submit" class="w-full bg-cruzeiro text-white font-semibold py-3 rounded-xl">Enviar indicação</button>
+                    </form>
                 </div>
             </main>
         </section>
@@ -265,6 +498,21 @@
             </div>
         </section>
 
+        <div id="tutorial-modal" class="hidden video-modal">
+            <div class="video-modal-card">
+                <div class="flex justify-between items-start gap-4 mb-3">
+                    <div>
+                        <h3 id="tutorial-modal-title" class="font-bold text-lg text-gray-800"></h3>
+                        <p id="tutorial-modal-desc" class="text-sm text-gray-500 mt-1"></p>
+                    </div>
+                    <button type="button" data-close-tutorial class="text-gray-500 font-medium">Fechar</button>
+                </div>
+                <div class="video-frame-wrap">
+                    <iframe id="tutorial-frame" title="Tutorial" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>
+            </div>
+        </div>
+
     </div> <!-- Fim App Container -->
 
     <!-- Bibliotecas PDF (locais) -->
@@ -272,13 +520,16 @@
     <script src="/vendor/fontkit.umd.min.js"></script>
 
     <!-- Módulos da aplicação -->
-    <script src="/js/config.js?v=4"></script>
-    <script src="/js/auth.js?v=4"></script>
-    <script src="/js/api.js?v=4"></script>
-    <script src="/js/validation.js?v=4"></script>
-    <script src="/js/cursos.js?v=4"></script>
-    <script src="/js/certificate.js?v=4"></script>
-    <script src="/js/ui.js?v=4"></script>
-    <script src="/js/app.js?v=4"></script>
+    <script src="/js/config.js?v=7"></script>
+    <script src="/js/auth.js?v=7"></script>
+    <script src="/js/api.js?v=7"></script>
+    <script src="/js/validation.js?v=7"></script>
+    <script src="/js/cursos.js?v=7"></script>
+    <script src="/js/certificate.js?v=7"></script>
+    <script src="/js/avisos.js?v=7"></script>
+    <script src="/js/tutoriais.js?v=7"></script>
+    <script src="/js/atendimento.js?v=7"></script>
+    <script src="/js/ui.js?v=7"></script>
+    <script src="/js/app.js?v=7"></script>
 </body>
 </html>

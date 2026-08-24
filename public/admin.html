@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin | Área do Aluno</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css?v=7">
+</head>
+<body class="bg-slate-50">
+  <section id="admin-login" class="min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+      <h1 class="text-2xl font-bold text-gray-800 mb-1">Painel administrativo</h1>
+      <p class="text-sm text-gray-500 mb-6">Acesso separado da área do aluno.</p>
+      <div id="admin-login-error" class="hidden mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3"></div>
+      <form id="admin-login-form" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1" for="admin-email">E-mail</label>
+          <input id="admin-email" type="email" required class="w-full px-4 py-3 rounded-lg border border-gray-300 outline-none focus:ring-2 focus:ring-blue-500" autocomplete="username">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1" for="admin-password">Senha</label>
+          <input id="admin-password" type="password" required class="w-full px-4 py-3 rounded-lg border border-gray-300 outline-none focus:ring-2 focus:ring-blue-500" autocomplete="current-password">
+        </div>
+        <button id="admin-login-btn" class="w-full bg-cruzeiro text-white font-semibold py-3 rounded-lg">Entrar</button>
+      </form>
+    </div>
+  </section>
+
+  <section id="admin-app" class="hidden min-h-screen">
+    <header class="bg-white border-b sticky top-0 z-10">
+      <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+        <strong class="text-gray-800">Admin · Área do Aluno</strong>
+        <div class="flex items-center gap-3 text-sm">
+          <span id="admin-name" class="text-gray-600"></span>
+          <button type="button" id="admin-logout" class="text-red-500 font-medium">Sair</button>
+        </div>
+      </div>
+    </header>
+    <div class="max-w-6xl mx-auto px-4 py-6">
+      <nav class="flex flex-wrap gap-2 mb-6">
+        <button type="button" class="admin-tab is-active" data-tab="avisos">Avisos</button>
+        <button type="button" class="admin-tab" data-tab="tutoriais">Tutoriais</button>
+        <button type="button" class="admin-tab" data-tab="contatos">Contatos</button>
+        <button type="button" class="admin-tab" data-tab="indicacoes">Indicações</button>
+      </nav>
+
+      <div id="tab-avisos" class="admin-panel">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-bold">Avisos</h2>
+          <button type="button" class="bg-cruzeiro text-white text-sm font-semibold px-4 py-2 rounded-lg" data-aviso-new>Novo aviso</button>
+        </div>
+        <div id="admin-avisos-list" class="space-y-3"></div>
+      </div>
+
+      <div id="tab-tutoriais" class="admin-panel hidden">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-bold">Tutoriais</h2>
+          <button type="button" class="bg-cruzeiro text-white text-sm font-semibold px-4 py-2 rounded-lg" data-tut-new>Novo tutorial</button>
+        </div>
+        <div id="admin-tuts-list" class="space-y-3"></div>
+      </div>
+
+      <div id="tab-contatos" class="admin-panel hidden">
+        <h2 class="text-xl font-bold mb-2">Contatos por polo</h2>
+        <p class="text-sm text-gray-500 mb-4">Deixe em branco para usar o número padrão do servidor.</p>
+        <div id="admin-contatos-list" class="space-y-3"></div>
+      </div>
+
+      <div id="tab-indicacoes" class="admin-panel hidden">
+        <h2 class="text-xl font-bold mb-4">Indicações</h2>
+        <div class="flex flex-col sm:flex-row gap-3 mb-4">
+          <input id="ind-q" class="flex-1 px-3 py-2 rounded-lg border" placeholder="Buscar nome, WhatsApp, RGM...">
+          <select id="ind-status" class="px-3 py-2 rounded-lg border bg-white">
+            <option value="">Todos os status</option>
+            <option value="novo">novo</option>
+            <option value="contatado">contatado</option>
+            <option value="convertido">convertido</option>
+            <option value="descartado">descartado</option>
+          </select>
+        </div>
+        <div id="admin-inds-list" class="space-y-3"></div>
+        <div id="ind-detail" class="hidden mt-4 bg-white border rounded-xl p-4 text-sm"></div>
+      </div>
+    </div>
+  </section>
+
+  <div id="admin-modal" class="hidden video-modal">
+    <div class="video-modal-card admin-modal-card">
+      <div class="flex justify-between items-center mb-4">
+        <h3 id="admin-modal-title" class="font-bold text-lg">Formulário</h3>
+        <button type="button" id="admin-modal-close" class="text-gray-500">Fechar</button>
+      </div>
+      <form id="admin-modal-form" class="space-y-3"></form>
+    </div>
+  </div>
+
+  <script src="/js/admin.js?v=7"></script>
+</body>
+</html>

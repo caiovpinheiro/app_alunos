@@ -64,6 +64,7 @@
       UI.setUserName(window.Auth.getUserName());
       document.getElementById('login-form').reset();
       UI.showScreen('dashboard-page');
+      window.Avisos.refresh();
     } catch (err) {
       UI.showLoginError(err.status === 401
         ? 'Credenciais inválidas. Verifique seu acesso e tente novamente.'
@@ -94,6 +95,7 @@
       UI.setUserName(window.Auth.getUserName());
       document.getElementById('register-form').reset();
       UI.showScreen('dashboard-page');
+      window.Avisos.refresh();
     } catch (err) {
       if (err.details) UI.showFieldErrors(mapRegisterErrors(err.details));
       UI.showRegisterError(err.message || 'Não foi possível concluir o cadastro. Tente novamente.');
@@ -202,6 +204,7 @@
   async function logout() {
     await window.Api.logout();
     window.Auth.clear();
+    if (window.Avisos) window.Avisos.closeDropdown();
     releaseCurrentPdf();
     window.UI.clearPreview();
     document.getElementById('login-form').reset();
@@ -231,14 +234,19 @@
     }).format(new Date());
     document.getElementById('f_data').max = today;
 
+    window.UI.initCubeFlip(document.getElementById('btn-login'));
     document.getElementById('login-form').addEventListener('submit', handleLogin);
     document.getElementById('register-form').addEventListener('submit', handleRegister);
     document.getElementById('cert-form').addEventListener('submit', handleGenerate);
     window.CursoAutocomplete.init();
+    window.Avisos.init();
+    window.Tutoriais.init();
+    window.Atendimento.init();
 
     if (window.Auth.isAuthenticated()) {
       window.UI.setUserName(window.Auth.getUserName());
       window.UI.showScreen('dashboard-page');
+      window.Avisos.refresh();
     } else {
       window.UI.showScreen('login-page');
     }
@@ -251,7 +259,14 @@
   window.logout = logout;
   window.showScreen = function (id) {
     if (id === 'form-page') prefillForm();
+    if (window.Avisos) window.Avisos.closeDropdown();
+    if (window.Tutoriais) window.Tutoriais.closeModal();
     window.UI.showScreen(id);
+    if ((id === 'dashboard-page' || id === 'avisos-page') && window.Avisos) {
+      window.Avisos.refresh();
+    }
+    if (id === 'tutoriais-page' && window.Tutoriais) window.Tutoriais.refresh();
+    if (id === 'atendimento-page' && window.Atendimento) window.Atendimento.refresh();
   };
 
   document.addEventListener('DOMContentLoaded', init);

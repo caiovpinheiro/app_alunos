@@ -2,7 +2,7 @@
 window.UI = (function () {
   'use strict';
 
-  var SCREENS = ['login-page', 'first-access-page', 'dashboard-page', 'form-page', 'success-page'];
+  var SCREENS = ['login-page', 'first-access-page', 'dashboard-page', 'avisos-page', 'tutoriais-page', 'atendimento-page', 'form-page', 'success-page'];
   var PUBLIC_SCREENS = ['login-page', 'first-access-page'];
 
   function showScreen(screenId) {
@@ -18,13 +18,70 @@ window.UI = (function () {
   }
 
   function setUserName(name) {
-    document.getElementById('user-display-name').textContent = name;
+    document.querySelectorAll('[data-user-name]').forEach(function (el) {
+      el.textContent = name;
+    });
   }
 
   function setLoginLoading(loading) {
     var btn = document.getElementById('btn-login');
     btn.disabled = loading;
-    btn.textContent = loading ? 'Entrando...' : 'Entrar';
+    btn.setAttribute('aria-label', loading ? 'Entrando...' : 'Entrar');
+    var front = btn.querySelector('[data-cube-front]');
+    var second = btn.querySelector('[data-cube-second]');
+    if (front) front.textContent = loading ? 'Entrando...' : 'Entrar';
+    if (second) second.textContent = loading ? 'Entrando...' : 'Acessar';
+    if (loading) btn.classList.remove('is-flipped');
+  }
+
+  function initCubeFlip(btn) {
+    if (!btn) return;
+    var cube = btn.querySelector('.cube-flip-cube');
+    if (!cube) return;
+
+    function measure() {
+      btn.style.setProperty('--cube-d', (btn.offsetHeight / 2) + 'px');
+    }
+    measure();
+    if (window.ResizeObserver) new ResizeObserver(measure).observe(btn);
+
+    var hovered = false;
+    var busy = false;
+
+    function wantsFlip() {
+      return !btn.disabled && (hovered || btn.matches(':focus-visible'));
+    }
+
+    function settle() {
+      busy = false;
+      var should = wantsFlip();
+      if (should !== btn.classList.contains('is-flipped')) turn(should);
+    }
+
+    function turn(flipped) {
+      if (btn.disabled && flipped) return;
+      busy = true;
+      btn.classList.toggle('is-flipped', flipped);
+    }
+
+    cube.addEventListener('transitionend', function (event) {
+      if (event.propertyName === 'transform') settle();
+    });
+
+    btn.addEventListener('pointerenter', function () {
+      hovered = true;
+      if (!busy) turn(wantsFlip());
+    });
+    btn.addEventListener('pointerleave', function () {
+      hovered = false;
+      if (!busy) turn(wantsFlip());
+    });
+    btn.addEventListener('focusin', function () {
+      if (!busy) turn(wantsFlip());
+    });
+    btn.addEventListener('focusout', function () {
+      if (!busy) turn(wantsFlip());
+    });
   }
 
   function showLoginError(message) {
@@ -104,6 +161,7 @@ window.UI = (function () {
     showScreen: showScreen,
     setUserName: setUserName,
     setLoginLoading: setLoginLoading,
+    initCubeFlip: initCubeFlip,
     showLoginError: showLoginError,
     hideLoginError: hideLoginError,
     setRegisterLoading: setRegisterLoading,

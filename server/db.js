@@ -62,6 +62,96 @@ async function ensureSchema(pool) {
     CREATE INDEX IF NOT EXISTS idx_csu_alunos_rgm ON csu_alunos (rgm);
     CREATE INDEX IF NOT EXISTS idx_csu_sessoes_expires ON csu_sessoes (expires_at);
     CREATE INDEX IF NOT EXISTS idx_csu_certificados_rgm ON csu_certificados (rgm);
+
+    CREATE TABLE IF NOT EXISTS csu_avisos (
+      id SERIAL PRIMARY KEY,
+      titulo TEXT NOT NULL,
+      descricao TEXT NOT NULL,
+      categoria TEXT NOT NULL,
+      prioridade TEXT NOT NULL,
+      data_inicio DATE NOT NULL,
+      data_fim DATE NOT NULL,
+      ativo BOOLEAN NOT NULL DEFAULT TRUE,
+      publico TEXT NOT NULL DEFAULT 'todos',
+      polo TEXT,
+      curso TEXT,
+      recorrente BOOLEAN NOT NULL DEFAULT FALSE,
+      dia_recorrente SMALLINT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      CONSTRAINT csu_avisos_categoria_chk CHECK (categoria IN ('Geral', 'Acadêmico', 'Financeiro', 'Provas', 'Atividades')),
+      CONSTRAINT csu_avisos_prioridade_chk CHECK (prioridade IN ('baixa', 'media', 'alta')),
+      CONSTRAINT csu_avisos_publico_chk CHECK (publico IN ('todos', 'polo', 'curso'))
+    );
+
+    CREATE TABLE IF NOT EXISTS csu_aviso_leituras (
+      aviso_id INTEGER NOT NULL REFERENCES csu_avisos(id) ON DELETE CASCADE,
+      aluno_id INTEGER NOT NULL REFERENCES csu_alunos(id) ON DELETE CASCADE,
+      lido_em TIMESTAMPTZ NOT NULL DEFAULT now(),
+      PRIMARY KEY (aviso_id, aluno_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_csu_avisos_ativo_datas ON csu_avisos (ativo, data_inicio, data_fim);
+    CREATE INDEX IF NOT EXISTS idx_csu_aviso_leituras_aluno ON csu_aviso_leituras (aluno_id);
+
+    CREATE TABLE IF NOT EXISTS csu_tutoriais (
+      id SERIAL PRIMARY KEY,
+      titulo TEXT NOT NULL,
+      descricao TEXT NOT NULL,
+      categoria TEXT NOT NULL,
+      video_url TEXT NOT NULL,
+      thumbnail_url TEXT,
+      duracao TEXT,
+      ativo BOOLEAN NOT NULL DEFAULT TRUE,
+      ordem INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      CONSTRAINT csu_tutoriais_categoria_chk CHECK (categoria IN (
+        'Primeiros passos', 'Área do Aluno', 'Blackboard', 'Provas', 'Atividades', 'Financeiro', 'Documentos'
+      ))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_csu_tutoriais_ativo_ordem ON csu_tutoriais (ativo, ordem);
+
+    CREATE TABLE IF NOT EXISTS csu_contatos_polo (
+      polo TEXT PRIMARY KEY,
+      whatsapp_academico TEXT,
+      whatsapp_comercial TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS csu_indicacoes (
+      id SERIAL PRIMARY KEY,
+      aluno_id INTEGER NOT NULL REFERENCES csu_alunos(id),
+      indicador_nome TEXT NOT NULL,
+      indicador_rgm TEXT NOT NULL,
+      indicador_email TEXT,
+      indicador_polo TEXT,
+      indicado_nome TEXT NOT NULL,
+      indicado_whatsapp TEXT NOT NULL,
+      indicado_email TEXT,
+      curso_interesse TEXT,
+      observacao TEXT,
+      status TEXT NOT NULL DEFAULT 'novo',
+      webhook_enviado BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      CONSTRAINT csu_indicacoes_status_chk CHECK (status IN ('novo', 'contatado', 'convertido', 'descartado'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_csu_indicacoes_status ON csu_indicacoes (status, created_at DESC);
+
+    CREATE TABLE IF NOT EXISTS csu_admins (
+      id SERIAL PRIMARY KEY,
+      email TEXT NOT NULL UNIQUE,
+      nome TEXT NOT NULL,
+      pw_hash TEXT NOT NULL,
+      ativo BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS csu_admin_sessoes (
+      token TEXT PRIMARY KEY,
+      admin_id INTEGER NOT NULL REFERENCES csu_admins(id) ON DELETE CASCADE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      expires_at TIMESTAMPTZ NOT NULL
+    );
   `);
 }
 
