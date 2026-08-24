@@ -4,6 +4,15 @@
 
   var TOKEN_KEY = 'csu_admin_token';
   var state = { avisos: [], tutoriais: [], categorias: [], contatos: [], indicacoes: [], editing: null };
+  var TUT_CATEGORIAS = [
+    'Primeiros passos',
+    'Área do Aluno',
+    'Blackboard',
+    'Provas',
+    'Atividades',
+    'Financeiro',
+    'Documentos',
+  ];
 
   function token() { return sessionStorage.getItem(TOKEN_KEY); }
   function setToken(value) {
@@ -84,11 +93,12 @@
   }
 
   function select(name, label, options, value) {
+    var list = (options && options.length) ? options : [];
     return '<label class="block text-sm font-medium">' + escapeHtml(label) +
-      '<select name="' + name + '" class="mt-1 w-full px-3 py-2 rounded-lg border bg-white">' +
-      options.map(function (opt) {
+      '<select name="' + name + '" required class="mt-1 w-full px-3 py-2 rounded-lg border bg-white">' +
+      list.map(function (opt) {
         var sel = String(opt) === String(value) ? ' selected' : '';
-        return '<option' + sel + '>' + escapeHtml(opt) + '</option>';
+        return '<option value="' + escapeHtml(opt) + '"' + sel + '>' + escapeHtml(opt) + '</option>';
       }).join('') +
       '</select></label>';
   }
@@ -151,14 +161,16 @@
 
   function tutForm(item) {
     item = item || { titulo: '', descricao: '', categoria: 'Primeiros passos', video_url: '', thumbnail_url: '', duracao: '', ordem: 0, ativo: true };
+    var cats = (state.categorias && state.categorias.length) ? state.categorias : TUT_CATEGORIAS;
     return field('titulo', 'Título', item.titulo) +
       area('descricao', 'Descrição', item.descricao) +
-      select('categoria', 'Categoria', state.categorias, item.categoria) +
+      select('categoria', 'Tipo / Categoria', cats, item.categoria || cats[0]) +
       field('video_url', 'URL do YouTube', item.video_url) +
       field('thumbnail_url', 'Thumbnail (opcional)', item.thumbnail_url) +
       field('duracao', 'Duração', item.duracao) +
       field('ordem', 'Ordem', item.ordem, 'number') +
       '<label class="flex items-center gap-2 text-sm"><input type="checkbox" name="ativo"' + (item.ativo !== false ? ' checked' : '') + '> Ativo</label>' +
+      '<p id="admin-form-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2"></p>' +
       '<button class="w-full bg-cruzeiro text-white font-semibold py-2 rounded-lg">Salvar</button>';
   }
 
@@ -277,13 +289,19 @@
     }
     if (event.target.closest('[data-tut-new]')) {
       state.editing = { type: 'tut' };
-      openModal('Novo tutorial', tutForm());
+      if (!state.categorias.length) {
+        loadTuts().then(function () { openModal('Novo tutorial', tutForm()); });
+      } else {
+        openModal('Novo tutorial', tutForm());
+      }
+      return;
     }
     var te = event.target.closest('[data-tut-edit]');
     if (te) {
       var tut = state.tutoriais.find(function (row) { return String(row.id) === te.getAttribute('data-tut-edit'); });
       state.editing = { type: 'tut', id: tut.id };
       openModal('Editar tutorial', tutForm(tut));
+      return;
     }
     var tt = event.target.closest('[data-tut-toggle]');
     if (tt) { await request('/api/admin/tutoriais/' + tt.getAttribute('data-tut-toggle') + '/toggle', { method: 'POST' }); loadTuts(); }
@@ -316,20 +334,41 @@
   document.getElementById('admin-modal-form').addEventListener('submit', async function (event) {
     event.preventDefault();
     var data = formData(event.target);
-    data.ativo = event.target.querySelector('[name="ativo"]').checked;
-    if (state.editing.type === 'aviso') {
-      data.recorrente = event.target.querySelector('[name="recorrente"]').checked;
-      if (data.dia_recorrente === '') data.dia_recorrente = null;
-      if (state.editing.id) await request('/api/admin/avisos/' + state.editing.id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-      else await request('/api/admin/avisos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-      closeModal();
-      loadAvisos();
-    } else if (state.editing.type === 'tut') {
-      data.ordem = Number(data.ordem);
-      if (state.editing.id) await request('/api/admin/tutoriais/' + state.editing.id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-      else await request('/api/admin/tutoriais', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-      closeModal();
-      loadTuts();
+    var errBox = event.target.querySelector('#admin-form-error');
+    if (errBox) {
+      errBox.classList.add('hidden');
+      errBox.textContent = '';
+    }
+    var ativoEl = event.target.querySelector('[name="ativo"]');
+    data.ativo = !!(ativoEl && ativoEl.checked);
+    try {
+      if (state.editing.type === 'aviso') {
+        data.recorrente = event.target.querySelector('[name="recorrente"]').checked;
+        if (data.dia_recorrente === '') data.dia_recorrente = null;
+        if (state.editing.id) await request('/api/admin/avisos/' + state.editing.id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+        else await request('/api/admin/avisos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+        closeModal();
+        loadAvisos();
+      } else if (state.editing.type === 'tut') {
+        data.ordem = Number(data.ordem || 0);
+        if (!data.categoria) throw new Error('Selecione o tipo/categoria do tutorial.');
+        if (state.editing.id) await request('/api/admin/tutoriais/' + state.editing.id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+        else await request('/api/admin/tutoriais', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+        closeModal();
+        loadTuts();
+      }
+    } catch (err) {
+      var msg = err.message || 'Não foi possível salvar.';
+      if (err.details) {
+        var parts = Object.keys(err.details).map(function (k) { return err.details[k]; });
+        if (parts.length) msg = parts.join(' ');
+      }
+      if (errBox) {
+        errBox.textContent = msg;
+        errBox.classList.remove('hidden');
+      } else {
+        window.alert(msg);
+      }
     }
   });
 

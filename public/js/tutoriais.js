@@ -87,11 +87,15 @@ window.Tutoriais = (function () {
     try {
       var res = await window.Api.listTutoriais();
       cache = (res && res.tutoriais) || [];
-      categorias = res.categorias || [];
+      categorias = (res && res.categorias && res.categorias.length)
+        ? res.categorias
+        : Array.from(new Set(cache.map(function (item) { return item.categoria; }).filter(Boolean)));
       renderFilters(categorias);
       render();
     } catch (err) {
       cache = [];
+      categorias = [];
+      renderFilters(categorias);
       render();
     }
   }
