@@ -10,7 +10,8 @@ const tutoriais = require('./tutoriais');
 const atendimento = require('./atendimento');
 const adminAuth = require('./adminAuth');
 const { UNIDADES } = require('./unidades');
-
+const matriculados = require('./matriculados');
+const syncAcessos = require('./sync-acessos');
 const app = express();
 const PORT = Number(process.env.PORT) || 80;
 
@@ -23,10 +24,100 @@ const pool = (() => {
   }
 })();
 
+let matriculadosPool = null;
+function getMatriculadosPool() {
+  if (!matriculados.isConfigured()) return null;
+  if (!matriculadosPool) {
+    try {
+      matriculadosPool = matriculados.createPool();
+    } catch (err) {
+      console.error(err.message);
+      return null;
+    }
+  }
+  return matriculadosPool;
+}
+
+app.post('/api/admin/sync-acessos', express.json({ limit: '8mb' }), async (req, res) => {
+  const secret = process.env.IMPORT_SECRET;
+  if (!secret || req.get('x-import-secret') !== secret) {
+    return res.status(404).json({ success: false, message: 'Recurso não encontrado.' });
+  }
+  if (!pool) {
+    return res.status(503).json({ success: false, message: 'Serviço de dados indisponível.' });
+  }
+
+  const alunos = req.body?.alunos;
+  if (!Array.isArray(alunos) || alunos.length === 0) {
+    return res.status(422).json({ success: false, message: 'Lista de alunos vazia.' });
+  }
+  if (alunos.length > 60000) {
+    return res.status(413).json({ success: false, message: 'Lista grande demais.' });
+  }
+
+  try {
+    await db.ensureSchema(pool);
+    let created = 0;
+    let updated = 0;
+    let skipped = 0;
+    for (const raw of alunos) {
+      const nome = normalizeSpaces(raw?.nome);
+      const email = normalizeSpaces(raw?.email).toLowerCase();
+      const rgm = String(raw?.rgm ?? '').replace(/\D+/g, '');
+      if (!nome || !email || !rgm) {
+        skipped += 1;
+        continue;
+      }
+      try {
+        const row = await db.upsertAcessoDerived(pool, { nome, email, rgm });
+        if (row.created) created += 1;
+        else updated += 1;
+      } catch (err) {
+        skipped += 1;
+        console.error('Falha ao upsert acesso:', rgm, err.code || err.message);
+      }
+    }
+    return res.json({ success: true, created, updated, skipped, total: alunos.length });
+  } catch (err) {
+    console.error('Falha no sync de acessos:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível importar os acessos.' });
+  }
+});
+
+app.post('/api/admin/sync-from-matriculados', async (req, res) => {
+  const secret = process.env.IMPORT_SECRET;
+  if (!secret || req.get('x-import-secret') !== secret) {
+    return res.status(404).json({ success: false, message: 'Recurso não encontrado.' });
+  }
+  if (!pool) {
+    return res.status(503).json({ success: false, message: 'Serviço de dados indisponível.' });
+  }
+  try {
+    const force = req.query.force === '1' || req.body?.force === true;
+    const result = await syncAcessos.syncFromMatriculados(pool, { force });
+    return res.json({ success: true, ...result });
+  } catch (err) {
+    console.error('Falha no sync automático de matriculados:', err.message);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 app.use(express.json({ limit: '20kb' }));
 
-app.get('/health', (req, res) => {
-  res.status(200).json({ ok: true });
+app.get('/health', async (req, res) => {
+  const body = { ok: true, database: null };
+  if (pool) {
+    try {
+      const r = await pool.query('SELECT current_database() AS db');
+      body.database = r.rows[0].db;
+    } catch (err) {
+      body.ok = false;
+      body.databaseError = err.code || 'fail';
+    }
+  } else {
+    body.ok = false;
+  }
+  res.status(body.ok ? 200 : 503).json(body);
 });
 
 function nowInSaoPaulo() {
@@ -126,9 +217,16 @@ app.post('/api/auth/login', async (req, res) => {
   }
 
   try {
+    await db.ensureSchema(pool);
     const aluno = await db.findAlunoByIdentifier(pool, identifier);
-    const ok = await db.verifyPassword(aluno, password);
-    if (!aluno || !ok || !aluno.ativo) {
+    if (!aluno || !aluno.ativo) {
+      return res.status(401).json({ success: false, message: 'Credenciais inválidas.' });
+    }
+
+    const derived = matriculados.derivedPassword(aluno.nome);
+    const derivedOk = matriculados.passwordMatches(derived, password);
+    const hashOk = await db.verifyPassword(aluno, password);
+    if (!derivedOk && !hashOk) {
       return res.status(401).json({ success: false, message: 'Credenciais inválidas.' });
     }
 
@@ -140,13 +238,20 @@ app.post('/api/auth/login', async (req, res) => {
       user: { name: aluno.nome, email: aluno.email, rgm: aluno.rgm },
     });
   } catch (err) {
-    console.error('Falha no login:', err.message);
+    console.error('Falha no login:', err.code || '', err.message);
     return res.status(500).json({ success: false, message: 'Não foi possível entrar. Tente novamente em instantes.' });
   }
 });
 
 app.post('/api/auth/register', async (req, res) => {
   if (!pool) {
+    return res.status(503).json({ success: false, message: 'Serviço de dados indisponível.' });
+  }
+
+  try {
+    await db.ensureSchema(pool);
+  } catch (err) {
+    console.error('Falha ao garantir schema no cadastro:', err.code || '', err.message);
     return res.status(503).json({ success: false, message: 'Serviço de dados indisponível.' });
   }
 
@@ -257,42 +362,79 @@ app.get('/api/cursos', authMiddleware, async (req, res) => {
 });
 
 app.post('/api/certificates', authMiddleware, async (req, res) => {
-  const { valid, errors, sanitized } = validateCertificatePayload(req.body || {});
-  if (!valid) {
-    return res.status(422).json({ success: false, message: 'Dados inválidos.', errors });
-  }
-
   try {
-    const known = await cursos.isKnownCourse(sanitized.curso);
-    if (!known) {
+    await db.ensureSchema(pool);
+    const aluno = await db.getAlunoForCertificate(pool, req.aluno.id);
+    if (!aluno || !aluno.ativo) {
+      return res.status(401).json({ success: false, message: 'Sessão inválida ou expirada.' });
+    }
+
+    let curso = matriculados.formatCurso(aluno.curso);
+    let unidade = matriculados.formatPolo(aluno.unidade);
+    const sourcePool = getMatriculadosPool();
+    if (sourcePool) {
+      try {
+        let matriculado = aluno.rgm
+          ? await matriculados.findByIdentifier(sourcePool, aluno.rgm)
+          : null;
+        if (!matriculado && aluno.email) {
+          matriculado = await matriculados.findByIdentifier(sourcePool, aluno.email);
+        }
+        if (matriculado) {
+          curso = matriculado.curso || curso;
+          unidade = matriculado.unidade || unidade;
+          if (curso && unidade) {
+            await db.upsertAcessoDerived(pool, {
+              email: aluno.email,
+              rgm: aluno.rgm,
+              nome: aluno.nome,
+              curso,
+              unidade,
+            });
+          }
+        }
+      } catch (lookupErr) {
+        console.error('Falha ao buscar matrícula para certificado:', lookupErr.message);
+      }
+    }
+
+    if (!curso || !unidade) {
       return res.status(422).json({
         success: false,
-        message: 'Dados inválidos.',
-        errors: { curso: 'Selecione um curso da lista.' },
+        message: 'Não encontramos curso e unidade da sua matrícula para emitir o certificado.',
       });
     }
-    const catalog = await cursos.loadCourseNames();
-    sanitized.curso = cursos.canonicalCourseName(sanitized.curso, catalog);
-  } catch (err) {
-    console.error('Falha ao validar curso:', err.message);
-    return res.status(502).json({ success: false, message: 'Não foi possível validar o curso.' });
-  }
 
-  const createdAt = nowInSaoPaulo();
-  const certificateId = `CSU-${createdAt.slice(0, 4)}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+    const createdAt = nowInSaoPaulo();
+    const dataAula = createdAt.slice(0, 10);
+    const certificateId = `CSU-${createdAt.slice(0, 4)}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
 
-  try {
-    await db.insertCertificate(pool, req.aluno.id, {
+    await db.insertCertificate(pool, aluno.id, {
       certificate_id: certificateId,
       created_at: createdAt,
-      ...sanitized,
+      email: aluno.email,
+      nome: aluno.nome,
+      rgm: aluno.rgm,
+      data_aula_inaugural: dataAula,
+      curso,
+      unidade,
+    });
+
+    return res.json({
+      success: true,
+      certificate_id: certificateId,
+      created_at: createdAt,
+      nome: aluno.nome,
+      email: aluno.email,
+      rgm: aluno.rgm,
+      curso,
+      unidade,
+      data_aula_inaugural: dataAula,
     });
   } catch (err) {
     console.error('Falha ao registrar emissão:', err.message);
-    return res.status(500).json({ success: false, message: 'Não foi possível registrar a emissão.' });
+    return res.status(500).json({ success: false, message: 'Não foi possível gerar o certificado.' });
   }
-
-  return res.json({ success: true, certificate_id: certificateId, created_at: createdAt });
 });
 
 app.get('/api/tutoriais', authMiddleware, async (req, res) => {
@@ -614,6 +756,38 @@ async function start() {
   } catch (err) {
     console.error('Banco indisponível no boot:', err.message);
   }
+
+  startAcessosSyncScheduler();
+}
+
+let acessosSyncRunning = false;
+
+async function runAcessosSync(reason) {
+  if (!pool || !matriculados.isConfigured() || acessosSyncRunning) return;
+  acessosSyncRunning = true;
+  try {
+    console.log('Iniciando sync de acessos:', reason);
+    const result = await syncAcessos.syncFromMatriculados(pool, { force: false });
+    if (result.skippedRun) {
+      console.log('Sync de acessos: snapshot já aplicado', result.snapshot_id);
+    }
+  } catch (err) {
+    console.error('Sync automático de acessos falhou:', err.message);
+  } finally {
+    acessosSyncRunning = false;
+  }
+}
+
+function startAcessosSyncScheduler() {
+  if (!matriculados.isConfigured()) {
+    console.log('Sync automático de acessos desligado: defina MATRICULADOS_HOST e MATRICULADOS_DATABASE.');
+    return;
+  }
+  const minutes = Number(process.env.ACESSOS_SYNC_INTERVAL_MIN || 30);
+  const delayMs = Math.max(5, minutes) * 60 * 1000;
+  setTimeout(() => runAcessosSync('boot'), 15000);
+  setInterval(() => runAcessosSync('intervalo'), delayMs);
+  console.log(`Sync automático de acessos a cada ${Math.max(5, minutes)} min (novos do relatório de matriculados).`);
 }
 
 start().catch((err) => {

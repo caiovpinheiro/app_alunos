@@ -4,6 +4,7 @@ const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 
 const BCRYPT_ROUNDS = 12;
+const DERIVED_PW_MARKER = 'DERIVED';
 const TOKEN_TTL_MS = 8 * 60 * 60 * 1000;
 
 function createPool() {
@@ -13,7 +14,7 @@ function createPool() {
     throw new Error(`Variáveis de banco ausentes: ${missing.join(', ')}`);
   }
 
-  return new Pool({
+  const pool = new Pool({
     host: process.env.DATABASE_HOST,
     port: Number(process.env.DATABASE_PORT),
     database: process.env.DATABASE_NAME,
@@ -24,6 +25,10 @@ function createPool() {
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 15000,
   });
+  pool.on('error', (err) => {
+    console.error('Erro inesperado no pool Postgres:', err.code || '', err.message);
+  });
+  return pool;
 }
 
 async function ensureSchema(pool) {
@@ -152,6 +157,31 @@ async function ensureSchema(pool) {
       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       expires_at TIMESTAMPTZ NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS csu_sync_state (
+      id TEXT PRIMARY KEY,
+      snapshot_id TEXT,
+      snapshot_at TIMESTAMPTZ,
+      file_name TEXT,
+      row_count INTEGER,
+      created_count INTEGER,
+      updated_count INTEGER,
+      skipped_count INTEGER,
+      revoked_count INTEGER,
+      synced_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  await pool.query(`
+    ALTER TABLE csu_sync_state
+    ADD COLUMN IF NOT EXISTS revoked_count INTEGER
+  `);
+  await pool.query(`
+    ALTER TABLE csu_alunos
+    ADD COLUMN IF NOT EXISTS curso TEXT
+  `);
+  await pool.query(`
+    ALTER TABLE csu_alunos
+    ADD COLUMN IF NOT EXISTS unidade TEXT
   `);
 }
 
@@ -184,13 +214,87 @@ async function seedAlunoIfEmpty(pool) {
   return true;
 }
 
+async function upsertAlunoFromMatricula(pool, { email, rgm, nome, password }) {
+  const existing = await pool.query(
+    `SELECT id, email, rgm, nome, pw_hash, ativo
+     FROM csu_alunos
+     WHERE rgm = $1 OR lower(email) = lower($2)
+     ORDER BY CASE WHEN rgm = $1 THEN 0 ELSE 1 END
+     LIMIT 1`,
+    [rgm, email],
+  );
+
+  if (existing.rows[0]) {
+    const row = existing.rows[0];
+    await pool.query(
+      `UPDATE csu_alunos
+       SET email = $1, rgm = $2, nome = $3
+       WHERE id = $4`,
+      [email, rgm, nome, row.id],
+    );
+    return { id: row.id, email, rgm, nome, ativo: row.ativo };
+  }
+
+  const pwHash = await bcrypt.hash(String(password), BCRYPT_ROUNDS);
+  const inserted = await pool.query(
+    `INSERT INTO csu_alunos (email, rgm, nome, pw_hash)
+     VALUES ($1, $2, $3, $4)
+     RETURNING id, email, rgm, nome, ativo`,
+    [email, rgm, nome, pwHash],
+  );
+  return inserted.rows[0];
+}
+
+async function upsertAcessoDerived(pool, { email, rgm, nome, curso, unidade }) {
+  const existing = await pool.query(
+    `SELECT id, email, rgm, nome, pw_hash, ativo
+     FROM csu_alunos
+     WHERE rgm = $1 OR lower(email) = lower($2)
+     ORDER BY CASE WHEN rgm = $1 THEN 0 ELSE 1 END
+     LIMIT 1`,
+    [rgm, email],
+  );
+
+  if (existing.rows[0]) {
+    const row = existing.rows[0];
+    await pool.query(
+      `UPDATE csu_alunos
+       SET email = $1, rgm = $2, nome = $3, ativo = TRUE, curso = $5, unidade = $6
+       WHERE id = $4`,
+      [email, rgm, nome, row.id, curso || null, unidade || null],
+    );
+    return { id: row.id, email, rgm, nome, ativo: true, created: false };
+  }
+
+  const inserted = await pool.query(
+    `INSERT INTO csu_alunos (email, rgm, nome, pw_hash, curso, unidade)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     RETURNING id, email, rgm, nome, ativo`,
+    [email, rgm, nome, DERIVED_PW_MARKER, curso || null, unidade || null],
+  );
+  return { ...inserted.rows[0], created: true };
+}
+
+async function getAlunoForCertificate(pool, alunoId) {
+  const result = await pool.query(
+    `SELECT id, email, rgm, nome, ativo, curso, unidade
+     FROM csu_alunos
+     WHERE id = $1
+     LIMIT 1`,
+    [alunoId],
+  );
+  return result.rows[0] || null;
+}
+
 async function findAlunoByIdentifier(pool, identifier) {
   const id = normalizeIdentifier(identifier);
   if (!id) return null;
   const result = await pool.query(
     `SELECT id, email, rgm, nome, pw_hash, ativo
      FROM csu_alunos
-     WHERE lower(email) = lower($1) OR rgm = $1
+     WHERE lower(email) = lower($1)
+        OR rgm = $1
+        OR regexp_replace(rgm, '\\D', '', 'g') = regexp_replace($1, '\\D', '', 'g')
      LIMIT 1`,
     [id],
   );
@@ -288,11 +392,78 @@ async function insertCertificate(pool, alunoId, record) {
   );
 }
 
+async function deactivateAlunosByRgm(pool, rgms) {
+  const unique = [...new Set((rgms || []).filter(Boolean))];
+  if (!unique.length) return 0;
+  const seedRgm = String(process.env.SEED_ALUNO_RGM || '').replace(/\D+/g, '');
+  const toRevoke = seedRgm ? unique.filter((rgm) => rgm !== seedRgm) : unique;
+  if (!toRevoke.length) return 0;
+
+  let revoked = 0;
+  const chunkSize = 500;
+  for (let i = 0; i < toRevoke.length; i += chunkSize) {
+    const chunk = toRevoke.slice(i, i + chunkSize);
+    const updated = await pool.query(
+      `UPDATE csu_alunos
+       SET ativo = FALSE
+       WHERE ativo = TRUE AND rgm = ANY($1::text[])
+       RETURNING id`,
+      [chunk],
+    );
+    const ids = updated.rows.map((row) => row.id);
+    revoked += ids.length;
+    if (ids.length) {
+      await pool.query('DELETE FROM csu_sessoes WHERE aluno_id = ANY($1::int[])', [ids]);
+    }
+  }
+  return revoked;
+}
+
+async function getSyncState(pool, id = 'matriculados') {
+  const result = await pool.query(
+    'SELECT snapshot_id, snapshot_at, file_name, row_count, created_count, updated_count, skipped_count, revoked_count, synced_at FROM csu_sync_state WHERE id = $1',
+    [id],
+  );
+  return result.rows[0] || null;
+}
+
+async function saveSyncState(pool, state, id = 'matriculados') {
+  await pool.query(
+    `INSERT INTO csu_sync_state
+      (id, snapshot_id, snapshot_at, file_name, row_count, created_count, updated_count, skipped_count, revoked_count, synced_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, now())
+     ON CONFLICT (id) DO UPDATE SET
+       snapshot_id = EXCLUDED.snapshot_id,
+       snapshot_at = EXCLUDED.snapshot_at,
+       file_name = EXCLUDED.file_name,
+       row_count = EXCLUDED.row_count,
+       created_count = EXCLUDED.created_count,
+       updated_count = EXCLUDED.updated_count,
+       skipped_count = EXCLUDED.skipped_count,
+       revoked_count = EXCLUDED.revoked_count,
+       synced_at = now()`,
+    [
+      id,
+      state.snapshot_id,
+      state.snapshot_at,
+      state.file_name,
+      state.row_count,
+      state.created_count,
+      state.updated_count,
+      state.skipped_count,
+      state.revoked_count || 0,
+    ],
+  );
+}
+
 module.exports = {
   TOKEN_TTL_MS,
   createPool,
   ensureSchema,
   seedAlunoIfEmpty,
+  upsertAlunoFromMatricula,
+  upsertAcessoDerived,
+  getAlunoForCertificate,
   findAlunoByIdentifier,
   verifyPassword,
   createSession,
@@ -300,4 +471,7 @@ module.exports = {
   deleteSession,
   createAluno,
   insertCertificate,
+  deactivateAlunosByRgm,
+  getSyncState,
+  saveSyncState,
 };

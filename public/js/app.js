@@ -68,7 +68,7 @@
     } catch (err) {
       UI.showLoginError(err.status === 401
         ? 'Credenciais inválidas. Verifique seu acesso e tente novamente.'
-        : 'Não foi possível entrar. Tente novamente em instantes.');
+        : (err.message || 'Não foi possível entrar. Tente novamente em instantes.'));
     } finally {
       UI.setLoginLoading(false);
     }
@@ -110,6 +110,43 @@
       mapped['reg_' + key] = details[key];
     });
     return mapped;
+  }
+
+  async function generateCertificateNow() {
+    var UI = window.UI;
+    UI.hideDashboardCertError();
+    UI.setDashboardCertLoading(true);
+    try {
+      var confirmation = await window.Api.emitCertificate({});
+      if (!confirmation || !confirmation.success) throw new Error('emissão não confirmada');
+
+      var assets = await loadAssets();
+      var pdfBytes = await window.CertificateGenerator.generateCertificate({
+        nome: confirmation.nome,
+        rgm: confirmation.rgm,
+        unidade: confirmation.unidade,
+        dataAulaISO: confirmation.data_aula_inaugural,
+        emissaoISO: confirmation.created_at,
+      }, assets);
+
+      releaseCurrentPdf();
+      var blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      currentPdf.blobUrl = URL.createObjectURL(blob);
+      currentPdf.fileName = 'Certificado_Aula_Inaugural_' + sanitizeFileName(confirmation.nome) + '.pdf';
+
+      UI.showPreview(currentPdf.blobUrl, confirmation.certificate_id);
+      UI.showScreen('success-page');
+    } catch (err) {
+      if (err.status === 401) {
+        window.Auth.clear();
+        UI.showScreen('login-page');
+        UI.showLoginError('Sua sessão expirou. Entre novamente.');
+      } else {
+        UI.showDashboardCertError(err.message || GENERIC_ERROR);
+      }
+    } finally {
+      UI.setDashboardCertLoading(false);
+    }
   }
 
   async function handleGenerate(event) {
@@ -224,6 +261,23 @@
     }
   }
 
+  function bindPasswordToggles() {
+    document.querySelectorAll('[data-password-toggle]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var input = document.getElementById(btn.getAttribute('data-password-toggle'));
+        if (!input) return;
+        var visible = input.type === 'password';
+        input.type = visible ? 'text' : 'password';
+        btn.setAttribute('aria-pressed', visible ? 'true' : 'false');
+        btn.setAttribute('aria-label', visible ? 'Ocultar senha' : 'Mostrar senha');
+        btn.innerHTML = visible
+          ? '<i data-lucide="eye-off" class="w-5 h-5"></i>'
+          : '<i data-lucide="eye" class="w-5 h-5"></i>';
+        if (window.lucide) window.lucide.createIcons();
+      });
+    });
+  }
+
   function init() {
     lucide.createIcons();
     window.AppConfig.load();
@@ -235,6 +289,7 @@
     document.getElementById('f_data').max = today;
 
     window.UI.initCubeFlip(document.getElementById('btn-login'));
+    bindPasswordToggles();
     document.getElementById('login-form').addEventListener('submit', handleLogin);
     document.getElementById('register-form').addEventListener('submit', handleRegister);
     document.getElementById('cert-form').addEventListener('submit', handleGenerate);
@@ -254,6 +309,7 @@
 
   window.handleLogin = handleLogin;
   window.handleGenerate = handleGenerate;
+  window.generateCertificateNow = generateCertificateNow;
   window.downloadPDF = downloadPDF;
   window.printCert = printCert;
   window.logout = logout;
