@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/styles.css?v=7">
+    <link rel="stylesheet" href="/css/styles.css?v=16">
 </head>
 <body>
 
@@ -15,11 +15,14 @@
     <div id="app">
 
         <!-- 1. TELA DE LOGIN -->
-        <section id="login-page" class="min-h-screen flex items-center justify-center p-4">
-            <div class="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-                <div class="text-center mb-8">
+        <section id="login-page" class="auth-screen min-h-screen flex items-center justify-center p-4">
+            <div class="auth-orb auth-orb-a" aria-hidden="true"></div>
+            <div class="auth-orb auth-orb-b" aria-hidden="true"></div>
+            <div class="auth-orb auth-orb-c" aria-hidden="true"></div>
+            <div class="auth-card max-w-md w-full bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+                <div class="text-center mb-8 auth-hero">
                     <div class="flex justify-center mb-4">
-                        <div class="bg-cruzeiro rounded-xl overflow-hidden w-16 h-16">
+                        <div class="auth-logo bg-cruzeiro rounded-xl overflow-hidden w-16 h-16">
                             <img src="/assets/logo-login.jpg" alt="Cruzeiro do Sul Educacional" class="w-full h-full object-cover">
                         </div>
                     </div>
@@ -62,11 +65,14 @@
         </section>
 
         <!-- 1b. PRIMEIRO ACESSO -->
-        <section id="first-access-page" class="hidden min-h-screen flex items-center justify-center p-4">
-            <div class="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-                <div class="text-center mb-8">
+        <section id="first-access-page" class="auth-screen hidden min-h-screen flex items-center justify-center p-4">
+            <div class="auth-orb auth-orb-a" aria-hidden="true"></div>
+            <div class="auth-orb auth-orb-b" aria-hidden="true"></div>
+            <div class="auth-orb auth-orb-c" aria-hidden="true"></div>
+            <div class="auth-card max-w-md w-full bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+                <div class="text-center mb-8 auth-hero">
                     <div class="flex justify-center mb-4">
-                        <div class="bg-cruzeiro text-white p-3 rounded-xl">
+                        <div class="auth-logo bg-cruzeiro text-white p-3 rounded-xl">
                             <i data-lucide="user-plus" class="w-10 h-10"></i>
                         </div>
                     </div>
@@ -112,8 +118,9 @@
                         </div>
                         <p class="text-xs text-red-500 mt-1 hidden" id="err_reg_confirmPassword"></p>
                     </div>
-                    <button type="submit" id="btn-register" class="w-full bg-cruzeiro hover:bg-blue-800 text-white font-semibold py-3 rounded-lg transition duration-300 shadow-lg disabled:opacity-70 disabled:cursor-not-allowed">
-                        Criar acesso
+                    <button type="submit" id="btn-register" class="btn-plastic w-full bg-cruzeiro hover:bg-blue-800 text-white font-semibold py-3 rounded-lg transition duration-300 shadow-lg disabled:cursor-not-allowed">
+                        <span class="btn-plastic-label">Criar acesso</span>
+                        <span class="btn-spinner" aria-hidden="true"></span>
                     </button>
                 </form>
                 <p class="mt-6 text-center text-sm text-gray-500">
@@ -160,27 +167,31 @@
             </header>
 
             <main class="max-w-7xl mx-auto px-4 py-8">
-                <h2 class="text-2xl font-bold text-gray-800 mb-6">Bem-vindo(a)!</h2>
+                <div class="bento-welcome mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">Bem-vindo(a)!</h2>
+                    <p class="text-sm text-gray-500 mt-1">Acesse certificado, avisos, tutoriais e atendimento em um só lugar.</p>
+                </div>
                 <div id="dashboard-cert-error" class="hidden mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3" role="alert"></div>
 
-                <!-- Grid de Funcionalidades -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Bento grid -->
+                <div class="bento-grid">
                     <!-- Card: Gerar Certificado -->
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow group">
-                        <div class="w-12 h-12 bg-blue-50 text-cruzeiro rounded-xl flex items-center justify-center mb-4 group-hover:bg-cruzeiro group-hover:text-white transition-colors">
+                    <div class="dash-card bento-cell bento-feature bg-white p-6 rounded-3xl shadow-sm border border-gray-100 group">
+                        <div class="dash-card-icon dash-card-icon--blue w-12 h-12 bg-blue-50 text-cruzeiro rounded-xl flex items-center justify-center mb-4">
                             <i data-lucide="award" class="w-6 h-6"></i>
                         </div>
                         <h3 class="text-lg font-bold text-gray-800 mb-2">Gerar Certificado</h3>
                         <p class="text-gray-500 text-sm mb-6 leading-relaxed">Gere seu certificado de participação na Aula Inaugural de forma rápida e segura.</p>
-                        <button type="button" id="btn-gerar-certificado" onclick="generateCertificateNow()" class="w-full flex items-center justify-center gap-2 bg-gray-50 text-cruzeiro font-semibold py-2.5 rounded-lg hover:bg-cruzeiro hover:text-white transition disabled:opacity-70 disabled:cursor-not-allowed">
-                            <span id="btn-gerar-certificado-text">Gerar certificado</span>
+                        <button type="button" id="btn-gerar-certificado" onclick="generateCertificateNow()" class="btn-plastic dash-card-btn w-full flex items-center justify-center gap-2 bg-gray-50 text-cruzeiro font-semibold py-2.5 rounded-lg disabled:cursor-not-allowed">
+                            <span id="btn-gerar-certificado-text" class="btn-plastic-label">Gerar certificado</span>
+                            <span class="btn-spinner" aria-hidden="true"></span>
                         </button>
                     </div>
 
                     <!-- Card: Avisos -->
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                    <div class="dash-card bento-cell bento-avisos bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
                         <div class="flex items-start justify-between gap-3 mb-4">
-                            <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
+                            <div class="dash-card-icon dash-card-icon--amber w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
                                 <i data-lucide="megaphone" class="w-6 h-6"></i>
                             </div>
                             <button type="button" onclick="showScreen('avisos-page')" class="text-sm font-semibold text-cruzeiro hover:underline">Ver todos</button>
@@ -191,26 +202,26 @@
                     </div>
 
                     <!-- Card: Tutoriais -->
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow group">
-                        <div class="w-12 h-12 bg-violet-50 text-violet-700 rounded-xl flex items-center justify-center mb-4">
+                    <div class="dash-card bento-cell bento-tutoriais bg-white p-6 rounded-3xl shadow-sm border border-gray-100 group">
+                        <div class="dash-card-icon dash-card-icon--violet w-12 h-12 bg-violet-50 text-violet-700 rounded-xl flex items-center justify-center mb-4">
                             <i data-lucide="play-circle" class="w-6 h-6"></i>
                         </div>
                         <h3 class="text-lg font-bold text-gray-800 mb-2">Tutoriais</h3>
                         <p class="text-gray-500 text-sm mb-6 leading-relaxed">Videoaulas para Área do Aluno, Blackboard, provas, boleto e documentos.</p>
-                        <button onclick="showScreen('tutoriais-page')" class="w-full flex items-center justify-center gap-2 bg-gray-50 text-cruzeiro font-semibold py-2.5 rounded-lg hover:bg-cruzeiro hover:text-white transition">
+                        <button onclick="showScreen('tutoriais-page')" class="btn-plastic dash-card-btn w-full flex items-center justify-center gap-2 bg-gray-50 text-cruzeiro font-semibold py-2.5 rounded-lg">
                             Ver tutoriais
                             <i data-lucide="chevron-right" class="w-4 h-4"></i>
                         </button>
                     </div>
 
                     <!-- Card: Atendimento -->
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow group">
-                        <div class="w-12 h-12 bg-green-50 text-green-700 rounded-xl flex items-center justify-center mb-4">
+                    <div class="dash-card bento-cell bento-atendimento bg-white p-6 rounded-3xl shadow-sm border border-gray-100 group">
+                        <div class="dash-card-icon dash-card-icon--green w-12 h-12 bg-green-50 text-green-700 rounded-xl flex items-center justify-center mb-4">
                             <i data-lucide="headset" class="w-6 h-6"></i>
                         </div>
                         <h3 class="text-lg font-bold text-gray-800 mb-2">Atendimento</h3>
                         <p class="text-gray-500 text-sm mb-6 leading-relaxed">Suporte acadêmico, comercial e indicação de novos alunos no WhatsApp.</p>
-                        <button onclick="showScreen('atendimento-page')" class="w-full flex items-center justify-center gap-2 bg-gray-50 text-cruzeiro font-semibold py-2.5 rounded-lg hover:bg-cruzeiro hover:text-white transition">
+                        <button onclick="showScreen('atendimento-page')" class="btn-plastic dash-card-btn w-full flex items-center justify-center gap-2 bg-gray-50 text-cruzeiro font-semibold py-2.5 rounded-lg">
                             Falar com a equipe
                             <i data-lucide="chevron-right" class="w-4 h-4"></i>
                         </button>
@@ -361,42 +372,51 @@
                     <p class="text-sm text-gray-500 mb-4">Fale com o comercial do seu polo ou indique alguém.</p>
                     <div class="grid sm:grid-cols-2 gap-3">
                         <a id="btn-whatsapp-comercial" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center bg-cruzeiro text-white font-semibold py-3 rounded-xl">Falar com comercial</a>
-                        <button type="button" onclick="document.getElementById('indicacao-card').scrollIntoView({behavior:'smooth'})" class="bg-gray-50 text-cruzeiro font-semibold py-3 rounded-xl">Indicar alguém</button>
+                        <button type="button" id="btn-toggle-indicacao" class="btn-plastic dash-card-btn bg-gray-50 text-cruzeiro font-semibold py-3 rounded-xl" aria-expanded="false" aria-controls="indicacao-panel">Indicar alguém</button>
                     </div>
                 </div>
 
-                <div id="indicacao-card" class="bg-white rounded-2xl border border-gray-100 p-6">
-                    <h3 class="text-lg font-bold mb-1">Indicar alguém</h3>
-                    <p class="text-sm text-gray-500 mb-4">Seus dados já entram automaticamente. Preencha só os dados da pessoa indicada.</p>
-                    <div id="indicacao-alert" class="hidden mb-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3"></div>
-                    <div id="indicacao-ok" class="hidden mb-3 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-3"></div>
-                    <form id="indicacao-form" class="space-y-4" novalidate>
-                        <div>
-                            <label class="block text-sm font-medium mb-1" for="f_ind_nome">Nome*</label>
-                            <input id="f_ind_nome" required class="w-full px-4 py-2.5 rounded-lg border">
-                            <p class="text-xs text-red-500 mt-1 hidden" id="err_ind_nome"></p>
+                <div id="indicacao-panel" class="indicacao-panel" hidden>
+                    <div class="indicacao-panel-inner">
+                        <div id="indicacao-card" class="bg-white rounded-2xl border border-gray-100 p-6">
+                            <div class="flex items-start justify-between gap-3 mb-1">
+                                <h3 class="text-lg font-bold">Indicar alguém</h3>
+                                <button type="button" id="btn-close-indicacao" class="text-gray-400 hover:text-gray-700 p-1 rounded-lg" aria-label="Fechar formulário de indicação">
+                                    <i data-lucide="x" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                            <p class="text-sm text-gray-500 mb-4">Seus dados já entram automaticamente. Preencha só os dados da pessoa indicada.</p>
+                            <div id="indicacao-alert" class="hidden mb-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3"></div>
+                            <div id="indicacao-ok" class="hidden mb-3 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-3"></div>
+                            <form id="indicacao-form" class="space-y-4" novalidate>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" for="f_ind_nome">Nome*</label>
+                                    <input id="f_ind_nome" required class="w-full px-4 py-2.5 rounded-lg border">
+                                    <p class="text-xs text-red-500 mt-1 hidden" id="err_ind_nome"></p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" for="f_ind_whatsapp">WhatsApp*</label>
+                                    <input id="f_ind_whatsapp" required class="w-full px-4 py-2.5 rounded-lg border" placeholder="11999999999">
+                                    <p class="text-xs text-red-500 mt-1 hidden" id="err_ind_whatsapp"></p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" for="f_ind_email">E-mail (opcional)</label>
+                                    <input id="f_ind_email" type="email" class="w-full px-4 py-2.5 rounded-lg border">
+                                    <p class="text-xs text-red-500 mt-1 hidden" id="err_ind_email"></p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" for="f_ind_curso">Curso de interesse (opcional)</label>
+                                    <input id="f_ind_curso" class="w-full px-4 py-2.5 rounded-lg border">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" for="f_ind_obs">Observação (opcional)</label>
+                                    <textarea id="f_ind_obs" rows="3" class="w-full px-4 py-2.5 rounded-lg border"></textarea>
+                                    <p class="text-xs text-red-500 mt-1 hidden" id="err_ind_obs"></p>
+                                </div>
+                                <button id="btn-indicacao" type="submit" class="w-full bg-cruzeiro text-white font-semibold py-3 rounded-xl">Enviar indicação</button>
+                            </form>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1" for="f_ind_whatsapp">WhatsApp*</label>
-                            <input id="f_ind_whatsapp" required class="w-full px-4 py-2.5 rounded-lg border" placeholder="11999999999">
-                            <p class="text-xs text-red-500 mt-1 hidden" id="err_ind_whatsapp"></p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1" for="f_ind_email">E-mail (opcional)</label>
-                            <input id="f_ind_email" type="email" class="w-full px-4 py-2.5 rounded-lg border">
-                            <p class="text-xs text-red-500 mt-1 hidden" id="err_ind_email"></p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1" for="f_ind_curso">Curso de interesse (opcional)</label>
-                            <input id="f_ind_curso" class="w-full px-4 py-2.5 rounded-lg border">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1" for="f_ind_obs">Observação (opcional)</label>
-                            <textarea id="f_ind_obs" rows="3" class="w-full px-4 py-2.5 rounded-lg border"></textarea>
-                            <p class="text-xs text-red-500 mt-1 hidden" id="err_ind_obs"></p>
-                        </div>
-                        <button id="btn-indicacao" type="submit" class="w-full bg-cruzeiro text-white font-semibold py-3 rounded-xl">Enviar indicação</button>
-                    </form>
+                    </div>
                 </div>
             </main>
         </section>
@@ -477,7 +497,7 @@
                         <div class="pt-6">
                             <button type="submit" id="btn-submit" class="w-full bg-cruzeiro text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-800 transition duration-300 flex items-center justify-center gap-3 disabled:cursor-not-allowed">
                                 <span id="btn-text">Gerar meu certificado</span>
-                                <div id="btn-loader" class="hidden animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                                <div id="btn-loader" class="btn-loader hidden" aria-hidden="true"></div>
                             </button>
                         </div>
                     </form>
@@ -546,8 +566,8 @@
     <script src="/js/certificate.js?v=7"></script>
     <script src="/js/avisos.js?v=7"></script>
     <script src="/js/tutoriais.js?v=7"></script>
-    <script src="/js/atendimento.js?v=7"></script>
-    <script src="/js/ui.js?v=7"></script>
+    <script src="/js/atendimento.js?v=8"></script>
+    <script src="/js/ui.js?v=9"></script>
     <script src="/js/app.js?v=7"></script>
 </body>
 </html>

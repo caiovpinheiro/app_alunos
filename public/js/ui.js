@@ -9,10 +9,26 @@ window.UI = (function () {
     if (PUBLIC_SCREENS.indexOf(screenId) === -1 && !window.Auth.isAuthenticated()) {
       screenId = 'login-page';
     }
+
+    var previous = null;
     SCREENS.forEach(function (id) {
-      document.getElementById(id).classList.add('hidden');
+      var node = document.getElementById(id);
+      if (!node) return;
+      if (!node.classList.contains('hidden')) previous = id;
+      node.classList.add('hidden');
+      node.classList.remove('is-entering', 'from-auth');
     });
-    document.getElementById(screenId).classList.remove('hidden');
+
+    var el = document.getElementById(screenId);
+    if (!el) return;
+    el.classList.remove('hidden');
+    if (previous === 'login-page' || previous === 'first-access-page') {
+      el.classList.add('from-auth');
+    }
+    // reinicia a animação de entrada a cada troca de tela
+    void el.offsetWidth;
+    el.classList.add('is-entering');
+
     if (window.lucide) window.lucide.createIcons();
     window.scrollTo(0, 0);
   }
@@ -25,7 +41,10 @@ window.UI = (function () {
 
   function setLoginLoading(loading) {
     var btn = document.getElementById('btn-login');
+    var page = document.getElementById('login-page');
     btn.disabled = loading;
+    btn.classList.toggle('is-loading', loading);
+    if (page) page.classList.toggle('is-busy', loading);
     btn.setAttribute('aria-label', loading ? 'Entrando...' : 'Entrar');
     var front = btn.querySelector('[data-cube-front]');
     var second = btn.querySelector('[data-cube-second]');
@@ -96,8 +115,12 @@ window.UI = (function () {
 
   function setRegisterLoading(loading) {
     var btn = document.getElementById('btn-register');
+    var page = document.getElementById('first-access-page');
     btn.disabled = loading;
-    btn.textContent = loading ? 'Criando acesso...' : 'Criar acesso';
+    btn.classList.toggle('is-loading', loading);
+    if (page) page.classList.toggle('is-busy', loading);
+    var label = btn.querySelector('.btn-plastic-label');
+    if (label) label.textContent = loading ? 'Criando acesso...' : 'Criar acesso';
   }
 
   function showRegisterError(message) {
@@ -115,6 +138,7 @@ window.UI = (function () {
     var text = document.getElementById('btn-gerar-certificado-text');
     if (!btn || !text) return;
     btn.disabled = loading;
+    btn.classList.toggle('is-loading', loading);
     text.textContent = loading ? 'Gerando certificado...' : 'Gerar certificado';
   }
 
@@ -133,6 +157,7 @@ window.UI = (function () {
     var text = document.getElementById('btn-text');
     var loader = document.getElementById('btn-loader');
     btn.disabled = loading;
+    btn.classList.toggle('is-loading', loading);
     btn.classList.toggle('opacity-70', loading);
     text.textContent = loading ? 'Gerando certificado...' : 'Gerar meu certificado';
     loader.classList.toggle('hidden', !loading);

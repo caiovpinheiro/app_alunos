@@ -64,10 +64,51 @@ window.Atendimento = (function () {
     }
   }
 
+  function setIndicacaoOpen(open) {
+    var panel = document.getElementById('indicacao-panel');
+    var btn = document.getElementById('btn-toggle-indicacao');
+    if (!panel || !btn) return;
+
+    if (open) {
+      panel.hidden = false;
+      // força reflow para a animação de expandir
+      void panel.offsetHeight;
+      panel.classList.add('is-open');
+      btn.setAttribute('aria-expanded', 'true');
+      btn.classList.add('is-active');
+      if (window.lucide) window.lucide.createIcons();
+      window.setTimeout(function () {
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 80);
+    } else {
+      panel.classList.remove('is-open');
+      btn.setAttribute('aria-expanded', 'false');
+      btn.classList.remove('is-active');
+      var done = false;
+      function finish() {
+        if (done) return;
+        done = true;
+        if (!panel.classList.contains('is-open')) panel.hidden = true;
+      }
+      panel.addEventListener('transitionend', finish, { once: true });
+      window.setTimeout(finish, 500);
+    }
+  }
+
+  function toggleIndicacao() {
+    var panel = document.getElementById('indicacao-panel');
+    if (!panel) return;
+    setIndicacaoOpen(!panel.classList.contains('is-open'));
+  }
+
   function init() {
     var form = document.getElementById('indicacao-form');
     if (form) form.addEventListener('submit', submitIndicacao);
+    var toggleBtn = document.getElementById('btn-toggle-indicacao');
+    if (toggleBtn) toggleBtn.addEventListener('click', toggleIndicacao);
+    var closeBtn = document.getElementById('btn-close-indicacao');
+    if (closeBtn) closeBtn.addEventListener('click', function () { setIndicacaoOpen(false); });
   }
 
-  return { init: init, refresh: refresh };
+  return { init: init, refresh: refresh, toggleIndicacao: toggleIndicacao };
 })();
