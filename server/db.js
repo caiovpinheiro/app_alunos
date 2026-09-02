@@ -251,6 +251,15 @@ async function ensureSchema(pool) {
     CREATE INDEX IF NOT EXISTS idx_csu_semestre_imagens_status ON csu_semestre_imagens (status, updated_at);
   `);
   await pool.query(`
+    ALTER TABLE csu_semestre_imagens
+    ADD COLUMN IF NOT EXISTS share_token TEXT
+  `);
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_csu_semestre_imagens_share
+    ON csu_semestre_imagens (share_token)
+    WHERE share_token IS NOT NULL
+  `);
+  await pool.query(`
     ALTER TABLE csu_sync_state
     ADD COLUMN IF NOT EXISTS revoked_count INTEGER
   `);

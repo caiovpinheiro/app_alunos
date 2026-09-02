@@ -15,6 +15,7 @@ const syncAcessos = require('./sync-acessos');
 const meuSemestre = require('./meuSemestre');
 const planoImagem = require('./planoImagem');
 const app = express();
+app.set('trust proxy', 1);
 const PORT = Number(process.env.PORT) || 80;
 
 const pool = (() => {
@@ -483,6 +484,18 @@ app.get('/api/meu-semestre/imagem.svg', authMiddleware, async (req, res) => {
 app.get('/api/meu-semestre/imagem.png', authMiddleware, async (req, res) => {
   if (!pool) return unavailable(res);
   return planoImagem.sendAlunoImage(pool, req.aluno.id, 'png', res);
+});
+
+app.get('/api/meu-semestre/imagem-url', authMiddleware, async (req, res) => {
+  if (!pool) return unavailable(res);
+  return planoImagem.sendAlunoShareLink(pool, req.aluno.id, req, res);
+});
+
+app.get('/p/plano/:file', async (req, res) => {
+  if (!pool) return unavailable(res);
+  const match = String(req.params.file || '').match(/^([a-f0-9]{64})\.png$/i);
+  if (!match) return res.status(404).end();
+  return planoImagem.sendSharedImage(pool, match[1].toLowerCase(), res);
 });
 
 app.post('/api/admin/planos-imagens/gerar-lote', requireAdmin, async (req, res) => {

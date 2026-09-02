@@ -16,6 +16,9 @@ const MES_INDEX = {
   JUL: 7, AGO: 8, SET: 9, OUT: 10, NOV: 11, DEZ: 12,
 };
 const LOGO_PATH = path.join(__dirname, 'assets', 'cruzeiro-virtual.png');
+const FONT_REGULAR_PATH = path.join(__dirname, 'assets', 'fonts', 'Arimo-Regular.ttf');
+const FONT_BOLD_PATH = path.join(__dirname, 'assets', 'fonts', 'Arimo-Bold.ttf');
+const RENDER_VERSION = 2;
 
 let cachedLogo = null;
 let workerRunning = false;
@@ -50,10 +53,10 @@ function wrapText(value, maxChars) {
 function textLines(lines, x, y, options = {}) {
   const size = options.size || 28;
   const lineHeight = options.lineHeight || Math.round(size * 1.22);
-  const weight = options.weight || 600;
+  const weight = Number(options.weight) >= 600 ? 700 : 400;
   const fill = options.fill || '#092b63';
   const anchor = options.anchor || 'start';
-  return `<text x="${x}" y="${y}" font-size="${size}" font-weight="${weight}" fill="${fill}" text-anchor="${anchor}">` +
+  return `<text x="${x}" y="${y}" font-size="${size}" font-weight="${weight}" fill="${fill}" text-anchor="${anchor}" font-family="Arimo, 'Liberation Sans', 'DejaVu Sans', sans-serif">` +
     lines.map((line, index) => `<tspan x="${x}" dy="${index === 0 ? 0 : lineHeight}">${xml(line)}</tspan>`).join('') +
     '</text>';
 }
@@ -88,9 +91,37 @@ function activityKind(titulo) {
 }
 
 function activityIcon(x, y, kind) {
-  const symbols = { digital: '◎', carreira: '◆', projeto: '●', extensao: '♥', outro: '✓' };
-  const symbol = symbols[kind] || '✓';
-  return `<g><rect x="${x}" y="${y}" width="68" height="68" rx="16" fill="#edf6fd"/><text x="${x + 34}" y="${y + 47}" text-anchor="middle" font-size="36" font-weight="800" fill="#0d3f83">${symbol}</text></g>`;
+  const cx = x + 34;
+  const cy = y + 34;
+  let mark = `<circle cx="${cx}" cy="${cy}" r="10" fill="#0d3f83"/>`;
+  if (kind === 'digital') {
+    mark = `<circle cx="${cx}" cy="${cy}" r="14" fill="none" stroke="#0d3f83" stroke-width="4"/><circle cx="${cx}" cy="${cy}" r="5" fill="#0d3f83"/>`;
+  } else if (kind === 'carreira') {
+    mark = `<rect x="${cx - 11}" y="${cy - 11}" width="22" height="22" rx="3" transform="rotate(45 ${cx} ${cy})" fill="#0d3f83"/>`;
+  } else if (kind === 'extensao') {
+    mark = `<path d="M${cx} ${cy - 13}c-8 8-8 14 0 20c8-6 8-12 0-20z" fill="#0d3f83"/>`;
+  } else if (kind === 'outro') {
+    mark = `<path d="M${cx - 10} ${cy}l7 7 14-16" fill="none" stroke="#0d3f83" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`;
+  }
+  return `<g><rect x="${x}" y="${y}" width="68" height="68" rx="16" fill="#edf6fd"/>${mark}</g>`;
+}
+
+let cachedEmbedCss = null;
+
+function fontFaceCss() {
+  if (cachedEmbedCss) return cachedEmbedCss;
+  const regular = fs.readFileSync(FONT_REGULAR_PATH).toString('base64');
+  const bold = fs.readFileSync(FONT_BOLD_PATH).toString('base64');
+  cachedEmbedCss =
+    `@font-face{font-family:'Arimo';font-weight:400;font-style:normal;src:url('data:font/ttf;base64,${regular}') format('truetype')}` +
+    `@font-face{font-family:'Arimo';font-weight:700;font-style:normal;src:url('data:font/ttf;base64,${bold}') format('truetype')}` +
+    `text{font-family:'Arimo','Liberation Sans','DejaVu Sans',sans-serif}`;
+  return cachedEmbedCss;
+}
+
+function fontCss(embedFonts) {
+  if (embedFonts) return fontFaceCss();
+  return `text{font-family:'Arimo','Liberation Sans','DejaVu Sans',sans-serif}`;
 }
 
 function logoDataUri() {
@@ -193,7 +224,7 @@ function mapToPlanData(data) {
   };
 }
 
-function renderSvg(data) {
+function renderSvg(data, options = {}) {
   const width = 1080;
   const margin = 54;
   const contentWidth = width - margin * 2;
@@ -235,7 +266,7 @@ function renderSvg(data) {
     <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="7" stdDeviation="9" flood-color="#092b63" flood-opacity=".08"/></filter>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
-  <style>text{font-family:Arial,Helvetica,sans-serif}</style>
+  <style>${fontCss(Boolean(options.embedFonts))}</style>
   <image href="data:image/png;base64,${logoData}" xlink:href="data:image/png;base64,${logoData}" x="290" y="34" width="500" height="180" preserveAspectRatio="xMidYMid meet"/>
   ${textLines([`PLANO DE ESTUDOS — ${data.semester || ''}`], width / 2, 250, { size: 54, weight: 800, anchor: 'middle' })}
   ${roundedRect(margin, 292, contentWidth, 104, 24, 'url(#softBlue)')}
@@ -293,7 +324,7 @@ function renderSvg(data) {
   const attention = Array.isArray(data.attention) ? data.attention : [];
   if (attention.length) {
     svg += roundedRect(margin, cursorY, contentWidth, 150, 26, 'url(#attention)');
-    svg += `<circle cx="142" cy="${cursorY + 75}" r="55" fill="#f4c400"/><text x="142" y="${cursorY + 106}" text-anchor="middle" font-size="88" font-weight="900" fill="#092b63">!</text>`;
+    svg += `<circle cx="142" cy="${cursorY + 75}" r="55" fill="#f4c400"/><text x="142" y="${cursorY + 106}" text-anchor="middle" font-size="88" font-weight="700" fill="#092b63" font-family="Arimo, 'Liberation Sans', 'DejaVu Sans', sans-serif">!</text>`;
     svg += textLines(['ATENÇÃO'], 225, cursorY + 52, { size: 32, weight: 800 });
     attention.slice(0, 2).forEach((line, index) => {
       svg += checkIcon(225, cursorY + 69 + index * 38, 25);
@@ -310,6 +341,7 @@ function renderSvg(data) {
 
 function fingerprintFromParts({ nome, plano, disciplinas, atividades, avaliacao, atencao }) {
   return {
+    v: RENDER_VERSION,
     nome: nome || '',
     plano: plano
       ? {
@@ -422,20 +454,56 @@ function concurrency() {
   return Math.min(3, Math.max(2, Math.trunc(n)));
 }
 
+function newShareToken() {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+async function ensureShareToken(pool, alunoId, planoId) {
+  const existing = await pool.query(
+    `SELECT share_token FROM csu_semestre_imagens WHERE aluno_id = $1 AND plano_id = $2 LIMIT 1`,
+    [alunoId, planoId],
+  );
+  if (existing.rows[0] && existing.rows[0].share_token) return existing.rows[0].share_token;
+  const token = newShareToken();
+  const updated = await pool.query(
+    `UPDATE csu_semestre_imagens
+     SET share_token = COALESCE(share_token, $3), updated_at = now()
+     WHERE aluno_id = $1 AND plano_id = $2
+     RETURNING share_token`,
+    [alunoId, planoId, token],
+  );
+  return updated.rows[0] && updated.rows[0].share_token;
+}
+
+function publicBaseUrl(req) {
+  const configured = String(process.env.APP_PUBLIC_URL || '').trim().replace(/\/$/, '');
+  if (configured) return configured;
+  const proto = (req.get('x-forwarded-proto') || req.protocol || 'https').split(',')[0].trim();
+  const host = (req.get('x-forwarded-host') || req.get('host') || '').split(',')[0].trim();
+  return host ? `${proto}://${host}` : '';
+}
+
+function publicImageUrl(req, token) {
+  const base = publicBaseUrl(req);
+  if (!base || !token) return null;
+  return `${base}/p/plano/${token}.png`;
+}
+
 async function upsertRow(pool, { alunoId, planoId, hash, status, filePath, errorMessage }) {
   const result = await pool.query(
     `INSERT INTO csu_semestre_imagens
-      (aluno_id, plano_id, data_hash, file_path, status, error_message, generated_at, updated_at)
-     VALUES ($1, $2, $3, $4, $5, $6, CASE WHEN $5 = 'concluida' THEN now() ELSE NULL END, now())
+      (aluno_id, plano_id, data_hash, file_path, status, error_message, share_token, generated_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, CASE WHEN $5 = 'concluida' THEN now() ELSE NULL END, now())
      ON CONFLICT (aluno_id, plano_id) DO UPDATE SET
        data_hash = EXCLUDED.data_hash,
        file_path = EXCLUDED.file_path,
        status = EXCLUDED.status,
        error_message = EXCLUDED.error_message,
+       share_token = COALESCE(csu_semestre_imagens.share_token, EXCLUDED.share_token),
        generated_at = CASE WHEN EXCLUDED.status = 'concluida' THEN now() ELSE csu_semestre_imagens.generated_at END,
        updated_at = now()
-     RETURNING id, aluno_id, plano_id, data_hash, file_path, status`,
-    [alunoId, planoId, hash, filePath || null, status, errorMessage || null],
+     RETURNING id, aluno_id, plano_id, data_hash, file_path, status, share_token`,
+    [alunoId, planoId, hash, filePath || null, status, errorMessage || null, newShareToken()],
   );
   return result.rows[0];
 }
@@ -449,7 +517,7 @@ async function generateForAluno(pool, alunoId) {
   }
   const hash = hashFingerprint(fingerprint(data));
   const existing = await pool.query(
-    `SELECT id, data_hash, file_path, status
+    `SELECT id, data_hash, file_path, status, share_token
      FROM csu_semestre_imagens
      WHERE aluno_id = $1 AND plano_id = $2
      LIMIT 1`,
@@ -461,7 +529,14 @@ async function generateForAluno(pool, alunoId) {
       const pngPath = safeFilePath(row.file_path);
       if (fs.existsSync(pngPath)) {
         const svgPath = pngPath.replace(/\.png$/i, '.svg');
-        return { hash, pngPath, svgPath: fs.existsSync(svgPath) ? svgPath : null, reused: true };
+        const shareToken = await ensureShareToken(pool, alunoId, data.plano.id);
+        return {
+          hash,
+          pngPath,
+          svgPath: fs.existsSync(svgPath) ? svgPath : null,
+          reused: true,
+          shareToken,
+        };
       }
     } catch (err) {
       /* regenera se o caminho antigo for inválido */
@@ -479,9 +554,9 @@ async function generateForAluno(pool, alunoId) {
 
   const paths = filePaths(alunoId, data.plano.id, hash);
   fs.mkdirSync(paths.dir, { recursive: true });
-  const svg = renderSvg(mapToPlanData(data));
-  fs.writeFileSync(paths.svg, svg, 'utf8');
-  await sharp(Buffer.from(svg)).png().toFile(paths.png);
+  const planData = mapToPlanData(data);
+  fs.writeFileSync(paths.svg, renderSvg(planData), 'utf8');
+  await sharp(Buffer.from(renderSvg(planData, { embedFonts: true }))).png().toFile(paths.png);
   await upsertRow(pool, {
     alunoId,
     planoId: data.plano.id,
@@ -500,7 +575,13 @@ async function generateForAluno(pool, alunoId) {
       /* arquivo antigo pode já ter saído do volume */
     }
   }
-  return { hash, pngPath: paths.png, svgPath: paths.svg, reused: false };
+  return {
+    hash,
+    pngPath: paths.png,
+    svgPath: paths.svg,
+    reused: false,
+    shareToken: await ensureShareToken(pool, alunoId, data.plano.id),
+  };
 }
 
 function generateForAlunoLocked(pool, alunoId) {
@@ -528,6 +609,52 @@ async function sendAlunoImage(pool, alunoId, format, res) {
     }
     console.error('Falha ao gerar plano de estudos:', err.message);
     return res.status(500).json({ success: false, message: 'Não foi possível gerar o plano de estudos.' });
+  }
+}
+
+async function sendAlunoShareLink(pool, alunoId, req, res) {
+  try {
+    const result = await generateForAlunoLocked(pool, alunoId);
+    const token = result.shareToken || (result.pngPath && await (async () => {
+      const data = await meuSemestre.getMeuSemestre(pool, alunoId);
+      return data.plano ? ensureShareToken(pool, alunoId, data.plano.id) : null;
+    })());
+    const url = publicImageUrl(req, token);
+    if (!url) {
+      return res.status(500).json({ success: false, message: 'Defina APP_PUBLIC_URL no Environment para gerar o link.' });
+    }
+    return res.json({ success: true, url });
+  } catch (err) {
+    if (err.code === 'NO_PLAN') {
+      return res.status(404).json({ success: false, message: err.message });
+    }
+    console.error('Falha ao gerar link do plano:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível gerar o link do plano.' });
+  }
+}
+
+async function sendSharedImage(pool, token, res) {
+  if (!/^[a-f0-9]{64}$/.test(String(token || ''))) {
+    return res.status(404).end();
+  }
+  try {
+    const result = await pool.query(
+      `SELECT file_path, status FROM csu_semestre_imagens WHERE share_token = $1 LIMIT 1`,
+      [token],
+    );
+    const row = result.rows[0];
+    if (!row || row.status !== 'concluida' || !row.file_path) {
+      return res.status(404).end();
+    }
+    const filePath = safeFilePath(row.file_path);
+    if (!fs.existsSync(filePath)) return res.status(404).end();
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Content-Disposition', 'inline; filename="plano-de-estudos.png"');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    return res.sendFile(filePath);
+  } catch (err) {
+    console.error('Falha ao servir plano compartilhado:', err.message);
+    return res.status(404).end();
   }
 }
 
@@ -789,6 +916,8 @@ module.exports = {
   renderSvg,
   mapToPlanData,
   sendAlunoImage,
+  sendAlunoShareLink,
+  sendSharedImage,
   startBatch,
   getStatus,
   kickWorker,

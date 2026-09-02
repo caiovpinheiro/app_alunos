@@ -317,10 +317,16 @@ window.MeuSemestre = (function () {
         '<p class="ms-eyebrow">Meu Semestre</p>' +
         '<h2>Olá, ' + escapeHtml(nome) + '</h2>' +
         '<p class="ms-muted">' + escapeHtml(cache.plano.curso) + ' · ' + escapeHtml(cache.plano.periodo) + '</p>' +
-        '<button type="button" class="btn-plastic ms-download-btn" data-download-plano>' +
-          '<span class="btn-plastic-label">Baixar meu plano de estudos</span>' +
-          '<span class="btn-spinner" aria-hidden="true"></span>' +
-        '</button>' +
+        '<div class="ms-page-actions">' +
+          '<button type="button" class="btn-plastic ms-download-btn" data-download-plano>' +
+            '<span class="btn-plastic-label">Baixar meu plano de estudos</span>' +
+            '<span class="btn-spinner" aria-hidden="true"></span>' +
+          '</button>' +
+          '<button type="button" class="btn-plastic ms-download-btn ms-copy-link-btn" data-copy-plano-link>' +
+            '<span class="btn-plastic-label">Copiar link para WhatsApp</span>' +
+            '<span class="btn-spinner" aria-hidden="true"></span>' +
+          '</button>' +
+        '</div>' +
       '</header>' +
       '<section class="ms-hero" aria-label="Resumo do semestre">' + heroDisc + heroPay + '</section>' +
       '<section class="ms-section">' +
@@ -386,6 +392,42 @@ window.MeuSemestre = (function () {
     renderPage();
   }
 
+  async function copyPlanLink(button) {
+    if (downloading) return;
+    downloading = true;
+    if (button) {
+      button.disabled = true;
+      button.classList.add('is-loading');
+      var label = button.querySelector('.btn-plastic-label');
+      if (label) label.textContent = 'Gerando link...';
+    }
+    try {
+      var res = await window.Api.getPlanoImageUrl();
+      if (!res || !res.url) throw new Error('Não foi possível gerar o link.');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(res.url);
+      } else {
+        window.prompt('Copie o link do plano de estudos:', res.url);
+      }
+      if (button) {
+        var done = button.querySelector('.btn-plastic-label');
+        if (done) done.textContent = 'Link copiado';
+      }
+    } catch (err) {
+      window.alert(err.message || 'Não foi possível copiar o link do plano.');
+    } finally {
+      downloading = false;
+      if (button) {
+        button.disabled = false;
+        button.classList.remove('is-loading');
+        setTimeout(function () {
+          var label = button.querySelector('.btn-plastic-label');
+          if (label) label.textContent = 'Copiar link para WhatsApp';
+        }, 1600);
+      }
+    }
+  }
+
   async function downloadPlan(button) {
     if (downloading) return;
     downloading = true;
@@ -428,6 +470,13 @@ window.MeuSemestre = (function () {
         event.preventDefault();
         event.stopPropagation();
         downloadPlan(download);
+        return;
+      }
+      var copyLink = event.target.closest('[data-copy-plano-link]');
+      if (copyLink) {
+        event.preventDefault();
+        event.stopPropagation();
+        copyPlanLink(copyLink);
         return;
       }
       var btn = event.target.closest('[data-open-tutoriais]');

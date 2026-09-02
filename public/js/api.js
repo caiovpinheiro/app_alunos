@@ -107,6 +107,10 @@ window.Api = (function () {
     return res.blob();
   }
 
+  async function getPlanoImageUrl() {
+    return request('/api/meu-semestre/imagem-url', { headers: authHeaders() });
+  }
+
   async function createIndicacao(payload) {
     return request('/api/indicacoes', {
       method: 'POST',
@@ -127,6 +131,7 @@ window.Api = (function () {
     listTutoriais: listTutoriais,
     getMeuSemestre: getMeuSemestre,
     downloadPlanoPng: downloadPlanoPng,
+    getPlanoImageUrl: getPlanoImageUrl,
     getAtendimento: getAtendimento,
     createIndicacao: createIndicacao,
   };

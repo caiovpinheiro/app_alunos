@@ -22,7 +22,7 @@
 - Auto-deploy só pelo webhook do GitHub no EasyPanel, sem Action visível no repo.
 
 **Impacto**
-- Quem for agente daqui pra frente altera `main` e o deploy sobe sozinho. O secret precisa existir no repositório.
+- Quem for agente daqui pra frente altera `main`; a imagem sobe no GHCR e o EasyPanel puxa `:latest`. Pacote privado no GHCR exige usuário/PAT com `read:packages` no EasyPanel (ou deixar o pacote público).
 
 ### 2026-08-19 - Finalização do Portal do Aluno (Certificado da Aula Inaugural)
 
@@ -102,17 +102,20 @@
 - Geração in-app em `server/planoImagem.js`, a partir de `meuSemestre.getMeuSemestre`. Sem n8n e sem IA. SVG personalizado + PNG via `sharp`. Logo em `server/assets/cruzeiro-virtual.png`.
 - Rotas do aluno: `GET /api/meu-semestre/imagem.svg` e `.png`, só com `req.aluno.id`. Botão “Baixar meu plano de estudos” na tela já existente. Cache em `csu_semestre_imagens` + arquivos em `PLAN_IMAGE_OUTPUT_DIR` (volume, não pasta pública).
 - Worker interno (concorrência 2–3, `FOR UPDATE SKIP LOCKED`). Admin `POST /api/admin/planos-imagens/gerar-lote` retorna na hora; `GET .../status` mostra totais. `PLAN_IMAGE_AUTO_SYNC=true` processa alunos novos a cada `PLAN_IMAGE_SYNC_INTERVAL_MIN`.
+- Link compartilhável: `share_token` (64 hex) em `csu_semestre_imagens`. `GET /api/meu-semestre/imagem-url` (autenticado) devolve só `{ url }`. Público `GET /p/plano/:token.png` serve a PNG inline, sem gerar de novo. `APP_PUBLIC_URL` no EasyPanel (ex.: `https://aluno.seudominio.com`).
+- Fontes Arimo em `server/assets/fonts/` embutidas no SVG na hora do PNG (evita quadradinhos no Alpine). Fingerprint `v: 2` regenera PNGs antigas.
 
 **Contexto**
-- Meu Semestre já existia. A imagem é só uma projeção visual dos mesmos dados.
+- Meu Semestre já existia. A imagem é só uma projeção visual dos mesmos dados. Quadradinhos vinham da falta de fonte no container.
 
 **Alternativas descartadas**
 - n8n / geração por IA.
 - Recriar tabelas/tela de Meu Semestre.
 - Expor `/data/planos-estudos` como estático.
+- URL com `aluno_id` (adivinhável / IDOR).
 
 **Impacto**
-- EasyPanel precisa montar volume em `/data/planos-estudos` e definir as três variáveis. Schema da tabela nova sobe no boot (`CREATE TABLE IF NOT EXISTS`).
+- EasyPanel: volume `planos-estudos` em `/data/planos-estudos`; `PLAN_IMAGE_*` e `APP_PUBLIC_URL`. Schema sobe no boot. WhatsApp/e-mail usam o link `/p/plano/<token>.png`.
 
 ### 2026-09-02 - Rotas por tela (`/meu-semestre`, `/tutoriais`, …)
 
