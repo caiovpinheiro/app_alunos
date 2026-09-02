@@ -63,7 +63,10 @@
       window.Auth.setSession(res.token, res.user);
       UI.setUserName(window.Auth.getUserName());
       document.getElementById('login-form').reset();
-      UI.showScreen('dashboard-page');
+      var afterLogin = window.UI.takeReturnPath();
+      var nextScreen = afterLogin ? window.UI.screenFromPath(afterLogin) : 'dashboard-page';
+      if (nextScreen === 'login-page' || nextScreen === 'first-access-page') nextScreen = 'dashboard-page';
+      window.showScreen(nextScreen, { replace: true });
       window.Avisos.refresh();
       if (window.MeuSemestre) window.MeuSemestre.refresh();
     } catch (err) {
@@ -95,7 +98,7 @@
       window.Auth.setSession(res.token, res.user);
       UI.setUserName(window.Auth.getUserName());
       document.getElementById('register-form').reset();
-      UI.showScreen('dashboard-page');
+      window.showScreen('dashboard-page', { replace: true });
       window.Avisos.refresh();
       if (window.MeuSemestre) window.MeuSemestre.refresh();
     } catch (err) {
@@ -137,11 +140,11 @@
       currentPdf.fileName = 'Certificado_Aula_Inaugural_' + sanitizeFileName(confirmation.nome) + '.pdf';
 
       UI.showPreview(currentPdf.blobUrl, confirmation.certificate_id);
-      UI.showScreen('success-page');
+      window.showScreen('success-page');
     } catch (err) {
       if (err.status === 401) {
         window.Auth.clear();
-        UI.showScreen('login-page');
+        window.showScreen('login-page', { replace: true });
         UI.showLoginError('Sua sessão expirou. Entre novamente.');
       } else {
         UI.showDashboardCertError(err.message || GENERIC_ERROR);
@@ -192,11 +195,11 @@
       currentPdf.fileName = 'Certificado_Aula_Inaugural_' + sanitizeFileName(result.sanitized.nome) + '.pdf';
 
       UI.showPreview(currentPdf.blobUrl, confirmation.certificate_id);
-      UI.showScreen('success-page');
+      window.showScreen('success-page');
     } catch (err) {
       if (err.status === 401) {
         window.Auth.clear();
-        UI.showScreen('login-page');
+        window.showScreen('login-page', { replace: true });
         UI.showLoginError('Sua sessão expirou. Entre novamente.');
       } else if (err.status === 422 && err.details) {
         UI.showFieldErrors(err.details);
@@ -248,7 +251,7 @@
     releaseCurrentPdf();
     window.UI.clearPreview();
     document.getElementById('login-form').reset();
-    window.UI.showScreen('login-page');
+    window.showScreen('login-page', { replace: true });
   }
 
   function prefillForm() {
@@ -312,11 +315,11 @@
 
     if (window.Auth.isAuthenticated()) {
       window.UI.setUserName(window.Auth.getUserName());
-      window.UI.showScreen('dashboard-page');
-      window.Avisos.refresh();
-      if (window.MeuSemestre) window.MeuSemestre.refresh();
+      var startScreen = window.UI.screenFromPath(window.location.pathname);
+      if (startScreen === 'login-page' || startScreen === 'first-access-page') startScreen = 'dashboard-page';
+      window.showScreen(startScreen, { replace: true });
     } else {
-      window.UI.showScreen('login-page');
+      window.showScreen(window.UI.screenFromPath(window.location.pathname), { replace: true });
     }
   }
 
@@ -326,11 +329,11 @@
   window.downloadPDF = downloadPDF;
   window.printCert = printCert;
   window.logout = logout;
-  window.showScreen = function (id) {
+  window.showScreen = function (id, options) {
     if (id === 'form-page') prefillForm();
     if (window.Avisos) window.Avisos.closeDropdown();
     if (window.Tutoriais) window.Tutoriais.closeModal();
-    window.UI.showScreen(id);
+    window.UI.showScreen(id, options);
     if ((id === 'dashboard-page' || id === 'avisos-page') && window.Avisos) {
       window.Avisos.refresh();
     }
@@ -340,6 +343,11 @@
     if (id === 'tutoriais-page' && window.Tutoriais) window.Tutoriais.refresh();
     if (id === 'atendimento-page' && window.Atendimento) window.Atendimento.refresh();
   };
+
+  window.addEventListener('popstate', function () {
+    var id = window.UI.screenFromPath(window.location.pathname);
+    window.showScreen(id, { skipHistory: true });
+  });
 
   document.addEventListener('DOMContentLoaded', init);
 })();

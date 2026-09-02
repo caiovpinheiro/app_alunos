@@ -778,6 +778,21 @@ app.patch('/api/admin/indicacoes/:id/status', requireAdmin, async (req, res) => 
 
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
+const STUDENT_PAGES = [
+  '/login',
+  '/primeiro-acesso',
+  '/inicio',
+  '/meu-semestre',
+  '/avisos',
+  '/tutoriais',
+  '/atendimento',
+  '/certificado',
+  '/sucesso',
+];
+app.get(STUDENT_PAGES, (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
+});
+
 app.use('/api', (req, res) => {
   res.status(404).json({ success: false, message: 'Recurso não encontrado.' });
 });
