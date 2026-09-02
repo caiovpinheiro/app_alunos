@@ -17,11 +17,15 @@ window.UI = (function () {
       if (!node.classList.contains('hidden')) previous = id;
       node.classList.add('hidden');
       node.classList.remove('is-entering', 'from-auth');
+      node.setAttribute('aria-hidden', 'true');
+      node.inert = true;
     });
 
     var el = document.getElementById(screenId);
     if (!el) return;
     el.classList.remove('hidden');
+    el.removeAttribute('aria-hidden');
+    el.inert = false;
     if (previous === 'login-page' || previous === 'first-access-page') {
       el.classList.add('from-auth');
     }

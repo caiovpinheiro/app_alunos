@@ -210,7 +210,8 @@
   }
 
   function downloadPDF() {
-    if (!currentPdf.blobUrl) return;
+    if (!currentPdf.blobUrl || !currentPdf.fileName) return;
+    if (!/\.pdf$/i.test(currentPdf.fileName)) return;
     var link = document.createElement('a');
     link.href = currentPdf.blobUrl;
     link.download = currentPdf.fileName;
@@ -292,6 +293,14 @@
 
     window.UI.initCubeFlip(document.getElementById('btn-login'));
     bindPasswordToggles();
+    var certBtn = document.getElementById('btn-gerar-certificado');
+    if (certBtn) {
+      certBtn.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        generateCertificateNow();
+      });
+    }
     document.getElementById('login-form').addEventListener('submit', handleLogin);
     document.getElementById('register-form').addEventListener('submit', handleRegister);
     document.getElementById('cert-form').addEventListener('submit', handleGenerate);

@@ -419,10 +419,14 @@ window.MeuSemestre = (function () {
   }
 
   function init() {
-    document.addEventListener('click', function (event) {
+    var page = document.getElementById('meu-semestre-page');
+    if (!page) return;
+    page.addEventListener('click', function (event) {
+      if (page.classList.contains('hidden')) return;
       var download = event.target.closest('[data-download-plano]');
       if (download) {
         event.preventDefault();
+        event.stopPropagation();
         downloadPlan(download);
         return;
       }
