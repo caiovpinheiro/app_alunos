@@ -1537,6 +1537,25 @@ textarea:focus {
   margin-bottom: 22px;
 }
 
+.ms-download-btn {
+  margin-top: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--csu-blue);
+  color: #fff;
+  font-weight: 700;
+  padding: 11px 16px;
+  border-radius: 12px;
+  border: 0;
+}
+
+.ms-download-btn.is-loading {
+  opacity: 0.75;
+  pointer-events: none;
+}
+
 .ms-page-head h2 {
   font-size: clamp(1.6rem, 3vw, 2.1rem);
   font-weight: 800;

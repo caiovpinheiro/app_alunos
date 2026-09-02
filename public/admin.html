@@ -48,6 +48,7 @@
         <button type="button" class="admin-tab" data-tab="tutoriais">Tutoriais</button>
         <button type="button" class="admin-tab" data-tab="contatos">Contatos</button>
         <button type="button" class="admin-tab" data-tab="indicacoes">Indicações</button>
+        <button type="button" class="admin-tab" data-tab="planos">Imagens dos planos</button>
       </nav>
 
       <div id="tab-avisos" class="admin-panel">
@@ -87,6 +88,17 @@
         <div id="admin-inds-list" class="space-y-3"></div>
         <div id="ind-detail" class="hidden mt-4 bg-white border rounded-xl p-4 text-sm"></div>
       </div>
+
+      <div id="tab-planos" class="admin-panel hidden">
+        <h2 class="text-xl font-bold mb-2">Imagens dos planos</h2>
+        <p class="text-sm text-gray-500 mb-4">Gera PNG/SVG só para alunos ativos com plano cadastrado. A fila continua após reiniciar o servidor.</p>
+        <div class="flex flex-wrap gap-3 mb-4">
+          <button type="button" id="btn-planos-lote" class="bg-cruzeiro text-white text-sm font-semibold px-4 py-2 rounded-lg">Gerar lote</button>
+          <button type="button" id="btn-planos-status" class="bg-gray-100 text-cruzeiro text-sm font-semibold px-4 py-2 rounded-lg">Atualizar totais</button>
+        </div>
+        <p id="planos-lote-msg" class="text-sm text-gray-500 mb-4"></p>
+        <div id="admin-planos-status" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3"></div>
+      </div>
     </div>
   </section>
 
@@ -100,6 +112,6 @@
     </div>
   </div>
 
-  <script src="/js/admin.js?v=8"></script>
+  <script src="/js/admin.js?v=10"></script>
 </body>
 </html>

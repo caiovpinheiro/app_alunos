@@ -72,3 +72,21 @@
 **Impacto**
 - Operação precisa rodar os SQL manuais após o deploy. Aluno sem `curso` em `csu_alunos` ou sem plano do curso vê estado vazio. Mensalidades são por aluno, não por curso.
 
+### 2026-09-02 - Imagens do plano de estudos (SVG/PNG)
+
+**Decisão**
+- Geração in-app em `server/planoImagem.js`, a partir de `meuSemestre.getMeuSemestre`. Sem n8n e sem IA. SVG personalizado + PNG via `sharp`. Logo em `server/assets/cruzeiro-virtual.png`.
+- Rotas do aluno: `GET /api/meu-semestre/imagem.svg` e `.png`, só com `req.aluno.id`. Botão “Baixar meu plano de estudos” na tela já existente. Cache em `csu_semestre_imagens` + arquivos em `PLAN_IMAGE_OUTPUT_DIR` (volume, não pasta pública).
+- Worker interno (concorrência 2–3, `FOR UPDATE SKIP LOCKED`). Admin `POST /api/admin/planos-imagens/gerar-lote` retorna na hora; `GET .../status` mostra totais. `PLAN_IMAGE_AUTO_SYNC=true` processa alunos novos a cada `PLAN_IMAGE_SYNC_INTERVAL_MIN`.
+
+**Contexto**
+- Meu Semestre já existia. A imagem é só uma projeção visual dos mesmos dados.
+
+**Alternativas descartadas**
+- n8n / geração por IA.
+- Recriar tabelas/tela de Meu Semestre.
+- Expor `/data/planos-estudos` como estático.
+
+**Impacto**
+- EasyPanel precisa montar volume em `/data/planos-estudos` e definir as três variáveis. Schema da tabela nova sobe no boot (`CREATE TABLE IF NOT EXISTS`).
+

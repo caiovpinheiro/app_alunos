@@ -232,6 +232,23 @@ async function ensureSchema(pool) {
     CREATE INDEX IF NOT EXISTS idx_csu_semestre_itens_plano ON csu_semestre_itens (plano_id, tipo, ordem);
     CREATE INDEX IF NOT EXISTS idx_csu_semestre_eventos_plano ON csu_semestre_eventos (plano_id, data_inicio);
     CREATE INDEX IF NOT EXISTS idx_csu_semestre_mensalidades_aluno ON csu_semestre_mensalidades (aluno_id, vencimento);
+
+    CREATE TABLE IF NOT EXISTS csu_semestre_imagens (
+      id SERIAL PRIMARY KEY,
+      aluno_id INTEGER NOT NULL REFERENCES csu_alunos(id) ON DELETE CASCADE,
+      plano_id INTEGER NOT NULL REFERENCES csu_semestre_planos(id) ON DELETE CASCADE,
+      data_hash TEXT NOT NULL,
+      file_path TEXT,
+      status TEXT NOT NULL DEFAULT 'pendente',
+      error_message TEXT,
+      generated_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      CONSTRAINT csu_semestre_imagens_status_chk CHECK (status IN ('pendente', 'processando', 'concluida', 'erro')),
+      UNIQUE (aluno_id, plano_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_csu_semestre_imagens_status ON csu_semestre_imagens (status, updated_at);
   `);
   await pool.query(`
     ALTER TABLE csu_sync_state

@@ -90,6 +90,23 @@ window.Api = (function () {
     return request('/api/atendimento', { headers: authHeaders() });
   }
 
+  async function downloadPlanoPng() {
+    var res;
+    try {
+      res = await fetch('/api/meu-semestre/imagem.png', { headers: authHeaders() });
+    } catch (networkErr) {
+      throw new Error('Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.');
+    }
+    if (!res.ok) {
+      var body = null;
+      try { body = await res.json(); } catch (e) { /* ignore */ }
+      var err = new Error((body && body.message) || 'Não foi possível baixar o plano de estudos.');
+      err.status = res.status;
+      throw err;
+    }
+    return res.blob();
+  }
+
   async function createIndicacao(payload) {
     return request('/api/indicacoes', {
       method: 'POST',
@@ -109,6 +126,7 @@ window.Api = (function () {
     markAvisoRead: markAvisoRead,
     listTutoriais: listTutoriais,
     getMeuSemestre: getMeuSemestre,
+    downloadPlanoPng: downloadPlanoPng,
     getAtendimento: getAtendimento,
     createIndicacao: createIndicacao,
   };
