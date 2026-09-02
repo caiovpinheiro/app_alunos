@@ -2,7 +2,7 @@
 window.UI = (function () {
   'use strict';
 
-  var SCREENS = ['login-page', 'first-access-page', 'dashboard-page', 'avisos-page', 'tutoriais-page', 'atendimento-page', 'form-page', 'success-page'];
+  var SCREENS = ['login-page', 'first-access-page', 'dashboard-page', 'meu-semestre-page', 'avisos-page', 'tutoriais-page', 'atendimento-page', 'form-page', 'success-page'];
   var PUBLIC_SCREENS = ['login-page', 'first-access-page'];
 
   function showScreen(screenId) {

@@ -54,4 +54,21 @@
 - CRM completo de indicações.
 
 **Impacto**
-- EasyPanel: novas env `ADMIN_*`, `WHATSAPP_*_PADRAO`, `INDICACAO_WEBHOOK_URL`. Porta do container continua 80.
+### 2026-09-02 - Meu Semestre (área autenticada)
+
+**Decisão**
+- Nova tela `meu-semestre-page` + card de destaque no dashboard, no stack atual (HTML/CSS/JS vanilla, Express, Postgres). Sem React e sem progresso/porcentagem de atividades.
+- Tabelas `csu_semestre_planos`, `csu_semestre_itens`, `csu_semestre_eventos` e `csu_semestre_mensalidades` via `CREATE TABLE IF NOT EXISTS`. API `GET /api/meu-semestre` autenticada: aluno só por `req.aluno.id`, curso só de `csu_alunos`.
+- Dados acadêmicos 2026/2 (Administração) em `sql/seed_meu_semestre.sql`; mensalidade do Atol em `sql/seed_meu_semestre_atol.sql`. Nenhum seed roda no boot.
+
+**Contexto**
+- Primeira fatia acadêmica/financeira do portal. CRUD admin e conciliação automática de pagamentos ficam para etapa seguinte.
+
+**Alternativas descartadas**
+- Importar o protótipo React/shadcn do zip (quebra a arquitetura e a spec).
+- Aceitar `aluno_id` no frontend (risco de IDOR).
+- Executar o SQL acadêmico no `ensureSchema` (produção não deve popular sozinha).
+
+**Impacto**
+- Operação precisa rodar os SQL manuais após o deploy. Aluno sem `curso` em `csu_alunos` ou sem plano do curso vê estado vazio. Mensalidades são por aluno, não por curso.
+

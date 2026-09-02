@@ -170,6 +170,68 @@ async function ensureSchema(pool) {
       revoked_count INTEGER,
       synced_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
+
+    CREATE TABLE IF NOT EXISTS csu_semestre_planos (
+      id SERIAL PRIMARY KEY,
+      curso TEXT NOT NULL,
+      periodo TEXT NOT NULL,
+      titulo TEXT NOT NULL,
+      ativo BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      UNIQUE (curso, periodo)
+    );
+
+    CREATE TABLE IF NOT EXISTS csu_semestre_itens (
+      id SERIAL PRIMARY KEY,
+      plano_id INTEGER NOT NULL REFERENCES csu_semestre_planos(id) ON DELETE CASCADE,
+      tipo TEXT NOT NULL,
+      titulo TEXT NOT NULL,
+      descricao TEXT,
+      mes TEXT,
+      data_inicio DATE,
+      data_fim DATE,
+      prova_inicio DATE,
+      prova_fim DATE,
+      prazo DATE,
+      prazo_preferencial DATE,
+      tutorial_categoria TEXT,
+      tutorial_hint TEXT,
+      destaque BOOLEAN NOT NULL DEFAULT FALSE,
+      ordem INTEGER NOT NULL DEFAULT 0,
+      CONSTRAINT csu_semestre_itens_tipo_chk CHECK (tipo IN ('disciplina', 'atividade', 'avaliacao_integrada')),
+      UNIQUE (plano_id, tipo, titulo)
+    );
+
+    CREATE TABLE IF NOT EXISTS csu_semestre_eventos (
+      id SERIAL PRIMARY KEY,
+      plano_id INTEGER NOT NULL REFERENCES csu_semestre_planos(id) ON DELETE CASCADE,
+      titulo TEXT NOT NULL,
+      subtitulo TEXT,
+      data_inicio DATE NOT NULL,
+      data_fim DATE,
+      tipo TEXT NOT NULL,
+      ordem INTEGER NOT NULL DEFAULT 0,
+      CONSTRAINT csu_semestre_eventos_tipo_chk CHECK (tipo IN (
+        'prova', 'prazo', 'financeiro', 'encerramento', 'recuperacao', 'divulgacao', 'disciplina'
+      )),
+      UNIQUE (plano_id, titulo, data_inicio)
+    );
+
+    CREATE TABLE IF NOT EXISTS csu_semestre_mensalidades (
+      id SERIAL PRIMARY KEY,
+      aluno_id INTEGER NOT NULL REFERENCES csu_alunos(id) ON DELETE CASCADE,
+      referencia TEXT NOT NULL,
+      status TEXT NOT NULL,
+      vencimento DATE NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      CONSTRAINT csu_semestre_mensalidades_status_chk CHECK (status IN ('aberto', 'pago', 'atrasado')),
+      UNIQUE (aluno_id, referencia)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_csu_semestre_planos_curso ON csu_semestre_planos (lower(curso), periodo);
+    CREATE INDEX IF NOT EXISTS idx_csu_semestre_itens_plano ON csu_semestre_itens (plano_id, tipo, ordem);
+    CREATE INDEX IF NOT EXISTS idx_csu_semestre_eventos_plano ON csu_semestre_eventos (plano_id, data_inicio);
+    CREATE INDEX IF NOT EXISTS idx_csu_semestre_mensalidades_aluno ON csu_semestre_mensalidades (aluno_id, vencimento);
   `);
   await pool.query(`
     ALTER TABLE csu_sync_state

@@ -65,6 +65,7 @@
       document.getElementById('login-form').reset();
       UI.showScreen('dashboard-page');
       window.Avisos.refresh();
+      if (window.MeuSemestre) window.MeuSemestre.refresh();
     } catch (err) {
       UI.showLoginError(err.status === 401
         ? 'Credenciais inválidas. Verifique seu acesso e tente novamente.'
@@ -96,6 +97,7 @@
       document.getElementById('register-form').reset();
       UI.showScreen('dashboard-page');
       window.Avisos.refresh();
+      if (window.MeuSemestre) window.MeuSemestre.refresh();
     } catch (err) {
       if (err.details) UI.showFieldErrors(mapRegisterErrors(err.details));
       UI.showRegisterError(err.message || 'Não foi possível concluir o cadastro. Tente novamente.');
@@ -297,11 +299,13 @@
     window.Avisos.init();
     window.Tutoriais.init();
     window.Atendimento.init();
+    if (window.MeuSemestre) window.MeuSemestre.init();
 
     if (window.Auth.isAuthenticated()) {
       window.UI.setUserName(window.Auth.getUserName());
       window.UI.showScreen('dashboard-page');
       window.Avisos.refresh();
+      if (window.MeuSemestre) window.MeuSemestre.refresh();
     } else {
       window.UI.showScreen('login-page');
     }
@@ -320,6 +324,9 @@
     window.UI.showScreen(id);
     if ((id === 'dashboard-page' || id === 'avisos-page') && window.Avisos) {
       window.Avisos.refresh();
+    }
+    if ((id === 'dashboard-page' || id === 'meu-semestre-page') && window.MeuSemestre) {
+      window.MeuSemestre.refresh();
     }
     if (id === 'tutoriais-page' && window.Tutoriais) window.Tutoriais.refresh();
     if (id === 'atendimento-page' && window.Atendimento) window.Atendimento.refresh();
