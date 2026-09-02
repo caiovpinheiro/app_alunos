@@ -47,13 +47,27 @@ window.MeuSemestre = (function () {
     return months[p.month - 1] || '';
   }
 
-  function emptyDash() {
+  function soonHtml(compact) {
     return (
-      '<p class="ms-muted">Ainda não há um semestre cadastrado para o seu curso.</p>' +
-      '<button type="button" onclick="showScreen(\'meu-semestre-page\')" class="btn-plastic dash-card-btn w-full flex items-center justify-center gap-2 bg-gray-50 text-cruzeiro font-semibold py-2.5 rounded-lg">' +
-        '<span class="btn-plastic-label">Ver Meu Semestre</span>' +
-        '<i data-lucide="chevron-right" class="w-4 h-4"></i>' +
-      '</button>'
+      '<div class="ms-soon">' +
+        '<span class="ms-soon-pill">Em breve</span>' +
+        '<p>Em breve você poderá organizar seu semestre por aqui.</p>' +
+        (compact
+          ? '<button type="button" onclick="showScreen(\'meu-semestre-page\')" class="btn-plastic dash-card-btn w-full flex items-center justify-center gap-2 bg-gray-50 text-cruzeiro font-semibold py-2.5 rounded-lg">' +
+              '<span class="btn-plastic-label">Ver Meu Semestre</span>' +
+              '<i data-lucide="chevron-right" class="w-4 h-4"></i>' +
+            '</button>'
+          : '') +
+      '</div>'
+    );
+  }
+
+  function offlineHtml() {
+    return (
+      '<div class="ms-soon">' +
+        '<span class="ms-soon-pill ms-soon-pill--off">Fora do ar</span>' +
+        '<p>Opção fora do ar. Tente novamente em instantes.</p>' +
+      '</div>'
     );
   }
 
@@ -71,7 +85,7 @@ window.MeuSemestre = (function () {
     var wrap = document.getElementById('dashboard-semestre-body');
     if (!wrap) return;
     if (!cache || !cache.plano) {
-      wrap.innerHTML = emptyDash();
+      wrap.innerHTML = soonHtml(true);
       if (window.lucide) window.lucide.createIcons();
       return;
     }
@@ -217,10 +231,9 @@ window.MeuSemestre = (function () {
     if (!cache.plano) {
       root.innerHTML =
         '<div class="ms-empty">' +
+          '<span class="ms-soon-pill">Em breve</span>' +
           '<h2>Meu Semestre</h2>' +
-          '<p>Ainda não há um plano acadêmico cadastrado para o seu curso' +
-            (cache.curso ? ' (' + escapeHtml(cache.curso) + ')' : '') +
-          '.</p>' +
+          '<p>Em breve você poderá organizar seu semestre por aqui.</p>' +
         '</div>';
       return;
     }
@@ -267,9 +280,10 @@ window.MeuSemestre = (function () {
       )
       : (
         '<article class="ms-pay">' +
+          '<span class="ms-soon-pill">Em breve</span>' +
           '<small>Situação financeira</small>' +
-          '<h2>Nenhum pagamento em aberto</h2>' +
-          '<p>' + escapeHtml(cache.aviso_pagamento) + '</p>' +
+          '<h2>Pagamentos</h2>' +
+          '<p class="ms-muted">Em breve você poderá acompanhar seus pagamentos por aqui.</p>' +
         '</article>'
       );
 
@@ -332,8 +346,8 @@ window.MeuSemestre = (function () {
       '<section class="ms-section">' +
         '<div class="ms-section-title"><div><p class="ms-eyebrow">Financeiro</p><h3>Situação financeira</h3></div></div>' +
         '<article class="ms-finance">' +
-          (financeList || '<p class="ms-muted">Nenhuma mensalidade cadastrada para o seu usuário.</p>') +
-          '<p class="ms-dash-note">' + escapeHtml(cache.aviso_pagamento) + '</p>' +
+          (financeList || '<p class="ms-muted">Em breve você poderá acompanhar seus pagamentos por aqui.</p>') +
+          (financeList ? '<p class="ms-dash-note">' + escapeHtml(cache.aviso_pagamento) + '</p>' : '') +
         '</article>' +
       '</section>';
 
@@ -350,9 +364,17 @@ window.MeuSemestre = (function () {
     } catch (err) {
       cache = null;
       var dash = document.getElementById('dashboard-semestre-body');
-      if (dash) dash.innerHTML = '<p class="ms-muted">Não foi possível carregar o semestre agora.</p>' + emptyDash();
+      if (dash) dash.innerHTML = offlineHtml();
       var page = document.getElementById('meu-semestre-content');
-      if (page) page.innerHTML = '<p class="aviso-empty">Não foi possível carregar o semestre agora.</p>';
+      if (page) {
+        page.innerHTML =
+          '<div class="ms-empty">' +
+            '<span class="ms-soon-pill ms-soon-pill--off">Fora do ar</span>' +
+            '<h2>Meu Semestre</h2>' +
+            '<p>Opção fora do ar. Tente novamente em instantes.</p>' +
+          '</div>';
+      }
+      if (window.lucide) window.lucide.createIcons();
       return;
     }
     renderDashboard();
