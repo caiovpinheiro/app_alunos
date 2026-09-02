@@ -4,14 +4,15 @@
 
 - Trabalhe **somente em `main`**. Commit e push direto nela.
 - **Nunca** crie branch, PR, fork ou `cursor/...-f9ae` neste repositório.
-- Push em `main` dispara `.github/workflows/deploy.yml`, que chama o webhook do EasyPanel (`secrets.EASYPANEL_DEPLOY_APP`).
+- Push em `main` dispara `.github/workflows/deploy.yml`: publica `ghcr.io/caiovpinheiro/app_alunos:latest` e chama o webhook do EasyPanel (`secrets.EASYPANEL_DEPLOY_APP`).
 - Não invente outro fluxo de deploy (n8n, branch de homologação, etc.) sem pedido explícito.
 
 ### 2026-09-02 - Deploy na `main` via GitHub Actions + EasyPanel
 
 **Decisão**
 - Produção é `main`. Agentes e humanos não abrem branch/PR para este repo.
-- CI em push/`workflow_dispatch` faz POST na Deployment Trigger URL guardada no secret `EASYPANEL_DEPLOY_APP`. A URL não vai para o código.
+- CI em push/`workflow_dispatch` builda a imagem, envia para `ghcr.io/caiovpinheiro/app_alunos:latest` (e tag do SHA) e depois faz POST na Deployment Trigger URL (`EASYPANEL_DEPLOY_APP`). A URL não vai para o código.
+- No EasyPanel, Source = Docker Image `ghcr.io/caiovpinheiro/app_alunos:latest`.
 
 **Contexto**
 - EasyPanel já tem o app e o secret no GitHub. Faltava o workflow e a regra de não ramificar.
