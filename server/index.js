@@ -12,6 +12,7 @@ const adminAuth = require('./adminAuth');
 const { UNIDADES } = require('./unidades');
 const matriculados = require('./matriculados');
 const syncAcessos = require('./sync-acessos');
+const meuSemestre = require('./meuSemestre');
 const app = express();
 const PORT = Number(process.env.PORT) || 80;
 
@@ -459,6 +460,17 @@ app.get('/api/tutoriais/:id', authMiddleware, async (req, res) => {
   } catch (err) {
     console.error('Falha ao abrir tutorial:', err.message);
     return res.status(500).json({ success: false, message: 'Não foi possível abrir o tutorial.' });
+  }
+});
+
+app.get('/api/meu-semestre', authMiddleware, async (req, res) => {
+  if (!pool) return unavailable(res);
+  try {
+    const data = await meuSemestre.getMeuSemestre(pool, req.aluno.id);
+    return res.json({ success: true, ...data });
+  } catch (err) {
+    console.error('Falha ao carregar Meu Semestre:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível carregar o semestre.' });
   }
 });
 

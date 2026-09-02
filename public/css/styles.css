@@ -415,6 +415,10 @@ header.bg-white.border-b {
     grid-row: span 1;
   }
 
+  .bento-semestre {
+    grid-column: 1 / -1;
+  }
+
   .bento-avisos {
     grid-column: span 2;
     grid-row: span 2;
@@ -434,6 +438,10 @@ header.bg-white.border-b {
   .bento-feature {
     grid-column: span 2;
     min-height: 220px;
+  }
+
+  .bento-semestre {
+    grid-column: 1 / -1;
   }
 
   .bento-avisos {
@@ -469,6 +477,16 @@ header.bg-white.border-b {
   min-height: 0;
 }
 
+.bento-semestre .ms-dash-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.bento-semestre .ms-dash-body .dash-card-btn {
+  margin-top: auto;
+}
+
 #dashboard-page.is-entering .bento-welcome {
   animation: rise-in 520ms var(--csu-ease) both;
 }
@@ -482,10 +500,11 @@ header.bg-white.border-b {
   animation-duration: 700ms;
 }
 
-#dashboard-page.is-entering .bento-feature { animation-delay: 70ms; }
-#dashboard-page.is-entering .bento-avisos { animation-delay: 140ms; }
-#dashboard-page.is-entering .bento-tutoriais { animation-delay: 210ms; }
-#dashboard-page.is-entering .bento-atendimento { animation-delay: 280ms; }
+#dashboard-page.is-entering .bento-semestre { animation-delay: 40ms; }
+#dashboard-page.is-entering .bento-feature { animation-delay: 110ms; }
+#dashboard-page.is-entering .bento-avisos { animation-delay: 180ms; }
+#dashboard-page.is-entering .bento-tutoriais { animation-delay: 250ms; }
+#dashboard-page.is-entering .bento-atendimento { animation-delay: 320ms; }
 
 @keyframes bento-pop {
   from {
@@ -624,6 +643,12 @@ header.bg-white.border-b {
   background-color: #15803d !important;
   background-image: linear-gradient(145deg, #22c55e, #15803d 55%, #166534) !important;
   box-shadow: 0 10px 18px rgba(21, 128, 61, 0.28);
+}
+
+.dash-card:hover .dash-card-icon--sky {
+  background-color: #0369a1 !important;
+  background-image: linear-gradient(145deg, #38bdf8, #0284c7 55%, #0369a1) !important;
+  box-shadow: 0 10px 18px rgba(3, 105, 161, 0.28);
 }
 
 .dash-card:hover h3 {
@@ -1453,6 +1478,581 @@ textarea:focus {
   background-image: linear-gradient(145deg, #0a63c2, var(--csu-blue) 55%, var(--csu-blue-deep)) !important;
   color: #fff !important;
   box-shadow: 0 12px 22px rgba(0, 74, 153, 0.28);
+}
+
+/* Meu Semestre */
+.ms-muted {
+  color: var(--csu-muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.ms-dash-kicker {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #0284c7;
+  background: #e0f2fe;
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+.ms-dash-facts {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px 16px;
+  margin: 0 0 12px;
+}
+
+@media (min-width: 768px) {
+  .ms-dash-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.ms-dash-fact dt {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #0284c7;
+  margin-bottom: 2px;
+}
+
+.ms-dash-fact dd {
+  margin: 0;
+  color: var(--csu-ink);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.ms-dash-note {
+  font-size: 12px;
+  color: var(--csu-muted);
+  margin: 0 0 14px;
+}
+
+.ms-page-head {
+  margin-bottom: 22px;
+}
+
+.ms-page-head h2 {
+  font-size: clamp(1.6rem, 3vw, 2.1rem);
+  font-weight: 800;
+  color: var(--csu-blue-deep);
+  letter-spacing: -0.03em;
+  margin: 4px 0 6px;
+}
+
+.ms-eyebrow {
+  margin: 0;
+  color: #0284c7;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.ms-hero,
+.ms-bottom {
+  display: grid;
+  gap: 16px;
+}
+
+@media (min-width: 900px) {
+  .ms-hero {
+    grid-template-columns: minmax(0, 1.55fr) minmax(260px, 0.75fr);
+  }
+
+  .ms-bottom {
+    grid-template-columns: 1.2fr 0.8fr;
+    align-items: start;
+  }
+
+  .ms-guides {
+    position: sticky;
+    top: 88px;
+  }
+}
+
+.ms-now,
+.ms-pay,
+.ms-calendar,
+.ms-guides,
+.ms-finance,
+.ms-integrated,
+.ms-subject,
+.ms-obligation {
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid var(--csu-line);
+  border-radius: 20px;
+  box-shadow: var(--csu-shadow);
+}
+
+.ms-now,
+.ms-pay,
+.ms-calendar,
+.ms-guides,
+.ms-finance,
+.ms-integrated {
+  padding: 22px;
+}
+
+.ms-now {
+  background:
+    radial-gradient(circle at 100% 0, rgba(14, 165, 233, 0.16) 0, transparent 42%),
+    #fff;
+}
+
+.ms-card-heading {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.ms-icon-box {
+  min-width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  background: var(--csu-blue-soft);
+  color: var(--csu-blue);
+}
+
+.ms-icon-amber {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.ms-card-heading small,
+.ms-pay > small,
+.ms-integrated small {
+  color: #0284c7;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.ms-card-heading h2,
+.ms-pay h2,
+.ms-integrated h3,
+.ms-guides h3,
+.ms-section-title h3 {
+  margin: 5px 0 0;
+  color: var(--csu-blue-deep);
+  letter-spacing: -0.025em;
+  font-weight: 800;
+}
+
+.ms-card-heading h2 {
+  font-size: clamp(1.2rem, 2.2vw, 1.85rem);
+  max-width: 36rem;
+}
+
+.ms-date-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 28px;
+  margin: 22px 0 0 58px;
+  color: var(--csu-muted);
+  font-size: 0.9rem;
+}
+
+.ms-date-row span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.ms-date-row strong {
+  color: var(--csu-ink);
+}
+
+.ms-pay {
+  border-top: 4px solid #facc15;
+}
+
+.ms-pay-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.ms-pill {
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.ms-pay h2 {
+  font-size: 1.35rem;
+}
+
+.ms-pay-date {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 8px;
+}
+
+.ms-pay-date > strong {
+  font-size: 2.6rem;
+  line-height: 1;
+  color: var(--csu-blue-deep);
+  letter-spacing: -0.05em;
+}
+
+.ms-pay-date span {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #0284c7;
+}
+
+.ms-pay-date small {
+  font-size: 10px;
+  color: var(--csu-muted);
+}
+
+.ms-pay p,
+.ms-integrated p {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #3f6212;
+  font-size: 13px;
+  margin: 13px 0 0;
+}
+
+.ms-section {
+  margin-top: 28px;
+}
+
+.ms-section-title {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.ms-section-title.ms-compact {
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.ms-section-title h3 {
+  font-size: 1.3rem;
+}
+
+.ms-timeline {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 1024px) {
+  .ms-timeline {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.ms-subject {
+  padding: 16px;
+  display: grid;
+  grid-template-columns: 51px 1fr;
+  gap: 12px;
+  min-height: 168px;
+}
+
+.ms-subject.is-current {
+  border: 2px solid #7dd3fc;
+  box-shadow: 0 9px 25px rgba(3, 105, 161, 0.08);
+}
+
+.ms-month {
+  width: 51px;
+  height: 51px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: var(--csu-blue-soft);
+  color: var(--csu-blue);
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.ms-subject.is-current .ms-month {
+  background: var(--csu-blue);
+  color: #fff;
+}
+
+.ms-tag {
+  color: #0284c7;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.ms-subject-copy h3 {
+  margin: 5px 0 8px;
+  color: var(--csu-blue-deep);
+  font-size: 1rem;
+  line-height: 1.3;
+}
+
+.ms-subject-copy > span {
+  color: var(--csu-muted);
+  font-size: 12px;
+}
+
+.ms-exam {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--csu-line);
+  padding-top: 12px;
+}
+
+.ms-exam small {
+  color: var(--csu-muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.ms-exam strong {
+  color: var(--csu-blue);
+  font-size: 13px;
+}
+
+.ms-obligations {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .ms-obligations {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.ms-obligation {
+  padding: 18px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.ms-obligation-icon {
+  min-width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--csu-blue-soft);
+  color: var(--csu-blue);
+}
+
+.ms-obligation h3 {
+  margin: 0 0 6px;
+  color: var(--csu-blue-deep);
+  font-size: 1rem;
+}
+
+.ms-obligation p {
+  margin: 0 0 8px;
+  color: var(--csu-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.ms-text-link,
+.ms-guide-link,
+.ms-secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--csu-blue);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ms-integrated {
+  background:
+    linear-gradient(135deg, rgba(0, 74, 153, 0.08), rgba(255, 255, 255, 0.96) 45%),
+    #fff;
+  border-color: rgba(0, 74, 153, 0.16);
+}
+
+.ms-integrated h3 {
+  font-size: 1.25rem;
+  max-width: 40rem;
+}
+
+.ms-event {
+  display: grid;
+  grid-template-columns: 48px 1fr 10px;
+  gap: 13px;
+  align-items: center;
+  padding: 12px 0;
+  border-top: 1px solid var(--csu-line);
+}
+
+.ms-event > div {
+  width: 46px;
+  height: 46px;
+  border-radius: 11px;
+  background: #f1f5f9;
+  display: grid;
+  place-content: center;
+  text-align: center;
+}
+
+.ms-event > div strong {
+  color: var(--csu-blue-deep);
+  font-size: 19px;
+  line-height: 1;
+}
+
+.ms-event > div span {
+  color: #0284c7;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.ms-event p {
+  margin: 0;
+  display: grid;
+  gap: 3px;
+  font-size: 13px;
+}
+
+.ms-event small {
+  color: var(--csu-muted);
+  font-size: 11px;
+}
+
+.ms-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 99px;
+}
+
+.ms-dot-amber { background: #facc15; }
+.ms-dot-blue { background: #38bdf8; }
+.ms-dot-navy { background: var(--csu-blue-deep); }
+
+.ms-guides {
+  background: linear-gradient(145deg, #0d478e, #082c61);
+  color: #fff;
+}
+
+.ms-guides .ms-eyebrow {
+  color: #96c9f4;
+}
+
+.ms-guides h3 {
+  color: #fff;
+  font-size: 1.45rem;
+  margin: 12px 0 10px;
+}
+
+.ms-guides > p {
+  max-width: 26rem;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.ms-guide-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.ms-guide-link {
+  display: grid;
+  justify-items: start;
+  gap: 2px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.ms-guide-link small {
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.ms-secondary-btn {
+  margin-top: 6px;
+  width: fit-content;
+  background: #fff;
+  color: var(--csu-blue-deep);
+  border-radius: 11px;
+  padding: 10px 14px;
+}
+
+.ms-finance-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--csu-line);
+}
+
+.ms-finance-row div {
+  display: grid;
+  gap: 2px;
+}
+
+.ms-finance-row span {
+  color: var(--csu-muted);
+  font-size: 13px;
+}
+
+.ms-empty {
+  background: #fff;
+  border: 1px solid var(--csu-line);
+  border-radius: 20px;
+  padding: 28px;
+}
+
+@media (max-width: 640px) {
+  .ms-date-row {
+    margin-left: 0;
+    margin-top: 18px;
+    display: grid;
+  }
+
+  .ms-subject {
+    min-height: 0;
+  }
+
+  .ms-pay-date > strong {
+    font-size: 2.2rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

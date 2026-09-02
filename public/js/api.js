@@ -82,6 +82,10 @@ window.Api = (function () {
     return request('/api/tutoriais', { headers: authHeaders() });
   }
 
+  async function getMeuSemestre() {
+    return request('/api/meu-semestre', { headers: authHeaders() });
+  }
+
   async function getAtendimento() {
     return request('/api/atendimento', { headers: authHeaders() });
   }
@@ -104,6 +108,7 @@ window.Api = (function () {
     countAvisosNaoLidas: countAvisosNaoLidas,
     markAvisoRead: markAvisoRead,
     listTutoriais: listTutoriais,
+    getMeuSemestre: getMeuSemestre,
     getAtendimento: getAtendimento,
     createIndicacao: createIndicacao,
   };
