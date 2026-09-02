@@ -3,6 +3,7 @@ window.MeuSemestre = (function () {
   'use strict';
 
   var cache = null;
+  var downloading = false;
 
   function escapeHtml(text) {
     return String(text == null ? '' : text)
@@ -316,6 +317,10 @@ window.MeuSemestre = (function () {
         '<p class="ms-eyebrow">Meu Semestre</p>' +
         '<h2>Olá, ' + escapeHtml(nome) + '</h2>' +
         '<p class="ms-muted">' + escapeHtml(cache.plano.curso) + ' · ' + escapeHtml(cache.plano.periodo) + '</p>' +
+        '<button type="button" class="btn-plastic ms-download-btn" data-download-plano>' +
+          '<span class="btn-plastic-label">Baixar meu plano de estudos</span>' +
+          '<span class="btn-spinner" aria-hidden="true"></span>' +
+        '</button>' +
       '</header>' +
       '<section class="ms-hero" aria-label="Resumo do semestre">' + heroDisc + heroPay + '</section>' +
       '<section class="ms-section">' +
@@ -381,8 +386,46 @@ window.MeuSemestre = (function () {
     renderPage();
   }
 
+  async function downloadPlan(button) {
+    if (downloading) return;
+    downloading = true;
+    if (button) {
+      button.disabled = true;
+      button.classList.add('is-loading');
+      var label = button.querySelector('.btn-plastic-label');
+      if (label) label.textContent = 'Gerando plano...';
+    }
+    try {
+      var blob = await window.Api.downloadPlanoPng();
+      var url = URL.createObjectURL(blob);
+      var link = document.createElement('a');
+      link.href = url;
+      link.download = 'plano-de-estudos.png';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+    } catch (err) {
+      window.alert(err.message || 'Não foi possível baixar o plano de estudos.');
+    } finally {
+      downloading = false;
+      if (button) {
+        button.disabled = false;
+        button.classList.remove('is-loading');
+        var label = button.querySelector('.btn-plastic-label');
+        if (label) label.textContent = 'Baixar meu plano de estudos';
+      }
+    }
+  }
+
   function init() {
     document.addEventListener('click', function (event) {
+      var download = event.target.closest('[data-download-plano]');
+      if (download) {
+        event.preventDefault();
+        downloadPlan(download);
+        return;
+      }
       var btn = event.target.closest('[data-open-tutoriais]');
       if (!btn) return;
       event.preventDefault();

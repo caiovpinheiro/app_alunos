@@ -13,6 +13,7 @@ const { UNIDADES } = require('./unidades');
 const matriculados = require('./matriculados');
 const syncAcessos = require('./sync-acessos');
 const meuSemestre = require('./meuSemestre');
+const planoImagem = require('./planoImagem');
 const app = express();
 const PORT = Number(process.env.PORT) || 80;
 
@@ -474,6 +475,46 @@ app.get('/api/meu-semestre', authMiddleware, async (req, res) => {
   }
 });
 
+app.get('/api/meu-semestre/imagem.svg', authMiddleware, async (req, res) => {
+  if (!pool) return unavailable(res);
+  return planoImagem.sendAlunoImage(pool, req.aluno.id, 'svg', res);
+});
+
+app.get('/api/meu-semestre/imagem.png', authMiddleware, async (req, res) => {
+  if (!pool) return unavailable(res);
+  return planoImagem.sendAlunoImage(pool, req.aluno.id, 'png', res);
+});
+
+app.post('/api/admin/planos-imagens/gerar-lote', requireAdmin, async (req, res) => {
+  if (!pool) return unavailable(res);
+  try {
+    const result = await planoImagem.startBatch(pool);
+    return res.json({
+      success: true,
+      message: result.started || result.running
+        ? 'Geração em lote iniciada em segundo plano.'
+        : 'Nada novo para gerar agora.',
+      queued: result.queued,
+      total: result.total,
+      running: result.running,
+    });
+  } catch (err) {
+    console.error('Falha ao iniciar lote de planos:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível iniciar a geração em lote.' });
+  }
+});
+
+app.get('/api/admin/planos-imagens/status', requireAdmin, async (req, res) => {
+  if (!pool) return unavailable(res);
+  try {
+    const status = await planoImagem.getStatus(pool);
+    return res.json({ success: true, ...status });
+  } catch (err) {
+    console.error('Falha ao consultar status das imagens:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível consultar o status.' });
+  }
+});
+
 app.get('/api/atendimento', authMiddleware, async (req, res) => {
   if (!pool) return unavailable(res);
   try {
@@ -770,6 +811,7 @@ async function start() {
   }
 
   startAcessosSyncScheduler();
+  planoImagem.startAutoSync(pool);
 }
 
 let acessosSyncRunning = false;
