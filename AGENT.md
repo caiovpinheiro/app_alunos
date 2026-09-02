@@ -90,3 +90,18 @@
 **Impacto**
 - EasyPanel precisa montar volume em `/data/planos-estudos` e definir as três variáveis. Schema da tabela nova sobe no boot (`CREATE TABLE IF NOT EXISTS`).
 
+### 2026-09-02 - Rotas por tela (`/meu-semestre`, `/tutoriais`, …)
+
+**Decisão**
+- Cada tela do portal tem URL própria via History API. O servidor devolve `index.html` nesses caminhos. `/admin` permanece separado.
+
+**Contexto**
+- Antes tudo vivia em `/`; o aluno não conseguia abrir ou compartilhar uma tela específica.
+
+**Alternativas descartadas**
+- Hash (`#/tutoriais`).
+- Framework de rotas.
+
+**Impacto**
+- Recarregar `/meu-semestre` ou `/tutoriais` funciona. Sem sessão, a URL é lembrada e o aluno volta para ela depois do login.
+

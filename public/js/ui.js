@@ -4,10 +4,90 @@ window.UI = (function () {
 
   var SCREENS = ['login-page', 'first-access-page', 'dashboard-page', 'meu-semestre-page', 'avisos-page', 'tutoriais-page', 'atendimento-page', 'form-page', 'success-page'];
   var PUBLIC_SCREENS = ['login-page', 'first-access-page'];
+  var PATHS = {
+    'login-page': '/login',
+    'first-access-page': '/primeiro-acesso',
+    'dashboard-page': '/inicio',
+    'meu-semestre-page': '/meu-semestre',
+    'avisos-page': '/avisos',
+    'tutoriais-page': '/tutoriais',
+    'atendimento-page': '/atendimento',
+    'form-page': '/certificado',
+    'success-page': '/sucesso',
+  };
+  var TITLES = {
+    'login-page': 'Entrar',
+    'first-access-page': 'Primeiro acesso',
+    'dashboard-page': 'Início',
+    'meu-semestre-page': 'Meu Semestre',
+    'avisos-page': 'Avisos',
+    'tutoriais-page': 'Tutoriais',
+    'atendimento-page': 'Atendimento',
+    'form-page': 'Certificado',
+    'success-page': 'Certificado gerado',
+  };
+  var RETURN_KEY = 'csu_return_to';
 
-  function showScreen(screenId) {
+  function normalizePath(pathname) {
+    var raw = String(pathname || '/').split('?')[0].split('#')[0];
+    var p = raw.replace(/\/+$/, '');
+    return p || '/';
+  }
+
+  function screenFromPath(pathname) {
+    var p = normalizePath(pathname);
+    if (p === '/' || p === '/inicio') return 'dashboard-page';
+    var found = null;
+    Object.keys(PATHS).some(function (id) {
+      if (PATHS[id] === p) {
+        found = id;
+        return true;
+      }
+      return false;
+    });
+    return found || 'dashboard-page';
+  }
+
+  function titleFor(screenId) {
+    var label = TITLES[screenId] || 'Área do Aluno';
+    return label + ' | Cruzeiro do Sul Educacional';
+  }
+
+  function syncUrl(screenId, options) {
+    options = options || {};
+    var path = PATHS[screenId];
+    if (!path) return;
+    document.title = titleFor(screenId);
+    if (options.skipHistory) return;
+    if (normalizePath(window.location.pathname) === path) return;
+    var state = { screen: screenId };
+    if (options.replace) window.history.replaceState(state, '', path);
+    else window.history.pushState(state, '', path);
+  }
+
+  function rememberReturn(path) {
+    try { sessionStorage.setItem(RETURN_KEY, path); } catch (err) { /* ignore */ }
+  }
+
+  function takeReturnPath() {
+    try {
+      var value = sessionStorage.getItem(RETURN_KEY);
+      sessionStorage.removeItem(RETURN_KEY);
+      return value;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function showScreen(screenId, options) {
+    options = options || {};
+    if (SCREENS.indexOf(screenId) === -1) screenId = 'dashboard-page';
     if (PUBLIC_SCREENS.indexOf(screenId) === -1 && !window.Auth.isAuthenticated()) {
+      rememberReturn(PATHS[screenId] || normalizePath(window.location.pathname));
       screenId = 'login-page';
+    }
+    if (window.Auth.isAuthenticated() && PUBLIC_SCREENS.indexOf(screenId) !== -1) {
+      screenId = 'dashboard-page';
     }
 
     var previous = null;
@@ -35,6 +115,7 @@ window.UI = (function () {
 
     if (window.lucide) window.lucide.createIcons();
     window.scrollTo(0, 0);
+    syncUrl(screenId, options);
   }
 
   function setUserName(name) {
@@ -206,6 +287,9 @@ window.UI = (function () {
 
   return {
     showScreen: showScreen,
+    screenFromPath: screenFromPath,
+    takeReturnPath: takeReturnPath,
+    PATHS: PATHS,
     setUserName: setUserName,
     setLoginLoading: setLoginLoading,
     initCubeFlip: initCubeFlip,
