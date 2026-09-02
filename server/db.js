@@ -239,6 +239,7 @@ async function ensureSchema(pool) {
       plano_id INTEGER NOT NULL REFERENCES csu_semestre_planos(id) ON DELETE CASCADE,
       data_hash TEXT NOT NULL,
       file_path TEXT,
+      imagem_png BYTEA,
       status TEXT NOT NULL DEFAULT 'pendente',
       error_message TEXT,
       generated_at TIMESTAMPTZ,
@@ -253,6 +254,10 @@ async function ensureSchema(pool) {
   await pool.query(`
     ALTER TABLE csu_semestre_imagens
     ADD COLUMN IF NOT EXISTS share_token TEXT
+  `);
+  await pool.query(`
+    ALTER TABLE csu_semestre_imagens
+    ADD COLUMN IF NOT EXISTS imagem_png BYTEA
   `);
   await pool.query(`
     CREATE UNIQUE INDEX IF NOT EXISTS idx_csu_semestre_imagens_share

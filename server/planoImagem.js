@@ -489,21 +489,22 @@ function publicImageUrl(req, token) {
   return `${base}/p/plano/${token}.png`;
 }
 
-async function upsertRow(pool, { alunoId, planoId, hash, status, filePath, errorMessage }) {
+async function upsertRow(pool, { alunoId, planoId, hash, status, filePath, errorMessage, imagePng }) {
   const result = await pool.query(
     `INSERT INTO csu_semestre_imagens
-      (aluno_id, plano_id, data_hash, file_path, status, error_message, share_token, generated_at, updated_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, CASE WHEN $5 = 'concluida' THEN now() ELSE NULL END, now())
+      (aluno_id, plano_id, data_hash, file_path, imagem_png, status, error_message, share_token, generated_at, updated_at)
+     VALUES ($1, $2, $3, $4, $8, $5, $6, $7, CASE WHEN $5 = 'concluida' THEN now() ELSE NULL END, now())
      ON CONFLICT (aluno_id, plano_id) DO UPDATE SET
        data_hash = EXCLUDED.data_hash,
        file_path = EXCLUDED.file_path,
+       imagem_png = CASE WHEN EXCLUDED.status = 'concluida' THEN EXCLUDED.imagem_png ELSE csu_semestre_imagens.imagem_png END,
        status = EXCLUDED.status,
        error_message = EXCLUDED.error_message,
        share_token = COALESCE(csu_semestre_imagens.share_token, EXCLUDED.share_token),
        generated_at = CASE WHEN EXCLUDED.status = 'concluida' THEN now() ELSE csu_semestre_imagens.generated_at END,
        updated_at = now()
      RETURNING id, aluno_id, plano_id, data_hash, file_path, status, share_token`,
-    [alunoId, planoId, hash, filePath || null, status, errorMessage || null, newShareToken()],
+    [alunoId, planoId, hash, filePath || null, status, errorMessage || null, newShareToken(), imagePng || null],
   );
   return result.rows[0];
 }
@@ -517,29 +518,41 @@ async function generateForAluno(pool, alunoId) {
   }
   const hash = hashFingerprint(fingerprint(data));
   const existing = await pool.query(
-    `SELECT id, data_hash, file_path, status, share_token
+    `SELECT id, data_hash, file_path, status, share_token,
+            (imagem_png IS NOT NULL) AS has_imagem
      FROM csu_semestre_imagens
      WHERE aluno_id = $1 AND plano_id = $2
      LIMIT 1`,
     [alunoId, data.plano.id],
   );
   const row = existing.rows[0];
-  if (row && row.status === 'concluida' && row.data_hash === hash && row.file_path) {
+  if (row && row.status === 'concluida' && row.data_hash === hash) {
+    let pngPath = null;
     try {
-      const pngPath = safeFilePath(row.file_path);
-      if (fs.existsSync(pngPath)) {
-        const svgPath = pngPath.replace(/\.png$/i, '.svg');
-        const shareToken = await ensureShareToken(pool, alunoId, data.plano.id);
-        return {
-          hash,
-          pngPath,
-          svgPath: fs.existsSync(svgPath) ? svgPath : null,
-          reused: true,
-          shareToken,
-        };
+      if (row.file_path) {
+        const candidate = safeFilePath(row.file_path);
+        if (fs.existsSync(candidate)) pngPath = candidate;
       }
     } catch (err) {
-      /* regenera se o caminho antigo for inválido */
+      pngPath = null;
+    }
+    if (pngPath && !row.has_imagem) {
+      await pool.query(
+        `UPDATE csu_semestre_imagens
+         SET imagem_png = $3, updated_at = now()
+         WHERE aluno_id = $1 AND plano_id = $2`,
+        [alunoId, data.plano.id, fs.readFileSync(pngPath)],
+      );
+    }
+    if (pngPath || row.has_imagem) {
+      const svgPath = pngPath ? pngPath.replace(/\.png$/i, '.svg') : null;
+      return {
+        hash,
+        pngPath,
+        svgPath: svgPath && fs.existsSync(svgPath) ? svgPath : null,
+        reused: true,
+        shareToken: await ensureShareToken(pool, alunoId, data.plano.id),
+      };
     }
   }
 
@@ -556,7 +569,8 @@ async function generateForAluno(pool, alunoId) {
   fs.mkdirSync(paths.dir, { recursive: true });
   const planData = mapToPlanData(data);
   fs.writeFileSync(paths.svg, renderSvg(planData), 'utf8');
-  await sharp(Buffer.from(renderSvg(planData, { embedFonts: true }))).png().toFile(paths.png);
+  const pngBuffer = await sharp(Buffer.from(renderSvg(planData, { embedFonts: true }))).png().toBuffer();
+  fs.writeFileSync(paths.png, pngBuffer);
   await upsertRow(pool, {
     alunoId,
     planoId: data.plano.id,
@@ -564,6 +578,7 @@ async function generateForAluno(pool, alunoId) {
     status: 'concluida',
     filePath: paths.png,
     errorMessage: null,
+    imagePng: pngBuffer,
   });
   if (row && row.file_path && row.file_path !== paths.png) {
     try {
@@ -591,16 +606,44 @@ function generateForAlunoLocked(pool, alunoId) {
   return pending;
 }
 
+async function sendPngBuffer(pool, alunoId, planoId, res, disposition) {
+  const row = await pool.query(
+    `SELECT imagem_png FROM csu_semestre_imagens
+     WHERE aluno_id = $1 AND plano_id = $2 AND status = 'concluida' AND imagem_png IS NOT NULL
+     LIMIT 1`,
+    [alunoId, planoId],
+  );
+  const buf = row.rows[0] && row.rows[0].imagem_png;
+  if (!buf) return false;
+  res.setHeader('Content-Type', 'image/png');
+  res.setHeader('Content-Disposition', disposition);
+  res.setHeader('Cache-Control', disposition.startsWith('inline') ? 'public, max-age=3600' : 'private, no-store');
+  res.end(buf);
+  return true;
+}
+
 async function sendAlunoImage(pool, alunoId, format, res) {
   try {
     const result = await generateForAlunoLocked(pool, alunoId);
-    const filePath = format === 'svg' ? result.svgPath : result.pngPath;
+    if (format === 'png') {
+      if (result.pngPath && fs.existsSync(result.pngPath)) {
+        res.setHeader('Content-Type', 'image/png');
+        res.setHeader('Content-Disposition', 'attachment; filename="plano-de-estudos.png"');
+        res.setHeader('Cache-Control', 'private, no-store');
+        return res.sendFile(safeFilePath(result.pngPath));
+      }
+      const data = await meuSemestre.getMeuSemestre(pool, alunoId);
+      if (data.plano && await sendPngBuffer(pool, alunoId, data.plano.id, res, 'attachment; filename="plano-de-estudos.png"')) {
+        return;
+      }
+      return res.status(500).json({ success: false, message: 'Não foi possível gerar a imagem.' });
+    }
+    const filePath = result.svgPath;
     if (!filePath || !fs.existsSync(filePath)) {
       return res.status(500).json({ success: false, message: 'Não foi possível gerar a imagem.' });
     }
-    const filename = format === 'svg' ? 'plano-de-estudos.svg' : 'plano-de-estudos.png';
-    res.setHeader('Content-Type', format === 'svg' ? 'image/svg+xml; charset=utf-8' : 'image/png');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="plano-de-estudos.svg"');
     res.setHeader('Cache-Control', 'private, no-store');
     return res.sendFile(safeFilePath(filePath));
   } catch (err) {
@@ -639,18 +682,20 @@ async function sendSharedImage(pool, token, res) {
   }
   try {
     const result = await pool.query(
-      `SELECT file_path, status FROM csu_semestre_imagens WHERE share_token = $1 LIMIT 1`,
+      `SELECT file_path, status, imagem_png FROM csu_semestre_imagens WHERE share_token = $1 LIMIT 1`,
       [token],
     );
     const row = result.rows[0];
-    if (!row || row.status !== 'concluida' || !row.file_path) {
+    if (!row || row.status !== 'concluida') {
       return res.status(404).end();
     }
-    const filePath = safeFilePath(row.file_path);
-    if (!fs.existsSync(filePath)) return res.status(404).end();
     res.setHeader('Content-Type', 'image/png');
     res.setHeader('Content-Disposition', 'inline; filename="plano-de-estudos.png"');
     res.setHeader('Cache-Control', 'public, max-age=3600');
+    if (row.imagem_png) return res.end(row.imagem_png);
+    if (!row.file_path) return res.status(404).end();
+    const filePath = safeFilePath(row.file_path);
+    if (!fs.existsSync(filePath)) return res.status(404).end();
     return res.sendFile(filePath);
   } catch (err) {
     console.error('Falha ao servir plano compartilhado:', err.message);
@@ -711,7 +756,8 @@ async function enqueueOutdated(pool) {
   }
 
   const existing = await pool.query(
-    `SELECT aluno_id, plano_id, data_hash, file_path, status
+    `SELECT aluno_id, plano_id, data_hash, file_path, status,
+            (imagem_png IS NOT NULL) AS has_imagem
      FROM csu_semestre_imagens
      WHERE aluno_id = ANY($1::int[])`,
     [eligible.map((row) => row.alunoId)],
@@ -733,15 +779,7 @@ async function enqueueOutdated(pool) {
     const prev = current.get(`${row.alunoId}:${row.planoId}`);
     if (prev && prev.status === 'processando') continue;
     if (prev && prev.status === 'pendente' && prev.data_hash === hash) continue;
-    let fileOk = false;
-    if (prev && prev.file_path && prev.data_hash === hash && prev.status === 'concluida') {
-      try {
-        fileOk = fs.existsSync(safeFilePath(prev.file_path));
-      } catch (err) {
-        fileOk = false;
-      }
-    }
-    if (fileOk) continue;
+    if (prev && prev.status === 'concluida' && prev.data_hash === hash && prev.has_imagem) continue;
     await upsertRow(pool, {
       alunoId: row.alunoId,
       planoId: row.planoId,

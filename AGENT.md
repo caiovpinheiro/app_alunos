@@ -104,6 +104,7 @@
 - Worker interno (concorrência 2–3, `FOR UPDATE SKIP LOCKED`). Admin `POST /api/admin/planos-imagens/gerar-lote` retorna na hora; `GET .../status` mostra totais. `PLAN_IMAGE_AUTO_SYNC=true` processa alunos novos a cada `PLAN_IMAGE_SYNC_INTERVAL_MIN`.
 - Link compartilhável: `share_token` (64 hex) em `csu_semestre_imagens`. `GET /api/meu-semestre/imagem-url` (autenticado) devolve só `{ url }`. Público `GET /p/plano/:token.png` serve a PNG inline, sem gerar de novo. `APP_PUBLIC_URL` no EasyPanel (ex.: `https://aluno.seudominio.com`).
 - Fontes Arimo em `server/assets/fonts/` embutidas no SVG na hora do PNG (evita quadradinhos no Alpine). Fingerprint `v: 2` regenera PNGs antigas.
+- PNG binária em `csu_semestre_imagens.imagem_png` (BYTEA) para o CRM puxar do Postgres. Disco em `/data/planos-estudos` continua como cache. Lote reprocessa concluída sem `imagem_png`.
 
 **Contexto**
 - Meu Semestre já existia. A imagem é só uma projeção visual dos mesmos dados. Quadradinhos vinham da falta de fonte no container.
@@ -115,7 +116,7 @@
 - URL com `aluno_id` (adivinhável / IDOR).
 
 **Impacto**
-- EasyPanel: volume `planos-estudos` em `/data/planos-estudos`; `PLAN_IMAGE_*` e `APP_PUBLIC_URL`. Schema sobe no boot. WhatsApp/e-mail usam o link `/p/plano/<token>.png`.
+- EasyPanel: volume `planos-estudos` em `/data/planos-estudos`; `PLAN_IMAGE_*` e `APP_PUBLIC_URL`. Schema sobe no boot. CRM lê `imagem_png` + `share_token`. WhatsApp/e-mail também podem usar `/p/plano/<token>.png`.
 
 ### 2026-09-02 - Rotas por tela (`/meu-semestre`, `/tutoriais`, …)
 
