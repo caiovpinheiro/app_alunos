@@ -1,5 +1,28 @@
 # AGENT.md — Registro de Decisões
 
+## Fluxo de git (obrigatório)
+
+- Trabalhe **somente em `main`**. Commit e push direto nela.
+- **Nunca** crie branch, PR, fork ou `cursor/...-f9ae` neste repositório.
+- Push em `main` dispara `.github/workflows/deploy.yml`, que chama o webhook do EasyPanel (`secrets.EASYPANEL_DEPLOY_APP`).
+- Não invente outro fluxo de deploy (n8n, branch de homologação, etc.) sem pedido explícito.
+
+### 2026-09-02 - Deploy na `main` via GitHub Actions + EasyPanel
+
+**Decisão**
+- Produção é `main`. Agentes e humanos não abrem branch/PR para este repo.
+- CI em push/`workflow_dispatch` faz POST na Deployment Trigger URL guardada no secret `EASYPANEL_DEPLOY_APP`. A URL não vai para o código.
+
+**Contexto**
+- EasyPanel já tem o app e o secret no GitHub. Faltava o workflow e a regra de não ramificar.
+
+**Alternativas descartadas**
+- Continuar com branches `cursor/*` e merge manual.
+- Auto-deploy só pelo webhook do GitHub no EasyPanel, sem Action visível no repo.
+
+**Impacto**
+- Quem for agente daqui pra frente altera `main` e o deploy sobe sozinho. O secret precisa existir no repositório.
+
 ### 2026-08-19 - Finalização do Portal do Aluno (Certificado da Aula Inaugural)
 
 **Decisão**

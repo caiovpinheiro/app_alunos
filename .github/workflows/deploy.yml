@@ -1,0 +1,35 @@
+name: Deploy EasyPanel
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: easypanel-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Disparar deploy no EasyPanel
+        env:
+          DEPLOY_URL: ${{ secrets.EASYPANEL_DEPLOY_APP }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DEPLOY_URL:-}" ]; then
+            echo "Secret EASYPANEL_DEPLOY_APP não encontrado. Cadastre a Deployment Trigger URL do EasyPanel em Settings → Secrets."
+            exit 1
+          fi
+          code=$(curl -sS -o /tmp/easypanel-deploy-body.txt -w "%{http_code}" -X POST \
+            -H "Content-Type: application/json" \
+            --data "{}" \
+            "$DEPLOY_URL")
+          if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
+            echo "EasyPanel respondeu HTTP $code"
+            exit 1
+          fi
+          echo "Deploy disparado (HTTP $code)."
