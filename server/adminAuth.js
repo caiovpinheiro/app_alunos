@@ -9,22 +9,32 @@ function normalizeEmail(value) {
 }
 
 async function seedAdminIfEmpty(pool) {
-  const count = await pool.query('SELECT COUNT(*)::int AS n FROM csu_admins');
-  if (count.rows[0].n > 0) return false;
-
   const email = normalizeEmail(process.env.ADMIN_EMAIL);
   const password = String(process.env.ADMIN_PASSWORD || '');
   const nome = String(process.env.ADMIN_NOME || 'Administrador').trim() || 'Administrador';
   if (!email || password.length < 6) {
-    console.warn('Nenhum admin criado: defina ADMIN_EMAIL e ADMIN_PASSWORD (mín. 6) no Environment.');
+    const count = await pool.query('SELECT COUNT(*)::int AS n FROM csu_admins');
+    if (count.rows[0].n === 0) {
+      console.warn('Nenhum admin criado: defina ADMIN_EMAIL e ADMIN_PASSWORD (mín. 6) no Environment.');
+    }
     return false;
   }
+
   const pwHash = await bcrypt.hash(password, 12);
+  const existing = await findAdminByEmail(pool, email);
+  if (existing) {
+    await pool.query(
+      `UPDATE csu_admins SET nome = $2, pw_hash = $3, ativo = TRUE WHERE id = $1`,
+      [existing.id, nome, pwHash],
+    );
+    return true;
+  }
+
   await pool.query(
     `INSERT INTO csu_admins (email, nome, pw_hash) VALUES ($1, $2, $3)`,
     [email, nome, pwHash],
   );
-  console.log('Administrador inicial criado em csu_admins (ADMIN_*).');
+  console.log('Administrador criado em csu_admins (ADMIN_*).');
   return true;
 }
 

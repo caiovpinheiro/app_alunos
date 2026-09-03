@@ -132,6 +132,11 @@
 **Impacto**
 - EasyPanel: `MATERIAS_SUPABASE_URL`, `MATERIAS_SUPABASE_KEY`, `APP_PUBLIC_URL`. SQL CRM: join `csu_materias_imagens` + `csu_materias_alunos` + `csu_alunos`.
 
+### 2026-09-03 - Admin do Environment no boot
+
+**Decisão**
+- `seedAdminIfEmpty` passa a garantir o admin de `ADMIN_EMAIL` / `ADMIN_PASSWORD` (cria ou atualiza senha). O registro antigo `admin@local` não é mais o único caminho de login.
+
 ### 2026-09-02 - Rotas por tela (`/meu-semestre`, `/tutoriais`, …)
 
 **Decisão**
