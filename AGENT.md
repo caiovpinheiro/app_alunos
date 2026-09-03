@@ -122,8 +122,9 @@
 
 **Decisão**
 - Tabela espelho `csu_materias_alunos` (sync de `materias_alunos` no Supabase por RGM) e `csu_materias_imagens` (PNG em `imagem_png`, `share_token`, URL pública).
-- Admin: `POST /api/admin/materias-imagens/sync`, `POST .../gerar-lote`, `GET .../status`, `GET .../crm` (lista RGM + URL para Meta).
+- Admin: `POST /api/admin/materias-imagens/sync`, `POST .../gerar-lote`, `GET .../status`, `GET .../crm`, `GET .../export.csv` (RGM, nome, telefone, e-mail, URL). Telefone vem de `matriculados_rows` (`Fone celular`).
 - Cruza RGM com `csu_alunos`; cria aluno placeholder se faltar; atualiza nome vazio a partir do Supabase.
+- Meu Semestre: se o aluno tem `csu_materias_alunos`, a tela usa essas disciplinas (não só o plano genérico de Administração). Sem matérias e sem plano do curso, continua vazio.
 - CLI: `node tools/gerar-materias-imagens.js [sync|gerar|all|status]`.
 
 **Contexto**

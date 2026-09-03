@@ -276,6 +276,82 @@ function collectTutoriais(disciplinas, atividades, avaliacao) {
   return list;
 }
 
+function parseBrRangeToIso(raw) {
+  const match = String(raw || '').match(/(\d{2})\/(\d{2})\/(\d{4})(?:\s*a\s*(\d{2})\/(\d{2})\/(\d{4}))?/);
+  if (!match) return { inicio: null, fim: null };
+  const inicio = `${match[3]}-${match[2]}-${match[1]}`;
+  const fim = match[4] ? `${match[6]}-${match[5]}-${match[4]}` : inicio;
+  return { inicio, fim };
+}
+
+function materiaTitle(item) {
+  if (item == null) return '';
+  if (typeof item === 'string') return item.trim();
+  if (typeof item === 'object') {
+    return String(item.disciplina || item.nome || item.titulo || item.materia || '').trim();
+  }
+  return String(item).trim();
+}
+
+function materiaPeriodo(item) {
+  if (item && typeof item === 'object') return String(item.data || item.periodo || '').trim();
+  return '';
+}
+
+function isMandatoryActivity(title) {
+  const t = String(title || '').toLowerCase();
+  return t.includes('ambient')
+    || t.includes('carreira')
+    || t.includes('extens')
+    || t.includes('projeto')
+    || t.includes('avalia')
+    || t.includes('multidisciplinar');
+}
+
+function mapMateriasToItens(materias) {
+  const list = Array.isArray(materias) ? materias : [];
+  const itens = [];
+  list.forEach((item, index) => {
+    const titulo = materiaTitle(item);
+    if (!titulo) return;
+    const range = parseBrRangeToIso(materiaPeriodo(item));
+    const tipo = isMandatoryActivity(titulo)
+      ? (titulo.toLowerCase().includes('avalia') ? 'avaliacao_integrada' : 'atividade')
+      : 'disciplina';
+    itens.push({
+      id: index + 1,
+      tipo,
+      titulo,
+      descricao: '',
+      mes: monthLabel(range.inicio),
+      data_inicio: tipo === 'disciplina' ? range.inicio : null,
+      data_fim: tipo === 'disciplina' ? range.fim : null,
+      prova_inicio: null,
+      prova_fim: null,
+      prazo: tipo === 'disciplina' ? null : range.fim,
+      prazo_preferencial: null,
+      tutorial_categoria: null,
+      tutorial_hint: null,
+      destaque: tipo !== 'disciplina',
+      ordem: index + 1,
+    });
+  });
+  return itens;
+}
+
+async function getMateriasByRgm(pool, rgm) {
+  if (!rgm) return null;
+  const result = await pool.query(
+    `SELECT materias
+     FROM csu_materias_alunos
+     WHERE rgm = $1
+        OR regexp_replace(rgm, '\\D', '', 'g') = regexp_replace($1, '\\D', '', 'g')
+     LIMIT 1`,
+    [rgm],
+  );
+  return result.rows[0] || null;
+}
+
 async function getAlunoCurso(pool, alunoId) {
   const result = await pool.query(
     `SELECT id, nome, email, rgm, curso
@@ -285,6 +361,40 @@ async function getAlunoCurso(pool, alunoId) {
     [alunoId],
   );
   return result.rows[0] || null;
+}
+
+function assembleSemestre({ aluno, plano, itens, eventos, mensalidadesRows, today, avisoPagamento }) {
+  const disciplinas = itens
+    .filter((item) => item.tipo === 'disciplina')
+    .map((item) => Object.assign({}, item, { status: disciplinaStatus(item, today) }));
+  const atividades = itens.filter((item) => item.tipo === 'atividade');
+  const avaliacao = itens.find((item) => item.tipo === 'avaliacao_integrada') || null;
+  const eventosMapped = (eventos || []).map(mapEvento);
+  const mensalidades = (mensalidadesRows || []).map((row) => mapMensalidade(row, today));
+  const disciplinaAtual = pickDisciplinaAtual(disciplinas, today);
+  const proximaProva = pickProximaProva(disciplinas, today);
+  const proximoPrazo = pickProximoPrazo(disciplinas, atividades, avaliacao, eventosMapped, today);
+  const mensalidade = pickMensalidade(mensalidades);
+
+  return {
+    plano,
+    curso: aluno.curso || (plano && plano.curso) || null,
+    aluno: { nome: aluno.nome, curso: aluno.curso || (plano && plano.curso) || null },
+    resumo: {
+      disciplina_atual: disciplinaAtual,
+      proxima_prova: proximaProva,
+      proximo_prazo: proximoPrazo,
+      mensalidade,
+    },
+    disciplinas,
+    atividades,
+    avaliacao_integrada: avaliacao,
+    calendario: mergeCalendario(eventosMapped, mensalidades),
+    mensalidades,
+    tutoriais: collectTutoriais(disciplinas, atividades, avaliacao),
+    aviso_pagamento: avisoPagamento,
+    hoje: today,
+  };
 }
 
 async function getMeuSemestre(pool, alunoId) {
@@ -316,6 +426,35 @@ async function getMeuSemestre(pool, alunoId) {
   empty.curso = aluno.curso || null;
   empty.aluno = { nome: aluno.nome, curso: aluno.curso || null };
 
+  const mensalidadesRes = await pool.query(
+    `SELECT id, referencia, status, vencimento
+     FROM csu_semestre_mensalidades
+     WHERE aluno_id = $1
+     ORDER BY vencimento ASC, id ASC`,
+    [alunoId],
+  );
+
+  const materiasRow = await getMateriasByRgm(pool, aluno.rgm);
+  if (materiasRow) {
+    const itens = mapMateriasToItens(materiasRow.materias).map(mapItem);
+    if (itens.length) {
+      return assembleSemestre({
+        aluno,
+        plano: {
+          id: 0,
+          curso: aluno.curso || 'Curso',
+          periodo: process.env.MATERIAS_PERIODO || '2026/2',
+          titulo: 'Meu Semestre',
+        },
+        itens,
+        eventos: [],
+        mensalidadesRows: mensalidadesRes.rows,
+        today,
+        avisoPagamento,
+      });
+    }
+  }
+
   const planos = await pool.query(
     `SELECT id, curso, periodo, titulo, ativo
      FROM csu_semestre_planos
@@ -325,7 +464,7 @@ async function getMeuSemestre(pool, alunoId) {
   const plano = pickPlano(planos.rows, aluno.curso, today);
   if (!plano) return empty;
 
-  const [itensRes, eventosRes, mensalidadesRes] = await Promise.all([
+  const [itensRes, eventosRes] = await Promise.all([
     pool.query(
       `SELECT id, tipo, titulo, descricao, mes, data_inicio, data_fim,
               prova_inicio, prova_fim, prazo, prazo_preferencial,
@@ -342,52 +481,22 @@ async function getMeuSemestre(pool, alunoId) {
        ORDER BY data_inicio ASC, ordem ASC, id ASC`,
       [plano.id],
     ),
-    pool.query(
-      `SELECT id, referencia, status, vencimento
-       FROM csu_semestre_mensalidades
-       WHERE aluno_id = $1
-       ORDER BY vencimento ASC, id ASC`,
-      [alunoId],
-    ),
   ]);
 
-  const itens = itensRes.rows.map(mapItem);
-  const disciplinas = itens
-    .filter((item) => item.tipo === 'disciplina')
-    .map((item) => Object.assign({}, item, { status: disciplinaStatus(item, today) }));
-  const atividades = itens.filter((item) => item.tipo === 'atividade');
-  const avaliacao = itens.find((item) => item.tipo === 'avaliacao_integrada') || null;
-  const eventos = eventosRes.rows.map(mapEvento);
-  const mensalidades = mensalidadesRes.rows.map((row) => mapMensalidade(row, today));
-  const disciplinaAtual = pickDisciplinaAtual(disciplinas, today);
-  const proximaProva = pickProximaProva(disciplinas, today);
-  const proximoPrazo = pickProximoPrazo(disciplinas, atividades, avaliacao, eventos, today);
-  const mensalidade = pickMensalidade(mensalidades);
-
-  return {
+  return assembleSemestre({
+    aluno,
     plano: {
       id: plano.id,
       curso: plano.curso,
       periodo: plano.periodo,
       titulo: plano.titulo,
     },
-    curso: aluno.curso || plano.curso,
-    aluno: { nome: aluno.nome, curso: aluno.curso || plano.curso },
-    resumo: {
-      disciplina_atual: disciplinaAtual,
-      proxima_prova: proximaProva,
-      proximo_prazo: proximoPrazo,
-      mensalidade,
-    },
-    disciplinas,
-    atividades,
-    avaliacao_integrada: avaliacao,
-    calendario: mergeCalendario(eventos, mensalidades),
-    mensalidades,
-    tutoriais: collectTutoriais(disciplinas, atividades, avaliacao),
-    aviso_pagamento: avisoPagamento,
-    hoje: today,
-  };
+    itens: itensRes.rows.map(mapItem),
+    eventos: eventosRes.rows,
+    mensalidadesRows: mensalidadesRes.rows,
+    today,
+    avisoPagamento,
+  });
 }
 
 module.exports = {

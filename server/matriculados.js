@@ -193,12 +193,52 @@ async function findByIdentifier(pool, identifier) {
   return aluno;
 }
 
+function pickPhone(data) {
+  const celular = collapseSpaces(data?.['Fone celular']);
+  const comercial = collapseSpaces(data?.['Fone Comercial']);
+  const residencial = collapseSpaces(data?.['Fone Residencial']);
+  const digits = (value) => String(value || '').replace(/\D+/g, '');
+  const candidates = [celular, comercial, residencial];
+  for (const value of candidates) {
+    const n = digits(value);
+    if (n.length >= 10) return n;
+  }
+  return '';
+}
+
+async function phonesByRgms(pool, rgms) {
+  const map = new Map();
+  const list = [...new Set((rgms || []).map(normalizeRgm).filter(Boolean))];
+  if (!pool || !list.length) return map;
+  const snapshotId = await getLatestSnapshotId(pool);
+  if (!snapshotId) return map;
+
+  const result = await pool.query(
+    `
+    SELECT DISTINCT ON (regexp_replace(COALESCE(data->>'RGM', data->>'RGM_erp_matricula', ''), '\\D', '', 'g'))
+      regexp_replace(COALESCE(data->>'RGM', data->>'RGM_erp_matricula', ''), '\\D', '', 'g') AS rgm,
+      data
+    FROM public.matriculados_rows
+    WHERE snapshot_id = $1
+      AND regexp_replace(COALESCE(data->>'RGM', data->>'RGM_erp_matricula', ''), '\\D', '', 'g') = ANY($2::text[])
+    ORDER BY regexp_replace(COALESCE(data->>'RGM', data->>'RGM_erp_matricula', ''), '\\D', '', 'g'),
+      CASE WHEN upper(btrim(COALESCE(data->>'Situação Matrícula', ''))) = 'EM CURSO' THEN 0 ELSE 1 END
+    `,
+    [snapshotId, list],
+  );
+  for (const row of result.rows) {
+    map.set(row.rgm, pickPhone(row.data));
+  }
+  return map;
+}
+
 module.exports = {
   isConfigured,
   createPool,
   derivedPassword,
   passwordMatches,
   findByIdentifier,
+  phonesByRgms,
   mapRow,
   formatPolo,
   formatCurso,

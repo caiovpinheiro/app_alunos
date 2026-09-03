@@ -397,6 +397,46 @@
     }
   });
 
+  document.getElementById('btn-materias-export').addEventListener('click', async function () {
+    var btn = document.getElementById('btn-materias-export');
+    var msg = document.getElementById('materias-lote-msg');
+    btn.disabled = true;
+    if (msg) {
+      msg.dataset.locked = '1';
+      msg.textContent = 'Gerando CSV...';
+    }
+    try {
+      var res = await fetch('/api/admin/materias-imagens/export.csv', {
+        headers: token() ? { Authorization: 'Bearer ' + token() } : {},
+      });
+      if (res.status === 401) {
+        setToken(null);
+        showLogin();
+        throw new Error('Sessão expirada.');
+      }
+      if (!res.ok) {
+        var body = null;
+        try { body = await res.json(); } catch (e) { /* ignore */ }
+        throw new Error((body && body.message) || 'Não foi possível exportar o CSV.');
+      }
+      var blob = await res.blob();
+      var url = URL.createObjectURL(blob);
+      var link = document.createElement('a');
+      link.href = url;
+      link.download = 'planos-materias.csv';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+      if (msg) msg.textContent = 'CSV baixado.';
+    } catch (err) {
+      if (msg) msg.textContent = err.message || 'Não foi possível exportar o CSV.';
+    } finally {
+      btn.disabled = false;
+      if (msg) delete msg.dataset.locked;
+    }
+  });
+
   document.getElementById('admin-modal-close').addEventListener('click', closeModal);
 
   document.addEventListener('click', async function (event) {

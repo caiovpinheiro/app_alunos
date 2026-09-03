@@ -285,6 +285,7 @@ async function ensureSchema(pool) {
       qtd_materias INTEGER NOT NULL DEFAULT 0,
       consultado_em TIMESTAMPTZ,
       aluno_id INTEGER REFERENCES csu_alunos(id) ON DELETE SET NULL,
+      telefone TEXT,
       synced_at TIMESTAMPTZ,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -314,6 +315,10 @@ async function ensureSchema(pool) {
     CREATE UNIQUE INDEX IF NOT EXISTS idx_csu_materias_imagens_share
     ON csu_materias_imagens (share_token)
     WHERE share_token IS NOT NULL
+  `);
+  await pool.query(`
+    ALTER TABLE csu_materias_alunos
+    ADD COLUMN IF NOT EXISTS telefone TEXT
   `);
 }
 

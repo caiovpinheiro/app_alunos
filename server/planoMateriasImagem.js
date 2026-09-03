@@ -518,6 +518,7 @@ async function listCrmRows(pool, req, { limit = 100, offset = 0 } = {}) {
        m.rgm,
        COALESCE(a.nome, m.aluno_nome) AS nome,
        a.email,
+       m.telefone,
        i.share_token,
        i.status,
        i.generated_at
@@ -525,7 +526,7 @@ async function listCrmRows(pool, req, { limit = 100, offset = 0 } = {}) {
      JOIN csu_materias_alunos m ON m.rgm = i.rgm
      LEFT JOIN csu_alunos a ON a.id = i.aluno_id
      WHERE i.status = 'concluida' AND i.share_token IS NOT NULL
-     ORDER BY i.generated_at DESC NULLS LAST, m.rgm ASC
+     ORDER BY COALESCE(a.nome, m.aluno_nome) ASC, m.rgm ASC
      LIMIT $1 OFFSET $2`,
     [limit, offset],
   );
@@ -533,11 +534,77 @@ async function listCrmRows(pool, req, { limit = 100, offset = 0 } = {}) {
     rgm: row.rgm,
     nome: row.nome,
     email: row.email,
+    telefone: row.telefone || '',
     share_token: row.share_token,
-    url: base ? `${base}/p/plano/${row.share_token}.png` : null,
+    url: base ? `${base}/p/plano/${row.share_token}.png` : `/p/plano/${row.share_token}.png`,
     status: row.status,
     generated_at: row.generated_at,
   }));
+}
+
+function csvEscape(value) {
+  const text = String(value ?? '');
+  if (/[",\n\r]/.test(text)) return `"${text.replace(/"/g, '""')}"`;
+  return text;
+}
+
+function rowsToCsv(rows) {
+  const header = ['rgm', 'nome', 'telefone', 'email', 'url'];
+  const lines = [header.join(',')];
+  for (const row of rows) {
+    lines.push(header.map((key) => csvEscape(row[key])).join(','));
+  }
+  return `\uFEFF${lines.join('\n')}`;
+}
+
+async function buildExportRows(pool, req, phonesByRgm) {
+  const base = publicBaseUrl(req);
+  const result = await pool.query(
+    `SELECT
+       m.rgm,
+       COALESCE(a.nome, m.aluno_nome) AS nome,
+       a.email,
+       m.telefone,
+       i.share_token
+     FROM csu_materias_imagens i
+     JOIN csu_materias_alunos m ON m.rgm = i.rgm
+     LEFT JOIN csu_alunos a ON a.id = i.aluno_id
+     WHERE i.status = 'concluida' AND i.share_token IS NOT NULL
+     ORDER BY COALESCE(a.nome, m.aluno_nome) ASC, m.rgm ASC`,
+  );
+  const phones = phonesByRgm || new Map();
+  const updates = [];
+  const rows = result.rows.map((row) => {
+    const rgmDigits = String(row.rgm || '').replace(/\D+/g, '');
+    const telefone = phones.get(rgmDigits) || phones.get(row.rgm) || row.telefone || '';
+    if (telefone && telefone !== row.telefone) updates.push({ rgm: row.rgm, telefone });
+    return {
+      rgm: row.rgm,
+      nome: row.nome || '',
+      telefone,
+      email: row.email || '',
+      url: base ? `${base}/p/plano/${row.share_token}.png` : `/p/plano/${row.share_token}.png`,
+    };
+  });
+  if (updates.length) {
+    await pool.query(
+      `UPDATE csu_materias_alunos AS m
+       SET telefone = v.telefone, updated_at = now()
+       FROM unnest($1::text[], $2::text[]) AS v(rgm, telefone)
+       WHERE m.rgm = v.rgm`,
+      [updates.map((item) => item.rgm), updates.map((item) => item.telefone)],
+    );
+  }
+  return rows;
+}
+
+async function sendExportCsv(pool, req, res, phonesByRgm) {
+  const rows = await buildExportRows(pool, req, phonesByRgm);
+  const csv = rowsToCsv(rows);
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="planos-materias.csv"');
+  res.setHeader('Cache-Control', 'private, no-store');
+  return res.send(csv);
 }
 
 module.exports = {
@@ -549,4 +616,5 @@ module.exports = {
   startBatch,
   getStatus,
   listCrmRows,
+  sendExportCsv,
 };

@@ -576,6 +576,28 @@ app.get('/api/admin/materias-imagens/status', requireAdmin, async (req, res) => 
   }
 });
 
+app.get('/api/admin/materias-imagens/export.csv', requireAdmin, async (req, res) => {
+  if (!pool) return unavailable(res);
+  try {
+    let phones = new Map();
+    const source = getMatriculadosPool();
+    if (source) {
+      const rgms = (await pool.query(
+        `SELECT rgm FROM csu_materias_imagens WHERE status = 'concluida' AND share_token IS NOT NULL`,
+      )).rows.map((row) => row.rgm);
+      try {
+        phones = await matriculados.phonesByRgms(source, rgms);
+      } catch (err) {
+        console.error('Telefones de matriculados indisponíveis no export:', err.message);
+      }
+    }
+    return planoMateriasImagem.sendExportCsv(pool, req, res, phones);
+  } catch (err) {
+    console.error('Falha ao exportar CSV de matérias:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível exportar o CSV.' });
+  }
+});
+
 app.get('/api/admin/materias-imagens/crm', requireAdmin, async (req, res) => {
   if (!pool) return unavailable(res);
   try {
