@@ -276,6 +276,45 @@ async function ensureSchema(pool) {
     ALTER TABLE csu_alunos
     ADD COLUMN IF NOT EXISTS unidade TEXT
   `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS csu_materias_alunos (
+      rgm TEXT PRIMARY KEY,
+      aluno_label TEXT,
+      aluno_nome TEXT,
+      materias JSONB NOT NULL DEFAULT '[]'::jsonb,
+      qtd_materias INTEGER NOT NULL DEFAULT 0,
+      consultado_em TIMESTAMPTZ,
+      aluno_id INTEGER REFERENCES csu_alunos(id) ON DELETE SET NULL,
+      synced_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_csu_materias_alunos_aluno ON csu_materias_alunos (aluno_id);
+
+    CREATE TABLE IF NOT EXISTS csu_materias_imagens (
+      id SERIAL PRIMARY KEY,
+      rgm TEXT NOT NULL UNIQUE,
+      aluno_id INTEGER REFERENCES csu_alunos(id) ON DELETE CASCADE,
+      data_hash TEXT NOT NULL,
+      file_path TEXT,
+      imagem_png BYTEA,
+      status TEXT NOT NULL DEFAULT 'pendente',
+      error_message TEXT,
+      share_token TEXT,
+      generated_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      CONSTRAINT csu_materias_imagens_status_chk CHECK (status IN ('pendente', 'processando', 'concluida', 'erro'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_csu_materias_imagens_status ON csu_materias_imagens (status, updated_at);
+  `);
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_csu_materias_imagens_share
+    ON csu_materias_imagens (share_token)
+    WHERE share_token IS NOT NULL
+  `);
 }
 
 function normalizeIdentifier(value) {

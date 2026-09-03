@@ -118,6 +118,20 @@
 **Impacto**
 - EasyPanel: volume `planos-estudos` em `/data/planos-estudos`; `PLAN_IMAGE_*` e `APP_PUBLIC_URL`. Schema sobe no boot. CRM lê `imagem_png` + `share_token`. WhatsApp/e-mail também podem usar `/p/plano/<token>.png`.
 
+### 2026-09-03 - Planos por matérias (Supabase → CRM/WhatsApp)
+
+**Decisão**
+- Tabela espelho `csu_materias_alunos` (sync de `materias_alunos` no Supabase por RGM) e `csu_materias_imagens` (PNG em `imagem_png`, `share_token`, URL pública).
+- Admin: `POST /api/admin/materias-imagens/sync`, `POST .../gerar-lote`, `GET .../status`, `GET .../crm` (lista RGM + URL para Meta).
+- Cruza RGM com `csu_alunos`; cria aluno placeholder se faltar; atualiza nome vazio a partir do Supabase.
+- CLI: `node tools/gerar-materias-imagens.js [sync|gerar|all|status]`.
+
+**Contexto**
+- Ingressantes desde set/2025 com matérias no Supabase; CRM precisa de URL pública da PNG para variável no disparo WhatsApp.
+
+**Impacto**
+- EasyPanel: `MATERIAS_SUPABASE_URL`, `MATERIAS_SUPABASE_KEY`, `APP_PUBLIC_URL`. SQL CRM: join `csu_materias_imagens` + `csu_materias_alunos` + `csu_alunos`.
+
 ### 2026-09-02 - Rotas por tela (`/meu-semestre`, `/tutoriais`, …)
 
 **Decisão**

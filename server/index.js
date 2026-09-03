@@ -14,6 +14,8 @@ const matriculados = require('./matriculados');
 const syncAcessos = require('./sync-acessos');
 const meuSemestre = require('./meuSemestre');
 const planoImagem = require('./planoImagem');
+const planoMateriasImagem = require('./planoMateriasImagem');
+const materiasAlunos = require('./materiasAlunos');
 const app = express();
 app.set('trust proxy', 1);
 const PORT = Number(process.env.PORT) || 80;
@@ -525,6 +527,65 @@ app.get('/api/admin/planos-imagens/status', requireAdmin, async (req, res) => {
   } catch (err) {
     console.error('Falha ao consultar status das imagens:', err.message);
     return res.status(500).json({ success: false, message: 'Não foi possível consultar o status.' });
+  }
+});
+
+app.post('/api/admin/materias-imagens/sync', requireAdmin, async (req, res) => {
+  if (!pool) return unavailable(res);
+  try {
+    await db.ensureSchema(pool);
+    const result = await materiasAlunos.syncFromSupabase(pool);
+    return res.json({
+      success: true,
+      message: `Sincronizados ${result.synced} alunos do Supabase.`,
+      ...result,
+    });
+  } catch (err) {
+    console.error('Falha ao sincronizar matérias:', err.message);
+    return res.status(500).json({ success: false, message: err.message || 'Não foi possível sincronizar as matérias.' });
+  }
+});
+
+app.post('/api/admin/materias-imagens/gerar-lote', requireAdmin, async (req, res) => {
+  if (!pool) return unavailable(res);
+  try {
+    const result = await planoMateriasImagem.startBatch(pool);
+    return res.json({
+      success: true,
+      message: result.started || result.running
+        ? 'Geração de imagens por matérias iniciada em segundo plano.'
+        : 'Nada novo para gerar agora.',
+      queued: result.queued,
+      total: result.total,
+      running: result.running,
+    });
+  } catch (err) {
+    console.error('Falha ao iniciar lote de matérias:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível iniciar a geração em lote.' });
+  }
+});
+
+app.get('/api/admin/materias-imagens/status', requireAdmin, async (req, res) => {
+  if (!pool) return unavailable(res);
+  try {
+    const status = await planoMateriasImagem.getStatus(pool);
+    return res.json({ success: true, ...status });
+  } catch (err) {
+    console.error('Falha ao consultar status das matérias:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível consultar o status.' });
+  }
+});
+
+app.get('/api/admin/materias-imagens/crm', requireAdmin, async (req, res) => {
+  if (!pool) return unavailable(res);
+  try {
+    const limit = Math.min(500, Math.max(1, Number(req.query.limit) || 100));
+    const offset = Math.max(0, Number(req.query.offset) || 0);
+    const rows = await planoMateriasImagem.listCrmRows(pool, req, { limit, offset });
+    return res.json({ success: true, rows, limit, offset });
+  } catch (err) {
+    console.error('Falha ao listar URLs de matérias:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível listar as URLs.' });
   }
 });
 

@@ -66,7 +66,7 @@
     if (name === 'tutoriais') loadTuts();
     if (name === 'contatos') loadContatos();
     if (name === 'indicacoes') loadInds();
-    if (name === 'planos') loadPlanos();
+    if (name === 'planos') { loadPlanos(); loadMaterias(); }
   }
 
   function closeModal() {
@@ -235,6 +235,33 @@
     }
   }
 
+  function renderMateriasStatus(data) {
+    var cards = [
+      ['Sincronizados', data && data.materias_synced],
+      ['Pendentes', data && data.pendentes],
+      ['Processando', data && data.processando],
+      ['Concluídas', data && data.concluidas],
+      ['Erros', data && data.erros],
+    ];
+    document.getElementById('admin-materias-status').innerHTML = cards.map(function (item) {
+      return '<article class="bg-white border rounded-xl p-4">' +
+        '<p class="text-sm text-gray-500">' + escapeHtml(item[0]) + '</p>' +
+        '<p class="text-2xl font-bold text-gray-800">' + Number(item[1] || 0) + '</p>' +
+        '</article>';
+    }).join('');
+  }
+
+  async function loadMaterias() {
+    var res = await request('/api/admin/materias-imagens/status');
+    renderMateriasStatus(res);
+    var msg = document.getElementById('materias-lote-msg');
+    if (msg && !msg.dataset.locked) {
+      msg.textContent = res.running
+        ? 'Geração de matérias em andamento. Atualize os totais para acompanhar.'
+        : (msg.textContent || '');
+    }
+  }
+
   function showInd(item) {
     var el = document.getElementById('ind-detail');
     el.classList.remove('hidden');
@@ -319,6 +346,54 @@
       await loadPlanos();
     } catch (err) {
       document.getElementById('planos-lote-msg').textContent = err.message || 'Não foi possível consultar o status.';
+    }
+  });
+
+  document.getElementById('btn-materias-sync').addEventListener('click', async function () {
+    var btn = document.getElementById('btn-materias-sync');
+    var msg = document.getElementById('materias-lote-msg');
+    btn.disabled = true;
+    if (msg) {
+      msg.dataset.locked = '1';
+      msg.textContent = 'Sincronizando matérias do Supabase...';
+    }
+    try {
+      var res = await request('/api/admin/materias-imagens/sync', { method: 'POST' });
+      if (msg) msg.textContent = res.message || 'Sincronização concluída.';
+      await loadMaterias();
+    } catch (err) {
+      if (msg) msg.textContent = err.message || 'Não foi possível sincronizar.';
+    } finally {
+      btn.disabled = false;
+      if (msg) delete msg.dataset.locked;
+    }
+  });
+
+  document.getElementById('btn-materias-lote').addEventListener('click', async function () {
+    var btn = document.getElementById('btn-materias-lote');
+    var msg = document.getElementById('materias-lote-msg');
+    btn.disabled = true;
+    if (msg) {
+      msg.dataset.locked = '1';
+      msg.textContent = 'Iniciando geração de imagens por matérias...';
+    }
+    try {
+      var res = await request('/api/admin/materias-imagens/gerar-lote', { method: 'POST' });
+      if (msg) msg.textContent = res.message || 'Geração em lote iniciada.';
+      await loadMaterias();
+    } catch (err) {
+      if (msg) msg.textContent = err.message || 'Não foi possível iniciar o lote.';
+    } finally {
+      btn.disabled = false;
+      if (msg) delete msg.dataset.locked;
+    }
+  });
+
+  document.getElementById('btn-materias-status').addEventListener('click', async function () {
+    try {
+      await loadMaterias();
+    } catch (err) {
+      document.getElementById('materias-lote-msg').textContent = err.message || 'Não foi possível consultar o status.';
     }
   });
 

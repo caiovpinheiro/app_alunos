@@ -687,7 +687,19 @@ async function sendSharedImage(pool, token, res) {
     );
     const row = result.rows[0];
     if (!row || row.status !== 'concluida') {
-      return res.status(404).end();
+      const planoMateriasImagem = require('./planoMateriasImagem');
+      const materiasRow = await planoMateriasImagem.findSharedImage(pool, token);
+      if (!materiasRow || materiasRow.status !== 'concluida') {
+        return res.status(404).end();
+      }
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Content-Disposition', 'inline; filename="plano-de-estudos.png"');
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      if (materiasRow.imagem_png) return res.end(materiasRow.imagem_png);
+      if (!materiasRow.file_path) return res.status(404).end();
+      const materiasPath = safeFilePath(materiasRow.file_path);
+      if (!fs.existsSync(materiasPath)) return res.status(404).end();
+      return res.sendFile(materiasPath);
     }
     res.setHeader('Content-Type', 'image/png');
     res.setHeader('Content-Disposition', 'inline; filename="plano-de-estudos.png"');
