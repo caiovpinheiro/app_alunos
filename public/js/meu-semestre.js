@@ -95,13 +95,10 @@ window.MeuSemestre = (function () {
     var disc = resumo.disciplina_atual;
     var prova = resumo.proxima_prova;
     var prazo = resumo.proximo_prazo;
-    var pay = resumo.mensalidade;
     var periodo = disc ? formatRange(disc.data_inicio, disc.data_fim) : '';
     var provaTxt = prova ? formatRange(prova.prova_inicio, prova.prova_fim) : '';
     var prazoTxt = prazo ? (prazo.titulo + ' · ' + formatDayMonth(prazo.data)) : '';
-    var payTxt = pay
-      ? (pay.situacao_label + ' · vence ' + formatDate(pay.vencimento))
-      : 'Nenhum pagamento em aberto';
+    var payTxt = '1ª parcela dia 25 · demais até o dia 10';
 
     wrap.innerHTML =
       '<dl class="ms-dash-facts">' +
@@ -109,7 +106,7 @@ window.MeuSemestre = (function () {
         dashFact('Período de estudo', periodo) +
         dashFact('Próxima prova', provaTxt) +
         dashFact('Próximo prazo importante', prazoTxt) +
-        dashFact('Pagamento', payTxt) +
+        dashFact('Mensalidades', payTxt) +
       '</dl>' +
       '<p class="ms-dash-note">' + escapeHtml(cache.aviso_pagamento || '') + '</p>' +
       '<button type="button" onclick="showScreen(\'meu-semestre-page\')" class="btn-plastic dash-card-btn w-full flex items-center justify-center gap-2 bg-gray-50 text-cruzeiro font-semibold py-2.5 rounded-lg">' +
@@ -241,7 +238,6 @@ window.MeuSemestre = (function () {
 
     var resumo = cache.resumo || {};
     var disc = resumo.disciplina_atual;
-    var pay = resumo.mensalidade;
     var nome = (cache.aluno && cache.aluno.nome) || window.Auth.getUserName();
     var avaliacao = cache.avaliacao_integrada;
     var disciplinas = cache.disciplinas || [];
@@ -263,30 +259,15 @@ window.MeuSemestre = (function () {
       )
       : '<article class="ms-now"><p class="ms-muted">Nenhuma disciplina mensal em andamento.</p></article>';
 
-    var venc = pay && parseIso(pay.vencimento);
-    var heroPay = pay
-      ? (
+    var heroPay =
         '<article class="ms-pay">' +
           '<div class="ms-pay-top">' +
             '<span class="ms-icon-box ms-icon-amber"><i data-lucide="receipt-text" class="w-5 h-5"></i></span>' +
-            '<span class="ms-pill">' + escapeHtml(pay.status === 'aberto' ? 'Em aberto' : pay.situacao_label) + '</span>' +
           '</div>' +
-          '<small>Próximo vencimento</small>' +
-          '<h2>Mensalidade ' + escapeHtml(pay.referencia) + '</h2>' +
-          (venc
-            ? '<div class="ms-pay-date"><strong>' + escapeHtml(venc.d) + '</strong><span>' + escapeHtml(monthShort(pay.vencimento)) + '<br><small>' + escapeHtml(venc.y) + '</small></span></div>'
-            : '') +
-          '<p><i data-lucide="alert-circle" class="w-4 h-4"></i> ' + escapeHtml(pay.situacao_label) + '</p>' +
-        '</article>'
-      )
-      : (
-        '<article class="ms-pay">' +
-          '<span class="ms-soon-pill">Em breve</span>' +
-          '<small>Situação financeira</small>' +
-          '<h2>Pagamentos</h2>' +
-          '<p class="ms-muted">Em breve você poderá acompanhar seus pagamentos por aqui.</p>' +
-        '</article>'
-      );
+          '<small>Mensalidades</small>' +
+          '<h2>Vencimentos fixos</h2>' +
+          '<p>A 1ª parcela vence no <strong>dia 25</strong>. As demais devem ser pagas até o <strong>dia 10</strong> de cada mês.</p>' +
+        '</article>';
 
     var avaliacaoHtml = avaliacao
       ? (
@@ -303,20 +284,18 @@ window.MeuSemestre = (function () {
       )
       : '';
 
-    var financeList = (cache.mensalidades || []).map(function (item) {
-      return (
-        '<div class="ms-finance-row">' +
-          '<div><strong>' + escapeHtml(item.referencia) + '</strong><span>Vence ' + escapeHtml(formatDate(item.vencimento)) + '</span></div>' +
-          '<span class="ms-pill">' + escapeHtml(item.situacao_label) + '</span>' +
-        '</div>'
-      );
-    }).join('');
+    var financeNote =
+      '<article class="ms-finance">' +
+        '<p>A <strong>1ª parcela</strong> vence no <strong>dia 25</strong>.</p>' +
+        '<p>As demais mensalidades devem ser pagas até o <strong>dia 10</strong> de cada mês.</p>' +
+      '</article>';
 
     root.innerHTML =
       '<header class="ms-page-head">' +
         '<p class="ms-eyebrow">Meu Semestre</p>' +
         '<h2>Olá, ' + escapeHtml(nome) + '</h2>' +
         '<p class="ms-muted">' + escapeHtml(cache.plano.curso) + ' · ' + escapeHtml(cache.plano.periodo) + '</p>' +
+        '<p class="ms-preview-note">Esta lista é uma prévia. Nem sempre todas as matérias aparecem aqui. Confira o que está disponível no <a href="https://novoportal.cruzeirodosul.edu.br/" target="_blank" rel="noopener">portal</a> ou no app Duda (<a href="https://apps.apple.com/br/app/duda/id6451416655" target="_blank" rel="noopener">iPhone</a> · <a href="https://play.google.com/store/apps/details?id=br.com.cruzeirodosulvirtual" target="_blank" rel="noopener">Android</a>).</p>' +
         '<div class="ms-page-actions">' +
           '<button type="button" class="btn-plastic ms-download-btn" data-download-plano>' +
             '<span class="btn-plastic-label">Baixar meu plano de estudos</span>' +
@@ -355,11 +334,8 @@ window.MeuSemestre = (function () {
         '</article>' +
       '</section>' +
       '<section class="ms-section">' +
-        '<div class="ms-section-title"><div><p class="ms-eyebrow">Financeiro</p><h3>Situação financeira</h3></div></div>' +
-        '<article class="ms-finance">' +
-          (financeList || '<p class="ms-muted">Em breve você poderá acompanhar seus pagamentos por aqui.</p>') +
-          (financeList ? '<p class="ms-dash-note">' + escapeHtml(cache.aviso_pagamento) + '</p>' : '') +
-        '</article>' +
+        '<div class="ms-section-title"><div><p class="ms-eyebrow">Financeiro</p><h3>Mensalidades</h3></div></div>' +
+        financeNote +
       '</section>';
 
     if (window.lucide) window.lucide.createIcons();

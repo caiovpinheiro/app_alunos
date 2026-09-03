@@ -100,7 +100,7 @@
         <div id="admin-planos-status" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-8"></div>
 
         <h3 class="text-lg font-bold mb-2">Planos por matérias (WhatsApp / CRM)</h3>
-        <p class="text-sm text-gray-500 mb-4">Sincroniza <code>materias_alunos</code> do Supabase, cruza por RGM, gera PNG + URL pública e salva em <code>csu_materias_imagens</code>.</p>
+        <p class="text-sm text-gray-500 mb-4">Sincroniza <code>materias_alunos</code> do Supabase, cruza por RGM, gera PNG + URL pública e salva em <code>csu_materias_imagens</code>. O lote só gera alunos ainda sem imagem.</p>
         <div class="flex flex-wrap gap-3 mb-4">
           <button type="button" id="btn-materias-sync" class="bg-cruzeiro text-white text-sm font-semibold px-4 py-2 rounded-lg">Sincronizar Supabase</button>
           <button type="button" id="btn-materias-lote" class="bg-cruzeiro text-white text-sm font-semibold px-4 py-2 rounded-lg">Gerar lote matérias</button>
@@ -123,6 +123,6 @@
     </div>
   </div>
 
-  <script src="/js/admin.js?v=12"></script>
+  <script src="/js/admin.js?v=13"></script>
 </body>
 </html>

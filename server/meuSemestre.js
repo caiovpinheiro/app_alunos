@@ -370,11 +370,9 @@ function assembleSemestre({ aluno, plano, itens, eventos, mensalidadesRows, toda
   const atividades = itens.filter((item) => item.tipo === 'atividade');
   const avaliacao = itens.find((item) => item.tipo === 'avaliacao_integrada') || null;
   const eventosMapped = (eventos || []).map(mapEvento);
-  const mensalidades = (mensalidadesRows || []).map((row) => mapMensalidade(row, today));
   const disciplinaAtual = pickDisciplinaAtual(disciplinas, today);
   const proximaProva = pickProximaProva(disciplinas, today);
   const proximoPrazo = pickProximoPrazo(disciplinas, atividades, avaliacao, eventosMapped, today);
-  const mensalidade = pickMensalidade(mensalidades);
 
   return {
     plano,
@@ -384,13 +382,13 @@ function assembleSemestre({ aluno, plano, itens, eventos, mensalidadesRows, toda
       disciplina_atual: disciplinaAtual,
       proxima_prova: proximaProva,
       proximo_prazo: proximoPrazo,
-      mensalidade,
+      mensalidade: null,
     },
     disciplinas,
     atividades,
     avaliacao_integrada: avaliacao,
-    calendario: mergeCalendario(eventosMapped, mensalidades),
-    mensalidades,
+    calendario: mergeCalendario(eventosMapped, []),
+    mensalidades: [],
     tutoriais: collectTutoriais(disciplinas, atividades, avaliacao),
     aviso_pagamento: avisoPagamento,
     hoje: today,
@@ -399,7 +397,7 @@ function assembleSemestre({ aluno, plano, itens, eventos, mensalidadesRows, toda
 
 async function getMeuSemestre(pool, alunoId) {
   const today = todayIsoSaoPaulo();
-  const avisoPagamento = 'O pagamento pode levar até 1 dia útil para ser atualizado';
+  const avisoPagamento = 'A 1ª parcela vence no dia 25. As demais mensalidades devem ser pagas até o dia 10 de cada mês.';
   const empty = {
     plano: null,
     curso: null,

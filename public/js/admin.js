@@ -258,7 +258,9 @@
     if (msg && !msg.dataset.locked) {
       msg.textContent = res.running
         ? 'Geração de matérias em andamento. Atualize os totais para acompanhar.'
-        : (msg.textContent || '');
+        : (res.last_rgm
+          ? ('Último RGM processado: ' + res.last_rgm + '. O próximo lote gera só alunos novos.')
+          : (msg.textContent || ''));
     }
   }
 

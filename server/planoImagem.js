@@ -15,6 +15,13 @@ const MES_INDEX = {
   JAN: 1, FEV: 2, MAR: 3, ABR: 4, MAI: 5, JUN: 6,
   JUL: 7, AGO: 8, SET: 9, OUT: 10, NOV: 11, DEZ: 12,
 };
+const PORTAL_URL = 'https://novoportal.cruzeirodosul.edu.br/';
+const DUDA_IOS_URL = 'https://apps.apple.com/br/app/duda/id6451416655';
+const DUDA_ANDROID_URL = 'https://play.google.com/store/apps/details?id=br.com.cruzeirodosulvirtual';
+const FINANCE_LINES = [
+  'A 1ª parcela vence no dia 25.',
+  'As demais mensalidades devem ser pagas até o dia 10 de cada mês.',
+];
 const LOGO_PATH = path.join(__dirname, 'assets', 'cruzeiro-virtual.png');
 const FONT_REGULAR_PATH = path.join(__dirname, 'assets', 'fonts', 'Arimo-Regular.ttf');
 const FONT_BOLD_PATH = path.join(__dirname, 'assets', 'fonts', 'Arimo-Bold.ttf');
@@ -215,12 +222,12 @@ function mapToPlanData(data) {
   return {
     studentName: (data.aluno && data.aluno.nome) || 'Aluno',
     semester: (data.plano && data.plano.periodo) || '',
-    intro: 'Este é o seu plano de estudos do semestre',
+    intro: 'Prévia das matérias — confirme no portal ou no app Duda',
     months,
-    activitiesSubtitle: 'Faça um pouco por semana para não acumular',
+    activitiesSubtitle: 'Faça um pouco por semana e confirme no portal',
     mandatoryActivities: activities,
     attention: attentionFrom(data),
-    weeklyReminder: 'Toda semana: acesse o AVA, estude, faça as atividades e confira os avisos.',
+    weeklyReminder: `Acesse o portal ${PORTAL_URL} ou o app Duda (iPhone e Android).`,
   };
 }
 
@@ -254,8 +261,11 @@ function renderSvg(data, options = {}) {
   const headerHeight = 415;
   const monthsHeight = preparedMonths.reduce((sum, month) => sum + month.height + 30, 0);
   const activitiesHeight = activityHeaderHeight + activityRows.reduce((sum, row) => sum + row.height + 12, 0) + 30;
-  const attentionBlock = (Array.isArray(data.attention) ? data.attention : []).length ? 174 : 24;
-  const footerHeight = attentionBlock + 126;
+  const attentionBlock = (Array.isArray(data.attention) ? data.attention : []).length ? 174 : 0;
+  const disclaimerHeight = 150;
+  const financeHeight = 128;
+  const accessHeight = 210;
+  const footerHeight = attentionBlock + disclaimerHeight + financeHeight + accessHeight + 72;
   const height = headerHeight + monthsHeight + activitiesHeight + footerHeight;
 
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
@@ -273,7 +283,7 @@ function renderSvg(data, options = {}) {
   <circle cx="112" cy="344" r="36" fill="#0d3f83"/>
   <circle cx="112" cy="331" r="12" fill="#fff"/><path d="M91 366c4-19 38-19 42 0" fill="#fff"/>
   ${textLines([`Olá, ${data.studentName || 'Aluno'}!`], 170, 336, { size: 32, weight: 800 })}
-  ${textLines([data.intro || 'Este é o seu plano de estudos do semestre'], 170, 373, { size: 23, weight: 500, fill: '#243a5a' })}`;
+  ${textLines([data.intro || 'Prévia das matérias — confirme no portal ou no app Duda'], 170, 373, { size: 20, weight: 500, fill: '#243a5a' })}`;
 
   let y = headerHeight;
   let timelineStarted = false;
@@ -332,9 +342,24 @@ function renderSvg(data, options = {}) {
     });
     cursorY += 174;
   }
-  svg += roundedRect(margin, cursorY, contentWidth, 100, 24, 'url(#navy)');
+
+  svg += roundedRect(margin, cursorY, contentWidth, 150, 26, 'url(#attention)');
+  svg += `<circle cx="142" cy="${cursorY + 75}" r="55" fill="#f4c400"/><text x="142" y="${cursorY + 106}" text-anchor="middle" font-size="88" font-weight="700" fill="#092b63" font-family="Arimo, 'Liberation Sans', 'DejaVu Sans', sans-serif">!</text>`;
+  svg += textLines(['ATENÇÃO'], 225, cursorY + 48, { size: 30, weight: 800 });
+  svg += textLines(wrapText('Esta lista é uma prévia. Nem sempre todas as matérias aparecem aqui. Confira o que está disponível no portal ou no app Duda.', 48), 225, cursorY + 88, { size: 20, weight: 600, lineHeight: 26, fill: '#243a5a' });
+  cursorY += 174;
+
+  svg += roundedRect(margin, cursorY, contentWidth, 118, 24, '#fff', '#092b63', 3);
+  svg += textLines(['MENSALIDADES'], 92, cursorY + 42, { size: 24, weight: 800 });
+  svg += textLines(FINANCE_LINES, 92, cursorY + 78, { size: 20, weight: 600, lineHeight: 28, fill: '#243a5a' });
+  cursorY += 142;
+
+  svg += roundedRect(margin, cursorY, contentWidth, 200, 24, 'url(#navy)');
   svg += bookIcon(92, cursorY + 28);
-  svg += textLines(wrapText(data.weeklyReminder || 'Toda semana: acesse o AVA, estude, faça as atividades e confira os avisos.', 75), 170, cursorY + 43, { size: 22, weight: 600, lineHeight: 28, fill: '#fff' });
+  svg += textLines(['Acesse o portal oficial ou o app Duda'], 170, cursorY + 48, { size: 24, weight: 700, fill: '#fff' });
+  svg += textLines([`Portal: ${PORTAL_URL}`], 92, cursorY + 92, { size: 18, weight: 600, fill: '#fff' });
+  svg += textLines([`iPhone: ${DUDA_IOS_URL}`], 92, cursorY + 124, { size: 16, weight: 500, fill: '#fff' });
+  svg += textLines([`Android: ${DUDA_ANDROID_URL}`], 92, cursorY + 154, { size: 16, weight: 500, fill: '#fff' });
   svg += '</svg>';
   return svg;
 }

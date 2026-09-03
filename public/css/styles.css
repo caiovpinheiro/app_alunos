@@ -1531,10 +1531,19 @@ textarea:focus {
   font-weight: 600;
 }
 
-.ms-dash-note {
-  font-size: 12px;
-  color: var(--csu-muted);
-  margin: 0 0 14px;
+.ms-preview-note {
+  font-size: 14px;
+  line-height: 1.45;
+  color: #243a5a;
+  background: #fff7d7;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin: 10px 0 0;
+}
+.ms-preview-note a {
+  color: var(--csu-blue);
+  font-weight: 700;
+  text-decoration: underline;
 }
 
 .ms-page-head {

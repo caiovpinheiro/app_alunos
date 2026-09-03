@@ -108,16 +108,16 @@ function mapMateriasToPlanData({ nome, materias, periodo }) {
   return {
     studentName: nome || 'Aluno',
     semester: periodo || '2026/2',
-    intro: 'Estas são as matérias do seu semestre',
+    intro: 'Prévia das matérias — confirme no portal ou no app Duda',
     months,
-    activitiesSubtitle: 'Faça um pouco por semana para não acumular',
+    activitiesSubtitle: 'Faça um pouco por semana e confirme no portal',
     mandatoryActivities: atividades.map((item) => ({
       kind: activityKind(item.name),
       name: item.name,
       deadline: item.period ? `Disponível: ${formatMateriaRange(item.period)}` : 'Durante o semestre',
     })),
     attention: [],
-    weeklyReminder: 'Toda semana: acesse o AVA, estude, faça as atividades e confira os avisos.',
+    weeklyReminder: 'Acesse o portal oficial ou o app Duda para ver as disciplinas disponíveis.',
   };
 }
 
@@ -258,7 +258,7 @@ async function generateForRgm(pool, rgm) {
     [rgm],
   );
   const prev = existing.rows[0];
-  if (prev && prev.status === 'concluida' && prev.data_hash === hash && prev.has_imagem) {
+  if (prev && prev.status === 'concluida' && prev.has_imagem) {
     let pngPath = null;
     try {
       if (prev.file_path) {
@@ -338,16 +338,36 @@ async function findSharedImage(pool, token) {
   return result.rows[0] || null;
 }
 
+async function saveCursor(pool, { lastRgm, queued, skipped, total }) {
+  await pool.query(
+    `INSERT INTO csu_sync_state
+      (id, snapshot_id, snapshot_at, file_name, row_count, created_count, updated_count, skipped_count, synced_at)
+     VALUES ('materias_imagens', $1, now(), 'incremental', $2, $3, 0, $4, now())
+     ON CONFLICT (id) DO UPDATE SET
+       snapshot_id = EXCLUDED.snapshot_id,
+       snapshot_at = now(),
+       file_name = 'incremental',
+       row_count = EXCLUDED.row_count,
+       created_count = EXCLUDED.created_count,
+       skipped_count = EXCLUDED.skipped_count,
+       synced_at = now()`,
+    [lastRgm || null, total, queued, skipped],
+  );
+}
+
 async function enqueueAll(pool) {
   const rows = await pool.query(
-    `SELECT m.rgm, m.aluno_id, m.aluno_nome, m.materias,
+    `SELECT m.rgm, m.aluno_id, m.aluno_nome, m.materias, m.consultado_em,
             i.data_hash, i.status, (i.imagem_png IS NOT NULL) AS has_imagem
      FROM csu_materias_alunos m
      LEFT JOIN csu_materias_imagens i ON i.rgm = m.rgm
-     WHERE m.aluno_id IS NOT NULL`,
+     WHERE m.aluno_id IS NOT NULL
+     ORDER BY m.consultado_em ASC NULLS LAST, m.rgm ASC`,
   );
   const periodo = process.env.MATERIAS_PERIODO || '2026/2';
   let queued = 0;
+  let skipped = 0;
+  let lastRgm = null;
   for (const row of rows.rows) {
     const materias = Array.isArray(row.materias) ? row.materias : [];
     const hash = hashFingerprint(fingerprintFromMaterias({
@@ -357,8 +377,15 @@ async function enqueueAll(pool) {
       periodo,
     }));
     if (row.status === 'processando') continue;
-    if (row.status === 'pendente' && row.data_hash === hash) continue;
-    if (row.status === 'concluida' && row.data_hash === hash && row.has_imagem) continue;
+    if (row.status === 'pendente') {
+      lastRgm = row.rgm;
+      continue;
+    }
+    if (row.status === 'concluida' && row.has_imagem) {
+      skipped += 1;
+      lastRgm = row.rgm;
+      continue;
+    }
     await upsertRow(pool, {
       rgm: row.rgm,
       alunoId: row.aluno_id,
@@ -368,8 +395,10 @@ async function enqueueAll(pool) {
       errorMessage: null,
     });
     queued += 1;
+    lastRgm = row.rgm;
   }
-  return { queued, total: rows.rows.length };
+  await saveCursor(pool, { lastRgm, queued, skipped, total: rows.rows.length });
+  return { queued, skipped, total: rows.rows.length, lastRgm };
 }
 
 async function claimJobs(pool, limit) {
@@ -472,7 +501,7 @@ async function startBatch(pool) {
     setImmediate(() => {
       enqueueAll(pool)
         .then((queued) => {
-          console.log(`Imagens de matérias: ${queued.queued} enfileiradas de ${queued.total} alunos.`);
+          console.log(`Imagens de matérias: ${queued.queued} novas, ${queued.skipped} já geradas (último RGM ${queued.lastRgm || '—'}).`);
           kickWorker(pool);
         })
         .catch((err) => console.error('Falha ao enfileirar imagens de matérias:', err.message))
@@ -500,6 +529,11 @@ async function getStatus(pool) {
   const counts = { pendente: 0, processando: 0, concluida: 0, erro: 0 };
   for (const row of result.rows) counts[row.status] = row.n;
   const materias = await pool.query(`SELECT COUNT(*)::int AS n FROM csu_materias_alunos`);
+  const cursor = await pool.query(
+    `SELECT snapshot_id AS last_rgm, snapshot_at, created_count, skipped_count, row_count, synced_at
+     FROM csu_sync_state WHERE id = 'materias_imagens' LIMIT 1`,
+  );
+  const last = cursor.rows[0] || {};
   return {
     running: workerRunning || enqueueRunning,
     pendentes: counts.pendente,
@@ -508,6 +542,10 @@ async function getStatus(pool) {
     erros: counts.erro,
     total: counts.pendente + counts.processando + counts.concluida + counts.erro,
     materias_synced: materias.rows[0].n,
+    last_rgm: last.last_rgm || null,
+    last_generated_at: last.snapshot_at || null,
+    last_queued: last.created_count || 0,
+    last_skipped: last.skipped_count || 0,
   };
 }
 
