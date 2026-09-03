@@ -1532,6 +1532,10 @@ textarea:focus {
 }
 
 .ms-preview-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
   font-size: 14px;
   line-height: 1.45;
   color: #243a5a;
@@ -1540,45 +1544,33 @@ textarea:focus {
   padding: 12px 14px;
   margin: 10px 0 0;
 }
+.ms-preview-note-text {
+  flex: 1 1 280px;
+}
 .ms-preview-note a {
   color: var(--csu-blue);
   font-weight: 700;
   text-decoration: underline;
 }
+.ms-store-badges {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+.ms-store-badge {
+  display: inline-flex;
+  line-height: 0;
+  text-decoration: none !important;
+}
+.ms-store-badge img {
+  height: 40px;
+  width: auto;
+  display: block;
+}
 
 .ms-page-head {
   margin-bottom: 22px;
-}
-
-.ms-page-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 16px;
-}
-
-.ms-download-btn {
-  margin-top: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: var(--csu-blue);
-  color: #fff;
-  font-weight: 700;
-  padding: 11px 16px;
-  border-radius: 12px;
-  border: 2px solid var(--csu-blue);
-}
-
-.ms-copy-link-btn {
-  background: #fff;
-  color: var(--csu-blue);
-}
-
-.ms-download-btn.is-loading {
-  opacity: 0.75;
-  pointer-events: none;
 }
 
 .ms-page-head h2 {

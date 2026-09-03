@@ -3,7 +3,6 @@ window.MeuSemestre = (function () {
   'use strict';
 
   var cache = null;
-  var downloading = false;
 
   function escapeHtml(text) {
     return String(text == null ? '' : text)
@@ -295,17 +294,17 @@ window.MeuSemestre = (function () {
         '<p class="ms-eyebrow">Meu Semestre</p>' +
         '<h2>Olá, ' + escapeHtml(nome) + '</h2>' +
         '<p class="ms-muted">' + escapeHtml(cache.plano.curso) + ' · ' + escapeHtml(cache.plano.periodo) + '</p>' +
-        '<p class="ms-preview-note">Esta lista é uma prévia. Nem sempre todas as matérias aparecem aqui. Confira o que está disponível no <a href="https://novoportal.cruzeirodosul.edu.br/" target="_blank" rel="noopener">portal</a> ou no app Duda (<a href="https://apps.apple.com/br/app/duda/id6451416655" target="_blank" rel="noopener">iPhone</a> · <a href="https://play.google.com/store/apps/details?id=br.com.cruzeirodosulvirtual" target="_blank" rel="noopener">Android</a>).</p>' +
-        '<div class="ms-page-actions">' +
-          '<button type="button" class="btn-plastic ms-download-btn" data-download-plano>' +
-            '<span class="btn-plastic-label">Baixar meu plano de estudos</span>' +
-            '<span class="btn-spinner" aria-hidden="true"></span>' +
-          '</button>' +
-          '<button type="button" class="btn-plastic ms-download-btn ms-copy-link-btn" data-copy-plano-link>' +
-            '<span class="btn-plastic-label">Copiar link para WhatsApp</span>' +
-            '<span class="btn-spinner" aria-hidden="true"></span>' +
-          '</button>' +
-        '</div>' +
+        '<p class="ms-preview-note">' +
+          '<span class="ms-preview-note-text">Esta lista é uma prévia. Nem sempre todas as matérias aparecem aqui. Confira o que está disponível no <a href="https://novoportal.cruzeirodosul.edu.br/" target="_blank" rel="noopener">portal</a> ou no app Duda</span>' +
+          '<span class="ms-store-badges">' +
+            '<a class="ms-store-badge" href="https://apps.apple.com/br/app/duda/id6451416655" target="_blank" rel="noopener">' +
+              '<img src="/assets/stores/app-store.svg" alt="Baixar na App Store" width="120" height="40">' +
+            '</a>' +
+            '<a class="ms-store-badge ms-store-badge--play" href="https://play.google.com/store/apps/details?id=br.com.cruzeirodosulvirtual" target="_blank" rel="noopener">' +
+              '<img src="/assets/stores/google-play.png" alt="Disponível no Google Play" width="135" height="40">' +
+            '</a>' +
+          '</span>' +
+        '</p>' +
       '</header>' +
       '<section class="ms-hero" aria-label="Resumo do semestre">' + heroDisc + heroPay + '</section>' +
       '<section class="ms-section">' +
@@ -368,93 +367,11 @@ window.MeuSemestre = (function () {
     renderPage();
   }
 
-  async function copyPlanLink(button) {
-    if (downloading) return;
-    downloading = true;
-    if (button) {
-      button.disabled = true;
-      button.classList.add('is-loading');
-      var label = button.querySelector('.btn-plastic-label');
-      if (label) label.textContent = 'Gerando link...';
-    }
-    try {
-      var res = await window.Api.getPlanoImageUrl();
-      if (!res || !res.url) throw new Error('Não foi possível gerar o link.');
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(res.url);
-      } else {
-        window.prompt('Copie o link do plano de estudos:', res.url);
-      }
-      if (button) {
-        var done = button.querySelector('.btn-plastic-label');
-        if (done) done.textContent = 'Link copiado';
-      }
-    } catch (err) {
-      window.alert(err.message || 'Não foi possível copiar o link do plano.');
-    } finally {
-      downloading = false;
-      if (button) {
-        button.disabled = false;
-        button.classList.remove('is-loading');
-        setTimeout(function () {
-          var label = button.querySelector('.btn-plastic-label');
-          if (label) label.textContent = 'Copiar link para WhatsApp';
-        }, 1600);
-      }
-    }
-  }
-
-  async function downloadPlan(button) {
-    if (downloading) return;
-    downloading = true;
-    if (button) {
-      button.disabled = true;
-      button.classList.add('is-loading');
-      var label = button.querySelector('.btn-plastic-label');
-      if (label) label.textContent = 'Gerando plano...';
-    }
-    try {
-      var blob = await window.Api.downloadPlanoPng();
-      var url = URL.createObjectURL(blob);
-      var link = document.createElement('a');
-      link.href = url;
-      link.download = 'plano-de-estudos.png';
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
-    } catch (err) {
-      window.alert(err.message || 'Não foi possível baixar o plano de estudos.');
-    } finally {
-      downloading = false;
-      if (button) {
-        button.disabled = false;
-        button.classList.remove('is-loading');
-        var label = button.querySelector('.btn-plastic-label');
-        if (label) label.textContent = 'Baixar meu plano de estudos';
-      }
-    }
-  }
-
   function init() {
     var page = document.getElementById('meu-semestre-page');
     if (!page) return;
     page.addEventListener('click', function (event) {
       if (page.classList.contains('hidden')) return;
-      var download = event.target.closest('[data-download-plano]');
-      if (download) {
-        event.preventDefault();
-        event.stopPropagation();
-        downloadPlan(download);
-        return;
-      }
-      var copyLink = event.target.closest('[data-copy-plano-link]');
-      if (copyLink) {
-        event.preventDefault();
-        event.stopPropagation();
-        copyPlanLink(copyLink);
-        return;
-      }
       var btn = event.target.closest('[data-open-tutoriais]');
       if (!btn) return;
       event.preventDefault();
