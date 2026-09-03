@@ -6,12 +6,65 @@ const path = require('node:path');
 const sharp = require('sharp');
 const { renderSvg } = require('./planoImagem');
 
-const RENDER_VERSION = 1;
+const RENDER_VERSION = 2;
 const STATUSES = ['pendente', 'processando', 'concluida', 'erro'];
+const MONTHS_FULL = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+];
 
 let workerRunning = false;
 let enqueueRunning = false;
 const inflight = new Map();
+
+function materiaTitle(item) {
+  if (item == null) return '';
+  if (typeof item === 'string') return item.trim();
+  if (typeof item === 'object') {
+    return String(item.disciplina || item.nome || item.titulo || item.materia || '').trim();
+  }
+  return String(item).trim();
+}
+
+function materiaPeriodo(item) {
+  if (item && typeof item === 'object') return String(item.data || item.periodo || '').trim();
+  return '';
+}
+
+function parseBrRange(raw) {
+  const match = String(raw || '').match(/(\d{2})\/(\d{2})\/(\d{4})(?:\s*a\s*(\d{2})\/(\d{2})\/(\d{4}))?/);
+  if (!match) return null;
+  return {
+    startDay: match[1],
+    startMonth: Number(match[2]),
+    startYear: Number(match[3]),
+    endDay: match[4] || match[1],
+    endMonth: Number(match[5] || match[2]),
+    endYear: Number(match[6] || match[3]),
+  };
+}
+
+function formatMateriaRange(raw) {
+  const parsed = parseBrRange(raw);
+  if (!parsed) return raw || 'Matéria do semestre';
+  const a = `${parsed.startDay}/${String(parsed.startMonth).padStart(2, '0')}`;
+  const b = `${parsed.endDay}/${String(parsed.endMonth).padStart(2, '0')}`;
+  if (a === b) return a;
+  if (parsed.startMonth === parsed.endMonth && parsed.startYear === parsed.endYear) {
+    return `${parsed.startDay} a ${parsed.endDay}/${String(parsed.startMonth).padStart(2, '0')}`;
+  }
+  return `${a} a ${b}`;
+}
+
+function normalizeMaterias(materias) {
+  return (Array.isArray(materias) ? materias : [])
+    .map((item) => ({
+      name: materiaTitle(item),
+      period: materiaPeriodo(item),
+      month: (parseBrRange(materiaPeriodo(item)) || {}).startMonth || 0,
+    }))
+    .filter((item) => item.name);
+}
 
 function isMandatoryActivity(title) {
   const t = String(title || '').toLowerCase();
@@ -33,31 +86,35 @@ function activityKind(titulo) {
 }
 
 function mapMateriasToPlanData({ nome, materias, periodo }) {
-  const list = (Array.isArray(materias) ? materias : [])
-    .map((item) => String(item || '').trim())
-    .filter(Boolean);
-  const disciplinas = list.filter((item) => !isMandatoryActivity(item));
-  const atividades = list.filter((item) => isMandatoryActivity(item));
+  const list = normalizeMaterias(materias);
+  const disciplinas = list.filter((item) => !isMandatoryActivity(item.name));
+  const atividades = list.filter((item) => isMandatoryActivity(item.name));
+
+  const grouped = new Map();
+  for (const item of disciplinas) {
+    const month = item.month || 99;
+    if (!grouped.has(month)) grouped.set(month, []);
+    grouped.get(month).push(item);
+  }
+  const months = [...grouped.keys()].sort((a, b) => a - b).map((month) => ({
+    label: MONTHS_FULL[month - 1] || 'DISCIPLINAS DO SEMESTRE',
+    disciplines: grouped.get(month).map((item) => ({
+      name: item.name,
+      study: formatMateriaRange(item.period),
+      exam: '—',
+    })),
+  }));
 
   return {
     studentName: nome || 'Aluno',
     semester: periodo || '2026/2',
     intro: 'Estas são as matérias do seu semestre',
-    months: disciplinas.length
-      ? [{
-        label: 'DISCIPLINAS DO SEMESTRE',
-        disciplines: disciplinas.map((name) => ({
-          name,
-          study: 'Matéria do semestre',
-          exam: '—',
-        })),
-      }]
-      : [],
+    months,
     activitiesSubtitle: 'Faça um pouco por semana para não acumular',
-    mandatoryActivities: atividades.map((name) => ({
-      kind: activityKind(name),
-      name,
-      deadline: 'Durante o semestre',
+    mandatoryActivities: atividades.map((item) => ({
+      kind: activityKind(item.name),
+      name: item.name,
+      deadline: item.period ? `Disponível: ${formatMateriaRange(item.period)}` : 'Durante o semestre',
     })),
     attention: [],
     weeklyReminder: 'Toda semana: acesse o AVA, estude, faça as atividades e confira os avisos.',
@@ -71,7 +128,10 @@ function fingerprintFromMaterias({ rgm, nome, materias, periodo }) {
     rgm: String(rgm || ''),
     nome: String(nome || ''),
     periodo: String(periodo || ''),
-    materias: (Array.isArray(materias) ? materias : []).map((item) => String(item || '').trim()).filter(Boolean),
+    materias: normalizeMaterias(materias).map((item) => ({
+      name: item.name,
+      period: item.period,
+    })),
   };
 }
 
