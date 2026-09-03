@@ -124,18 +124,20 @@ window.MeuSemestre = (function () {
   function subjectCard(item) {
     var current = item.status === 'atual' ? ' is-current' : '';
     var mes = item.mes || monthShort(item.data_inicio);
+    var period = formatRange(item.data_inicio, item.data_fim);
+    var exam = formatRange(item.prova_inicio, item.prova_fim);
+    var classes = 'ms-subject' + current + (mes ? '' : ' ms-subject--no-month') + (exam ? '' : ' ms-subject--no-exam');
     return (
-      '<article class="ms-subject' + current + '">' +
-        '<div class="ms-month">' + escapeHtml(mes) + '</div>' +
+      '<article class="' + classes + '">' +
+        (mes ? '<div class="ms-month">' + escapeHtml(mes) + '</div>' : '') +
         '<div class="ms-subject-copy">' +
-          '<span class="ms-tag">' + escapeHtml(statusLabel(item.status)) + '</span>' +
+          (item.status ? '<span class="ms-tag">' + escapeHtml(statusLabel(item.status)) + '</span>' : '') +
           '<h3>' + escapeHtml(item.titulo) + '</h3>' +
-          '<span>Período: ' + escapeHtml(formatRange(item.data_inicio, item.data_fim)) + '</span>' +
+          (period ? '<span>Período: ' + escapeHtml(period) + '</span>' : '') +
         '</div>' +
-        '<div class="ms-exam">' +
-          '<small>Prova</small>' +
-          '<strong>' + escapeHtml(formatRange(item.prova_inicio, item.prova_fim)) + '</strong>' +
-        '</div>' +
+        (exam
+          ? '<div class="ms-exam"><small>Prova</small><strong>' + escapeHtml(exam) + '</strong></div>'
+          : '') +
       '</article>'
     );
   }
@@ -243,6 +245,13 @@ window.MeuSemestre = (function () {
     var atividades = cache.atividades || [];
     var calendario = cache.calendario || [];
 
+    var heroDates = [];
+    if (disc && disc.data_fim) {
+      heroDates.push('<span><i data-lucide="clock-3" class="w-4 h-4"></i> Estude até <strong>' + escapeHtml(formatDate(disc.data_fim)) + '</strong></span>');
+    }
+    if (disc && (disc.prova_inicio || disc.prova_fim)) {
+      heroDates.push('<span><i data-lucide="calendar-days" class="w-4 h-4"></i> Prova: <strong>' + escapeHtml(formatRange(disc.prova_inicio, disc.prova_fim)) + '</strong></span>');
+    }
     var heroDisc = disc
       ? (
         '<article class="ms-now">' +
@@ -250,10 +259,7 @@ window.MeuSemestre = (function () {
             '<span class="ms-icon-box"><i data-lucide="book-open" class="w-5 h-5"></i></span>' +
             '<div><small>Disciplina atual</small><h2>' + escapeHtml(disc.titulo) + '</h2></div>' +
           '</div>' +
-          '<div class="ms-date-row">' +
-            '<span><i data-lucide="clock-3" class="w-4 h-4"></i> Estude até <strong>' + escapeHtml(formatDate(disc.data_fim)) + '</strong></span>' +
-            '<span><i data-lucide="calendar-days" class="w-4 h-4"></i> Prova: <strong>' + escapeHtml(formatRange(disc.prova_inicio, disc.prova_fim)) + '</strong></span>' +
-          '</div>' +
+          (heroDates.length ? '<div class="ms-date-row">' + heroDates.join('') + '</div>' : '') +
         '</article>'
       )
       : '<article class="ms-now"><p class="ms-muted">Nenhuma disciplina mensal em andamento.</p></article>';
@@ -273,7 +279,7 @@ window.MeuSemestre = (function () {
         '<article class="ms-integrated">' +
           '<small>Avaliação integrada</small>' +
           '<h3>' + escapeHtml(avaliacao.titulo) + '</h3>' +
-          '<p>Prazo até <strong>' + escapeHtml(formatDate(avaliacao.prazo)) + '</strong></p>' +
+          (avaliacao.prazo ? '<p>Prazo até <strong>' + escapeHtml(formatDate(avaliacao.prazo)) + '</strong></p>' : '') +
           (avaliacao.tutorial_categoria
             ? '<button type="button" class="ms-text-link" data-open-tutoriais="' + escapeHtml(avaliacao.tutorial_categoria) + '">' +
                 escapeHtml(avaliacao.tutorial_hint || 'Ver tutoriais') +

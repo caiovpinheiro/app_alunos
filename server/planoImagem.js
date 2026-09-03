@@ -201,21 +201,21 @@ function mapToPlanData(data) {
     label: MONTHS_FULL[month - 1],
     disciplines: grouped.get(month).map((item) => ({
       name: item.titulo,
-      study: formatRange(item.data_inicio, item.data_fim) || '—',
-      exam: formatRange(item.prova_inicio, item.prova_fim) || '—',
+      study: formatRange(item.data_inicio, item.data_fim) || '',
+      exam: formatRange(item.prova_inicio, item.prova_fim) || '',
     })),
   }));
 
   const activities = (data.atividades || []).map((item) => ({
     kind: activityKind(item.titulo),
     name: item.titulo,
-    deadline: activityDeadline(item) || '—',
+    deadline: activityDeadline(item) || '',
   }));
   if (data.avaliacao_integrada && data.avaliacao_integrada.titulo) {
     activities.push({
       kind: 'outro',
       name: data.avaliacao_integrada.titulo,
-      deadline: activityDeadline(data.avaliacao_integrada) || '—',
+      deadline: activityDeadline(data.avaliacao_integrada) || '',
     });
   }
 
@@ -304,10 +304,14 @@ function renderSvg(data, options = {}) {
       svg += bookIcon(cardX + 49, rowY + 30);
       svg += textLines(discipline.titleLines, cardX + 120, rowY + 38, { size: 25, weight: 800, lineHeight: 28 });
       const dateY = rowY + discipline.rowHeight - 25;
-      svg += calendarIcon(cardX + 120, dateY - 28, 30);
-      svg += textLines([`Estude: ${discipline.study || '—'}`], cardX + 160, dateY, { size: 20, weight: 650, fill: '#243a5a' });
-      svg += checkIcon(cardX + cardWidth - 295, dateY - 27, 30);
-      svg += textLines([`Prova: ${discipline.exam || '—'}`], cardX + cardWidth - 250, dateY, { size: 20, weight: 700, fill: '#243a5a' });
+      if (discipline.study) {
+        svg += calendarIcon(cardX + 120, dateY - 28, 30);
+        svg += textLines([`Estude: ${discipline.study}`], cardX + 160, dateY, { size: 20, weight: 650, fill: '#243a5a' });
+      }
+      if (discipline.exam) {
+        svg += checkIcon(cardX + cardWidth - 295, dateY - 27, 30);
+        svg += textLines([`Prova: ${discipline.exam}`], cardX + cardWidth - 250, dateY, { size: 20, weight: 700, fill: '#243a5a' });
+      }
       rowY += discipline.rowHeight + 14;
     }
     y += month.height + 30;
@@ -324,9 +328,11 @@ function renderSvg(data, options = {}) {
     svg += activityIcon(margin + 45, activityY + (activity.height - 68) / 2, activity.kind);
     const contentBaseY = activityY + 38;
     svg += textLines(activity.titleLines, margin + 135, contentBaseY, { size: 20, weight: 800, lineHeight: 24 });
-    svg += `<line x1="635" y1="${activityY + 20}" x2="635" y2="${activityY + activity.height - 20}" stroke="#b9d9f2" stroke-width="2"/>`;
-    svg += calendarIcon(662, activityY + (activity.height - 40) / 2, 38);
-    svg += textLines(activity.deadlineLines, 715, contentBaseY, { size: 18, weight: 650, lineHeight: 22, fill: '#243a5a' });
+    if (activity.deadlineLines.length) {
+      svg += `<line x1="635" y1="${activityY + 20}" x2="635" y2="${activityY + activity.height - 20}" stroke="#b9d9f2" stroke-width="2"/>`;
+      svg += calendarIcon(662, activityY + (activity.height - 40) / 2, 38);
+      svg += textLines(activity.deadlineLines, 715, contentBaseY, { size: 18, weight: 650, lineHeight: 22, fill: '#243a5a' });
+    }
     activityY += activity.height + 12;
   }
 

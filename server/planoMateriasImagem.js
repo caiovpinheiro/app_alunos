@@ -46,7 +46,7 @@ function parseBrRange(raw) {
 
 function formatMateriaRange(raw) {
   const parsed = parseBrRange(raw);
-  if (!parsed) return raw || 'Matéria do semestre';
+  if (!parsed) return raw || '';
   const a = `${parsed.startDay}/${String(parsed.startMonth).padStart(2, '0')}`;
   const b = `${parsed.endDay}/${String(parsed.endMonth).padStart(2, '0')}`;
   if (a === b) return a;
@@ -101,7 +101,7 @@ function mapMateriasToPlanData({ nome, materias, periodo }) {
     disciplines: grouped.get(month).map((item) => ({
       name: item.name,
       study: formatMateriaRange(item.period),
-      exam: '—',
+      exam: '',
     })),
   }));
 
@@ -114,7 +114,7 @@ function mapMateriasToPlanData({ nome, materias, periodo }) {
     mandatoryActivities: atividades.map((item) => ({
       kind: activityKind(item.name),
       name: item.name,
-      deadline: item.period ? `Disponível: ${formatMateriaRange(item.period)}` : 'Durante o semestre',
+      deadline: item.period ? formatMateriaRange(item.period) : '',
     })),
     attention: [],
     weeklyReminder: 'Acesse o portal oficial ou o app Duda para ver as disciplinas disponíveis.',

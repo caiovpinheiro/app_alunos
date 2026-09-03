@@ -1809,6 +1809,14 @@ textarea:focus {
   min-height: 168px;
 }
 
+.ms-subject--no-month {
+  grid-template-columns: 1fr;
+}
+
+.ms-subject--no-exam {
+  min-height: 0;
+}
+
 .ms-subject.is-current {
   border: 2px solid #7dd3fc;
   box-shadow: 0 9px 25px rgba(3, 105, 161, 0.08);

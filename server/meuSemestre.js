@@ -83,6 +83,7 @@ function comparePeriodo(a, b) {
 }
 
 function disciplinaStatus(item, today) {
+  if (!item.data_inicio && !item.data_fim) return null;
   if (item.data_inicio && today < item.data_inicio) return 'proxima';
   if (item.data_fim && today > item.data_fim) return 'encerrada';
   return 'atual';
