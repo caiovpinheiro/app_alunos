@@ -323,6 +323,13 @@
     el.addEventListener('click', function () { switchTab(el.getAttribute('data-tab')); });
   });
 
+  function matriculaFilterBody() {
+    return {
+      de: document.getElementById('planos-de').value || '',
+      ate: document.getElementById('planos-ate').value || '',
+    };
+  }
+
   document.getElementById('btn-planos-lote').addEventListener('click', async function () {
     var btn = document.getElementById('btn-planos-lote');
     var msg = document.getElementById('planos-lote-msg');
@@ -332,7 +339,11 @@
       msg.textContent = 'Iniciando geração em lote...';
     }
     try {
-      var res = await request('/api/admin/planos-imagens/gerar-lote', { method: 'POST' });
+      var res = await request('/api/admin/planos-imagens/gerar-lote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(matriculaFilterBody()),
+      });
       if (msg) msg.textContent = res.message || 'Geração em lote iniciada.';
       await loadPlanos();
     } catch (err) {
@@ -357,7 +368,7 @@
     btn.disabled = true;
     if (msg) {
       msg.dataset.locked = '1';
-      msg.textContent = 'Sincronizando matérias do Supabase...';
+      msg.textContent = 'Sincronizando matérias do Postgres...';
     }
     try {
       var res = await request('/api/admin/materias-imagens/sync', { method: 'POST' });
@@ -380,7 +391,11 @@
       msg.textContent = 'Iniciando geração de imagens por matérias...';
     }
     try {
-      var res = await request('/api/admin/materias-imagens/gerar-lote', { method: 'POST' });
+      var res = await request('/api/admin/materias-imagens/gerar-lote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(matriculaFilterBody()),
+      });
       if (msg) msg.textContent = res.message || 'Geração em lote iniciada.';
       await loadMaterias();
     } catch (err) {

@@ -92,6 +92,20 @@
       <div id="tab-planos" class="admin-panel hidden">
         <h2 class="text-xl font-bold mb-2">Imagens dos planos</h2>
         <p class="text-sm text-gray-500 mb-4">Gera PNG/SVG só para alunos ativos com plano cadastrado. A fila continua após reiniciar o servidor.</p>
+        <div class="bg-white border rounded-xl p-4 mb-4">
+          <p class="text-sm font-medium text-gray-700 mb-3">Filtrar por data de matrícula</p>
+          <div class="flex flex-wrap items-end gap-3">
+            <label class="text-sm text-gray-600">
+              De
+              <input id="planos-de" type="date" class="mt-1 block px-3 py-2 rounded-lg border bg-white">
+            </label>
+            <label class="text-sm text-gray-600">
+              Até
+              <input id="planos-ate" type="date" class="mt-1 block px-3 py-2 rounded-lg border bg-white">
+            </label>
+            <p class="text-xs text-gray-500 pb-2">Vazio = todos. Uma data só = só aquele dia. Usa a data de matrícula do relatório (EM CURSO).</p>
+          </div>
+        </div>
         <div class="flex flex-wrap gap-3 mb-4">
           <button type="button" id="btn-planos-lote" class="bg-cruzeiro text-white text-sm font-semibold px-4 py-2 rounded-lg">Gerar lote</button>
           <button type="button" id="btn-planos-status" class="bg-gray-100 text-cruzeiro text-sm font-semibold px-4 py-2 rounded-lg">Atualizar totais</button>
@@ -100,9 +114,9 @@
         <div id="admin-planos-status" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-8"></div>
 
         <h3 class="text-lg font-bold mb-2">Planos por matérias (WhatsApp / CRM)</h3>
-        <p class="text-sm text-gray-500 mb-4">Sincroniza <code>materias_alunos</code> do Supabase, cruza por RGM, gera PNG + URL pública e salva em <code>csu_materias_imagens</code>. O lote só gera alunos ainda sem imagem.</p>
+        <p class="text-sm text-gray-500 mb-4">Sincroniza <code>materias_alunos</code> do Postgres (<code>eduit</code>), cruza por RGM, gera PNG + URL pública e salva em <code>csu_materias_imagens</code>. O lote só gera alunos ainda sem imagem.</p>
         <div class="flex flex-wrap gap-3 mb-4">
-          <button type="button" id="btn-materias-sync" class="bg-cruzeiro text-white text-sm font-semibold px-4 py-2 rounded-lg">Sincronizar Supabase</button>
+          <button type="button" id="btn-materias-sync" class="bg-cruzeiro text-white text-sm font-semibold px-4 py-2 rounded-lg">Sincronizar matérias</button>
           <button type="button" id="btn-materias-lote" class="bg-cruzeiro text-white text-sm font-semibold px-4 py-2 rounded-lg">Gerar lote matérias</button>
           <button type="button" id="btn-materias-status" class="bg-gray-100 text-cruzeiro text-sm font-semibold px-4 py-2 rounded-lg">Atualizar matérias</button>
           <button type="button" id="btn-materias-export" class="bg-gray-100 text-cruzeiro text-sm font-semibold px-4 py-2 rounded-lg">Exportar CSV</button>
@@ -123,6 +137,6 @@
     </div>
   </div>
 
-  <script src="/js/admin.js?v=13"></script>
+  <script src="/js/admin.js?v=15"></script>
 </body>
 </html>

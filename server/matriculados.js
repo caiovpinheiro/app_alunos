@@ -206,6 +206,54 @@ function pickPhone(data) {
   return '';
 }
 
+function parseDataMatricula(raw) {
+  const value = String(raw ?? '').trim();
+  if (!value) return null;
+  if (/^\d{4}-\d{2}-\d{2}/.test(value)) return value.slice(0, 10);
+  const br = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (br) {
+    return `${br[3]}-${br[2].padStart(2, '0')}-${br[1].padStart(2, '0')}`;
+  }
+  if (/^\d{4,6}$/.test(value)) {
+    const serial = Number(value);
+    if (!Number.isFinite(serial) || serial < 20000) return null;
+    const utc = Date.UTC(1899, 11, 30) + serial * 86400000;
+    return new Date(utc).toISOString().slice(0, 10);
+  }
+  return null;
+}
+
+async function rgmsEnrolledBetween(pool, { de, ate } = {}) {
+  const from = de || null;
+  const to = ate || null;
+  if (!from && !to) return null;
+
+  const snapshotId = await getLatestSnapshotId(pool);
+  if (!snapshotId) return new Set();
+
+  const result = await pool.query(
+    `
+    SELECT data
+    FROM public.matriculados_rows
+    WHERE snapshot_id = $1
+      AND upper(btrim(COALESCE(data->>'Situação Matrícula', ''))) = 'EM CURSO'
+    `,
+    [snapshotId],
+  );
+
+  const rgms = new Set();
+  for (const row of result.rows) {
+    const data = row.data || {};
+    const iso = parseDataMatricula(data['Data Matrícula'] || data['Data Matricula']);
+    if (!iso) continue;
+    if (from && iso < from) continue;
+    if (to && iso > to) continue;
+    const rgm = normalizeRgm(data.RGM) || normalizeRgm(data.RGM_erp_matricula);
+    if (rgm) rgms.add(rgm);
+  }
+  return rgms;
+}
+
 async function phonesByRgms(pool, rgms) {
   const map = new Map();
   const list = [...new Set((rgms || []).map(normalizeRgm).filter(Boolean))];
@@ -239,6 +287,8 @@ module.exports = {
   passwordMatches,
   findByIdentifier,
   phonesByRgms,
+  rgmsEnrolledBetween,
+  parseDataMatricula,
   mapRow,
   formatPolo,
   formatCurso,

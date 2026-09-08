@@ -1,13 +1,52 @@
 'use strict';
 
+const { Pool } = require('pg');
+
 const DERIVED_PW_MARKER = 'DERIVED';
 
-function materiasSupabaseConfig() {
-  const url = process.env.MATERIAS_SUPABASE_URL || process.env.SUPABASE_URL;
-  const key = process.env.MATERIAS_SUPABASE_KEY || process.env.SUPABASE_KEY;
-  const table = process.env.MATERIAS_SUPABASE_TABLE || 'materias_alunos';
-  if (!url || !key) throw new Error('MATERIAS_SUPABASE_URL/KEY não configurado.');
-  return { url: url.replace(/\/$/, ''), key, table };
+function materiasPgConfig() {
+  const host = process.env.MATERIAS_HOST;
+  const database = process.env.MATERIAS_DATABASE;
+  if (host || database) {
+    return {
+      host: host || process.env.DATABASE_HOST,
+      port: Number(process.env.MATERIAS_PORT || 5432),
+      database: database || 'eduit',
+      user: process.env.MATERIAS_USER || process.env.MATRICULADOS_USER || process.env.DATABASE_USER,
+      password: process.env.MATERIAS_PASSWORD || process.env.MATRICULADOS_PASSWORD || process.env.DATABASE_PASSWORD,
+      ssl: process.env.MATERIAS_SSL === 'true',
+    };
+  }
+  if (process.env.DATABASE_NAME === 'eduit') {
+    return {
+      host: process.env.DATABASE_HOST,
+      port: Number(process.env.DATABASE_PORT || 5432),
+      database: 'eduit',
+      user: process.env.DATABASE_USER,
+      password: process.env.DATABASE_PASSWORD,
+      ssl: process.env.DATABASE_SSL === 'true',
+    };
+  }
+  throw new Error('MATERIAS_HOST/MATERIAS_DATABASE não configurado (Postgres eduit).');
+}
+
+function createMateriasPool() {
+  const cfg = materiasPgConfig();
+  const pool = new Pool({
+    host: cfg.host,
+    port: cfg.port,
+    database: cfg.database,
+    user: cfg.user,
+    password: cfg.password,
+    ssl: cfg.ssl ? { rejectUnauthorized: false } : false,
+    max: 4,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 15000,
+  });
+  pool.on('error', (err) => {
+    console.error('Erro inesperado no pool de matérias:', err.code || '', err.message);
+  });
+  return pool;
 }
 
 function parseNome(aluno, rgm) {
@@ -32,32 +71,28 @@ function needsNomeUpdate(nome, rgm) {
   return false;
 }
 
-async function fetchAllFromSupabase() {
-  const { url, key, table } = materiasSupabaseConfig();
+async function fetchAllFromPostgres() {
+  const table = String(process.env.MATERIAS_TABLE || 'materias_alunos').replace(/[^\w]/g, '') || 'materias_alunos';
   const since = String(process.env.MATERIAS_SINCE || '').trim();
-  const rows = [];
-  let offset = 0;
-  while (true) {
-    let endpoint = `${url}/rest/v1/${encodeURIComponent(table)}?select=rgm,aluno,materias,qtd_materias,consultado_em&order=rgm.asc&offset=${offset}&limit=1000`;
-    if (since) endpoint += `&consultado_em=gte.${encodeURIComponent(since)}`;
-    const res = await fetch(endpoint, {
-      headers: {
-        apikey: key,
-        Authorization: `Bearer ${key}`,
-        Accept: 'application/json',
-      },
-    });
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`Supabase materias_alunos: ${res.status} ${text.slice(0, 200)}`);
-    }
-    const batch = await res.json();
-    if (!Array.isArray(batch) || !batch.length) break;
-    rows.push(...batch);
-    if (batch.length < 1000) break;
-    offset += 1000;
+  const source = createMateriasPool();
+  try {
+    const result = since
+      ? await source.query(
+        `SELECT rgm, aluno, materias, qtd_materias, consultado_em
+         FROM ${table}
+         WHERE consultado_em >= $1::timestamptz
+         ORDER BY rgm ASC`,
+        [since],
+      )
+      : await source.query(
+        `SELECT rgm, aluno, materias, qtd_materias, consultado_em
+         FROM ${table}
+         ORDER BY rgm ASC`,
+      );
+    return result.rows;
+  } finally {
+    await source.end();
   }
-  return rows;
 }
 
 async function ensureAlunoForMaterias(pool, { rgm, nome }) {
@@ -90,8 +125,8 @@ async function ensureAlunoForMaterias(pool, { rgm, nome }) {
   return { id: inserted.rows[0].id, created: true, nomeUpdated: false };
 }
 
-async function syncFromSupabase(pool) {
-  const rows = await fetchAllFromSupabase();
+async function syncFromPostgres(pool) {
+  const rows = await fetchAllFromPostgres();
   let synced = 0;
   let linked = 0;
   let created = 0;
@@ -138,7 +173,8 @@ async function syncFromSupabase(pool) {
 
 module.exports = {
   parseNome,
-  fetchAllFromSupabase,
-  syncFromSupabase,
+  fetchAllFromPostgres,
+  syncFromPostgres,
+  syncFromSupabase: syncFromPostgres,
   ensureAlunoForMaterias,
 };

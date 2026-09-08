@@ -355,14 +355,17 @@ async function saveCursor(pool, { lastRgm, queued, skipped, total }) {
   );
 }
 
-async function enqueueAll(pool) {
+async function enqueueAll(pool, filter) {
+  const rgms = filter && filter.rgms ? [...filter.rgms] : null;
   const rows = await pool.query(
     `SELECT m.rgm, m.aluno_id, m.aluno_nome, m.materias, m.consultado_em,
             i.data_hash, i.status, (i.imagem_png IS NOT NULL) AS has_imagem
      FROM csu_materias_alunos m
      LEFT JOIN csu_materias_imagens i ON i.rgm = m.rgm
      WHERE m.aluno_id IS NOT NULL
+       AND ($1::text[] IS NULL OR regexp_replace(m.rgm, '\\D', '', 'g') = ANY($1::text[]))
      ORDER BY m.consultado_em ASC NULLS LAST, m.rgm ASC`,
+    [rgms],
   );
   const periodo = process.env.MATERIAS_PERIODO || '2026/2';
   let queued = 0;
@@ -495,11 +498,11 @@ function kickWorker(pool) {
   return true;
 }
 
-async function startBatch(pool) {
+async function startBatch(pool, filter) {
   if (!enqueueRunning) {
     enqueueRunning = true;
     setImmediate(() => {
-      enqueueAll(pool)
+      enqueueAll(pool, filter)
         .then((queued) => {
           console.log(`Imagens de matérias: ${queued.queued} novas, ${queued.skipped} já geradas (último RGM ${queued.lastRgm || '—'}).`);
           kickWorker(pool);

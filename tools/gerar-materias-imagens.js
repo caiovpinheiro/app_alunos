@@ -13,7 +13,7 @@ async function main() {
   const action = process.argv[2] || 'all';
 
   if (action === 'sync' || action === 'all') {
-    const synced = await materiasAlunos.syncFromSupabase(pool);
+    const synced = await materiasAlunos.syncFromPostgres(pool);
     console.log('Sync:', synced);
   }
 

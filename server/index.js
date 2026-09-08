@@ -144,6 +144,39 @@ function normalizeSpaces(value) {
   return String(value ?? '').replace(/\s+/g, ' ').trim();
 }
 
+function parseMatriculaDateRange(body) {
+  let de = normalizeSpaces(body?.de);
+  let ate = normalizeSpaces(body?.ate);
+  const iso = /^\d{4}-\d{2}-\d{2}$/;
+  if (!de && !ate) return null;
+  if (de && !ate) ate = de;
+  if (ate && !de) de = ate;
+  if (!iso.test(de) || !iso.test(ate)) {
+    const err = new Error('Informe datas válidas no filtro de matrícula.');
+    err.status = 422;
+    throw err;
+  }
+  if (de > ate) {
+    const err = new Error('A data inicial não pode ser maior que a final.');
+    err.status = 422;
+    throw err;
+  }
+  return { de, ate };
+}
+
+async function resolveMatriculaFilter(body) {
+  const range = parseMatriculaDateRange(body);
+  if (!range) return null;
+  const source = getMatriculadosPool();
+  if (!source) {
+    const err = new Error('Relatório de matriculados não configurado. Não dá para filtrar por data de matrícula.');
+    err.status = 422;
+    throw err;
+  }
+  const rgms = await matriculados.rgmsEnrolledBetween(source, range);
+  return { ...range, rgms };
+}
+
 function validateCertificatePayload(body) {
   const errors = {};
   const email = normalizeSpaces(body.email);
@@ -503,19 +536,35 @@ app.get('/p/plano/:file', async (req, res) => {
 app.post('/api/admin/planos-imagens/gerar-lote', requireAdmin, async (req, res) => {
   if (!pool) return unavailable(res);
   try {
-    const result = await planoImagem.startBatch(pool);
+    const filter = await resolveMatriculaFilter(req.body);
+    if (filter && filter.rgms.size === 0) {
+      return res.json({
+        success: true,
+        message: `Nenhum aluno EM CURSO matriculado entre ${filter.de} e ${filter.ate}.`,
+        queued: 0,
+        total: 0,
+        running: false,
+      });
+    }
+    const result = await planoImagem.startBatch(pool, filter);
+    const periodo = filter ? ` (${filter.rgms.size} RGMs de ${filter.de} a ${filter.ate})` : '';
     return res.json({
       success: true,
       message: result.started || result.running
-        ? 'Geração em lote iniciada em segundo plano.'
+        ? `Geração em lote iniciada em segundo plano.${periodo}`
         : 'Nada novo para gerar agora.',
       queued: result.queued,
       total: result.total,
+      matched: filter ? filter.rgms.size : null,
       running: result.running,
     });
   } catch (err) {
     console.error('Falha ao iniciar lote de planos:', err.message);
-    return res.status(500).json({ success: false, message: 'Não foi possível iniciar a geração em lote.' });
+    const status = err.status || 500;
+    return res.status(status).json({
+      success: false,
+      message: status === 422 ? err.message : 'Não foi possível iniciar a geração em lote.',
+    });
   }
 });
 
@@ -534,10 +583,10 @@ app.post('/api/admin/materias-imagens/sync', requireAdmin, async (req, res) => {
   if (!pool) return unavailable(res);
   try {
     await db.ensureSchema(pool);
-    const result = await materiasAlunos.syncFromSupabase(pool);
+    const result = await materiasAlunos.syncFromPostgres(pool);
     return res.json({
       success: true,
-      message: `Sincronizados ${result.synced} alunos do Supabase.`,
+      message: `Sincronizados ${result.synced} alunos de materias_alunos (Postgres).`,
       ...result,
     });
   } catch (err) {
@@ -549,19 +598,35 @@ app.post('/api/admin/materias-imagens/sync', requireAdmin, async (req, res) => {
 app.post('/api/admin/materias-imagens/gerar-lote', requireAdmin, async (req, res) => {
   if (!pool) return unavailable(res);
   try {
-    const result = await planoMateriasImagem.startBatch(pool);
+    const filter = await resolveMatriculaFilter(req.body);
+    if (filter && filter.rgms.size === 0) {
+      return res.json({
+        success: true,
+        message: `Nenhum aluno EM CURSO matriculado entre ${filter.de} e ${filter.ate}.`,
+        queued: 0,
+        total: 0,
+        running: false,
+      });
+    }
+    const result = await planoMateriasImagem.startBatch(pool, filter);
+    const periodo = filter ? ` (${filter.rgms.size} RGMs de ${filter.de} a ${filter.ate})` : '';
     return res.json({
       success: true,
       message: result.started || result.running
-        ? 'Geração de imagens por matérias iniciada em segundo plano.'
+        ? `Geração de imagens por matérias iniciada em segundo plano.${periodo}`
         : 'Nada novo para gerar agora.',
       queued: result.queued,
       total: result.total,
+      matched: filter ? filter.rgms.size : null,
       running: result.running,
     });
   } catch (err) {
     console.error('Falha ao iniciar lote de matérias:', err.message);
-    return res.status(500).json({ success: false, message: 'Não foi possível iniciar a geração em lote.' });
+    const status = err.status || 500;
+    return res.status(status).json({
+      success: false,
+      message: status === 422 ? err.message : 'Não foi possível iniciar a geração em lote.',
+    });
   }
 });
 

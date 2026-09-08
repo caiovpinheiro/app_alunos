@@ -746,16 +746,19 @@ async function sendSharedImage(pool, token, res) {
   }
 }
 
-async function listEligible(pool) {
+async function listEligible(pool, filter) {
   const today = meuSemestre.todayIsoSaoPaulo();
   const planos = await pool.query(
     `SELECT id, curso, periodo, titulo FROM csu_semestre_planos WHERE ativo = TRUE`,
   );
   if (!planos.rows.length) return [];
+  const rgms = filter && filter.rgms ? [...filter.rgms] : null;
   const alunos = await pool.query(
-    `SELECT id, nome, curso
+    `SELECT id, nome, curso, rgm
      FROM csu_alunos
-     WHERE ativo = TRUE AND curso IS NOT NULL AND btrim(curso) <> ''`,
+     WHERE ativo = TRUE AND curso IS NOT NULL AND btrim(curso) <> ''
+       AND ($1::text[] IS NULL OR regexp_replace(rgm, '\\D', '', 'g') = ANY($1::text[]))`,
+    [rgms],
   );
   const list = [];
   for (const aluno of alunos.rows) {
@@ -765,8 +768,8 @@ async function listEligible(pool) {
   return list;
 }
 
-async function enqueueOutdated(pool) {
-  const eligible = await listEligible(pool);
+async function enqueueOutdated(pool, filter) {
+  const eligible = await listEligible(pool, filter);
   if (!eligible.length) return { queued: 0, total: 0 };
 
   const planoIds = [...new Set(eligible.map((row) => row.planoId))];
@@ -925,11 +928,11 @@ function kickWorker(pool) {
   return true;
 }
 
-async function startBatch(pool) {
+async function startBatch(pool, filter) {
   if (!enqueueRunning) {
     enqueueRunning = true;
     setImmediate(() => {
-      enqueueOutdated(pool)
+      enqueueOutdated(pool, filter)
         .then((queued) => {
           console.log(`Imagens de plano: ${queued.queued} enfileiradas de ${queued.total} alunos elegíveis.`);
           kickWorker(pool);
