@@ -2,6 +2,7 @@
 
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
+const { envValue } = require('./env');
 
 const BCRYPT_ROUNDS = 12;
 const DERIVED_PW_MARKER = 'DERIVED';
@@ -15,11 +16,11 @@ function createPool() {
   }
 
   const pool = new Pool({
-    host: process.env.DATABASE_HOST,
-    port: Number(process.env.DATABASE_PORT),
-    database: process.env.DATABASE_NAME,
-    user: process.env.DATABASE_USER,
-    password: process.env.DATABASE_PASSWORD,
+    host: envValue('DATABASE_HOST'),
+    port: Number(envValue('DATABASE_PORT')),
+    database: envValue('DATABASE_NAME'),
+    user: envValue('DATABASE_USER'),
+    password: envValue('DATABASE_PASSWORD'),
     ssl: process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : false,
     max: 8,
     idleTimeoutMillis: 30000,

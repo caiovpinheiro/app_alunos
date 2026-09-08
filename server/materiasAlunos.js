@@ -1,30 +1,31 @@
 'use strict';
 
 const { Pool } = require('pg');
+const { envValue } = require('./env');
 
 const DERIVED_PW_MARKER = 'DERIVED';
 
 function materiasPgConfig() {
-  const host = process.env.MATERIAS_HOST;
-  const database = process.env.MATERIAS_DATABASE;
+  const host = envValue('MATERIAS_HOST');
+  const database = envValue('MATERIAS_DATABASE');
   if (host || database) {
     return {
-      host: host || process.env.DATABASE_HOST,
-      port: Number(process.env.MATERIAS_PORT || 5432),
+      host: host || envValue('DATABASE_HOST'),
+      port: Number(envValue('MATERIAS_PORT', '5432')),
       database: database || 'eduit',
-      user: process.env.MATERIAS_USER || process.env.MATRICULADOS_USER || process.env.DATABASE_USER,
-      password: process.env.MATERIAS_PASSWORD || process.env.MATRICULADOS_PASSWORD || process.env.DATABASE_PASSWORD,
-      ssl: process.env.MATERIAS_SSL === 'true',
+      user: envValue('MATERIAS_USER', envValue('MATRICULADOS_USER', envValue('DATABASE_USER'))),
+      password: envValue('MATERIAS_PASSWORD', envValue('MATRICULADOS_PASSWORD', envValue('DATABASE_PASSWORD'))),
+      ssl: envValue('MATERIAS_SSL') === 'true',
     };
   }
-  if (process.env.DATABASE_NAME === 'eduit') {
+  if (envValue('DATABASE_NAME') === 'eduit') {
     return {
-      host: process.env.DATABASE_HOST,
-      port: Number(process.env.DATABASE_PORT || 5432),
+      host: envValue('DATABASE_HOST'),
+      port: Number(envValue('DATABASE_PORT', '5432')),
       database: 'eduit',
-      user: process.env.DATABASE_USER,
-      password: process.env.DATABASE_PASSWORD,
-      ssl: process.env.DATABASE_SSL === 'true',
+      user: envValue('DATABASE_USER'),
+      password: envValue('DATABASE_PASSWORD'),
+      ssl: envValue('DATABASE_SSL') === 'true',
     };
   }
   throw new Error('MATERIAS_HOST/MATERIAS_DATABASE não configurado (Postgres eduit).');

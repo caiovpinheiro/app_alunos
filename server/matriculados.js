@@ -2,6 +2,7 @@
 
 const crypto = require('node:crypto');
 const { Pool } = require('pg');
+const { envValue } = require('./env');
 
 const SNAPSHOT_TTL_MS = 5 * 60 * 1000;
 const SITUACAO_ATIVA = 'EM CURSO';
@@ -18,11 +19,11 @@ function createPool() {
   }
 
   const pool = new Pool({
-    host: process.env.MATRICULADOS_HOST || process.env.DATABASE_HOST,
-    port: Number(process.env.MATRICULADOS_PORT || process.env.DATABASE_PORT || 5432),
-    database: process.env.MATRICULADOS_DATABASE || 'disparos',
-    user: process.env.MATRICULADOS_USER || process.env.DATABASE_USER,
-    password: process.env.MATRICULADOS_PASSWORD || process.env.DATABASE_PASSWORD,
+    host: envValue('MATRICULADOS_HOST', envValue('DATABASE_HOST')),
+    port: Number(envValue('MATRICULADOS_PORT', envValue('DATABASE_PORT', '5432'))),
+    database: envValue('MATRICULADOS_DATABASE', 'disparos'),
+    user: envValue('MATRICULADOS_USER', envValue('DATABASE_USER')),
+    password: envValue('MATRICULADOS_PASSWORD', envValue('DATABASE_PASSWORD')),
     ssl: (process.env.MATRICULADOS_SSL || process.env.DATABASE_SSL) === 'true'
       ? { rejectUnauthorized: false }
       : false,
