@@ -207,30 +207,36 @@ function pickPhone(data) {
   return '';
 }
 
+function excelSerialToIso(serial) {
+  if (!Number.isFinite(serial) || serial < 20000 || serial > 80000) return null;
+  const utc = Date.UTC(1899, 11, 30) + serial * 86400000;
+  return new Date(utc).toISOString().slice(0, 10);
+}
+
 function parseDataMatricula(raw) {
+  if (raw instanceof Date && !Number.isNaN(raw.getTime())) {
+    return raw.toISOString().slice(0, 10);
+  }
+  if (typeof raw === 'number') return excelSerialToIso(raw);
+
   const value = String(raw ?? '').trim();
   if (!value) return null;
   if (/^\d{4}-\d{2}-\d{2}/.test(value)) return value.slice(0, 10);
-  const br = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  const br = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\b|[T\s]|$)/);
   if (br) {
     return `${br[3]}-${br[2].padStart(2, '0')}-${br[1].padStart(2, '0')}`;
   }
-  if (/^\d{4,6}$/.test(value)) {
-    const serial = Number(value);
-    if (!Number.isFinite(serial) || serial < 20000) return null;
-    const utc = Date.UTC(1899, 11, 30) + serial * 86400000;
-    return new Date(utc).toISOString().slice(0, 10);
-  }
+  if (/^\d{4,6}(?:\.0+)?$/.test(value)) return excelSerialToIso(Number(value));
   return null;
 }
 
-async function rgmsEnrolledBetween(pool, { de, ate } = {}) {
+async function alunosEnrolledBetween(pool, { de, ate } = {}) {
   const from = de || null;
   const to = ate || null;
-  if (!from && !to) return null;
+  if (!from && !to) return { rgms: null, alunos: [] };
 
   const snapshotId = await getLatestSnapshotId(pool);
-  if (!snapshotId) return new Set();
+  if (!snapshotId) return { rgms: new Set(), alunos: [] };
 
   const result = await pool.query(
     `
@@ -242,16 +248,22 @@ async function rgmsEnrolledBetween(pool, { de, ate } = {}) {
     [snapshotId],
   );
 
-  const rgms = new Set();
+  const byRgm = new Map();
   for (const row of result.rows) {
     const data = row.data || {};
     const iso = parseDataMatricula(data['Data Matrícula'] || data['Data Matricula']);
     if (!iso) continue;
     if (from && iso < from) continue;
     if (to && iso > to) continue;
-    const rgm = normalizeRgm(data.RGM) || normalizeRgm(data.RGM_erp_matricula);
-    if (rgm) rgms.add(rgm);
+    const aluno = mapRow(data);
+    if (!aluno.rgm || byRgm.has(aluno.rgm)) continue;
+    byRgm.set(aluno.rgm, aluno);
   }
+  return { rgms: new Set(byRgm.keys()), alunos: [...byRgm.values()] };
+}
+
+async function rgmsEnrolledBetween(pool, range) {
+  const { rgms } = await alunosEnrolledBetween(pool, range);
   return rgms;
 }
 
@@ -288,6 +300,7 @@ module.exports = {
   passwordMatches,
   findByIdentifier,
   phonesByRgms,
+  alunosEnrolledBetween,
   rgmsEnrolledBetween,
   parseDataMatricula,
   mapRow,

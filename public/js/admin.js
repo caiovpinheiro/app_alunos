@@ -66,7 +66,7 @@
     if (name === 'tutoriais') loadTuts();
     if (name === 'contatos') loadContatos();
     if (name === 'indicacoes') loadInds();
-    if (name === 'planos') { loadPlanos(); loadMaterias(); }
+    if (name === 'planos') { loadPlanos(); loadMaterias(); loadImagensPreview(); }
   }
 
   function closeModal() {
@@ -330,6 +330,53 @@
     };
   }
 
+  var previewTimer = null;
+  var previewSeq = 0;
+  async function loadImagensPreview() {
+    var box = document.getElementById('planos-preview');
+    if (!box) return;
+    var seq = ++previewSeq;
+    box.textContent = 'Contando alunos do filtro...';
+    try {
+      var f = matriculaFilterBody();
+      var qs = [];
+      if (f.de) qs.push('de=' + encodeURIComponent(f.de));
+      if (f.ate) qs.push('ate=' + encodeURIComponent(f.ate));
+      var res = await request('/api/admin/imagens/previsualizar' + (qs.length ? '?' + qs.join('&') : ''));
+      if (seq !== previewSeq) return;
+      var planosGerar = Number(res.planos && res.planos.gerar);
+      var materiasGerar = Number(res.materias && res.materias.gerar);
+      var comPlano = res.planos && res.planos.com_plano;
+      var periodo = res.matriculados == null
+        ? 'Sem filtro de data: vale para todos os alunos ativos.'
+        : '<strong>' + Number(res.matriculados) + '</strong> matriculados EM CURSO neste período.';
+      var planoExtra = res.matriculados == null
+        ? Number(res.planos && res.planos.ja_tem) + ' já têm imagem de plano.'
+        : Number(comPlano) + ' com plano cadastrado · ' + Number(res.planos && res.planos.ja_tem) + ' já têm imagem.';
+      box.innerHTML =
+        '<p class="mb-2">' + periodo + '</p>' +
+        '<p class="text-base font-semibold text-gray-900">Gerar lote: ' + planosGerar + ' ' + (planosGerar === 1 ? 'pessoa' : 'pessoas') + '</p>' +
+        '<p class="text-xs text-gray-500 mb-2">' + planoExtra + '</p>' +
+        '<p class="text-base font-semibold text-gray-900">Gerar lote matérias: ' + materiasGerar + ' ' + (materiasGerar === 1 ? 'pessoa' : 'pessoas') + '</p>' +
+        '<p class="text-xs text-gray-500">' + Number(res.materias && res.materias.ja_tem) + ' já têm imagem de matérias.</p>';
+    } catch (err) {
+      if (seq !== previewSeq) return;
+      box.textContent = err.message || 'Não foi possível contar os alunos.';
+    }
+  }
+
+  function scheduleImagensPreview() {
+    clearTimeout(previewTimer);
+    previewTimer = setTimeout(function () { loadImagensPreview(); }, 350);
+  }
+
+  ['planos-de', 'planos-ate'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('change', scheduleImagensPreview);
+    el.addEventListener('input', scheduleImagensPreview);
+  });
+
   document.getElementById('btn-planos-lote').addEventListener('click', async function () {
     var btn = document.getElementById('btn-planos-lote');
     var msg = document.getElementById('planos-lote-msg');
@@ -346,6 +393,7 @@
       });
       if (msg) msg.textContent = res.message || 'Geração em lote iniciada.';
       await loadPlanos();
+      await loadImagensPreview();
     } catch (err) {
       if (msg) msg.textContent = err.message || 'Não foi possível iniciar o lote.';
     } finally {
@@ -398,6 +446,7 @@
       });
       if (msg) msg.textContent = res.message || 'Geração em lote iniciada.';
       await loadMaterias();
+      await loadImagensPreview();
     } catch (err) {
       if (msg) msg.textContent = err.message || 'Não foi possível iniciar o lote.';
     } finally {

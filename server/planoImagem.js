@@ -768,6 +768,55 @@ async function listEligible(pool, filter) {
   return list;
 }
 
+async function previewBatch(pool, filter) {
+  const today = meuSemestre.todayIsoSaoPaulo();
+  const planos = await pool.query(
+    `SELECT id, curso, periodo, titulo FROM csu_semestre_planos WHERE ativo = TRUE`,
+  );
+
+  if (filter && Array.isArray(filter.alunos)) {
+    const comPlano = filter.alunos.filter((aluno) => pickPlano(planos.rows, aluno.curso, today)).length;
+    const rgms = [...(filter.rgms || [])];
+    let jaTem = 0;
+    if (rgms.length) {
+      const done = await pool.query(
+        `SELECT COUNT(DISTINCT a.id)::int AS n
+         FROM csu_alunos a
+         JOIN csu_semestre_imagens i ON i.aluno_id = a.id
+         WHERE regexp_replace(a.rgm, '\\D', '', 'g') = ANY($1::text[])
+           AND i.status = 'concluida'
+           AND i.imagem_png IS NOT NULL`,
+        [rgms],
+      );
+      jaTem = done.rows[0].n;
+    }
+    return {
+      pessoas: filter.alunos.length,
+      com_plano: comPlano,
+      ja_tem: jaTem,
+      gerar: Math.max(0, comPlano - jaTem),
+    };
+  }
+
+  const eligible = await listEligible(pool, filter);
+  if (!eligible.length) return { pessoas: 0, com_plano: 0, ja_tem: 0, gerar: 0 };
+  const done = await pool.query(
+    `SELECT COUNT(DISTINCT aluno_id)::int AS n
+     FROM csu_semestre_imagens
+     WHERE aluno_id = ANY($1::int[])
+       AND status = 'concluida'
+       AND imagem_png IS NOT NULL`,
+    [eligible.map((row) => row.alunoId)],
+  );
+  const jaTem = done.rows[0].n;
+  return {
+    pessoas: eligible.length,
+    com_plano: eligible.length,
+    ja_tem: jaTem,
+    gerar: Math.max(0, eligible.length - jaTem),
+  };
+}
+
 async function enqueueOutdated(pool, filter) {
   const eligible = await listEligible(pool, filter);
   if (!eligible.length) return { queued: 0, total: 0 };
@@ -1003,6 +1052,7 @@ module.exports = {
   sendAlunoShareLink,
   sendSharedImage,
   startBatch,
+  previewBatch,
   getStatus,
   kickWorker,
   startAutoSync,

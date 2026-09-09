@@ -173,8 +173,35 @@ async function resolveMatriculaFilter(body) {
     err.status = 422;
     throw err;
   }
-  const rgms = await matriculados.rgmsEnrolledBetween(source, range);
-  return { ...range, rgms };
+  const { rgms, alunos } = await matriculados.alunosEnrolledBetween(source, range);
+  return { ...range, rgms, alunos };
+}
+
+async function ensureFilterAlunos(appPool, filter) {
+  if (!filter || !Array.isArray(filter.alunos) || !filter.alunos.length) {
+    return { created: 0, updated: 0 };
+  }
+  await db.ensureSchema(appPool);
+  let created = 0;
+  let updated = 0;
+  for (const aluno of filter.alunos) {
+    if (!aluno.rgm || !aluno.nome) continue;
+    const email = aluno.email || `rgm.${aluno.rgm}@matricula.portal`;
+    try {
+      const row = await db.upsertAcessoDerived(appPool, {
+        email,
+        rgm: aluno.rgm,
+        nome: aluno.nome,
+        curso: aluno.curso,
+        unidade: aluno.unidade,
+      });
+      if (row.created) created += 1;
+      else updated += 1;
+    } catch (err) {
+      console.error('Falha ao garantir aluno do filtro:', aluno.rgm, err.code || err.message);
+    }
+  }
+  return { created, updated };
 }
 
 function validateCertificatePayload(body) {
@@ -391,7 +418,7 @@ app.post('/api/avisos/:id/lida', authMiddleware, async (req, res) => {
 app.get('/api/cursos', authMiddleware, async (req, res) => {
   const q = normalizeSpaces(req.query.q).slice(0, 80);
   try {
-    const names = await cursos.searchCourses(q);
+    const names = await cursos.searchCourses(pool, q);
     return res.json({ success: true, cursos: names });
   } catch (err) {
     console.error('Falha ao buscar cursos:', err.message);
@@ -546,8 +573,11 @@ app.post('/api/admin/planos-imagens/gerar-lote', requireAdmin, async (req, res) 
         running: false,
       });
     }
+    const ensured = await ensureFilterAlunos(pool, filter);
     const result = await planoImagem.startBatch(pool, filter);
-    const periodo = filter ? ` (${filter.rgms.size} RGMs de ${filter.de} a ${filter.ate})` : '';
+    const periodo = filter
+      ? ` (${filter.rgms.size} matriculados de ${filter.de} a ${filter.ate}; ${ensured.created} novos no portal)`
+      : '';
     return res.json({
       success: true,
       message: result.started || result.running
@@ -564,6 +594,42 @@ app.post('/api/admin/planos-imagens/gerar-lote', requireAdmin, async (req, res) 
     return res.status(status).json({
       success: false,
       message: status === 422 ? err.message : 'Não foi possível iniciar a geração em lote.',
+    });
+  }
+});
+
+app.get('/api/admin/imagens/previsualizar', requireAdmin, async (req, res) => {
+  if (!pool) return unavailable(res);
+  try {
+    const filter = await resolveMatriculaFilter(req.query);
+    if (filter && filter.rgms.size === 0) {
+      return res.json({
+        success: true,
+        de: filter.de,
+        ate: filter.ate,
+        matriculados: 0,
+        planos: { pessoas: 0, com_plano: 0, ja_tem: 0, gerar: 0 },
+        materias: { pessoas: 0, ja_tem: 0, gerar: 0 },
+      });
+    }
+    const [planos, materias] = await Promise.all([
+      planoImagem.previewBatch(pool, filter),
+      planoMateriasImagem.previewBatch(pool, filter),
+    ]);
+    return res.json({
+      success: true,
+      de: filter ? filter.de : null,
+      ate: filter ? filter.ate : null,
+      matriculados: filter ? filter.rgms.size : null,
+      planos,
+      materias,
+    });
+  } catch (err) {
+    console.error('Falha ao pré-visualizar imagens:', err.message);
+    const status = err.status || 500;
+    return res.status(status).json({
+      success: false,
+      message: status === 422 ? err.message : 'Não foi possível contar os alunos do filtro.',
     });
   }
 });
@@ -608,8 +674,9 @@ app.post('/api/admin/materias-imagens/gerar-lote', requireAdmin, async (req, res
         running: false,
       });
     }
+    await ensureFilterAlunos(pool, filter);
     const result = await planoMateriasImagem.startBatch(pool, filter);
-    const periodo = filter ? ` (${filter.rgms.size} RGMs de ${filter.de} a ${filter.ate})` : '';
+    const periodo = filter ? ` (${filter.rgms.size} matriculados de ${filter.de} a ${filter.ate})` : '';
     return res.json({
       success: true,
       message: result.started || result.running

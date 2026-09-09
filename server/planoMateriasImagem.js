@@ -404,6 +404,23 @@ async function enqueueAll(pool, filter) {
   return { queued, skipped, total: rows.rows.length, lastRgm };
 }
 
+async function previewBatch(pool, filter) {
+  const rgms = filter && filter.rgms ? [...filter.rgms] : null;
+  const result = await pool.query(
+    `SELECT
+       COUNT(*)::int AS pessoas,
+       COUNT(*) FILTER (WHERE i.status = 'concluida' AND i.imagem_png IS NOT NULL)::int AS ja_tem
+     FROM csu_materias_alunos m
+     LEFT JOIN csu_materias_imagens i ON i.rgm = m.rgm
+     WHERE m.aluno_id IS NOT NULL
+       AND ($1::text[] IS NULL OR regexp_replace(m.rgm, '\\D', '', 'g') = ANY($1::text[]))`,
+    [rgms],
+  );
+  const pessoas = result.rows[0].pessoas;
+  const jaTem = result.rows[0].ja_tem;
+  return { pessoas, ja_tem: jaTem, gerar: Math.max(0, pessoas - jaTem) };
+}
+
 async function claimJobs(pool, limit) {
   const client = await pool.connect();
   try {
@@ -655,6 +672,7 @@ module.exports = {
   findSharedImage,
   publicImageUrl,
   startBatch,
+  previewBatch,
   getStatus,
   listCrmRows,
   sendExportCsv,

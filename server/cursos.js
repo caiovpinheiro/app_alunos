@@ -5,15 +5,6 @@ const MAX_RESULTS = 12;
 
 let cache = { at: 0, names: [] };
 
-function supabaseConfig() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_KEY;
-  const table = process.env.SUPABASE_CURSOS_TABLE || 'cursos_catalogo_ia';
-  const column = process.env.SUPABASE_CURSOS_COLUMN || 'curso';
-  if (!url || !key) throw new Error('Supabase não configurado.');
-  return { url, key, table, column };
-}
-
 function uniqueSorted(values) {
   const set = new Set();
   for (const value of values) {
@@ -23,23 +14,22 @@ function uniqueSorted(values) {
   return [...set].sort((a, b) => a.localeCompare(b, 'pt-BR'));
 }
 
-async function loadCourseNames() {
+async function loadCourseNames(pool) {
+  if (!pool) throw new Error('Postgres não configurado.');
   if (Date.now() - cache.at < CACHE_TTL_MS && cache.names.length) return cache.names;
 
-  const { url, key, table, column } = supabaseConfig();
-  const encodedColumn = encodeURIComponent(column);
-  const endpoint = `${url}/rest/v1/${encodeURIComponent(table)}?select=${encodedColumn}&${encodedColumn}=not.is.null&limit=2000`;
-
-  const res = await fetch(endpoint, {
-    headers: { apikey: key, Authorization: `Bearer ${key}` },
-  });
-  if (!res.ok) {
-    const detail = await res.text();
-    throw new Error(`Falha ao consultar cursos (${res.status}): ${detail.slice(0, 180)}`);
-  }
-
-  const rows = await res.json();
-  cache = { at: Date.now(), names: uniqueSorted(rows.map((row) => row[column])) };
+  const result = await pool.query(
+    `SELECT DISTINCT btrim(curso) AS curso
+     FROM (
+       SELECT curso FROM csu_alunos
+       WHERE curso IS NOT NULL AND btrim(curso) <> ''
+       UNION
+       SELECT curso FROM csu_semestre_planos
+       WHERE ativo = TRUE AND curso IS NOT NULL AND btrim(curso) <> ''
+     ) c
+     ORDER BY 1`,
+  );
+  cache = { at: Date.now(), names: uniqueSorted(result.rows.map((row) => row.curso)) };
   return cache.names;
 }
 
@@ -57,15 +47,15 @@ function filterCourses(names, query) {
   return starts.concat(contains).slice(0, MAX_RESULTS);
 }
 
-async function searchCourses(query) {
-  const names = await loadCourseNames();
+async function searchCourses(pool, query) {
+  const names = await loadCourseNames(pool);
   return filterCourses(names, query);
 }
 
-async function isKnownCourse(name) {
+async function isKnownCourse(pool, name) {
   const normalized = String(name ?? '').replace(/\s+/g, ' ').trim().toLowerCase();
   if (!normalized) return false;
-  const names = await loadCourseNames();
+  const names = await loadCourseNames(pool);
   return names.some((item) => item.toLowerCase() === normalized);
 }
 
