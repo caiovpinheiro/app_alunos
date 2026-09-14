@@ -346,6 +346,23 @@ window.MeuSemestre = (function () {
     if (window.lucide) window.lucide.createIcons();
   }
 
+  var retryTimer = null;
+
+  function showOffline() {
+    var dash = document.getElementById('dashboard-semestre-body');
+    if (dash) dash.innerHTML = offlineHtml();
+    var page = document.getElementById('meu-semestre-content');
+    if (page) {
+      page.innerHTML =
+        '<div class="ms-empty">' +
+          '<span class="ms-soon-pill ms-soon-pill--off">Fora do ar</span>' +
+          '<h2>Meu Semestre</h2>' +
+          '<p>Opção fora do ar. Tente novamente em instantes.</p>' +
+        '</div>';
+    }
+    if (window.lucide) window.lucide.createIcons();
+  }
+
   async function refresh() {
     if (!window.Auth.isAuthenticated()) {
       cache = null;
@@ -354,19 +371,18 @@ window.MeuSemestre = (function () {
     try {
       cache = await window.Api.getMeuSemestre();
     } catch (err) {
-      cache = null;
-      var dash = document.getElementById('dashboard-semestre-body');
-      if (dash) dash.innerHTML = offlineHtml();
-      var page = document.getElementById('meu-semestre-content');
-      if (page) {
-        page.innerHTML =
-          '<div class="ms-empty">' +
-            '<span class="ms-soon-pill ms-soon-pill--off">Fora do ar</span>' +
-            '<h2>Meu Semestre</h2>' +
-            '<p>Opção fora do ar. Tente novamente em instantes.</p>' +
-          '</div>';
+      if (!retryTimer) {
+        retryTimer = setTimeout(function () {
+          retryTimer = null;
+          refresh();
+        }, 2000);
       }
-      if (window.lucide) window.lucide.createIcons();
+      if (cache && cache.plano) {
+        renderDashboard();
+        renderPage();
+        return;
+      }
+      showOffline();
       return;
     }
     renderDashboard();

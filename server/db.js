@@ -8,6 +8,29 @@ const BCRYPT_ROUNDS = 12;
 const DERIVED_PW_MARKER = 'DERIVED';
 const TOKEN_TTL_MS = 8 * 60 * 60 * 1000;
 
+const TRANSIENT_DB_CODES = new Set([
+  'ECONNRESET', 'ECONNREFUSED', 'ETIMEDOUT', 'EPIPE', 'EHOSTUNREACH',
+  '57P01', '57P02', '57P03', '08000', '08003', '08006', '08001', '40001', '53300',
+]);
+
+function isTransientDbError(err) {
+  if (!err) return false;
+  if (TRANSIENT_DB_CODES.has(err.code)) return true;
+  return /terminat|timeout|Connection.*(?:end|closed)|too many clients/i.test(String(err.message || ''));
+}
+
+function withQueryRetry(pool) {
+  const rawQuery = pool.query.bind(pool);
+  pool.query = function query(...args) {
+    return rawQuery(...args).catch((err) => {
+      if (!isTransientDbError(err)) throw err;
+      console.warn('Postgres retry após falha transitória:', err.code || err.message);
+      return rawQuery(...args);
+    });
+  };
+  return pool;
+}
+
 function createPool() {
   const required = ['DATABASE_HOST', 'DATABASE_PORT', 'DATABASE_NAME', 'DATABASE_USER', 'DATABASE_PASSWORD'];
   const missing = required.filter((key) => !process.env[key]);
@@ -23,13 +46,15 @@ function createPool() {
     password: envValue('DATABASE_PASSWORD'),
     ssl: process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : false,
     max: 8,
-    idleTimeoutMillis: 30000,
+    idleTimeoutMillis: 10000,
     connectionTimeoutMillis: 15000,
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10000,
   });
   pool.on('error', (err) => {
     console.error('Erro inesperado no pool Postgres:', err.code || '', err.message);
   });
-  return pool;
+  return withQueryRetry(pool);
 }
 
 async function ensureSchema(pool) {
