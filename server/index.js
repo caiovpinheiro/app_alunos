@@ -1065,7 +1065,10 @@ async function runAcessosSync(reason) {
   try {
     console.log('Iniciando sync de acessos:', reason);
     const result = await syncAcessos.syncFromMatriculados(pool, { force: false });
-    if (result.skippedRun) {
+    if (result.incomplete) {
+      console.log('Sync de acessos: snapshot incompleto, nova tentativa em 2 min');
+      setTimeout(() => runAcessosSync('snapshot-incompleto'), 2 * 60 * 1000);
+    } else if (result.skippedRun) {
       console.log('Sync de acessos: snapshot já aplicado', result.snapshot_id);
     }
   } catch (err) {

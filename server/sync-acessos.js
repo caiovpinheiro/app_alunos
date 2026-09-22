@@ -28,6 +28,21 @@ async function loadLatestEmCurso(sourcePool) {
     [snap.id],
   );
 
+  const expected = Number(snap.row_count) || 0;
+  const loadedRows = rows.rows.length;
+  if (expected > 0 && loadedRows < expected) {
+    return {
+      incomplete: true,
+      snapshot_id: snap.id,
+      snapshot_at: snap.created_at,
+      file_name: snap.file_name,
+      row_count: expected,
+      loaded_rows: loadedRows,
+      alunos: [],
+      revokeRgms: [],
+    };
+  }
+
   const byRgm = new Map();
   const emails = new Set();
   const emCurso = new Set();
@@ -98,18 +113,54 @@ async function syncFromMatriculados(destPool, { force = false } = {}) {
   const sourcePool = matriculados.createPool();
   try {
     const payload = await loadLatestEmCurso(sourcePool);
+    if (payload.incomplete) {
+      console.warn(
+        'Sync de acessos adiado: snapshot incompleto',
+        `${payload.loaded_rows}/${payload.row_count}`,
+        payload.snapshot_id,
+      );
+      return {
+        skippedRun: true,
+        incomplete: true,
+        snapshot_id: payload.snapshot_id,
+        loaded_rows: payload.loaded_rows,
+        row_count: payload.row_count,
+        total: 0,
+        created: 0,
+        updated: 0,
+        skipped: 0,
+        revoked: 0,
+      };
+    }
+
     const previous = await db.getSyncState(destPool);
+    const appliedWork = Number(previous?.created_count || 0) + Number(previous?.updated_count || 0);
     if (
       !force
       && previous
       && previous.snapshot_id === payload.snapshot_id
       && Number(previous.row_count) === Number(payload.row_count)
       && previous.revoked_count != null
+      && appliedWork > 0
     ) {
       return {
         skippedRun: true,
         snapshot_id: payload.snapshot_id,
         total: payload.alunos.length,
+        created: 0,
+        updated: 0,
+        skipped: 0,
+        revoked: 0,
+      };
+    }
+
+    if (payload.alunos.length === 0 && Number(payload.row_count) > 0) {
+      console.warn('Sync de acessos adiado: dump sem alunos elegíveis', payload.snapshot_id);
+      return {
+        skippedRun: true,
+        incomplete: true,
+        snapshot_id: payload.snapshot_id,
+        total: 0,
         created: 0,
         updated: 0,
         skipped: 0,
