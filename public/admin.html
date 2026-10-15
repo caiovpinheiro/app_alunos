@@ -49,6 +49,7 @@
         <button type="button" class="admin-tab" data-tab="contatos">Contatos</button>
         <button type="button" class="admin-tab" data-tab="indicacoes">Indicações</button>
         <button type="button" class="admin-tab" data-tab="planos">Imagens dos planos</button>
+        <button type="button" class="admin-tab" data-tab="trilha">Trilha</button>
       </nav>
 
       <div id="tab-avisos" class="admin-panel">
@@ -87,6 +88,22 @@
         </div>
         <div id="admin-inds-list" class="space-y-3"></div>
         <div id="ind-detail" class="hidden mt-4 bg-white border rounded-xl p-4 text-sm"></div>
+      </div>
+
+      <div id="tab-trilha" class="admin-panel hidden">
+        <div class="flex flex-wrap justify-between items-center gap-3 mb-2">
+          <h2 class="text-xl font-bold">Trilha EaD para Iniciantes</h2>
+          <button type="button" id="btn-trilha-export" class="bg-cruzeiro text-white text-sm font-semibold px-4 py-2 rounded-lg">Baixar CSV dos alunos</button>
+        </div>
+        <p class="text-sm text-gray-500 mb-4">Quem começou, até onde chegou e onde trava. O CSV traz nome, RGM, e-mail, níveis concluídos e último acesso, para o CRM chamar quem parou.</p>
+        <p id="trilha-msg" class="text-sm text-gray-500 mb-4"></p>
+        <div id="admin-trilha-totais" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6"></div>
+        <h3 class="text-lg font-bold mb-2">Por nível</h3>
+        <div class="overflow-x-auto bg-white border rounded-xl mb-6"><table class="w-full text-sm"><thead class="bg-slate-50 text-left"><tr><th class="px-3 py-2">Nível</th><th class="px-3 py-2">Abriram</th><th class="px-3 py-2">Viram o vídeo</th><th class="px-3 py-2">Concluíram</th></tr></thead><tbody id="admin-trilha-niveis"></tbody></table></div>
+        <div class="grid lg:grid-cols-2 gap-6">
+          <div><h3 class="text-lg font-bold mb-2">Perguntas com mais erros</h3><ol id="admin-trilha-perguntas" class="space-y-2 text-sm"></ol></div>
+          <div><h3 class="text-lg font-bold mb-2">Onde tocaram em "Travei"</h3><ol id="admin-trilha-travei" class="space-y-2 text-sm"></ol></div>
+        </div>
       </div>
 
       <div id="tab-planos" class="admin-panel hidden">
@@ -140,6 +157,6 @@
     </div>
   </div>
 
-  <script src="/js/admin.js?v=17"></script>
+  <script src="/js/admin.js?v=18"></script>
 </body>
 </html>

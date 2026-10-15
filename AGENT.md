@@ -7,6 +7,30 @@
 - Push em `main` dispara `.github/workflows/deploy.yml`: publica `ghcr.io/caiovpinheiro/app_alunos:latest` e chama o webhook do EasyPanel (`secrets.EASYPANEL_DEPLOY_APP`).
 - Não invente outro fluxo de deploy (n8n, branch de homologação, etc.) sem pedido explícito.
 
+### 2026-10-15 - Trilha "EaD Digital para Iniciantes" (`/trilha`)
+
+**Decisão**
+- Nova tela `trilha-page` (`/trilha`) + card no dashboard + aba **Trilha** no `/admin`. Stack atual: JS vanilla (`public/js/trilha.js`), CSS escopado em `.trilha` (`public/css/trilha.css`), Express e Postgres.
+- Conteúdo (7 níveis: resumo, dicas, telas, perguntas; o Nível 1 tem 4 partes de vídeo) em `server/assets/trilha.json`, exportado do artefato original. Mudar texto = commit.
+- `GET /api/trilha` envia o conteúdo **sem gabarito**. `POST /api/trilha/resposta` corrige no servidor e só devolve a resposta certa e a explicação depois do acerto. Pontos calculados no servidor: 100 de primeira, 40 depois, 50 pelo vídeo.
+- Progresso por aluno em `csu_trilha_progresso` (PK `aluno_id, nivel`; partes vistas, vídeo ok, pulou, respostas, "Travei") e tarefas da semana em `csu_trilha_tarefas`. Criadas com `CREATE TABLE IF NOT EXISTS` no boot e na primeira chamada. Sempre por `req.aluno.id`.
+- Vídeos MP4 (~100 MB), capas, legendas `.vtt` e narração `.txt` em `public/trilha-midia/videos/`; telas WebP em `public/trilha-midia/telas/`. Servidos pelo `express.static`, com suporte a Range. Pasta **não** se chama `/trilha` para não colidir com a rota da tela.
+- WhatsApp da ajuda vem de `atendimento.getAtendimento` (número do polo). Sem DDD válido, usa (11) 91518-4535.
+- Preferências de leitura (letra maior, vídeo mais devagar, ver tudo) ficam no `localStorage` do aparelho (`csu-trilha-prefs`).
+- Admin: `GET /api/admin/trilha` (por nível, perguntas com mais erros, onde tocaram "Travei") e `GET /api/admin/trilha/export.csv` (para o CRM chamar quem parou).
+
+**Contexto**
+- A trilha vivia num artefato público com progresso só no `localStorage`. No portal, o aluno logado continua de qualquer aparelho, e a equipe vê onde a turma trava.
+
+**Alternativas descartadas**
+- YouTube não listado (pedido: vídeos no próprio servidor).
+- Gabarito no front (aluno veria a resposta no código).
+- Volume do EasyPanel para os vídeos (exigiria upload manual; o repositório mantém tudo versionado).
+
+**Impacto**
+- A imagem Docker cresce ~100 MB por causa dos vídeos. Trocar um vídeo = substituir o arquivo em `public/trilha-midia/videos/` com o mesmo nome e fazer push.
+- O progresso do artefato antigo não migra (era `localStorage` de outro domínio).
+
 ### 2026-09-02 - Deploy na `main` via GitHub Actions + EasyPanel
 
 **Decisão**

@@ -86,6 +86,22 @@ window.Api = (function () {
     return request('/api/meu-semestre', { headers: authHeaders() });
   }
 
+  async function getTrilha() {
+    return request('/api/trilha', { headers: authHeaders() });
+  }
+
+  async function getTrilhaResumo() {
+    return request('/api/trilha/resumo', { headers: authHeaders() });
+  }
+
+  async function trilhaPost(acao, payload) {
+    return request('/api/trilha/' + acao, {
+      method: 'POST',
+      headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+      body: JSON.stringify(payload || {}),
+    });
+  }
+
   async function getAtendimento() {
     return request('/api/atendimento', { headers: authHeaders() });
   }
@@ -133,6 +149,9 @@ window.Api = (function () {
     downloadPlanoPng: downloadPlanoPng,
     getPlanoImageUrl: getPlanoImageUrl,
     getAtendimento: getAtendimento,
+    getTrilha: getTrilha,
+    getTrilhaResumo: getTrilhaResumo,
+    trilhaPost: trilhaPost,
     createIndicacao: createIndicacao,
   };
 })();

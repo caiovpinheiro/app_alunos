@@ -2180,3 +2180,13 @@ textarea:focus {
     animation: none !important;
   }
 }
+
+/* Trilha EaD para Iniciantes: card do painel */
+@media (min-width: 768px) {
+  .bento-trilha { grid-column: 1 / -1; }
+}
+.trilha-dash-bar { height: 12px; border-radius: 999px; background: #e8eef7; overflow: hidden; }
+.trilha-dash-bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #ffc72c, #f59a00); transition: width .8s var(--csu-ease); }
+.trilha-dash-txt { margin-top: .6rem; font-size: .9rem; color: var(--csu-muted); }
+.trilha-dash-txt b { color: var(--csu-ink); }
+#dashboard-page.is-entering .bento-trilha { animation-delay: 75ms; }

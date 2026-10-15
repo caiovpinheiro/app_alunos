@@ -67,6 +67,50 @@
     if (name === 'contatos') loadContatos();
     if (name === 'indicacoes') loadInds();
     if (name === 'planos') { loadPlanos(); loadMaterias(); loadImagensPreview(); }
+    if (name === 'trilha') loadTrilha();
+  }
+
+  async function loadTrilha() {
+    var msg = document.getElementById('trilha-msg');
+    msg.textContent = 'Carregando...';
+    try {
+      var r = await request('/api/admin/trilha');
+      msg.textContent = '';
+      var card = function (label, value) {
+        return '<div class="bg-white border rounded-xl p-4"><p class="text-xs text-gray-500">' + escapeHtml(label) + '</p><p class="text-2xl font-bold text-gray-800">' + escapeHtml(value) + '</p></div>';
+      };
+      var taxa = r.iniciaram ? Math.round(r.concluiram / r.iniciaram * 100) + '%' : '—';
+      document.getElementById('admin-trilha-totais').innerHTML =
+        card('Alunos que começaram', r.iniciaram) + card('Concluíram os 7 níveis', r.concluiram) + card('Taxa de conclusão', taxa);
+      document.getElementById('admin-trilha-niveis').innerHTML = r.niveis.map(function (n) {
+        return '<tr class="border-t"><td class="px-3 py-2">' + n.nivel + '. ' + escapeHtml(n.titulo) + '</td><td class="px-3 py-2">' + n.abriram + '</td><td class="px-3 py-2">' + n.viram_video + '</td><td class="px-3 py-2">' + n.concluiram + '</td></tr>';
+      }).join('');
+      document.getElementById('admin-trilha-perguntas').innerHTML = r.perguntas_dificeis.length
+        ? r.perguntas_dificeis.map(function (q) { return '<li class="bg-white border rounded-lg px-3 py-2"><b>' + q.erros + ' erro(s)</b> · Nível ' + q.nivel + ': ' + escapeHtml(q.pergunta) + '</li>'; }).join('')
+        : '<li class="text-gray-500">Ainda sem respostas erradas.</li>';
+      document.getElementById('admin-trilha-travei').innerHTML = r.travei.length
+        ? r.travei.map(function (t) { return '<li class="bg-white border rounded-lg px-3 py-2"><b>' + t.vezes + 'x</b> · Nível ' + t.nivel + ': ' + escapeHtml(t.parte) + '</li>'; }).join('')
+        : '<li class="text-gray-500">Ninguém tocou em Travei ainda.</li>';
+    } catch (err) {
+      msg.textContent = err.message || 'Não foi possível carregar a trilha.';
+    }
+  }
+
+  async function exportTrilha() {
+    var msg = document.getElementById('trilha-msg');
+    msg.textContent = 'Gerando CSV...';
+    try {
+      var res = await fetch('/api/admin/trilha/export.csv', { headers: token() ? { Authorization: 'Bearer ' + token() } : {} });
+      if (res.status === 401) { setToken(null); showLogin(); throw new Error('Sessão expirada.'); }
+      if (!res.ok) throw new Error('Não foi possível exportar o CSV.');
+      var url = URL.createObjectURL(await res.blob());
+      var link = document.createElement('a'); link.href = url; link.download = 'trilha-alunos.csv';
+      document.body.appendChild(link); link.click(); link.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+      msg.textContent = 'CSV baixado.';
+    } catch (err) {
+      msg.textContent = err.message || 'Não foi possível exportar o CSV.';
+    }
   }
 
   function closeModal() {
@@ -462,6 +506,8 @@
       document.getElementById('materias-lote-msg').textContent = err.message || 'Não foi possível consultar o status.';
     }
   });
+
+  document.getElementById('btn-trilha-export').addEventListener('click', exportTrilha);
 
   document.getElementById('btn-materias-export').addEventListener('click', async function () {
     var btn = document.getElementById('btn-materias-export');

@@ -1,0 +1,46 @@
+WEBVTT
+
+00:00:00.450 --> 00:00:05.719
+Nível 2: conhecendo a Área do Aluno, onde ficam as ferramentas do dia a dia.
+
+00:00:06.769 --> 00:00:11.377
+Na página inicial da Área do Aluno, tudo fica no menu da esquerda.
+
+00:00:12.427 --> 00:00:17.227
+Este botão leva direto ao Ambiente Virtual, onde ficam as aulas.
+
+00:00:18.277 --> 00:00:24.933
+Aqui ficam Vida Acadêmica, Financeiro, Pagar Mensalidade e CAA Online.
+
+00:00:25.983 --> 00:00:31.136
+Em Vida Acadêmica você encontra Documentos Pendentes, Minhas Notas,
+
+00:00:31.136 --> 00:00:35.135
+Diploma Digital, Biblioteca e a Plataforma de Prova.
+
+00:00:36.185 --> 00:00:41.177
+A Plataforma de Prova é onde você faz a A1 e a Avaliação Final.
+
+00:00:42.227 --> 00:00:49.288
+O Calendário Acadêmico mostra, mês a mês, as datas de provas, prazos e feriados. Consulte
+
+00:00:49.288 --> 00:00:49.843
+sempre.
+
+00:00:50.893 --> 00:00:57.369
+No CAA Online você faz uma solicitação, acompanha pelo protocolo e paga as taxas,
+
+00:00:57.369 --> 00:00:58.488
+quando houver.
+
+00:00:59.538 --> 00:01:07.431
+Em Documentos Pendentes, envie arquivos PNG, JPG, GIF ou PDF de até 5 MB.
+
+00:01:08.481 --> 00:01:13.756
+Verde, com a palavra Entregue, quer dizer que está tudo certo. Atenção:
+
+00:01:13.756 --> 00:01:16.801
+documento pendente pode cancelar o curso.
+
+00:01:17.851 --> 00:01:22.267
+Pronto! Agora responda à missão deste nível para ganhar XP.

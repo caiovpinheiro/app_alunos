@@ -310,6 +310,7 @@
     window.CursoAutocomplete.init();
     window.Avisos.init();
     window.Tutoriais.init();
+    if (window.Trilha) window.Trilha.init();
     window.Atendimento.init();
     if (window.MeuSemestre) window.MeuSemestre.init();
 
@@ -341,6 +342,9 @@
       window.MeuSemestre.refresh();
     }
     if (id === 'tutoriais-page' && window.Tutoriais) window.Tutoriais.refresh();
+    if (id === 'trilha-page' && window.Trilha) window.Trilha.refresh();
+    if (id === 'dashboard-page' && window.Trilha) window.Trilha.refreshDashboard();
+    if (id !== 'trilha-page' && window.Trilha) window.Trilha.pause();
     if (id === 'atendimento-page' && window.Atendimento) window.Atendimento.refresh();
   };
 
