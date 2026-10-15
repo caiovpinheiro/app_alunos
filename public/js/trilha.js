@@ -488,13 +488,18 @@ window.Trilha = (function () {
         window.showScreen('login-page', { replace: true });
         return;
       }
+      if (err && err.status === 404) {
+        document.body.classList.remove('trilha-on');
+        window.showScreen('dashboard-page', { replace: true });
+        return;
+      }
       if (!built) root.innerHTML = '<p class="trilha-loading">Não foi possível carregar a trilha. Confira a internet e tente de novo.</p>';
     }).then(function () { loading = false; });
   }
 
   function refreshDashboard() {
     var body = document.getElementById('dashboard-trilha-body');
-    if (!body || !window.Auth.isAuthenticated()) return;
+    if (!body || !window.Auth.isAuthenticated() || !document.body.classList.contains('trilha-on')) return;
     window.Api.getTrilhaResumo().then(function (r) {
       var pct = Math.round(r.concluidos / r.total * 100);
       var txt;

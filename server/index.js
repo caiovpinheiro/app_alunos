@@ -507,7 +507,8 @@ app.get('/api/tutoriais', authMiddleware, async (req, res) => {
   if (!pool) return unavailable(res);
   try {
     const list = await tutoriais.listPublic(pool);
-    return res.json({ success: true, categorias: tutoriais.CATEGORIAS, tutoriais: list });
+    const comTrilha = trilha.liberadaPara(req.aluno);
+    return res.json({ success: true, categorias: tutoriais.CATEGORIAS, tutoriais: comTrilha ? list : trilha.semTrilha(list) });
   } catch (err) {
     console.error('Falha ao listar tutoriais:', err.message);
     return res.status(500).json({ success: false, message: 'Não foi possível carregar os tutoriais.' });
@@ -529,6 +530,17 @@ app.get('/api/tutoriais/:id', authMiddleware, async (req, res) => {
 });
 
 // ---------- Trilha EaD para Iniciantes ----------
+
+// Recursos liberados para o aluno logado (a tela usa para mostrar ou esconder a trilha).
+app.get('/api/recursos', authMiddleware, (req, res) => {
+  res.json({ success: true, trilha: trilha.liberadaPara(req.aluno) });
+});
+
+// Enquanto a trilha estiver em teste, só as contas de TRILHA_LIBERADA_PARA acessam.
+app.use('/api/trilha', authMiddleware, (req, res, next) => {
+  if (trilha.liberadaPara(req.aluno)) return next();
+  return res.status(404).json({ success: false, message: 'Recurso não encontrado.' });
+});
 
 let trilhaSchemaReady = null;
 function ensureTrilha() {
@@ -649,7 +661,7 @@ app.get('/api/meu-semestre', authMiddleware, async (req, res) => {
   if (!pool) return unavailable(res);
   try {
     const data = await meuSemestre.getMeuSemestre(pool, req.aluno.id);
-    return res.json({ success: true, ...data });
+    return res.json({ success: true, ...(trilha.liberadaPara(req.aluno) ? data : trilha.semTrilha(data)) });
   } catch (err) {
     console.error('Falha ao carregar Meu Semestre:', err.message);
     return res.status(500).json({ success: false, message: 'Não foi possível carregar o semestre.' });
@@ -1198,7 +1210,9 @@ async function start() {
   try {
     await db.ensureSchema(pool);
     await db.seedAlunoIfEmpty(pool);
-    await tutoriais.retirarExemplos(pool);
+    // Os tutoriais de exemplo só saem do ar quando a trilha for liberada para todos.
+    if (trilha.liberadaParaTodos()) await tutoriais.retirarExemplos(pool);
+    else await tutoriais.seedIfEmpty(pool);
     await ensureTrilha();
     await adminAuth.seedAdminIfEmpty(pool);
   } catch (err) {

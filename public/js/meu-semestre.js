@@ -207,6 +207,26 @@ window.MeuSemestre = (function () {
         ' <i data-lucide="chevron-right" class="w-4 h-4"></i></button>';
   }
 
+  function tutorialLinks(list) {
+    var cats = {};
+    (list || []).forEach(function (item) {
+      if (!item.categoria || cats[item.categoria]) return;
+      cats[item.categoria] = item;
+    });
+    var keys = Object.keys(cats);
+    if (!keys.length) {
+      return '<button type="button" class="ms-secondary-btn" onclick="showScreen(\'tutoriais-page\')">Ver todos os tutoriais</button>';
+    }
+    return keys.map(function (cat) {
+      return (
+        '<button type="button" class="ms-guide-link" data-open-tutoriais="' + escapeHtml(cat) + '">' +
+          '<span>' + escapeHtml(cat) + '</span>' +
+          '<small>' + escapeHtml(cats[cat].hint || 'Abrir tutoriais') + '</small>' +
+        '</button>'
+      );
+    }).join('') +
+      '<button type="button" class="ms-secondary-btn" onclick="showScreen(\'tutoriais-page\')">Ver todos os tutoriais</button>';
+  }
   function trilhaLinks(list) {
     var niveis = {};
     (list || []).forEach(function (item) {
@@ -335,12 +355,19 @@ window.MeuSemestre = (function () {
           '<div class="ms-section-title ms-compact"><div><p class="ms-eyebrow">Próximas datas</p><h3>Calendário</h3></div><i data-lucide="calendar-days" class="w-6 h-6"></i></div>' +
           (calendario.length ? calendario.map(calendarItem).join('') : '<p class="ms-muted">Sem datas cadastradas.</p>') +
         '</article>' +
-        '<article class="ms-guides">' +
-          '<p class="ms-eyebrow">Trilha EaD para Iniciantes</p>' +
-          '<h3>Não sabe como começar?</h3>' +
-          '<p>A trilha ensina passo a passo o que este semestre pede: AVA, provas, notas e pagamentos.</p>' +
-          '<div class="ms-guide-list">' + trilhaLinks(cache.tutoriais) + '</div>' +
-        '</article>' +
+        (document.body.classList.contains('trilha-on')
+          ? '<article class="ms-guides">' +
+              '<p class="ms-eyebrow">Trilha EaD para Iniciantes</p>' +
+              '<h3>Não sabe como começar?</h3>' +
+              '<p>A trilha ensina passo a passo o que este semestre pede: AVA, provas, notas e pagamentos.</p>' +
+              '<div class="ms-guide-list">' + trilhaLinks(cache.tutoriais) + '</div>' +
+            '</article>'
+          : '<article class="ms-guides">' +
+              '<p class="ms-eyebrow">Guias e tutoriais</p>' +
+              '<h3>Não sabe como começar?</h3>' +
+              '<p>Veja os tutoriais já disponíveis no portal sobre provas, atividades e financeiro.</p>' +
+              '<div class="ms-guide-list">' + tutorialLinks(cache.tutoriais) + '</div>' +
+            '</article>') +
       '</section>' +
       '<section class="ms-section">' +
         '<div class="ms-section-title"><div><p class="ms-eyebrow">Financeiro</p><h3>Mensalidades</h3></div></div>' +

@@ -50,6 +50,17 @@
 - A imagem Docker cresce ~100 MB por causa dos vídeos. Trocar um vídeo = substituir o arquivo em `public/trilha-midia/videos/` com o mesmo nome e fazer push.
 - O progresso do artefato antigo não migra (era `localStorage` de outro domínio).
 
+### 2026-10-15 - Trilha liberada só para contas de teste (`TRILHA_LIBERADA_PARA`)
+
+**Decisão**
+- A trilha e tudo que aponta para ela só aparecem para contas em `TRILHA_LIBERADA_PARA` (Environment do EasyPanel): RGM ou e-mail, separados por vírgula. `*` = todos. **Vazio = ninguém** (padrão seguro).
+- Quem não está na lista vê o portal como antes: sem card da trilha, sem faixa nos Tutoriais, sem links "Nível N da trilha" nos Tutoriais/Meu Semestre (o servidor remove o campo `trilha`), textos antigos de volta. As rotas `/api/trilha*` respondem 404 e `/trilha` volta ao início.
+- `GET /api/recursos` informa à tela se a conta tem a trilha (`body.trilha-on`; CSS `.so-trilha` / `.sem-trilha`).
+- Os 9 tutoriais de exemplo só são desligados no boot quando `TRILHA_LIBERADA_PARA=*`; antes disso o boot volta a usar `seedIfEmpty` (nada muda em produção).
+
+**Impacto**
+- Para liberar para todos: `TRILHA_LIBERADA_PARA=*` no EasyPanel e reiniciar. Para desligar: apagar a variável.
+
 ### 2026-09-02 - Deploy na `main` via GitHub Actions + EasyPanel
 
 **Decisão**

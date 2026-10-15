@@ -35,6 +35,40 @@ function guiaTrilha(categoria, tipo) {
   return { nivel, titulo: NIVEIS[nivel - 1].t };
 }
 
+// Liberação gradual: só as contas em TRILHA_LIBERADA_PARA (RGM ou e-mail, separados por
+// vírgula ou espaço) veem a trilha e os links para ela. "*" libera para todos. Vazio = ninguém.
+function listaLiberada() {
+  return String(process.env.TRILHA_LIBERADA_PARA || '')
+    .split(/[\s,;]+/)
+    .map((x) => x.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function liberadaParaTodos() {
+  return listaLiberada().includes('*');
+}
+
+function liberadaPara(aluno) {
+  const lista = listaLiberada();
+  if (lista.includes('*')) return true;
+  if (!aluno) return false;
+  const rgm = String(aluno.rgm || '').replace(/\D+/g, '');
+  const email = String(aluno.email || '').trim().toLowerCase();
+  return (rgm && lista.includes(rgm)) || (email && lista.includes(email));
+}
+
+// Remove os links "aprenda na trilha" de uma resposta (Meu Semestre, tutoriais)
+// para quem ainda não tem a trilha liberada: a tela fica como antes.
+function semTrilha(value) {
+  if (Array.isArray(value)) return value.map(semTrilha);
+  if (value && typeof value === 'object' && !(value instanceof Date)) {
+    const out = {};
+    Object.keys(value).forEach((k) => { if (k !== 'trilha') out[k] = semTrilha(value[k]); });
+    return out;
+  }
+  return value;
+}
+
 function formatPhone(raw) {
   let d = String(raw || '').replace(/\D/g, '');
   if (d.startsWith('55') && d.length > 11) d = d.slice(2);
@@ -345,6 +379,9 @@ module.exports = {
   NIVEIS,
   MAX_PONTOS,
   guiaTrilha,
+  liberadaPara,
+  liberadaParaTodos,
+  semTrilha,
   publicContent,
   nivelValido,
   ensureSchema,

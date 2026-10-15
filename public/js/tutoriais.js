@@ -53,6 +53,11 @@ window.Tutoriais = (function () {
     var items = filtered();
     var controls = [document.getElementById('tutoriais-search'), document.getElementById('tutoriais-filters')];
     controls.forEach(function (el) { if (el) el.classList.toggle('hidden', !cache.length); });
+    var trilhaOn = document.body.classList.contains('trilha-on');
+    if (!cache.length && !trilhaOn) {
+      wrap.innerHTML = '<p class="aviso-empty">Nenhum tutorial encontrado.</p>';
+      return;
+    }
     if (!cache.length) {
       wrap.innerHTML =
         '<div class="tutorial-empty">' +
@@ -64,7 +69,9 @@ window.Tutoriais = (function () {
     }
     wrap.innerHTML = items.length
       ? items.map(cardHtml).join('')
-      : '<p class="aviso-empty">Nenhum tutorial encontrado. Tente outra palavra ou veja a trilha, que explica tudo passo a passo.</p>';
+      : (trilhaOn
+        ? '<p class="aviso-empty">Nenhum tutorial encontrado. Tente outra palavra ou veja a trilha, que explica tudo passo a passo.</p>'
+        : '<p class="aviso-empty">Nenhum tutorial encontrado.</p>');
   }
 
   function renderFilters(categorias) {

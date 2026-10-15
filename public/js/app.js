@@ -69,6 +69,7 @@
       window.showScreen(nextScreen, { replace: true });
       window.Avisos.refresh();
       if (window.MeuSemestre) window.MeuSemestre.refresh();
+      carregarRecursos();
     } catch (err) {
       UI.showLoginError(err.status === 401
         ? 'Credenciais inválidas. Verifique seu acesso e tente novamente.'
@@ -101,6 +102,7 @@
       window.showScreen('dashboard-page', { replace: true });
       window.Avisos.refresh();
       if (window.MeuSemestre) window.MeuSemestre.refresh();
+      carregarRecursos();
     } catch (err) {
       if (err.details) UI.showFieldErrors(mapRegisterErrors(err.details));
       UI.showRegisterError(err.message || 'Não foi possível concluir o cadastro. Tente novamente.');
@@ -244,9 +246,28 @@
     document.body.appendChild(frame);
   }
 
+  // Trilha em teste: mostra a trilha e os links para ela só se a conta estiver liberada.
+  var recursosCarregados = false;
+  function carregarRecursos() {
+    if (!window.Auth.isAuthenticated()) return Promise.resolve();
+    return window.Api.getRecursos().then(function (r) {
+      recursosCarregados = true;
+      var on = !!(r && r.trilha);
+      document.body.classList.toggle('trilha-on', on);
+      if (on && window.Trilha) window.Trilha.refreshDashboard();
+      if (!on && window.UI.screenFromPath(window.location.pathname) === 'trilha-page') {
+        window.showScreen('dashboard-page', { replace: true });
+      }
+      if (window.MeuSemestre) window.MeuSemestre.refresh();
+      if (window.Tutoriais) window.Tutoriais.refresh();
+    }).catch(function () { /* sem a informação, fica tudo como antes (trilha escondida) */ });
+  }
+
   async function logout() {
     await window.Api.logout();
     window.Auth.clear();
+    document.body.classList.remove('trilha-on');
+    recursosCarregados = false;
     if (window.Avisos) window.Avisos.closeDropdown();
     releaseCurrentPdf();
     window.UI.clearPreview();
@@ -315,6 +336,7 @@
     if (window.MeuSemestre) window.MeuSemestre.init();
 
     if (window.Auth.isAuthenticated()) {
+      carregarRecursos();
       window.UI.setUserName(window.Auth.getUserName());
       var startScreen = window.UI.screenFromPath(window.location.pathname);
       if (startScreen === 'login-page' || startScreen === 'first-access-page') startScreen = 'dashboard-page';
@@ -331,6 +353,7 @@
   window.printCert = printCert;
   window.logout = logout;
   window.showScreen = function (id, options) {
+    if (id === 'trilha-page' && recursosCarregados && !document.body.classList.contains('trilha-on')) id = 'dashboard-page';
     if (id === 'form-page') prefillForm();
     if (window.Avisos) window.Avisos.closeDropdown();
     if (window.Tutoriais) window.Tutoriais.closeModal();
@@ -343,7 +366,7 @@
     }
     if (id === 'tutoriais-page' && window.Tutoriais) window.Tutoriais.refresh();
     if (id === 'trilha-page' && window.Trilha) window.Trilha.refresh();
-    if (id === 'dashboard-page' && window.Trilha) window.Trilha.refreshDashboard();
+    if (id === 'dashboard-page' && window.Trilha && document.body.classList.contains('trilha-on')) window.Trilha.refreshDashboard();
     if (id !== 'trilha-page' && window.Trilha) window.Trilha.pause();
     if (id === 'atendimento-page' && window.Atendimento) window.Atendimento.refresh();
   };

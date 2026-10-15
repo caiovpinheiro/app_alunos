@@ -86,6 +86,10 @@ window.Api = (function () {
     return request('/api/meu-semestre', { headers: authHeaders() });
   }
 
+  async function getRecursos() {
+    return request('/api/recursos', { headers: authHeaders() });
+  }
+
   async function getTrilha() {
     return request('/api/trilha', { headers: authHeaders() });
   }
@@ -149,6 +153,7 @@ window.Api = (function () {
     downloadPlanoPng: downloadPlanoPng,
     getPlanoImageUrl: getPlanoImageUrl,
     getAtendimento: getAtendimento,
+    getRecursos: getRecursos,
     getTrilha: getTrilha,
     getTrilhaResumo: getTrilhaResumo,
     trilhaPost: trilhaPost,
