@@ -157,11 +157,7 @@ window.MeuSemestre = (function () {
     var prazoFinal = item.prazo ? 'Disponível até ' + formatDate(item.prazo) : '';
     var prazo = prazoPref || prazoFinal;
     var extra = prazoPref && prazoFinal ? prazoFinal : '';
-    var link = item.tutorial_categoria
-      ? '<button type="button" class="ms-text-link" data-open-tutoriais="' + escapeHtml(item.tutorial_categoria) + '">' +
-          escapeHtml(item.tutorial_hint || 'Ver tutoriais') +
-          ' <i data-lucide="chevron-right" class="w-4 h-4"></i></button>'
-      : '';
+    var link = guiaLink(item);
     return (
       '<article class="ms-obligation">' +
         '<span class="ms-obligation-icon"><i data-lucide="' + atividadeIcon(item.titulo) + '" class="w-5 h-5"></i></span>' +
@@ -197,25 +193,37 @@ window.MeuSemestre = (function () {
     );
   }
 
-  function tutorialLinks(list) {
-    var cats = {};
-    (list || []).forEach(function (item) {
-      if (!item.categoria || cats[item.categoria]) return;
-      cats[item.categoria] = item;
-    });
-    var keys = Object.keys(cats);
-    if (!keys.length) {
-      return '<button type="button" class="ms-secondary-btn" onclick="showScreen(\'tutoriais-page\')">Ver todos os tutoriais</button>';
+  // Link de ajuda de um item: o nível da trilha que ensina o assunto; sem nível, os tutoriais.
+  function guiaLink(item) {
+    if (!item) return '';
+    if (item.trilha) {
+      return '<button type="button" class="ms-text-link" data-open-trilha="' + Number(item.trilha.nivel) + '">' +
+          escapeHtml(item.tutorial_hint ? item.tutorial_hint + ' · Nível ' + item.trilha.nivel + ' da trilha' : 'Aprenda no Nível ' + item.trilha.nivel + ' da trilha') +
+          ' <i data-lucide="chevron-right" class="w-4 h-4"></i></button>';
     }
-    return keys.map(function (cat) {
+    if (!item.tutorial_categoria) return '';
+    return '<button type="button" class="ms-text-link" data-open-tutoriais="' + escapeHtml(item.tutorial_categoria) + '">' +
+        escapeHtml(item.tutorial_hint || 'Ver tutoriais') +
+        ' <i data-lucide="chevron-right" class="w-4 h-4"></i></button>';
+  }
+
+  function trilhaLinks(list) {
+    var niveis = {};
+    (list || []).forEach(function (item) {
+      if (item.trilha && !niveis[item.trilha.nivel]) niveis[item.trilha.nivel] = item.trilha;
+    });
+    var keys = Object.keys(niveis).sort(function (a, b) { return a - b; });
+    var html = keys.map(function (n) {
       return (
-        '<button type="button" class="ms-guide-link" data-open-tutoriais="' + escapeHtml(cat) + '">' +
-          '<span>' + escapeHtml(cat) + '</span>' +
-          '<small>' + escapeHtml(cats[cat].hint || 'Abrir tutoriais') + '</small>' +
+        '<button type="button" class="ms-guide-link" data-open-trilha="' + Number(n) + '">' +
+          '<span>Nível ' + Number(n) + ' · ' + escapeHtml(niveis[n].titulo) + '</span>' +
+          '<small class="ms-guide-level">Vídeo, resumo e perguntas</small>' +
         '</button>'
       );
-    }).join('') +
-      '<button type="button" class="ms-secondary-btn" onclick="showScreen(\'tutoriais-page\')">Ver todos os tutoriais</button>';
+    }).join('');
+    html += '<button type="button" class="ms-secondary-btn" data-open-trilha="">Ver a trilha completa</button>';
+    html += ' <button type="button" class="ms-secondary-btn" data-open-tutoriais="">Consultar tutoriais</button>';
+    return html;
   }
 
   function renderPage() {
@@ -280,11 +288,7 @@ window.MeuSemestre = (function () {
           '<small>Avaliação integrada</small>' +
           '<h3>' + escapeHtml(avaliacao.titulo) + '</h3>' +
           (avaliacao.prazo ? '<p>Prazo até <strong>' + escapeHtml(formatDate(avaliacao.prazo)) + '</strong></p>' : '') +
-          (avaliacao.tutorial_categoria
-            ? '<button type="button" class="ms-text-link" data-open-tutoriais="' + escapeHtml(avaliacao.tutorial_categoria) + '">' +
-                escapeHtml(avaliacao.tutorial_hint || 'Ver tutoriais') +
-                ' <i data-lucide="chevron-right" class="w-4 h-4"></i></button>'
-            : '') +
+          guiaLink(avaliacao) +
         '</article>'
       )
       : '';
@@ -332,10 +336,10 @@ window.MeuSemestre = (function () {
           (calendario.length ? calendario.map(calendarItem).join('') : '<p class="ms-muted">Sem datas cadastradas.</p>') +
         '</article>' +
         '<article class="ms-guides">' +
-          '<p class="ms-eyebrow">Guias e tutoriais</p>' +
+          '<p class="ms-eyebrow">Trilha EaD para Iniciantes</p>' +
           '<h3>Não sabe como começar?</h3>' +
-          '<p>Veja os tutoriais já disponíveis no portal sobre provas, atividades e financeiro.</p>' +
-          '<div class="ms-guide-list">' + tutorialLinks(cache.tutoriais) + '</div>' +
+          '<p>A trilha ensina passo a passo o que este semestre pede: AVA, provas, notas e pagamentos.</p>' +
+          '<div class="ms-guide-list">' + trilhaLinks(cache.tutoriais) + '</div>' +
         '</article>' +
       '</section>' +
       '<section class="ms-section">' +

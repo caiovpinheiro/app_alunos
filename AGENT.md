@@ -7,6 +7,25 @@
 - Push em `main` dispara `.github/workflows/deploy.yml`: publica `ghcr.io/caiovpinheiro/app_alunos:latest` e chama o webhook do EasyPanel (`secrets.EASYPANEL_DEPLOY_APP`).
 - Não invente outro fluxo de deploy (n8n, branch de homologação, etc.) sem pedido explícito.
 
+### 2026-10-15 - Trilha é o guia principal; tutoriais viram consulta
+
+**Decisão**
+- Mapa assunto → nível em `server/trilha.js` (`guiaTrilha`): categoria do tutorial (Primeiros passos 1, Área do Aluno/Documentos 2, Blackboard/Atividades 3, Provas 4, Financeiro 5); sem categoria, o tipo do item do Meu Semestre (atividade 3, disciplina/avaliação integrada 4).
+- `/api/tutoriais` e `/api/meu-semestre` mandam `trilha: { nivel, titulo }` em cada item. Botões `data-open-trilha="N"` abrem `/trilha#nivel-N`, rolam até o nível e o deixam aberto mesmo sem terminar o anterior (consulta). O link funciona colado direto na barra.
+- Meu Semestre: links de atividades/avaliação e o quadro "Não sabe como começar?" apontam para os níveis da trilha; tutoriais ficam como botão secundário.
+- `/tutoriais`: faixa "Começando agora? Faça a trilha", link do nível em cada card e estado vazio que leva à trilha. No painel, o card Tutoriais passa a "consulta rápida" com botão de texto.
+- Os 9 tutoriais de exemplo não são mais criados no boot. `tutoriais.retirarExemplos` desliga (`ativo = FALSE`, sem apagar) só as linhas com título **e** vídeo de teste originais; tutorial editado no admin com vídeo real fica no ar.
+
+**Contexto**
+- Trilha e tutoriais ensinavam os mesmos assuntos em dois lugares, com duas portas no painel; o Meu Semestre só conhecia os tutoriais, que eram todos o mesmo vídeo de exemplo.
+
+**Alternativas descartadas**
+- Apagar `csu_tutoriais` ou a tela de tutoriais: o admin continua podendo publicar vídeos curtos de consulta.
+- Coluna `nivel_trilha` no banco: o mapa por categoria cobre os casos sem migração.
+
+**Impacto**
+- No primeiro boot após o deploy, os exemplos saem do ar e `/tutoriais` mostra o estado vazio até o admin cadastrar tutoriais reais. Para reativar um exemplo, troque o vídeo no admin (senão o boot desliga de novo).
+
 ### 2026-10-15 - Trilha "EaD Digital para Iniciantes" (`/trilha`)
 
 **Decisão**

@@ -7,9 +7,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/styles.css?v=26">
+    <link rel="stylesheet" href="/css/styles.css?v=27">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/trilha.css?v=1">
+    <link rel="stylesheet" href="/css/trilha.css?v=2">
 </head>
 <body>
 
@@ -242,9 +242,9 @@
                             <i data-lucide="play-circle" class="w-6 h-6"></i>
                         </div>
                         <h3 class="text-lg font-bold text-gray-800 mb-2">Tutoriais</h3>
-                        <p class="text-gray-500 text-sm mb-6 leading-relaxed">Videoaulas para Área do Aluno, Blackboard, provas, boleto e documentos.</p>
-                        <button onclick="showScreen('tutoriais-page')" class="btn-plastic dash-card-btn w-full flex items-center justify-center gap-2 bg-gray-50 text-cruzeiro font-semibold py-2.5 rounded-lg">
-                            Ver tutoriais
+                        <p class="text-gray-500 text-sm mb-6 leading-relaxed">Consulta rápida para uma dúvida pontual. Começando agora? A trilha acima ensina tudo passo a passo.</p>
+                        <button onclick="showScreen('tutoriais-page')" class="w-full flex items-center justify-center gap-2 text-cruzeiro text-sm font-semibold py-2 hover:underline">
+                            Consultar tutoriais
                             <i data-lucide="chevron-right" class="w-4 h-4"></i>
                         </button>
                     </div>
@@ -427,7 +427,16 @@
                     <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar ao Dashboard
                 </button>
                 <h2 class="text-2xl font-bold text-gray-800 mb-2">Tutoriais</h2>
-                <p class="text-gray-500 text-sm mb-6">Assista só quando quiser: o vídeo carrega ao clicar no card.</p>
+                <p class="text-gray-500 text-sm mb-6">Consulta rápida: vídeos curtos para tirar uma dúvida pontual. O vídeo carrega ao clicar no card.</p>
+                <div class="tutoriais-trilha-banner">
+                    <div class="tutoriais-trilha-icon"><i data-lucide="map" class="w-6 h-6"></i></div>
+                    <div class="flex-1 min-w-0">
+                        <p class="tutoriais-trilha-kicker">Começando agora?</p>
+                        <h3>Faça a Trilha EaD para Iniciantes</h3>
+                        <p>7 níveis com vídeo, resumo e perguntas, do primeiro acesso à formatura. É o caminho mais completo para aprender a usar tudo.</p>
+                    </div>
+                    <button type="button" data-open-trilha="" class="btn-plastic tutoriais-trilha-btn">Ir para a trilha <i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+                </div>
                 <input id="tutoriais-search" type="search" class="w-full mb-4 px-4 py-3 rounded-xl border border-gray-200" placeholder="Buscar tutorial...">
                 <div id="tutoriais-filters" class="flex flex-wrap gap-2 mb-6"></div>
                 <div id="tutoriais-grid" class="tutorial-grid"></div>
@@ -677,10 +686,10 @@
     <script src="/js/cursos.js?v=7"></script>
     <script src="/js/certificate.js?v=7"></script>
     <script src="/js/avisos.js?v=7"></script>
-    <script src="/js/tutoriais.js?v=8"></script>
-    <script src="/js/trilha.js?v=1"></script>
+    <script src="/js/tutoriais.js?v=9"></script>
+    <script src="/js/trilha.js?v=2"></script>
     <script src="/js/atendimento.js?v=8"></script>
-    <script src="/js/meu-semestre.js?v=10"></script>
+    <script src="/js/meu-semestre.js?v=11"></script>
     <script src="/js/ui.js?v=13"></script>
     <script src="/js/app.js?v=11"></script>
 </body>

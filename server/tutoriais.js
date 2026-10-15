@@ -1,6 +1,7 @@
 'use strict';
 
 const youtube = require('./youtube');
+const { guiaTrilha } = require('./trilha');
 
 const CATEGORIAS = [
   'Primeiros passos',
@@ -12,16 +13,19 @@ const CATEGORIAS = [
   'Documentos',
 ];
 
-const SEED = [
-  ['Como acessar a Área do Aluno', 'Primeiro acesso ao portal: login, senha e telas iniciais.', 'Área do Aluno', 'https://www.youtube.com/watch?v=M7lc1UVf-VE', '4:20', 1],
-  ['Primeiros passos', 'O que fazer no primeiro dia: cadastro, certificado e atalhos do dashboard.', 'Primeiros passos', 'https://www.youtube.com/watch?v=M7lc1UVf-VE', '5:10', 2],
-  ['Como acessar Blackboard', 'Entrar no AVA, localizar disciplinas e materiais.', 'Blackboard', 'https://www.youtube.com/watch?v=M7lc1UVf-VE', '6:00', 3],
-  ['Como realizar provas', 'Onde encontrar avaliações, prazos e regras de envio.', 'Provas', 'https://www.youtube.com/watch?v=M7lc1UVf-VE', '4:45', 4],
-  ['Como acessar atividades', 'Abrir, responder e enviar atividades no ambiente virtual.', 'Atividades', 'https://www.youtube.com/watch?v=M7lc1UVf-VE', '3:50', 5],
-  ['Como consultar notas', 'Acompanhar notas e feedbacks no Blackboard.', 'Blackboard', 'https://www.youtube.com/watch?v=M7lc1UVf-VE', '3:15', 6],
-  ['Como emitir boleto', 'Gerar boleto e conferir vencimentos no financeiro.', 'Financeiro', 'https://www.youtube.com/watch?v=M7lc1UVf-VE', '4:05', 7],
-  ['Como enviar documentos', 'Anexar documentos solicitados pela secretaria.', 'Documentos', 'https://www.youtube.com/watch?v=M7lc1UVf-VE', '3:40', 8],
-  ['Como abrir solicitações', 'Abrir protocolos e acompanhar o andamento.', 'Área do Aluno', 'https://www.youtube.com/watch?v=M7lc1UVf-VE', '4:30', 9],
+// Tutoriais de exemplo que vinham no boot (todos com o mesmo vídeo de teste).
+// A trilha EaD para Iniciantes substituiu esse conteúdo; eles são desligados no boot, não apagados.
+const EXEMPLO_VIDEO_URL = 'https://www.youtube.com/watch?v=M7lc1UVf-VE';
+const EXEMPLO_TITULOS = [
+  'Como acessar a Área do Aluno',
+  'Primeiros passos',
+  'Como acessar Blackboard',
+  'Como realizar provas',
+  'Como acessar atividades',
+  'Como consultar notas',
+  'Como emitir boleto',
+  'Como enviar documentos',
+  'Como abrir solicitações',
 ];
 
 function normalizeText(value) {
@@ -80,7 +84,7 @@ async function listPublic(pool) {
      WHERE ativo = TRUE
      ORDER BY ordem ASC, id ASC`,
   );
-  return result.rows.map(youtube.publicTutorial);
+  return result.rows.map((row) => ({ ...youtube.publicTutorial(row), trilha: guiaTrilha(row.categoria) }));
 }
 
 async function listAll(pool) {
@@ -146,19 +150,17 @@ async function remove(pool, id) {
   return Boolean(result.rows[0]);
 }
 
-async function seedIfEmpty(pool) {
-  const count = await pool.query('SELECT COUNT(*)::int AS n FROM csu_tutoriais');
-  if (count.rows[0].n > 0) return false;
-  for (const item of SEED) {
-    const [titulo, descricao, categoria, videoUrl, duracao, ordem] = item;
-    await pool.query(
-      `INSERT INTO csu_tutoriais (titulo, descricao, categoria, video_url, duracao, ativo, ordem)
-       VALUES ($1, $2, $3, $4, $5, TRUE, $6)`,
-      [titulo, descricao, categoria, videoUrl, duracao, ordem],
-    );
-  }
-  console.log('Tutoriais de exemplo criados em csu_tutoriais.');
-  return true;
+// Desliga (ativo = FALSE) os tutoriais de exemplo ainda no ar. Só mexe em linhas com o
+// título E o vídeo de teste originais: tutorial editado pelo admin com vídeo real fica intacto.
+async function retirarExemplos(pool) {
+  const result = await pool.query(
+    `UPDATE csu_tutoriais SET ativo = FALSE
+     WHERE ativo = TRUE AND video_url = $1 AND titulo = ANY($2::text[])
+     RETURNING id`,
+    [EXEMPLO_VIDEO_URL, EXEMPLO_TITULOS],
+  );
+  if (result.rowCount) console.log(`Tutoriais de exemplo desligados: ${result.rowCount}.`);
+  return result.rowCount;
 }
 
 module.exports = {
@@ -171,5 +173,5 @@ module.exports = {
   update,
   setAtivo,
   remove,
-  seedIfEmpty,
+  retirarExemplos,
 };

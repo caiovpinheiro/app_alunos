@@ -1198,7 +1198,7 @@ async function start() {
   try {
     await db.ensureSchema(pool);
     await db.seedAlunoIfEmpty(pool);
-    await tutoriais.seedIfEmpty(pool);
+    await tutoriais.retirarExemplos(pool);
     await ensureTrilha();
     await adminAuth.seedAdminIfEmpty(pool);
   } catch (err) {

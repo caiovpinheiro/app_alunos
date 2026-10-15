@@ -37,6 +37,11 @@ window.Tutoriais = (function () {
           '<h3>' + escapeHtml(item.titulo) + '</h3>' +
           '<p>' + escapeHtml(item.descricao) + '</p>' +
           (item.duracao ? '<span class="tutorial-dur">' + escapeHtml(item.duracao) + '</span>' : '') +
+          (item.trilha
+            ? '<button type="button" class="tutorial-trilha-link" data-open-trilha="' + item.trilha.nivel + '">' +
+                'Passo a passo no Nível ' + item.trilha.nivel + ' da trilha: ' + escapeHtml(item.trilha.titulo) +
+              '</button>'
+            : '') +
         '</div>' +
       '</article>'
     );
@@ -46,9 +51,20 @@ window.Tutoriais = (function () {
     var wrap = document.getElementById('tutoriais-grid');
     if (!wrap) return;
     var items = filtered();
+    var controls = [document.getElementById('tutoriais-search'), document.getElementById('tutoriais-filters')];
+    controls.forEach(function (el) { if (el) el.classList.toggle('hidden', !cache.length); });
+    if (!cache.length) {
+      wrap.innerHTML =
+        '<div class="tutorial-empty">' +
+          '<p><strong>Ainda não há tutoriais de consulta.</strong></p>' +
+          '<p>Tudo o que você precisa para começar está na Trilha EaD para Iniciantes, com vídeo, resumo e perguntas.</p>' +
+          '<button type="button" class="ms-secondary-btn" data-open-trilha="">Abrir a trilha</button>' +
+        '</div>';
+      return;
+    }
     wrap.innerHTML = items.length
       ? items.map(cardHtml).join('')
-      : '<p class="aviso-empty">Nenhum tutorial encontrado.</p>';
+      : '<p class="aviso-empty">Nenhum tutorial encontrado. Tente outra palavra ou veja a trilha, que explica tudo passo a passo.</p>';
   }
 
   function renderFilters(categorias) {

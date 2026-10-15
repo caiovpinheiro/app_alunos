@@ -2190,3 +2190,71 @@ textarea:focus {
 .trilha-dash-txt { margin-top: .6rem; font-size: .9rem; color: var(--csu-muted); }
 .trilha-dash-txt b { color: var(--csu-ink); }
 #dashboard-page.is-entering .bento-trilha { animation-delay: 75ms; }
+
+/* Tutoriais = consulta rápida; a trilha é o guia principal */
+.tutoriais-trilha-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 18px 20px;
+  border-radius: var(--csu-radius);
+  background: linear-gradient(135deg, #fff8e1, #fff3cc);
+  border: 1px solid #f2d27a;
+}
+.tutoriais-trilha-icon {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffc72c;
+  color: #2b1d00;
+}
+.tutoriais-trilha-kicker { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #8a5a00; }
+.tutoriais-trilha-banner h3 { font-size: 17px; font-weight: 700; color: var(--csu-ink); margin: 2px 0 4px; }
+.tutoriais-trilha-banner p:not(.tutoriais-trilha-kicker) { font-size: 14px; color: #5a4100; line-height: 1.5; }
+.tutoriais-trilha-btn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: var(--csu-blue);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+}
+@media (max-width: 640px) {
+  .tutoriais-trilha-banner { flex-direction: column; align-items: flex-start; }
+  .tutoriais-trilha-btn { width: 100%; justify-content: center; }
+}
+.tutorial-trilha-link {
+  display: block;
+  margin-top: 10px;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--csu-blue);
+  cursor: pointer;
+}
+.tutorial-trilha-link:hover { text-decoration: underline; }
+.tutorial-empty {
+  grid-column: 1 / -1;
+  padding: 24px;
+  border-radius: var(--csu-radius);
+  border: 1px dashed var(--csu-line);
+  background: #fff;
+  font-size: 14px;
+  color: var(--csu-muted);
+}
+.tutorial-empty p + p { margin-top: 4px; }
+.tutorial-empty strong { color: var(--csu-ink); }
+.tutorial-empty .ms-secondary-btn { margin-top: 12px; }
+.ms-guide-link small.ms-guide-level { color: #8a5a00; }

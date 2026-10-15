@@ -13,6 +13,8 @@ window.Trilha = (function () {
   var loading = false;
   var lastXp = null;
   var root = null;
+  var peek = {};           // níveis abertos por link (tutoriais, Meu Semestre) mesmo sem terminar o anterior
+  var alvo = null;         // nível (0-based) para rolar quando a trilha terminar de montar
 
   var LOCK = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2" fill="none"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4" fill="none"></path></svg>';
   var HELP_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/><path d="M19 20c0 1.5-2 2-5 2"/></svg>';
@@ -72,7 +74,7 @@ window.Trilha = (function () {
 
   var L = function () { return C.niveis; };
   function doneCount() { return L().filter(function (_, i) { return S.done[i]; }).length; }
-  function unlocked(i) { return !!P.review || i === 0 || !!S.done[i - 1]; }
+  function unlocked(i) { return !!P.review || !!peek[i] || i === 0 || !!S.done[i - 1]; }
   function currentIdx() { for (var i = 0; i < L().length; i++) if (!S.done[i]) return i; return L().length; }
 
   // ---------- topo, mapa, estado dos níveis ----------
@@ -435,6 +437,36 @@ window.Trilha = (function () {
     lastXp = null;
     refreshUI();
     built = true;
+    irParaAlvo();
+  }
+
+  // ---------- link direto para um nível (/trilha#nivel-3) ----------
+
+  function nivelDoHash() {
+    var m = /^#nivel-(\d+)$/.exec(window.location.hash || '');
+    return m ? Number(m[1]) : null;
+  }
+
+  function irParaAlvo() {
+    if (alvo == null || !C || !L()[alvo]) return;
+    var i = alvo; alvo = null;
+    peek[i] = true; refreshUI();
+    var sec = document.getElementById('tlv' + i);
+    if (!sec) return;
+    setTimeout(function () {
+      sec.scrollIntoView({ behavior: smooth(), block: 'start' });
+      sec.classList.add('is-target');
+      setTimeout(function () { sec.classList.remove('is-target'); }, 2200);
+    }, 60);
+  }
+
+  function openLevel(n) {
+    n = Number(n);
+    if (!n || n < 1) { window.showScreen('trilha-page'); return; }
+    alvo = n - 1;
+    window.showScreen('trilha-page');
+    try { window.history.replaceState(window.history.state, '', '/trilha#nivel-' + n); } catch (e) { /* ignore */ }
+    if (built) irParaAlvo();
   }
 
   // ---------- API pública ----------
@@ -442,8 +474,11 @@ window.Trilha = (function () {
   function refresh() {
     root = document.getElementById('trilha-root');
     if (!root || !window.Auth.isAuthenticated() || loading) return;
+    var doHash = nivelDoHash();
+    if (doHash) alvo = doHash - 1;
     loading = true;
     if (!built) root.innerHTML = '<p class="trilha-loading">Carregando sua trilha...</p>';
+    if (built && alvo != null) irParaAlvo();
     window.Api.getTrilha().then(function (res) {
       C = res.conteudo; nome = res.nome || ''; S = fromServer(res.progresso);
       build();
@@ -479,7 +514,16 @@ window.Trilha = (function () {
     if (r) r.querySelectorAll('video').forEach(function (v) { if (!v.paused) v.pause(); });
   }
 
-  function init() { root = document.getElementById('trilha-root'); }
+  function init() {
+    root = document.getElementById('trilha-root');
+    // Qualquer botão com data-open-trilha="N" (tutoriais, Meu Semestre, painel) abre o nível N.
+    document.addEventListener('click', function (event) {
+      var btn = event.target.closest('[data-open-trilha]');
+      if (!btn) return;
+      event.preventDefault();
+      openLevel(btn.getAttribute('data-open-trilha'));
+    });
+  }
 
-  return { init: init, refresh: refresh, refreshDashboard: refreshDashboard, pause: pause };
+  return { init: init, refresh: refresh, refreshDashboard: refreshDashboard, pause: pause, openLevel: openLevel };
 })();

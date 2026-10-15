@@ -16,6 +16,25 @@ const TAREFAS = new Set(CONTEUDO.tarefas.map((t) => t.id));
 const MAX_PONTOS = NIVEIS.reduce((n, l) => n + l.qs.length * PONTOS_1A + PONTOS_VIDEO, 0);
 const WHATSAPP_PADRAO = '(11) 91518-4535';
 
+// A trilha é o guia principal; tutoriais e Meu Semestre apontam para o nível que ensina o assunto.
+// Categoria de tutorial → nível (1-based). Sem categoria, usa o tipo do item do Meu Semestre.
+const NIVEL_POR_CATEGORIA = {
+  'Primeiros passos': 1,
+  'Área do Aluno': 2,
+  Documentos: 2,
+  Blackboard: 3,
+  Atividades: 3,
+  Provas: 4,
+  Financeiro: 5,
+};
+const NIVEL_POR_TIPO = { atividade: 3, disciplina: 4, avaliacao_integrada: 4 };
+
+function guiaTrilha(categoria, tipo) {
+  const nivel = NIVEL_POR_CATEGORIA[categoria] || NIVEL_POR_TIPO[tipo] || null;
+  if (!nivel || !NIVEIS[nivel - 1]) return null;
+  return { nivel, titulo: NIVEIS[nivel - 1].t };
+}
+
 function formatPhone(raw) {
   let d = String(raw || '').replace(/\D/g, '');
   if (d.startsWith('55') && d.length > 11) d = d.slice(2);
@@ -325,6 +344,7 @@ async function exportAlunos(pool) {
 module.exports = {
   NIVEIS,
   MAX_PONTOS,
+  guiaTrilha,
   publicContent,
   nivelValido,
   ensureSchema,
