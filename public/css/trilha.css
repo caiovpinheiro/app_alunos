@@ -299,7 +299,7 @@
 .trilha .wrap{padding-block:0 48px}
 .trilha .hud{top:64px}
 .trilha .level{scroll-margin-top:150px}
-.trilha .tWa{display:inline-flex;align-items:center;min-height:48px;padding:0 20px;border-radius:999px;background:#25d366;color:#05351a;font-weight:700;text-decoration:none;border:2px solid var(--ink)}
+.trilha .tWa{display:inline-flex;align-items:center;min-height:48px;padding:0 20px;border-radius:999px;background:#ffc72c;color:#2b1d00;font-weight:700;text-decoration:none;border:2px solid var(--ink)}
 .trilha-loading{padding:48px 16px;text-align:center;color:#64748b;font-size:1.05rem}
 /* Nível aberto por link (tutoriais, Meu Semestre): destaque breve ao chegar */
 .trilha .level.is-target{border-color:var(--xp-2);box-shadow:0 0 0 4px var(--hl),var(--shadow)}
