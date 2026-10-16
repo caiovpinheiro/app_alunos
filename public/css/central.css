@@ -78,6 +78,12 @@
 .c-capt small{display:block;color:var(--c-muted);font-size:.9rem;line-height:1.4;margin-top:2px}
 .c-cap:hover .c-capt strong{color:var(--c-blue)}
 .c-caps .c-trilha{margin:6px 0 0 70px;font-size:13px}
+.c-player.is-local{aspect-ratio:auto;overflow:visible;background:none}
+.c-player.is-local video{display:block;width:100%;aspect-ratio:16/9;border-radius:16px;background:#000}
+.c-pbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;color:var(--c-muted);font-size:.92rem}
+.c-pnext{min-height:44px;padding:0 16px;border-radius:999px;border:0;background:var(--c-blue);color:#fff!important;font:700 14px/1.2 var(--c-body)}
+.c-cap.is-on .c-time{background:var(--c-star);color:var(--c-on-star)}
+.c-cap.is-on .c-capt strong{color:var(--c-blue)}
 @media (min-width:900px){.c-aula{grid-template-columns:1.4fr 1fr;align-items:start}.c-player{position:sticky;top:84px}}
 
 /* Perguntas */

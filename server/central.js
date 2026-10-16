@@ -42,13 +42,17 @@ function publicContent(whatsapp, nivelTitulo) {
       })),
     aula: AULA && Array.isArray(AULA.capitulos)
       ? {
-          video_id: AULA.video_id,
+          // Com `v` em cada capítulo, a aula toca do próprio app (um vídeo por capítulo);
+          // sem `v`, usa a gravação do YouTube (`video_id`) e pula para `inicio_s`.
+          video_id: AULA.video_id || null,
           titulo: AULA.titulo || 'Aula Inaugural',
           duracao_s: AULA.duracao_s || null,
           capitulos: AULA.capitulos.map((c) => ({
             titulo: c.titulo,
             resumo: fill(c.resumo || '', whatsapp),
             inicio_s: Math.max(0, Math.floor(Number(c.inicio_s) || 0)),
+            v: c.v || null,
+            duracao: c.duracao || '',
             trilha: nivel(c.nivel_trilha),
           })),
         }

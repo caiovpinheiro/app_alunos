@@ -112,7 +112,7 @@ window.Central = (function () {
           '<ol class="c-caps">' + caps.map(function (x) {
             return (
               '<li><button type="button" class="c-cap" data-c-cap="' + x.i + '">' +
-                '<span class="c-time">' + mmss(x.c.inicio_s) + '</span>' +
+                '<span class="c-time">' + (x.c.v ? esc(x.c.duracao || (x.i + 1)) : mmss(x.c.inicio_s)) + '</span>' +
                 '<span class="c-capt"><strong>' + esc(x.c.titulo) + '</strong>' + (x.c.resumo ? '<small>' + esc(x.c.resumo) + '</small>' : '') + '</span>' +
               '</button>' + linkTrilha(x.c) + '</li>'
             );
@@ -171,10 +171,32 @@ window.Central = (function () {
     res.innerHTML = videos() + aula() + faq();
   }
 
+  function marcarAtual(i) {
+    document.querySelectorAll('#central-ajuda .c-cap').forEach(function (b) {
+      var on = Number(b.getAttribute('data-c-cap')) === i;
+      b.classList.toggle('is-on', on);
+      if (on) b.setAttribute('aria-current', 'true'); else b.removeAttribute('aria-current');
+    });
+  }
+
   function tocarCapitulo(i) {
     var A = C && C.aula; if (!A) return;
-    var c = A.capitulos[i] || A.capitulos[0];
+    if (!A.capitulos[i]) i = 0;
+    var c = A.capitulos[i];
     var p = document.getElementById('c-player'); if (!p) return;
+    marcarAtual(i);
+    p.classList.toggle('is-local', !!c.v);
+    if (c.v) {
+      var prox = A.capitulos[i + 1];
+      p.innerHTML = '<video controls autoplay playsinline preload="metadata" poster="' + esc(c.v) + '.jpg"><source src="' + esc(c.v) + '.mp4" type="video/mp4"></video>' +
+        '<div class="c-pbar"><span>' + (i + 1) + ' de ' + A.capitulos.length + ' · ' + esc(c.titulo) + '</span>' +
+        (prox ? '<button type="button" class="c-pnext" data-c-cap="' + (i + 1) + '">Próximo: ' + esc(prox.titulo) + '</button>' : '') + '</div>';
+      var vid = p.querySelector('video');
+      // Terminou um capítulo: segue para o próximo, como uma aula contínua.
+      vid.addEventListener('ended', function () { if (prox) tocarCapitulo(i + 1); });
+      if (window.matchMedia('(max-width: 900px)').matches) p.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
     p.innerHTML = '<iframe title="Aula Inaugural" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen ' +
       'src="https://www.youtube-nocookie.com/embed/' + encodeURIComponent(A.video_id) + '?autoplay=1&rel=0&start=' + (c.inicio_s || 0) + '"></iframe>';
     if (window.matchMedia('(max-width: 900px)').matches) p.scrollIntoView({ behavior: 'smooth', block: 'start' });
