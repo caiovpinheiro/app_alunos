@@ -1,55 +1,19 @@
-WEBVTT
+Nível 4: provas e notas. Vamos entender, com calma, como você é aprovado.
 
-00:00:00.450 --> 00:00:05.442
-Nível 4: provas e notas. Vamos entender como você é aprovado.
+A nota de cada disciplina do mês tem duas partes. A2, que são as atividades do mês, vale até 4 pontos. A1, que é a prova, vale até 6. Somou 6 ou mais? Você está aprovado!
 
-00:00:06.492 --> 00:00:10.646
-A nota de cada disciplina mensal tem duas partes.
+No Boletim de notas do AVA, cada Atividade de Sistematização soma na A2. São 3 tentativas, e fica valendo a maior nota.
 
-00:00:10.646 --> 00:00:14.376
-A2, as atividades do mês, vale até 4 pontos.
-
-00:00:14.376 --> 00:00:19.548
-A1, a prova, vale até 6. Somou 6 ou mais, você está aprovado.
-
-00:00:20.598 --> 00:00:26.347
-No Boletim de notas do AVA, cada Atividade de Sistematização soma na A2.
-
-00:00:26.347 --> 00:00:29.302
-São 3 tentativas e vale a maior nota.
-
-00:00:30.352 --> 00:00:35.344
 Aqui está a nota atual da A2: 2,64 de 4.
 
-00:00:36.394 --> 00:00:40.980
-A A1 é feita no começo do mês seguinte, na Plataforma de Prova.
+A prova A1 é feita no começo do mês seguinte, na Plataforma de Prova. Disciplina de fevereiro, prova no começo de março. A exceção são as de junho, que têm prova no fim de maio.
 
-00:00:40.980 --> 00:00:44.620
-Disciplina de fevereiro, prova no começo de março.
+Em Minhas Notas, você escolhe o semestre e filtra por aprovado, reprovado ou avaliação final.
 
-00:00:44.620 --> 00:00:48.405
-A exceção são as de junho, com prova no fim de maio.
+Olha o resultado aqui: 6 na A1 e 3,84 na A2. Média final 10: aprovado!
 
-00:00:49.455 --> 00:00:56.260
-Em Minhas Notas, escolha o semestre e filtre por aprovado, reprovado ou avaliação final.
+Ficou abaixo de 6? Calma, tem a Avaliação Final, no fim do semestre. Se essa nota for maior, ela entra no lugar da A1.
 
-00:00:57.310 --> 00:01:01.808
-Aqui o resultado: 6 na A1 e 3,84 na A2.
+PAC, Projetos, Extensão, Estágio e Ambientação duram o semestre todo e não têm a prova A1. É só seguir as orientações de cada disciplina.
 
-00:01:01.808 --> 00:01:04.691
-Média final 10, aprovado.
-
-00:01:05.741 --> 00:01:10.526
-Ficou abaixo de 6? Você faz a Avaliação Final no fim do semestre.
-
-00:01:10.526 --> 00:01:13.912
-Se a nota da AF for maior, ela substitui a A1.
-
-00:01:14.962 --> 00:01:21.334
-PAC, Projetos, Extensão, Estágio e Ambientação são semestrais e não têm A1.
-
-00:01:21.334 --> 00:01:24.648
-Siga as orientações de cada disciplina.
-
-00:01:25.698 --> 00:01:30.114
-Pronto! Agora responda à missão deste nível para ganhar XP.
+Pronto! Agora responde à missão deste nível e ganha os seus pontos.

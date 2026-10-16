@@ -1,43 +1,13 @@
-WEBVTT
+Nível 7: rumo à formatura! Vamos ver o que falta pra você pegar o seu diploma.
 
-00:00:00.450 --> 00:00:05.911
-Nível 7: rumo à formatura. O que falta para pegar o diploma.
+Pra se formar, você precisa ser aprovado em todas as disciplinas, nas horas complementares e em Temas Transversais. Estágio e TCC, só se o seu curso pedir.
 
-00:00:06.961 --> 00:00:12.108
-Para se formar, você precisa ser aprovado em todas as disciplinas, nas horas
+Pra saber se o seu curso pede estágio ou TCC, abre Emissão de Documentos e depois Histórico.
 
-00:00:12.108 --> 00:00:14.749
-complementares e em Temas Transversais.
+O ENADE é uma prova nacional do INEP, obrigatória pra quem está terminando o curso.
 
-00:00:14.749 --> 00:00:17.457
-Estágio e TCC, só se o seu curso exigir.
+Os três requisitos pra colar grau são: documentos entregues, aprovação em tudo e ENADE em dia. Depois disso, o seu diploma digital é emitido.
 
-00:00:18.507 --> 00:00:24.524
-Para saber se o seu curso exige estágio ou TCC, abra Emissão de Documentos e depois
+O certificado desta aula inaugural aparece no AVA em até 48 horas, se você preencher o formulário de presença até as 23h59.
 
-00:00:24.524 --> 00:00:25.249
-Histórico.
-
-00:00:26.299 --> 00:00:31.939
-O ENADE é uma prova nacional do INEP, obrigatória para quem está concluindo o
-
-00:00:31.939 --> 00:00:32.379
-curso.
-
-00:00:33.429 --> 00:00:36.295
-Os três requisitos para colar grau são:
-
-00:00:36.295 --> 00:00:40.411
-documentos entregues, aprovação em tudo e ENADE regular.
-
-00:00:40.411 --> 00:00:43.498
-Depois disso, o diploma digital é emitido.
-
-00:00:44.548 --> 00:00:51.300
-O certificado desta aula inaugural aparece no AVA em até 48 horas, se você preencher o
-
-00:00:51.300 --> 00:00:54.127
-formulário de presença até as 23h59.
-
-00:00:55.177 --> 00:01:00.275
-Pronto! Responda à última missão e conquiste a patente de Formando.
+Pronto! Responde à última missão e conquista a patente de Formando. Eu tô torcendo por você!

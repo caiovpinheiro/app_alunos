@@ -392,7 +392,8 @@
    "rank": "Contas em dia",
    "learn": [
     "A mensalidade vence <b>todo dia 25</b>.",
-    "Quanto antes pagar, mais barato: até o <b>dia 10</b>, <b>25% de desconto</b>. Do dia 11 ao dia 25, <b>15%</b>. Depois do dia 25, paga o valor cheio.",
+    "Quanto antes pagar, mais barato: até o <b>dia 10</b>, <b>25% de desconto</b>. Do dia 11 ao dia 25, <b>15%</b>. Se o dia 10 cair em fim de semana ou feriado, os 25% valem até o próximo dia útil.",
+    "Pagou depois do dia 25? Você perde <b>só o desconto de pontualidade</b> (no sistema aparece como Pagamento antecipado). <b>Bolsa e outros descontos continuam.</b>",
     "Para pagar: na Área do Aluno, vá em <b>Financeiro → Fazer Pagamentos / Acordos</b>. Dá para pagar com boleto, Pix ou cartão. O app Duda também mostra os boletos.",
     "O <b>Demonstrativo</b> é a lista das suas mensalidades: mostra o que já está pago e o que está em aberto.",
     "<b>Rematrícula</b> é renovar a matrícula para continuar estudando. Acontece duas vezes por ano, em <b>janeiro e julho</b>. Basta pagar o boleto: em 1 ou 2 dias úteis a renovação acontece sozinha.",
@@ -448,13 +449,13 @@
     {
      "q": "E se pagar no dia 26?",
      "opts": [
-      "15%",
-      "5%",
-      "Nenhum desconto",
-      "25%"
+      "Perde só o desconto de pontualidade; bolsa e outros descontos continuam",
+      "Perde todos os descontos",
+      "Ganha 15%",
+      "Ganha 25%"
      ],
-     "certa": 2,
-     "exp": "Depois do vencimento (dia 25), paga o valor cheio."
+     "certa": 0,
+     "exp": "Você perde só o desconto de pontualidade. Bolsa e outros descontos continuam valendo."
     },
     {
      "q": "Você pagou o boleto da rematrícula. Precisa fazer mais alguma coisa?",
@@ -468,7 +469,28 @@
      "exp": "A rematrícula é automática depois que o pagamento é confirmado."
     }
    ],
-   "video": "/trilha-midia/videos/nivel5"
+   "parts": [
+    {
+     "t": "Quanto eu pago?",
+     "v": "/trilha-midia/videos/nivel5_parte1",
+     "erro": "Ficou em dúvida sobre o valor? O valor certo é sempre o Total que aparece no sistema. Ainda com dúvida? Chame o atendimento pelo WhatsApp {whatsapp}."
+    },
+    {
+     "t": "Pagar com Pix",
+     "v": "/trilha-midia/videos/nivel5_parte2",
+     "erro": "O código Pix não funcionou? Ele vale só por alguns minutos: gere um novo e cole no app do banco em Pix Copia e Cola. O valor no banco está diferente do sistema? Não pague e chame o atendimento pelo WhatsApp {whatsapp}."
+    },
+    {
+     "t": "Pagar com cartão",
+     "v": "/trilha-midia/videos/nivel5_parte3",
+     "erro": "O cartão foi recusado? Confira o número, a validade e o código de trás (CVC). Se continuar, tente outro cartão ou pague com Pix."
+    },
+    {
+     "t": "Pagar com boleto",
+     "v": "/trilha-midia/videos/nivel5_parte4",
+     "erro": "O boleto mostra o valor cheio? É normal: o desconto está escrito nas Instruções. Use sempre o último boleto gerado. O valor no banco está diferente? Não pague e chame o atendimento pelo WhatsApp {whatsapp}."
+    }
+   ]
   },
   {
    "t": "Horas complementares",

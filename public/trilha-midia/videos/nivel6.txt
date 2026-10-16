@@ -1,34 +1,13 @@
-WEBVTT
+Nível 6: horas complementares. Isso é obrigatório pra você se formar, então presta atenção.
 
-00:00:00.450 --> 00:00:05.165
-Nível 6: horas complementares, um item obrigatório para se formar.
+Atividades Complementares são horas de cursos, palestras e eventos fora das aulas. Elas são obrigatórias: sem elas, o diploma não sai.
 
-00:00:06.215 --> 00:00:12.239
-Atividades Complementares são horas de cursos, palestras e eventos fora das aulas.
+Começa lendo o Regulamento e o Quadro de Atividades, pra saber o que conta hora.
 
-00:00:12.239 --> 00:00:15.985
-Elas são obrigatórias: sem elas, não sai o diploma.
+Pra enviar, escolhe o tipo, preenche o nome, a data e a carga horária do evento, e anexa o comprovante digitalizado.
 
-00:00:17.035 --> 00:00:21.985
-Comece lendo o Regulamento e o Quadro de Atividades, para saber o que conta hora.
+A análise leva até 30 dias. Em Consulta, você vê como está cada comprovante e quantas horas ainda faltam.
 
-00:00:23.035 --> 00:00:29.991
-Para enviar, escolha o tipo, preencha nome, data e carga horária do evento, e anexe o
+E uma dica boa: a disciplina Temas Transversais tem 4 módulos. Com nota 6 ou mais, ela vale 40 horas complementares, validadas automaticamente.
 
-00:00:29.991 --> 00:00:32.037
-comprovante digitalizado.
-
-00:00:33.087 --> 00:00:39.749
-A análise leva até 30 dias. Em Consulta você vê o status de cada comprovante e quantas horas
-
-00:00:39.749 --> 00:00:40.255
-faltam.
-
-00:00:41.305 --> 00:00:44.670
-A disciplina Temas Transversais tem 4 módulos.
-
-00:00:44.670 --> 00:00:50.521
-Com nota 6 ou mais, ela vale 40 horas complementares, validadas automaticamente.
-
-00:00:51.571 --> 00:00:55.987
-Pronto! Agora responda à missão deste nível para ganhar XP.
+Pronto! Agora responde à missão deste nível e ganha os seus pontos.
