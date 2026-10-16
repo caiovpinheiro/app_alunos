@@ -393,6 +393,7 @@
    "learn": [
     "A mensalidade vence <b>todo dia 25</b>.",
     "Quanto antes pagar, mais barato: até o <b>dia 10</b>, <b>25% de desconto</b>. Do dia 11 ao dia 25, <b>15%</b>. Se o dia 10 cair em fim de semana ou feriado, os 25% valem até o próximo dia útil.",
+    "<b>Primeira mensalidade:</b> nela, o desconto total vale até o <b>dia 25</b>, o próprio vencimento.",
     "Pagou depois do dia 25? Você perde <b>só o desconto de pontualidade</b> (no sistema aparece como Pagamento antecipado). <b>Bolsa e outros descontos continuam.</b>",
     "Para pagar: na Área do Aluno, vá em <b>Financeiro → Fazer Pagamentos / Acordos</b>. Dá para pagar com boleto, Pix ou cartão. O app Duda também mostra os boletos.",
     "O <b>Demonstrativo</b> é a lista das suas mensalidades: mostra o que já está pago e o que está em aberto.",
@@ -436,7 +437,7 @@
    ],
    "qs": [
     {
-     "q": "Você pagou a mensalidade no dia 15. Qual desconto ganhou?",
+     "q": "Você pagou a sua 3ª mensalidade no dia 15. Qual desconto ganhou?",
      "opts": [
       "25%",
       "15%",
@@ -444,7 +445,7 @@
       "10%"
      ],
      "certa": 1,
-     "exp": "Do dia 11 até o dia 25, o desconto é de 15%."
+     "exp": "Do dia 11 até o dia 25, o desconto é de 15%. Só na 1ª mensalidade o desconto total vale até o dia 25."
     },
     {
      "q": "E se pagar no dia 26?",
