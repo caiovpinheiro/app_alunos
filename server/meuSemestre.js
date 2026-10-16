@@ -402,7 +402,7 @@ function assembleSemestre({ aluno, plano, itens, eventos, mensalidadesRows, toda
 
 async function getMeuSemestre(pool, alunoId) {
   const today = todayIsoSaoPaulo();
-  const avisoPagamento = 'A 1ª parcela vence no dia 25. As demais mensalidades devem ser pagas até o dia 10 de cada mês.';
+  const avisoPagamento = 'A mensalidade vence todo dia 25. Pague até o dia 10 para ter o desconto. Na 1ª mensalidade, o desconto vale até o dia 25.';
   const empty = {
     plano: null,
     curso: null,

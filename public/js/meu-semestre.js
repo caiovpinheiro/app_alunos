@@ -97,7 +97,7 @@ window.MeuSemestre = (function () {
     var periodo = disc ? formatRange(disc.data_inicio, disc.data_fim) : '';
     var provaTxt = prova ? formatRange(prova.prova_inicio, prova.prova_fim) : '';
     var prazoTxt = prazo ? (prazo.titulo + ' · ' + formatDayMonth(prazo.data)) : '';
-    var payTxt = '1ª parcela dia 25 · demais até o dia 10';
+    var payTxt = 'Vence dia 25 · desconto até o dia 10';
 
     wrap.innerHTML =
       '<dl class="ms-dash-facts">' +
@@ -299,7 +299,7 @@ window.MeuSemestre = (function () {
           '</div>' +
           '<small>Mensalidades</small>' +
           '<h2>Vencimentos fixos</h2>' +
-          '<p>A 1ª parcela vence no <strong>dia 25</strong>. As demais devem ser pagas até o <strong>dia 10</strong> de cada mês.</p>' +
+          '<p>A mensalidade vence <strong>todo dia 25</strong>. Pague até o <strong>dia 10</strong> para ter o desconto. Na <strong>1ª mensalidade</strong>, o desconto vale até o dia 25.</p>' +
         '</article>';
 
     var avaliacaoHtml = avaliacao
@@ -315,8 +315,8 @@ window.MeuSemestre = (function () {
 
     var financeNote =
       '<article class="ms-finance">' +
-        '<p>A <strong>1ª parcela</strong> vence no <strong>dia 25</strong>.</p>' +
-        '<p>As demais mensalidades devem ser pagas até o <strong>dia 10</strong> de cada mês.</p>' +
+        '<p>A mensalidade vence <strong>todo dia 25</strong>. Pague até o <strong>dia 10</strong> para ter o desconto.</p>' +
+        '<p>Na <strong>1ª mensalidade</strong>, o desconto vale até o <strong>dia 25</strong>.</p>' +
       '</article>';
 
     root.innerHTML =
