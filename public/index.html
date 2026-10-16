@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="/css/styles.css?v=28">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/trilha.css?v=2">
+    <link rel="stylesheet" href="/css/central.css?v=1">
 </head>
 <body>
 
@@ -431,10 +432,11 @@
                 <button onclick="showScreen('dashboard-page')" class="flex items-center gap-2 text-gray-500 hover:text-cruzeiro mb-6 transition">
                     <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar ao Dashboard
                 </button>
+                <div id="central-ajuda" class="so-trilha central"></div>
+                <div class="sem-trilha">
                 <h2 class="text-2xl font-bold text-gray-800 mb-2">Tutoriais</h2>
-                <p class="sem-trilha text-gray-500 text-sm mb-6">Assista só quando quiser: o vídeo carrega ao clicar no card.</p>
-                <p class="so-trilha text-gray-500 text-sm mb-6">Consulta rápida: vídeos curtos para tirar uma dúvida pontual. O vídeo carrega ao clicar no card.</p>
-                <div class="so-trilha tutoriais-trilha-banner">
+                <p class="text-gray-500 text-sm mb-6">Assista só quando quiser: o vídeo carrega ao clicar no card.</p>
+                <div class="hidden tutoriais-trilha-banner">
                     <div class="tutoriais-trilha-icon"><i data-lucide="map" class="w-6 h-6"></i></div>
                     <div class="flex-1 min-w-0">
                         <p class="tutoriais-trilha-kicker">Começando agora?</p>
@@ -446,6 +448,7 @@
                 <input id="tutoriais-search" type="search" class="w-full mb-4 px-4 py-3 rounded-xl border border-gray-200" placeholder="Buscar tutorial...">
                 <div id="tutoriais-filters" class="flex flex-wrap gap-2 mb-6"></div>
                 <div id="tutoriais-grid" class="tutorial-grid"></div>
+                </div>
             </main>
         </section>
 
@@ -687,16 +690,17 @@
     <!-- Módulos da aplicação -->
     <script src="/js/config.js?v=7"></script>
     <script src="/js/auth.js?v=7"></script>
-    <script src="/js/api.js?v=12"></script>
+    <script src="/js/api.js?v=13"></script>
     <script src="/js/validation.js?v=7"></script>
     <script src="/js/cursos.js?v=7"></script>
     <script src="/js/certificate.js?v=7"></script>
     <script src="/js/avisos.js?v=7"></script>
     <script src="/js/tutoriais.js?v=10"></script>
     <script src="/js/trilha.js?v=3"></script>
+    <script src="/js/central.js?v=1"></script>
     <script src="/js/atendimento.js?v=8"></script>
     <script src="/js/meu-semestre.js?v=12"></script>
     <script src="/js/ui.js?v=13"></script>
-    <script src="/js/app.js?v=12"></script>
+    <script src="/js/app.js?v=13"></script>
 </body>
 </html>

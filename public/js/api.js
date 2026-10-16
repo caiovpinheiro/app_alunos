@@ -82,6 +82,10 @@ window.Api = (function () {
     return request('/api/tutoriais', { headers: authHeaders() });
   }
 
+  async function getCentral() {
+    return request('/api/central', { headers: authHeaders() });
+  }
+
   async function getMeuSemestre() {
     return request('/api/meu-semestre', { headers: authHeaders() });
   }
@@ -149,6 +153,7 @@ window.Api = (function () {
     countAvisosNaoLidas: countAvisosNaoLidas,
     markAvisoRead: markAvisoRead,
     listTutoriais: listTutoriais,
+    getCentral: getCentral,
     getMeuSemestre: getMeuSemestre,
     downloadPlanoPng: downloadPlanoPng,
     getPlanoImageUrl: getPlanoImageUrl,

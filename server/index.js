@@ -17,6 +17,7 @@ const planoImagem = require('./planoImagem');
 const planoMateriasImagem = require('./planoMateriasImagem');
 const materiasAlunos = require('./materiasAlunos');
 const trilha = require('./trilha');
+const central = require('./central');
 const app = express();
 app.set('trust proxy', 1);
 const PORT = Number(process.env.PORT) || 80;
@@ -580,6 +581,19 @@ app.get('/api/trilha', authMiddleware, async (req, res) => {
     console.error('Falha ao carregar trilha:', err.message);
     return res.status(500).json({ success: false, message: 'Não foi possível carregar a trilha.' });
   }
+});
+
+// Central de ajuda: mesma liberação da trilha (contas de TRILHA_LIBERADA_PARA).
+app.get('/api/central', authMiddleware, async (req, res) => {
+  if (!trilha.liberadaPara(req.aluno)) return res.status(404).json({ success: false, message: 'Recurso não encontrado.' });
+  const whatsapp = pool ? await trilhaWhatsapp(req.aluno.id) : null;
+  const numero = (whatsapp && trilha.formatPhone(whatsapp.telefone)) || '(11) 91518-4535';
+  const conteudo = central.publicContent(numero, (n) => (trilha.NIVEIS[n - 1] ? trilha.NIVEIS[n - 1].t : null));
+  conteudo.whatsapp = numero;
+  conteudo.whatsapp_url = whatsapp && whatsapp.url && trilha.formatPhone(whatsapp.telefone)
+    ? whatsapp.url
+    : 'https://wa.me/5511915184535';
+  return res.json({ success: true, conteudo });
 });
 
 async function trilhaAction(req, res, fn) {

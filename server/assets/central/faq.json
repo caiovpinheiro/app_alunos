@@ -1,0 +1,527 @@
+{
+ "versao": 1,
+ "grupos": [
+  {
+   "id": "acesso",
+   "titulo": "Entrar no portal e no app",
+   "icone": "key-round",
+   "perguntas": [
+    {
+     "id": "primeiro-acesso",
+     "q": "É a minha primeira vez. Como eu entro?",
+     "a": "Baixe <b>dois aplicativos</b> no celular: o <b>Duda</b> (estrela branca no fundo azul) e o <b>Microsoft Authenticator</b> (cadeado azul). No Duda, digite o CPF, marque a caixinha e toque em <b>Não sei meus dados de acesso</b> (o botão branco). Vai pedir e-mail e senha até 4 vezes: é normal. O passo a passo completo está no Nível 1 da Trilha.",
+     "nivel_trilha": 1,
+     "tags": [
+      "primeiro acesso",
+      "duda",
+      "authenticator",
+      "aplicativo",
+      "entrar"
+     ],
+     "confirmar": false
+    },
+    {
+     "id": "email-academico",
+     "q": "O que é o e-mail acadêmico? Onde descubro o meu?",
+     "a": "É um e-mail que a Cruzeiro do Sul cria só para você. Ele <b>não é</b> o seu Gmail nem o seu Hotmail. Para descobrir, abra o Duda, toque em <b>Não sei meus dados de acesso</b> e digite seu primeiro nome e o CPF. O app mostra o e-mail e a primeira senha: <b>anote os dois num papel</b>.",
+     "nivel_trilha": 1,
+     "tags": [
+      "e-mail acadêmico",
+      "login",
+      "duda",
+      "primeiro acesso"
+     ],
+     "confirmar": false
+    },
+    {
+     "id": "senha-nao-funciona",
+     "q": "A senha que o Duda mostrou não funciona. E agora?",
+     "a": "O Duda mostra a sua <b>primeira senha</b>. Se você já criou uma senha nova antes, use a <b>senha nova</b>. Se mesmo assim não der certo, chame o setor acadêmico pelo WhatsApp <b>{whatsapp}</b>.",
+     "nivel_trilha": 1,
+     "tags": [
+      "senha",
+      "login",
+      "duda",
+      "primeiro acesso"
+     ],
+     "confirmar": false
+    },
+    {
+     "id": "esqueci-senha",
+     "q": "Esqueci a minha senha. E agora?",
+     "a": "A sua senha é uma só: vale para o Duda e para as aulas (Blackboard). Na tela da <b>Microsoft</b> (fundo branco), toque em <b>Esqueci minha senha</b> e siga os passos. Não deu certo? Chame o setor acadêmico pelo WhatsApp <b>{whatsapp}</b>.",
+     "nivel_trilha": 1,
+     "tags": [
+      "senha",
+      "login",
+      "esqueci",
+      "microsoft"
+     ],
+     "confirmar": true
+    },
+    {
+     "id": "numero-authenticator",
+     "q": "Apareceu um número na tela. O que eu faço?",
+     "a": "Esse número confirma que é você. Saia do Duda <b>sem fechar</b> (só volte para a tela inicial do celular), abra o Authenticator, digite o número e toque em <b>SIM</b>. O aviso não chegou? Deslize a tela do Authenticator para baixo. Fechou o Duda sem querer? Faça o login de novo: vai aparecer um número novo.",
+     "nivel_trilha": 1,
+     "tags": [
+      "authenticator",
+      "número",
+      "aprovar",
+      "login",
+      "erro"
+     ],
+     "confirmar": false
+    },
+    {
+     "id": "onde-rgm",
+     "q": "O que é RGM? Onde vejo o meu?",
+     "a": "RGM é o seu <b>número de matrícula</b>. Ele aparece no app Duda, no cartão do curso, embaixo do nome do curso. Anote num lugar seguro: ele é pedido em vários lugares.",
+     "nivel_trilha": 1,
+     "tags": [
+      "rgm",
+      "matrícula",
+      "duda"
+     ],
+     "confirmar": false
+    }
+   ]
+  },
+  {
+   "id": "area-aluno",
+   "titulo": "Área do Aluno e documentos",
+   "icone": "folder-open",
+   "perguntas": [
+    {
+     "id": "o-que-e-area-aluno",
+     "q": "O que é a Área do Aluno? O que tem lá?",
+     "a": "É o site da sua matrícula na Cruzeiro do Sul. Lá ficam as notas e o calendário (<b>Vida Acadêmica</b>), os pagamentos (<b>Financeiro</b>), os pedidos (<b>CAA On-line</b>) e os seus dados, como telefone e endereço (<b>Minha Conta</b>). No computador, as opções ficam numa coluna do lado esquerdo.",
+     "nivel_trilha": 2,
+     "tags": [
+      "área do aluno",
+      "menu",
+      "minha conta",
+      "vida acadêmica"
+     ],
+     "confirmar": false
+    },
+    {
+     "id": "documentos-aceitos",
+     "q": "Como sei se meus documentos foram aceitos?",
+     "a": "Na Área do Aluno, abra <b>Documentos Pendentes</b>. Verde com a palavra <b>Entregue</b> quer dizer tudo certo. A conferência pode levar até <b>90 dias</b>. Atenção: documento faltando pode cancelar o curso, então confira logo.",
+     "nivel_trilha": 2,
+     "tags": [
+      "documentos",
+      "documentos pendentes",
+      "entregue",
+      "matrícula"
+     ],
+     "confirmar": false
+    },
+    {
+     "id": "enviar-documento",
+     "q": "Como envio um documento? Diz que o arquivo é grande demais.",
+     "a": "Tire uma foto bem nítida do documento ou mande em PDF (tipo de arquivo de documento), em <b>Documentos Pendentes</b>. O arquivo pode ter até <b>5 MB</b> (MB é o tamanho do arquivo). Ficou maior? Tire uma nova foto ou use um aplicativo que diminui o PDF.",
+     "nivel_trilha": 2,
+     "tags": [
+      "documentos",
+      "enviar",
+      "foto",
+      "pdf",
+      "arquivo grande"
+     ],
+     "confirmar": false
+    },
+    {
+     "id": "declaracao",
+     "q": "Preciso de uma declaração. Onde eu peço?",
+     "a": "Alguns documentos, como o Histórico, saem na Área do Aluno, em <b>Emissão de Documentos</b>. Para os outros pedidos, use o <b>CAA On-line</b> (o atendimento pela internet). Você recebe um <b>número de protocolo</b> para acompanhar o pedido.",
+     "nivel_trilha": 2,
+     "tags": [
+      "declaração",
+      "documentos",
+      "caa",
+      "protocolo",
+      "pedido"
+     ],
+     "confirmar": true
+    }
+   ]
+  },
+  {
+   "id": "aulas",
+   "titulo": "Aulas no AVA (Blackboard)",
+   "icone": "monitor-play",
+   "perguntas": [
+    {
+     "id": "onde-aulas",
+     "q": "Onde vejo minhas aulas?",
+     "a": "As aulas ficam no <b>AVA</b> (o site das aulas), que também se chama <b>Blackboard</b>: é a mesma coisa. No app Duda, toque em <b>Acessar Blackboard</b>. Na Área do Aluno, toque em <b>Acesso ao Ambiente Virtual</b> e depois em <b>Disciplinas</b>.",
+     "nivel_trilha": 3,
+     "tags": [
+      "aulas",
+      "ava",
+      "blackboard",
+      "disciplinas",
+      "matérias"
+     ],
+     "confirmar": false
+    },
+    {
+     "id": "nenhuma-materia",
+     "q": "Não aparece nenhuma matéria no AVA. É normal?",
+     "a": "Sim, logo depois da matrícula. A primeira matéria, <b>Ambientação Digital</b>, aparece em até <b>3 dias (72 horas)</b> e ensina a usar o AVA. Passou desse prazo? Chame o setor acadêmico pelo WhatsApp <b>{whatsapp}</b>.",
+     "nivel_trilha": 3,
+     "tags": [
+      "ava",
+      "matérias",
+      "ambientação digital",
+      "não aparece"
+     ],
+     "confirmar": false
+    },
+    {
+     "id": "como-e-materia",
+     "q": "Como funciona cada matéria? Até quando faço os exercícios?",
+     "a": "Cada matéria (o AVA chama de <b>disciplina</b>) dura <b>um mês</b>. O conteúdo vem em partes chamadas <b>Unidades</b>, com texto, videoaula e um exercício que vale nota. O prazo dos exercícios é sempre o <b>dia 1º do mês seguinte</b>: a matéria de fevereiro vai até 1º de março.",
+     "nivel_trilha": 3,
+     "tags": [
+      "matéria",
+      "disciplina",
+      "unidades",
+      "exercícios",
+      "prazo"
+     ],
+     "confirmar": false
+    },
+    {
+     "id": "falar-tutor",
+     "q": "Como falo com o tutor?",
+     "a": "O tutor é o professor que acompanha você na matéria. Dentro da matéria, no AVA, toque em <b>Fale com a Tutoria</b> e escreva a sua dúvida. Leia também os <b>Avisos</b> da matéria: é lá que o tutor dá os recados importantes.",
+     "nivel_trilha": 3,
+     "tags": [
+      "tutor",
+      "tutoria",
+      "dúvida",
+      "professor",
+      "avisos"
+     ],
+     "confirmar": false
+    }
+   ]
+  },
+  {
+   "id": "provas",
+   "titulo": "Provas e notas",
+   "icone": "clipboard-check",
+   "perguntas": [
+    {
+     "id": "como-funciona-nota",
+     "q": "Como funciona a minha nota?",
+     "a": "Cada matéria vale <b>10 pontos</b>: os exercícios do AVA (<b>A2</b>) valem até 4, e a prova (<b>A1</b>) vale até 6. Somou <b>6 ou mais</b>? Passou. Somou menos? Você faz a <b>AF</b> (Avaliação Final), uma prova de recuperação no fim do semestre: se a nota dela for maior que a da prova, ela entra no lugar.",
+     "nivel_trilha": 4,
+     "tags": [
+      "nota",
+      "média",
+      "a1",
+      "a2",
+      "af",
+      "recuperação"
+     ],
+     "confirmar": false
+    },
+    {
+     "id": "quando-prova",
+     "q": "Quando e onde é a prova?",
+     "a": "A prova (A1) é feita <b>pela internet</b>, no começo do mês seguinte ao da matéria, na Área do Aluno em <b>Vida Acadêmica → Plataforma de Prova</b>. As datas estão no <b>Calendário Acadêmico</b> e no <b>Meu Semestre</b>, aqui no portal. Atenção: a prova das matérias de junho é no <b>fim de maio</b>.",
+     "nivel_trilha": 4,
+     "tags": [
+      "prova",
+      "a1",
+      "data",
+      "calendário",
+      "plataforma de prova"
+     ],
+     "confirmar": false
+    },
+    {
+     "id": "perdi-prova",
+     "q": "Perdi a prova, e agora?",
+     "a": "Calma, ainda tem saída. Se a sua soma ficar abaixo de 6, você pode fazer a <b>AF</b> (prova de recuperação) no fim do semestre, e a nota dela entra no lugar da prova. Chame o setor acadêmico pelo WhatsApp <b>{whatsapp}</b> para saber se existe outra opção no seu caso.",
+     "nivel_trilha": 4,
+     "tags": [
+      "prova",
+      "perdi",
+      "faltei",
+      "af",
+      "recuperação"
+     ],
+     "confirmar": true
+    },
+    {
+     "id": "errei-exercicio",
+     "q": "Errei um exercício do AVA. Perdi a nota?",
+     "a": "Não. Cada exercício tem <b>3 tentativas</b>, e fica a <b>maior nota</b>. Só não deixe passar o prazo: o dia 1º do mês seguinte.",
+     "nivel_trilha": 4,
+     "tags": [
+      "exercício",
+      "tentativas",
+      "a2",
+      "nota"
+     ],
+     "confirmar": false
+    },
+    {
+     "id": "onde-notas",
+     "q": "Onde vejo minhas notas?",
+     "a": "A nota dos exercícios aparece no <b>AVA</b>, dentro da matéria. A nota final fica na Área do Aluno, em <b>Vida Acadêmica → Minhas Notas</b>: escolha o semestre para ver. O sistema arredonda a média.",
+     "nivel_trilha": 4,
+     "tags": [
+      "notas",
+      "minhas notas",
+      "vida acadêmica",
+      "resultado"
+     ],
+     "confirmar": false
+    }
+   ]
+  },
+  {
+   "id": "pagamentos",
+   "titulo": "Pagamentos e rematrícula",
+   "icone": "wallet",
+   "perguntas": [
+    {
+     "id": "vencimento-desconto",
+     "q": "Quando vence a mensalidade? Como ganho desconto?",
+     "a": "A mensalidade vence <b>todo dia 25</b>. Pagando até o <b>dia 10</b>, você ganha <b>25% de desconto</b>; do dia 11 ao dia 25, ganha <b>15%</b>. Se o dia 10 cair em sábado, domingo ou feriado, os 25% valem até o próximo dia útil.",
+     "nivel_trilha": 5,
+     "tags": [
+      "mensalidade",
+      "vencimento",
+      "desconto",
+      "pontualidade",
+      "dia 10",
+      "dia 25"
+     ],
+     "confirmar": false
+    },
+    {
+     "id": "primeira-mensalidade",
+     "q": "E a primeira mensalidade? Tem desconto?",
+     "a": "Sim. Na <b>primeira mensalidade</b>, o desconto total vale até o <b>dia 25</b>, o próprio vencimento. A partir da segunda, vale a regra normal: 25% até o dia 10 e 15% do dia 11 ao 25.",
+     "nivel_trilha": 5,
+     "tags": [
+      "primeira mensalidade",
+      "desconto",
+      "vencimento",
+      "matrícula"
+     ],
+     "confirmar": false
+    },
+    {
+     "id": "como-pagar",
+     "q": "Como eu pago a mensalidade?",
+     "a": "Na Área do Aluno, toque em <b>Pagar Mensalidade</b> (ou em Financeiro → Acordos e Pagamentos) e marque o mês. Escolha <b>Pagar com pix</b>, <b>Pagar com cartão</b> ou <b>Pagar com boleto</b>. O valor certo é sempre o <b>Total</b> que aparece no sistema.",
+     "nivel_trilha": 5,
+     "tags": [
+      "pagar",
+      "pix",
+      "cartão",
+      "boleto",
+      "financeiro"
+     ],
+     "confirmar": false
+    },
+    {
+     "id": "boleto-valor-cheio",
+     "q": "O boleto veio com valor cheio. Está errado?",
+     "a": "Não, é normal. O boleto mostra o valor cheio em <b>Valor do documento</b>, e o seu desconto está escrito nas <b>Instruções</b>, já somando pontualidade e bolsa. Use sempre o <b>último boleto gerado</b> e confira se o banco mostra o mesmo valor do <b>Total</b> do sistema.",
+     "nivel_trilha": 5,
+     "tags": [
+      "boleto",
+      "valor cheio",
+      "desconto",
+      "instruções",
+      "valor errado"
+     ],
+     "confirmar": false
+    },
+    {
+     "id": "valor-banco-diferente",
+     "q": "O app do banco mostrou um valor diferente do sistema. Eu pago?",
+     "a": "<b>Não pague.</b> O valor certo é sempre o <b>Total</b> que aparece no sistema. Chame o atendimento pelo WhatsApp <b>{whatsapp}</b> e a equipe resolve com você.",
+     "nivel_trilha": 5,
+     "tags": [
+      "banco",
+      "valor diferente",
+      "boleto",
+      "pix",
+      "valor errado"
+     ],
+     "confirmar": false
+    },
+    {
+     "id": "paguei-atrasado",
+     "q": "Paguei depois do dia 25. Perco todos os descontos?",
+     "a": "Não. Você perde <b>só o desconto de pontualidade</b> (no sistema ele se chama <b>Pagamento antecipado</b>). A <b>bolsa e os outros descontos continuam</b>. Pode entrar um juro pequeno por causa do atraso.",
+     "nivel_trilha": 5,
+     "tags": [
+      "atraso",
+      "vencido",
+      "desconto",
+      "bolsa",
+      "juros"
+     ],
+     "confirmar": false
+    },
+    {
+     "id": "paguei-em-aberto",
+     "q": "Paguei o boleto e ainda aparece em aberto. E agora?",
+     "a": "O <b>boleto</b> pode levar até <b>2 dias úteis</b> para aparecer como pago. Espere esse prazo e guarde o comprovante. Passou e continua em aberto? Chame o atendimento pelo WhatsApp <b>{whatsapp}</b>.",
+     "nivel_trilha": 5,
+     "tags": [
+      "boleto",
+      "pago",
+      "em aberto",
+      "comprovante"
+     ],
+     "confirmar": false
+    },
+    {
+     "id": "rematricula",
+     "q": "O que é rematrícula? Preciso fazer alguma coisa?",
+     "a": "Rematrícula é renovar a matrícula para continuar estudando. Ela acontece duas vezes por ano, em <b>janeiro e julho</b>. É só pagar o boleto: em <b>1 ou 2 dias úteis</b> a renovação acontece sozinha.",
+     "nivel_trilha": 5,
+     "tags": [
+      "rematrícula",
+      "renovação",
+      "matrícula",
+      "boleto"
+     ],
+     "confirmar": false
+    }
+   ]
+  },
+  {
+   "id": "horas-formatura",
+   "titulo": "Horas complementares e formatura",
+   "icone": "graduation-cap",
+   "perguntas": [
+    {
+     "id": "horas-o-que-sao",
+     "q": "O que são horas complementares? São obrigatórias?",
+     "a": "São horas de cursos, palestras, eventos e oficinas que você faz além das aulas. Elas são <b>obrigatórias</b>: sem completar, você não recebe o diploma. A quantidade depende do seu curso, e a matéria <b>Temas Transversais</b> já conta <b>40 horas</b> se você tirar 6 ou mais.",
+     "nivel_trilha": 6,
+     "tags": [
+      "horas complementares",
+      "atividades complementares",
+      "obrigatório",
+      "temas transversais"
+     ],
+     "confirmar": false
+    },
+    {
+     "id": "horas-enviar",
+     "q": "Como envio o certificado de um curso ou palestra?",
+     "a": "Tire uma foto do certificado (ou salve o PDF) e envie em <b>Atividades Complementares → Envio de comprovantes</b>. O arquivo pode ter até <b>1 MB</b>. A Cruzeiro do Sul confere em até <b>30 dias</b>, e em <b>Consulta</b> você vê quantas horas já valeram e quantas faltam.",
+     "nivel_trilha": 6,
+     "tags": [
+      "horas complementares",
+      "certificado",
+      "enviar",
+      "comprovante"
+     ],
+     "confirmar": false
+    },
+    {
+     "id": "formar-requisitos",
+     "q": "O que eu preciso para me formar?",
+     "a": "Passar em <b>todas as matérias</b>, completar as <b>horas complementares</b> e Temas Transversais, ter os <b>documentos entregues</b> e o <b>ENADE</b> em dia (uma prova obrigatória do governo, no fim do curso). Alguns cursos também pedem <b>Estágio</b> e <b>TCC</b> (trabalho final): veja na Área do Aluno, em <b>Emissão de Documentos → Histórico</b>.",
+     "nivel_trilha": 7,
+     "tags": [
+      "formatura",
+      "requisitos",
+      "enade",
+      "estágio",
+      "tcc"
+     ],
+     "confirmar": false
+    },
+    {
+     "id": "diploma",
+     "q": "Como recebo o meu diploma?",
+     "a": "Com tudo pronto, a Cruzeiro do Sul avisa a data da <b>colação de grau</b> (a formatura oficial). O diploma é <b>digital</b>: fica no computador ou no celular, sem papel. Leia os e-mails da Cruzeiro do Sul e olhe também a pasta de <b>spam</b> (lixo eletrônico), porque os avisos às vezes caem lá.",
+     "nivel_trilha": 7,
+     "tags": [
+      "diploma",
+      "colação de grau",
+      "formatura",
+      "e-mail"
+     ],
+     "confirmar": true
+    },
+    {
+     "id": "certificado-aula-inaugural",
+     "q": "Como pego o certificado da aula inaugural?",
+     "a": "No início deste portal, toque em <b>Gerar Certificado</b> e preencha seus dados com atenção: o nome sai no certificado do jeito que você escrever. Se você preencheu a lista de presença com o seu RGM no dia da aula, o certificado também aparece no AVA em até <b>2 dias</b>.",
+     "nivel_trilha": 7,
+     "tags": [
+      "certificado",
+      "aula inaugural",
+      "lista de presença"
+     ],
+     "confirmar": true
+    }
+   ]
+  },
+  {
+   "id": "ajuda",
+   "titulo": "Ajuda e atendimento",
+   "icone": "headset",
+   "perguntas": [
+    {
+     "id": "falar-atendimento",
+     "q": "Como falo com alguém da Cruzeiro do Sul?",
+     "a": "Neste portal, toque em <b>Atendimento → Suporte acadêmico</b>: o WhatsApp <b>{whatsapp}</b> abre já com o seu nome, RGM e polo. No app Duda, também tem <b>Ajuda → Teleatendimento</b>: uma pessoa atende por chat ou vídeo, de segunda a sexta, das 9h às 21h.",
+     "nivel_trilha": null,
+     "tags": [
+      "atendimento",
+      "whatsapp",
+      "ajuda",
+      "teleatendimento",
+      "contato"
+     ],
+     "confirmar": true
+    },
+    {
+     "id": "qual-canal",
+     "q": "Com quem eu falo sobre cada assunto?",
+     "a": "Dúvida da matéria: <b>Fale com a Tutoria</b>, no AVA. Pedido por escrito, como uma declaração: <b>CAA On-line</b>, na Área do Aluno, que dá um número de protocolo. Travou no acesso ou no pagamento: WhatsApp <b>{whatsapp}</b>.",
+     "nivel_trilha": null,
+     "tags": [
+      "atendimento",
+      "tutoria",
+      "caa",
+      "whatsapp",
+      "contato"
+     ],
+     "confirmar": false
+    },
+    {
+     "id": "por-onde-comecar",
+     "q": "Sou novo e não entendo muito de internet. Por onde começo?",
+     "a": "Comece pela <b>Trilha EaD para Iniciantes</b>, aqui no portal. São 7 níveis curtos, com vídeo, resumo e perguntas, do primeiro acesso até a formatura. Para uma dúvida rápida, use os <b>Tutoriais</b>.",
+     "nivel_trilha": null,
+     "tags": [
+      "começar",
+      "trilha",
+      "tutoriais",
+      "iniciante"
+     ],
+     "confirmar": false
+    }
+   ]
+  }
+ ]
+}
