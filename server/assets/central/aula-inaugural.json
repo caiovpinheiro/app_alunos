@@ -1,113 +1,90 @@
 {
- "video_id": "5JvAXkpHLNM",
  "titulo": "Aula Inaugural da Graduação EaD",
- "duracao_s": 1945,
- "data": "2026-09-03",
+ "duracao_s": 695,
  "capitulos": [
   {
    "titulo": "Boas-vindas",
-   "resumo": "Quem apresenta a aula e o que você vai aprender nela.",
-   "inicio_s": 274,
-   "fim_s": 332,
+   "resumo": "Um recado para quem decidiu estudar para mudar de vida.",
+   "v": "/trilha-midia/aula/cap_00",
+   "duracao": "0:35",
    "nivel_trilha": null
   },
   {
-   "titulo": "Conhecendo a Área do Aluno",
-   "resumo": "A tela inicial do portal, os ícones principais e o menu Vida Acadêmica.",
-   "inicio_s": 332,
-   "fim_s": 452,
+   "titulo": "Como funciona o EaD",
+   "resumo": "Como é estudar a distância: uma matéria por mês, no seu ritmo.",
+   "v": "/trilha-midia/aula/cap_01",
+   "duracao": "1:01",
+   "nivel_trilha": null
+  },
+  {
+   "titulo": "Primeiro acesso",
+   "resumo": "O app Duda, o e-mail acadêmico e a sua senha.",
+   "v": "/trilha-midia/aula/cap_02",
+   "duracao": "1:00",
+   "nivel_trilha": 1
+  },
+  {
+   "titulo": "Área do Aluno",
+   "resumo": "Onde fica cada coisa no portal do aluno.",
+   "v": "/trilha-midia/aula/cap_03",
+   "duracao": "1:03",
    "nivel_trilha": 2
   },
   {
-   "titulo": "Plataforma de provas",
-   "resumo": "Onde você faz as provas e como elas são corrigidas.",
-   "inicio_s": 452,
-   "fim_s": 647,
+   "titulo": "Seu mês de estudo",
+   "resumo": "Como funciona o mês: unidades, videoaulas e atividades.",
+   "v": "/trilha-midia/aula/cap_04",
+   "duracao": "1:04",
+   "nivel_trilha": 3
+  },
+  {
+   "titulo": "Tutor e avisos",
+   "resumo": "Como falar com o tutor e por que ler os avisos.",
+   "v": "/trilha-midia/aula/cap_05",
+   "duracao": "0:55",
+   "nivel_trilha": 3
+  },
+  {
+   "titulo": "Provas e notas",
+   "resumo": "A2, A1 e Avaliação Final: como você é aprovado.",
+   "v": "/trilha-midia/aula/cap_06",
+   "duracao": "1:05",
    "nivel_trilha": 4
   },
   {
-   "titulo": "CAA Online: abrir pedidos",
-   "resumo": "Como pedir coisas à Cruzeiro do Sul pelo CAA Online: desbloqueio de conta, e-mail acadêmico, nome social e outros.",
-   "inicio_s": 647,
-   "fim_s": 735,
-   "nivel_trilha": 2
+   "titulo": "Pagamentos",
+   "resumo": "Vencimento, descontos e como pagar com segurança.",
+   "v": "/trilha-midia/aula/cap_07",
+   "duracao": "1:05",
+   "nivel_trilha": 5
   },
   {
    "titulo": "Rematrícula",
-   "resumo": "A rematrícula acontece duas vezes por ano. Nela você também inclui ou tira disciplinas.",
-   "inicio_s": 735,
-   "fim_s": 763,
+   "resumo": "Como renovar o curso em janeiro e julho.",
+   "v": "/trilha-midia/aula/cap_07b",
+   "duracao": "0:39",
    "nivel_trilha": 5
   },
   {
    "titulo": "Horas complementares",
-   "resumo": "Onde ler as regras, enviar os comprovantes e ver se as horas foram aceitas.",
-   "inicio_s": 763,
-   "fim_s": 818,
+   "resumo": "O que são e como enviar as horas complementares.",
+   "v": "/trilha-midia/aula/cap_08",
+   "duracao": "1:03",
    "nivel_trilha": 6
   },
   {
-   "titulo": "Emitir documentos",
-   "resumo": "Como tirar declaração de matrícula para o trabalho ou o estágio.",
-   "inicio_s": 818,
-   "fim_s": 951,
-   "nivel_trilha": 2
-  },
-  {
-   "titulo": "Disciplinas no ambiente virtual",
-   "resumo": "Como entrar nas aulas e entender as disciplinas de cada mês.",
-   "inicio_s": 951,
-   "fim_s": 1138,
-   "nivel_trilha": 3
-  },
-  {
-   "titulo": "Avisos e filtros",
-   "resumo": "Os avisos são o recado oficial dos tutores. Dica: não use filtros, para nenhuma disciplina sumir.",
-   "inicio_s": 1138,
-   "fim_s": 1210,
-   "nivel_trilha": 3
-  },
-  {
-   "titulo": "Quando são as provas",
-   "resumo": "A prova de cada disciplina é no mês seguinte. A data aparece nos avisos.",
-   "inicio_s": 1210,
-   "fim_s": 1278,
-   "nivel_trilha": 4
-  },
-  {
-   "titulo": "Falar com o tutor",
-   "resumo": "Cada disciplina tem um espaço para mandar dúvidas ao tutor.",
-   "inicio_s": 1278,
-   "fim_s": 1320,
-   "nivel_trilha": 3
-  },
-  {
-   "titulo": "Calendário acadêmico",
-   "resumo": "Onde ficam as datas de provas, recuperações e entregas de cada mês.",
-   "inicio_s": 1320,
-   "fim_s": 1434,
-   "nivel_trilha": 2
-  },
-  {
-   "titulo": "Onde pedir ajuda",
-   "resumo": "Os canais de atendimento: chat on-line e o seu polo.",
-   "inicio_s": 1434,
-   "fim_s": 1546,
-   "nivel_trilha": null
-  },
-  {
-   "titulo": "Grupos e rotina de estudos",
-   "resumo": "Grupos da turma e dicas para organizar o seu tempo de estudo.",
-   "inicio_s": 1546,
-   "fim_s": 1711,
-   "nivel_trilha": 3
-  },
-  {
-   "titulo": "Certificado da aula inaugural",
-   "resumo": "Como gerar o certificado desta aula e usar como horas complementares.",
-   "inicio_s": 1711,
-   "fim_s": 1945,
+   "titulo": "Rumo à formatura",
+   "resumo": "O que falta para colar grau e pegar o diploma.",
+   "v": "/trilha-midia/aula/cap_09",
+   "duracao": "1:02",
    "nivel_trilha": 7
+  },
+  {
+   "titulo": "Ajuda e certificado",
+   "resumo": "Com quem falar quando precisar e o certificado desta aula.",
+   "v": "/trilha-midia/aula/cap_10",
+   "duracao": "1:03",
+   "nivel_trilha": null
   }
  ]
 }
