@@ -7,6 +7,19 @@
 - Push em `main` dispara `.github/workflows/deploy.yml`: publica `ghcr.io/caiovpinheiro/app_alunos:latest` e chama o webhook do EasyPanel (`secrets.EASYPANEL_DEPLOY_APP`).
 - Não invente outro fluxo de deploy (n8n, branch de homologação, etc.) sem pedido explícito.
 
+### 2026-10-17 - Chat do CRM (webchat) no portal, só para contas de teste
+
+**Decisão**
+- O script do webchat do CRM (`embed.js` + `data-key`) **não fica no HTML**. `GET /api/recursos` devolve `webchat: { src, key }` só para as contas em `WEBCHAT_LIBERADO_PARA` (Environment do EasyPanel): RGM ou e-mail, separados por vírgula. `*` = todos. **Vazio = ninguém** (padrão seguro, igual à trilha). Quem não está na lista recebe `webchat: null` e nada é carregado.
+- `app.js` monta a tag `<script async src data-key>` uma vez, depois do login, a partir desse retorno (`server/webchat.js`). No logout, se o chat estava na página, recarrega em `/login` (o widget não tem como ser descarregado).
+- `WEBCHAT_EMBED_URL` e `WEBCHAT_KEY` (o `data-key` do embed) vêm **só** do Environment do EasyPanel; não há valor padrão no código. Sem os dois, o chat não carrega.
+
+**Contexto**
+- Pedido: colocar o chat no site, mas só o aluno de teste deve ver. O CRM só aceita ser embutido em `app.cruzeiroead.com.br` (CSP `frame-ancestors`), então em `localhost` o script carrega mas o widget não abre; o teste real é em produção.
+
+**Impacto**
+- Para ligar: no EasyPanel, `WEBCHAT_EMBED_URL` (URL do `embed.js`), `WEBCHAT_KEY` (o `data-key`) e `WEBCHAT_LIBERADO_PARA=<RGM ou e-mail do aluno de teste>`, e reiniciar. Para todos: `*`. Para desligar: apagar a variável.
+
 ### 2026-10-15 - Trilha é o guia principal; tutoriais viram consulta
 
 **Decisão**

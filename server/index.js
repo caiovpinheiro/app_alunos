@@ -11,6 +11,7 @@ const atendimento = require('./atendimento');
 const adminAuth = require('./adminAuth');
 const { UNIDADES } = require('./unidades');
 const matriculados = require('./matriculados');
+const webchat = require('./webchat');
 const syncAcessos = require('./sync-acessos');
 const meuSemestre = require('./meuSemestre');
 const planoImagem = require('./planoImagem');
@@ -534,7 +535,7 @@ app.get('/api/tutoriais/:id', authMiddleware, async (req, res) => {
 
 // Recursos liberados para o aluno logado (a tela usa para mostrar ou esconder a trilha).
 app.get('/api/recursos', authMiddleware, (req, res) => {
-  res.json({ success: true, trilha: trilha.liberadaPara(req.aluno) });
+  res.json({ success: true, trilha: trilha.liberadaPara(req.aluno), webchat: webchat.configPara(req.aluno) });
 });
 
 // Enquanto a trilha estiver em teste, só as contas de TRILHA_LIBERADA_PARA acessam.

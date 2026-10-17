@@ -254,6 +254,7 @@
       recursosCarregados = true;
       var on = !!(r && r.trilha);
       document.body.classList.toggle('trilha-on', on);
+      carregarWebchat(r && r.webchat);
       if (on && window.Trilha) window.Trilha.refreshDashboard();
       if (!on && window.UI.screenFromPath(window.location.pathname) === 'trilha-page') {
         window.showScreen('dashboard-page', { replace: true });
@@ -264,9 +265,26 @@
     }).catch(function () { /* sem a informação, fica tudo como antes (trilha escondida) */ });
   }
 
+  // Chat do CRM: só entra na página para quem o servidor liberou (WEBCHAT_LIBERADO_PARA).
+  var webchatCarregado = false;
+  function carregarWebchat(cfg) {
+    if (webchatCarregado || !cfg || !cfg.src || !cfg.key) return;
+    webchatCarregado = true;
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = cfg.src;
+    s.setAttribute('data-key', cfg.key);
+    document.body.appendChild(s);
+  }
+
   async function logout() {
     await window.Api.logout();
     window.Auth.clear();
+    if (webchatCarregado) {
+      // O widget do chat não tem "descarregar": recarrega a página já na tela de entrada.
+      window.location.replace('/login');
+      return;
+    }
     document.body.classList.remove('trilha-on');
     recursosCarregados = false;
     if (window.Avisos) window.Avisos.closeDropdown();
