@@ -1,6 +1,7 @@
 /* Dados de acesso à faculdade (RGM, e-mail acadêmico, curso) e a primeira senha do Duda/portal.
-   Um componente, três lugares:
-   - [data-dados-acesso-slot="cartao"]: cartão "Seus dados de acesso" no Início;
+   Um componente, quatro lugares:
+   - [data-dados-acesso-slot="aba"]: aba "E-mail e senha" da ajuda do acesso (public/js/apps.js), no Início e nas telas internas;
+   - [data-dados-acesso-slot="cartao"]: cartão "Seus dados de acesso" (o Início não usa mais; ficou para outras telas);
    - [data-dados-acesso-slot="faixa"]: faixa compacta no módulo 1 da Aula Inaugural e na Central;
    - [data-acesso-rgm]: linha embaixo do nome no cabeçalho ("RGM 123456").
    Primeira senha (regra da faculdade): 3 primeiras letras do nome + @ + 3 primeiros números do RGM
@@ -151,11 +152,49 @@ window.DadosAcesso = (function () {
     );
   }
 
+  // ---------- aba "E-mail e senha" da ajuda do acesso (public/js/apps.js) ----------
+  // Sem dados: vazio (fica o texto padrão "Descubra seu e-mail e senha"). Com RGM: os dados do aluno.
+  function aba(d) {
+    if (d.preparo) {
+      return (
+        '<div class="dac-aba is-preparo">' +
+          '<h3>Seu acesso está sendo preparado</h3>' +
+          '<p class="dac-aba-sub">Assim que o RGM e o e-mail acadêmico chegarem, eles aparecem aqui.</p>' +
+          '<p class="dac-aba-pw"><b>Primeira senha:</b> ' + REGRA + '</p>' + exemplo() +
+        '</div>'
+      );
+    }
+    var email = d.email_academico
+      ? '<div class="dac-aba-l"><span class="dac-aba-k">E-mail acadêmico</span><span class="dac-aba-v"><span class="dac-val dac-email">' + esc(d.email_academico) + '</span>' + copiar(d.email_academico, 'e-mail acadêmico') + '</span></div>'
+      : '<div class="dac-aba-l"><span class="dac-aba-k">E-mail acadêmico</span><span class="dac-falta">O Duda mostra, em <b>Não sei meus dados de acesso</b>.</span></div>';
+    var senha = d.senha_inicio
+      ? '<div class="dac-faixa-pw"><p><b>Primeira senha:</b> <span class="dac-pw-ini">' + esc(d.senha_inicio) + '</span> + os 4 primeiros números do seu CPF</p>' +
+        '<button type="button" class="dac-copy dac-montar-btn" data-dac-montar aria-expanded="false"><i data-lucide="key-round" aria-hidden="true"></i><span>Montar a senha</span></button></div>' + montador()
+      : '<p class="dac-aba-pw"><b>Primeira senha:</b> ' + REGRA + '</p>';
+    return (
+      '<div class="dac-aba">' +
+        '<h3>' + (d.email_academico ? 'Seu e-mail acadêmico e a primeira senha' : 'Seus dados de acesso') + '</h3>' +
+        email +
+        '<div class="dac-aba-l"><span class="dac-aba-k">RGM</span><span class="dac-aba-v"><span class="dac-val">' + esc(d.rgm) + '</span>' + copiar(d.rgm, 'RGM') + '</span></div>' +
+        (d.curso ? '<div class="dac-aba-l"><span class="dac-aba-k">Curso</span><span class="dac-aba-v"><span class="dac-val dac-curso">' + esc(d.curso) + '</span></span></div>' : '') +
+        senha +
+        '<p class="dac-st sr-only" role="status" aria-live="polite"></p>' +
+      '</div>'
+    );
+  }
+
   function pintar(raiz) {
     var d = dados;
     (raiz || document).querySelectorAll('[data-dados-acesso-slot]').forEach(function (slot) {
       var tipo = slot.getAttribute('data-dados-acesso-slot');
-      var html = !d ? '' : tipo === 'cartao' ? cartao(d) : faixa(d, slot.getAttribute('data-dados-acesso-onde'));
+      var html = !d ? '' : tipo === 'cartao' ? cartao(d) : tipo === 'aba' ? aba(d) : faixa(d, slot.getAttribute('data-dados-acesso-onde'));
+      // Aba da ajuda do acesso: com dados, some o texto padrão; com e-mail, a aba ganha o ✓.
+      if (tipo === 'aba') {
+        var pan = slot.closest('.apps-pan');
+        if (pan) pan.classList.toggle('tem-dados', !!html);
+        var box = slot.closest('.apps-ajuda');
+        if (box) box.classList.toggle('tem-email', !!(d && d.email_academico));
+      }
       // Mesmo conteúdo: não redesenha (preserva a senha aberta e o que o aluno digitou).
       var chave = html.replace(/dac-cpf-\d+/g, '');
       if (slot.getAttribute('data-dac-chave') === chave) return;
@@ -177,7 +216,7 @@ window.DadosAcesso = (function () {
   }
 
   // ---------- interações ----------
-  function caixa(el) { return el.closest('.dac-card, .dac-faixa'); }
+  function caixa(el) { return el.closest('.dac-card, .dac-faixa, .dac-aba'); }
 
   function anunciar(box, txt) {
     var st = box && box.querySelector('.dac-st');

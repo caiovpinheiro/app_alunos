@@ -95,3 +95,14 @@
   .dac-m-pw .dac-pw b{font-size:1.05rem;padding:5px 7px;min-width:28px}
 }
 .dac-list dd.dac-falta,.dac-faixa-l dd.dac-falta{display:block}
+
+/* Aba "E-mail e senha" da ajuda do acesso (public/js/apps.js): os dados do aluno no lugar do texto padrão. */
+.dac-aba h3{margin:0;font:700 clamp(1.1rem,2.1vw,1.35rem)/1.25 var(--portal-display,"Poppins",sans-serif);color:var(--portal-text,#0b1f38)}
+.dac-aba-sub{margin:4px 0 0;color:var(--portal-muted,#45566e)}
+.dac-aba-l{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;margin-top:10px}
+.dac-aba-k{flex:0 0 8.5rem;color:var(--portal-muted,#45566e);font-size:.92rem}
+.dac-aba-v{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px 10px;min-width:0;max-width:100%;padding:6px 10px;border-radius:10px;border:1px solid var(--portal-border,#d3dfee);background:var(--portal-surface-2,#f5f9fe)}
+.dac-aba-v .dac-val{overflow-wrap:anywhere}
+.dac-aba-pw{margin:12px 0 0;font-size:.98rem;line-height:1.5}
+.dac-aba .dac-faixa-pw{margin-top:12px}
+@media (max-width:600px){.dac-aba-k{flex-basis:100%}}

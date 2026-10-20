@@ -124,25 +124,23 @@
 /* Link "Preciso de ajuda" do banner agora é botão (abre o painel) */
 button.portal-hero__link{border:0;background:none;padding:0;cursor:pointer;font-family:var(--portal-body)}
 
-/* ===== Primeiro acesso em 6 passos (public/js/apps.js) =====
-   1–2: baixar Duda e Authenticator (ícones e selos oficiais). 3–6: vídeos da Central, em linha do tempo. */
-.apps{font-family:var(--portal-body);color:var(--portal-text)}
+/* ===== Aplicativos e ajuda do acesso (public/js/apps.js) =====
+   "Aplicativos para sua jornada" (Duda e Authenticator, ícones e selos oficiais) e
+   "Como podemos ajudar no acesso?" (4 abas com o vídeo de cada passo). */
+.apps{display:flex;flex-direction:column;gap:18px;font-family:var(--portal-body);color:var(--portal-text)}
 .apps *{box-sizing:border-box}
-.apps ol{list-style:none;margin:0;padding:0}
-.apps-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 16px;margin-bottom:12px}
-.apps-title{margin:0;font:600 clamp(1.1rem,2.2vw,1.3rem)/1.25 var(--portal-display)}
-.apps-trilha{display:inline-flex;align-items:center;gap:4px;min-height:40px;padding:0;border:0;background:none;color:var(--portal-blue)!important;font:700 14px/1.25 var(--portal-body);text-decoration:underline;text-underline-offset:3px;cursor:pointer;text-align:left}
-.apps-trilha svg{width:16px;height:16px}
-.apps-linha{display:flex;flex-direction:column;gap:14px}
+.apps ul{list-style:none;margin:0;padding:0}
+.apps-head{margin-bottom:12px}
+.apps-title{margin:0;font:600 clamp(1.15rem,2.3vw,1.45rem)/1.25 var(--portal-display)}
+.apps-sub{margin:4px 0 0;color:var(--portal-muted);font-size:1rem;line-height:1.45}
 .apps-grid{display:grid;grid-template-columns:1fr;gap:14px}
 @media (min-width:860px){.apps-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}}
-.apps-step{flex:none;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--portal-navy);color:#fff;font:700 14px/1 var(--portal-display)}
-.apps-card{position:relative;display:flex;gap:14px;align-items:flex-start;min-width:0;padding:16px 18px;border-radius:var(--portal-radius);border:1px solid var(--portal-border);background:var(--portal-surface);box-shadow:var(--portal-shadow)}
-.apps-card .apps-step{position:absolute;top:-10px;left:-10px;box-shadow:0 0 0 3px var(--portal-bg)}
-.apps-icon{flex:none;width:60px;height:60px;object-fit:contain;border-radius:14px}
+.apps-card{display:flex;gap:16px;align-items:flex-start;min-width:0;padding:18px 20px;border-radius:var(--portal-radius);border:1px solid var(--portal-border);background:var(--portal-surface);box-shadow:var(--portal-shadow)}
+.apps-icon{flex:none;width:64px;height:64px;object-fit:contain;border-radius:16px}
+@media (min-width:600px){.apps-icon{width:76px;height:76px;border-radius:18px}}
 .apps-body{flex:1;min-width:0}
-.apps-body h3{margin:0;font:700 1.08rem/1.3 var(--portal-display);overflow-wrap:anywhere}
-.apps-body > p{margin:2px 0 0;color:var(--portal-muted);font-size:.95rem;line-height:1.45}
+.apps-body h3{margin:0;font:600 1.15rem/1.3 var(--portal-display);overflow-wrap:anywhere}
+.apps-body > p{margin:2px 0 0;color:var(--portal-muted);font-size:.98rem;line-height:1.45}
 /* Selos oficiais: altura útil igual (~40px). O PNG do Google tem margem transparente: 52px de arte = 40px visíveis. */
 .apps-badges{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-top:10px}
 .apps-badge{display:inline-flex;align-items:center;border-radius:8px;line-height:0}
@@ -151,33 +149,51 @@ button.portal-hero__link{border:0;background:none;padding:0;cursor:pointer;font-
 .apps-badge--android{margin:-6px -8px}
 .apps-badge--android img{height:52px}
 .apps-badge:focus-visible{outline:3px solid var(--portal-blue);outline-offset:3px}
-/* Passos 3–6: no celular, lista vertical com trilho; a partir de 860px, quatro em linha com trilho horizontal. */
-.apps-passos{position:relative;display:grid;grid-template-columns:1fr;gap:8px}
-.apps-passos::before{content:"";position:absolute;left:30px;top:20px;bottom:20px;width:2px;background:var(--portal-border)}
-.apps-passo{position:relative;min-width:0}
-.apps-passo-btn{display:flex;align-items:center;gap:12px;width:100%;min-height:60px;padding:10px 14px 10px 15px;border-radius:14px;border:1px solid var(--portal-border);background:var(--portal-surface);text-align:left;color:var(--portal-text)!important;font:inherit;cursor:pointer}
-.apps-passo-btn:hover{border-color:var(--portal-blue)}
-.apps-passo-btn:focus-visible{outline:3px solid var(--portal-blue);outline-offset:3px}
-.apps-passo-btn .apps-step{position:relative;z-index:1;background:var(--portal-blue)}
-.apps-passo-t{flex:1;min-width:0}
-.apps-passo-t strong{display:block;font:600 .98rem/1.3 var(--portal-display)}
-.apps-passo-t > span{display:block;color:var(--portal-muted);font-size:.86rem;line-height:1.35}
-.apps-passo-play{flex:none;display:inline-flex;align-items:center;gap:4px;color:var(--portal-blue);font:700 13px/1 var(--portal-body)}
-.apps-passo-play svg{width:14px;height:14px}
-@media (min-width:860px){
-  .apps-passos{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
-  .apps-passos::before{left:24px;right:24px;top:29px;bottom:auto;width:auto;height:2px}
-  .apps-passo-btn{flex-direction:column;align-items:flex-start;gap:8px;height:100%;padding:14px}
-  .apps-passo-play{margin-top:auto}
-}
+/* Ajuda do acesso */
+.apps-ajuda{padding:20px;border-radius:var(--portal-radius);border:1px solid var(--portal-border);background:var(--portal-surface);box-shadow:var(--portal-shadow)}
+@media (min-width:860px){.apps-ajuda{padding:24px 26px}}
+.apps-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media (min-width:860px){.apps-tabs{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.apps-tab{display:flex;align-items:center;justify-content:center;gap:10px;min-height:54px;padding:8px 12px;border-radius:12px;border:1px solid var(--portal-border);background:var(--portal-surface-2);color:var(--portal-text)!important;font:600 .98rem/1.2 var(--portal-display);text-align:left;cursor:pointer}
+.apps-tab svg{flex:none;width:22px;height:22px}
+.apps-tab:hover{border-color:var(--portal-blue)}
+.apps-tab:focus-visible{outline:3px solid var(--portal-blue);outline-offset:3px}
+.apps-tab[aria-selected="true"]{background:var(--portal-blue);border-color:var(--portal-blue);color:#fff!important}
+.apps-tab-ok{display:none;flex:none;place-items:center;width:22px;height:22px;border-radius:50%;background:#1b7f45;color:#fff}
+.apps-tab-ok svg{width:14px;height:14px;stroke-width:3}
+.apps-tab[aria-selected="true"] .apps-tab-ok{background:#fff;color:var(--portal-blue)}
+.apps-ajuda.tem-email .apps-tab-ok{display:grid}
+.apps-tab-okt{display:none}
+.apps-ajuda.tem-email .apps-tab-okt{display:inline}
+.apps-pan{display:flex;flex-direction:column;gap:14px;margin-top:12px;padding:18px;border-radius:14px;border:1px solid var(--portal-border)}
+.apps-pan[hidden]{display:none}
+@media (min-width:700px){.apps-pan{flex-direction:row;align-items:center;gap:26px;padding:22px 26px}}
+.apps-pan-ico{flex:none;display:grid;place-items:center;width:72px;height:72px;border-radius:16px;background:#fff6dc;color:var(--portal-blue)}
+.apps-pan-ico svg{width:36px;height:36px}
+@media (min-width:700px){.apps-pan-ico{width:140px;height:128px;border-radius:22px}.apps-pan-ico svg{width:60px;height:60px}}
+.apps-pan-body{flex:1;min-width:0}
+.apps-pan-padrao h3{margin:0;font:700 clamp(1.15rem,2.2vw,1.45rem)/1.25 var(--portal-display)}
+.apps-pan-padrao p{margin:4px 0 0;color:var(--portal-muted);font-size:1.02rem}
+.apps-pan.tem-dados .apps-pan-padrao{display:none}
+.apps-pan-acts{display:flex;flex-wrap:wrap;align-items:center;gap:12px 24px;margin-top:16px}
+.apps-ver{display:inline-flex;align-items:center;gap:10px;min-height:48px;padding:10px 22px;border:0;border-radius:10px;background:var(--portal-blue);color:#fff!important;font:700 1rem/1.2 var(--portal-display);cursor:pointer}
+.apps-ver svg{width:20px;height:20px}
+.apps-ver:hover{background:var(--portal-blue-2)}
+.apps-ver:focus-visible,.apps-completa:focus-visible{outline:3px solid var(--portal-blue);outline-offset:3px}
+.apps-completa{display:inline-flex;align-items:center;gap:4px;min-height:40px;padding:0;border:0;background:none;color:var(--portal-blue)!important;font:700 .98rem/1.25 var(--portal-body);text-decoration:underline;text-underline-offset:3px;cursor:pointer;text-align:left}
+.apps-completa svg{width:16px;height:16px}
 .apps .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 /* Variante compacta (telas internas): mesmo conteúdo, menos respiro */
-.apps--compacta .apps-title{font-size:1.02rem}
+.apps--compacta{gap:14px}
+.apps--compacta .apps-title{font-size:1.05rem}
 .apps--compacta .apps-card{padding:12px 14px;gap:12px}
 .apps--compacta .apps-icon{width:52px;height:52px;border-radius:12px}
 .apps--compacta .apps-body > p{font-size:.9rem}
 .apps--compacta .apps-badges{margin-top:8px}
-.apps--compacta .apps-passo-btn{min-height:52px}
+.apps--compacta .apps-ajuda{padding:16px}
+.apps--compacta .apps-tab{min-height:48px;font-size:.92rem}
+.apps--compacta .apps-pan-ico{width:64px;height:64px}
+.apps--compacta .apps-pan-ico svg{width:32px;height:32px}
 
 /* ===== Painel único de ajuda (public/js/ajuda.js) ===== */
 html.ajuda-aberta{overflow:hidden}
@@ -231,3 +247,4 @@ html.ajuda-aberta{overflow:hidden}
 /* Vídeos "Entenda como funciona" (capítulos da Aula Inaugural na Central) */
 .portal-vcard--entenda .portal-vcat{color:#7a5200}
 .portal-vcard--entenda .portal-vcat::before{content:"";display:inline-block;width:8px;height:8px;margin-right:6px;border-radius:50%;background:var(--portal-yellow);vertical-align:1px}
+.apps-pan.tem-dados{align-items:flex-start}
