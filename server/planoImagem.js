@@ -1002,11 +1002,15 @@ async function startBatch(pool, filter) {
   };
 }
 
-async function getStatus(pool) {
+async function getStatus(pool, filter) {
+  const rgms = filter && filter.rgms ? [...filter.rgms] : null;
   const result = await pool.query(
-    `SELECT status, COUNT(*)::int AS n
-     FROM csu_semestre_imagens
-     GROUP BY status`,
+    `SELECT i.status, COUNT(*)::int AS n
+     FROM csu_semestre_imagens i
+     JOIN csu_alunos a ON a.id = i.aluno_id
+     WHERE ($1::text[] IS NULL OR regexp_replace(a.rgm, '\\D', '', 'g') = ANY($1::text[]))
+     GROUP BY i.status`,
+    [rgms],
   );
   const counts = { pendente: 0, processando: 0, concluida: 0, erro: 0 };
   for (const row of result.rows) {

@@ -540,15 +540,23 @@ async function startBatch(pool, filter) {
   };
 }
 
-async function getStatus(pool) {
+async function getStatus(pool, filter) {
+  const rgms = filter && filter.rgms ? [...filter.rgms] : null;
   const result = await pool.query(
-    `SELECT status, COUNT(*)::int AS n
-     FROM csu_materias_imagens
-     GROUP BY status`,
+    `SELECT i.status, COUNT(*)::int AS n
+     FROM csu_materias_imagens i
+     WHERE ($1::text[] IS NULL OR regexp_replace(i.rgm, '\\D', '', 'g') = ANY($1::text[]))
+     GROUP BY i.status`,
+    [rgms],
   );
   const counts = { pendente: 0, processando: 0, concluida: 0, erro: 0 };
   for (const row of result.rows) counts[row.status] = row.n;
-  const materias = await pool.query(`SELECT COUNT(*)::int AS n FROM csu_materias_alunos`);
+  const materias = await pool.query(
+    `SELECT COUNT(*)::int AS n
+     FROM csu_materias_alunos
+     WHERE ($1::text[] IS NULL OR regexp_replace(rgm, '\\D', '', 'g') = ANY($1::text[]))`,
+    [rgms],
+  );
   const cursor = await pool.query(
     `SELECT snapshot_id AS last_rgm, snapshot_at, created_count, skipped_count, row_count, synced_at
      FROM csu_sync_state WHERE id = 'materias_imagens' LIMIT 1`,
