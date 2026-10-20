@@ -338,8 +338,54 @@
 .trilha .tcert{display:flex;align-items:flex-start;gap:12px;margin-top:16px;padding:16px 18px;border-radius:16px;border:1px solid #d3dfee;background:#f5f9fe}
 .trilha .tcert p{margin:0;flex:1;min-width:0}
 .trilha .tcert svg{flex:none;color:#45566e;margin-top:2px}
-.trilha .tcert.is-ok{border-color:#9ad3b1;background:#e3f5ea;flex-wrap:wrap;align-items:center}
-.trilha .tcert.is-ok .btn{flex:none}
+/* Card de conclusão (certificado liberado): painel azul com a medalha + texto, pílulas e ações.
+   Empilhado no celular; lado a lado quando o card tem 720px ou mais (container query, respeita o "A+ Letra maior"). */
+.trilha .tcert-ok{display:block;padding:0;border:1px solid var(--line);background:var(--surface);box-shadow:var(--shadow);overflow:hidden;container-type:inline-size;border-radius:var(--r-lg)}
+.trilha .tcert-ok svg{margin:0;color:inherit}
+.trilha .tcert-ok .tc-in{display:grid}
+.trilha .tc-art{position:relative;display:flex;align-items:center;gap:16px;padding:20px 22px 30px;color:#fff;
+  background:radial-gradient(120% 90% at 85% 100%,rgba(94,146,250,.55),transparent 60%),linear-gradient(150deg,var(--hero-1) 0%,var(--hero-1) 45%,var(--hero-2) 100%);
+  clip-path:ellipse(150% 100% at 50% 0)}
+.trilha .tc-medal-wrap{flex:none;width:88px;filter:drop-shadow(0 6px 14px rgba(0,12,32,.45))}
+.trilha .tc-medal{display:block;width:100%;height:auto}
+.trilha .tc-hrs{margin:0;font:700 1.05rem/1.2 var(--display);color:#fff}
+.trilha .tc-hrs b{display:block;margin-top:2px;font:800 2.4rem/1 var(--display);color:var(--xp);letter-spacing:-.01em}
+.trilha .tc-body{padding:18px 18px 22px;min-width:0}
+.trilha .tc-top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}
+.trilha .tc-k{font:700 13px/1.3 var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--fg)}
+.trilha .tc-badge{display:inline-flex;align-items:center;gap:8px;padding:5px 14px 5px 6px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font:700 15px/1.2 var(--body)}
+.trilha .tc-ck{flex:none;display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff}
+.trilha .tc-ck svg{width:15px;height:15px}
+.trilha .tc-h{margin:14px 0 6px;font:800 clamp(1.45rem,5.6vw,2.15rem)/1.15 var(--display);letter-spacing:-.015em;color:var(--fg);text-wrap:balance}
+.trilha .tc-sub{margin:0;color:var(--muted);font-size:1.05rem;line-height:1.5}
+.trilha .tc-row{display:flex;flex-direction:column;gap:16px;margin-top:20px}
+.trilha .tc-pills{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:10px}
+.trilha .tc-pills li{flex:1 1 auto;display:flex;align-items:center;gap:12px;min-height:56px;padding:10px 18px 10px 12px;border-radius:14px;background:var(--surface-2);border:1px solid #e3ecf7;font:700 1.05rem/1.2 var(--display);color:var(--fg)}
+.trilha .tc-pills .tc-ck{width:34px;height:34px}
+.trilha .tc-pills .tc-ck svg{width:18px;height:18px}
+.trilha .tc-acts{display:flex;flex-direction:column;align-items:stretch;gap:6px}
+.trilha .tc-btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:56px;padding:8px 16px;text-align:center;border:0;border-radius:12px;background:var(--accent);color:#fff;font:700 1rem/1.2 var(--display);cursor:pointer;box-shadow:0 8px 18px -8px rgba(10,79,166,.6);transition:background-color .2s,transform .15s var(--ease)}
+.trilha .tc-btn svg{flex:none;width:24px;height:24px}
+.trilha .tc-btn:hover{background:var(--solid)}
+.trilha .tc-btn:active{transform:scale(.97)}
+.trilha .tc-btn:disabled{opacity:.75;cursor:progress}
+.trilha .tc-link{align-self:center;display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 8px;border:0;background:none;color:var(--accent);font:700 1rem/1.2 var(--display);cursor:pointer;text-decoration:none}
+.trilha .tc-link:hover{text-decoration:underline;text-underline-offset:3px}
+.trilha .trailhead{scroll-margin-top:150px}
+.trilha #tModulosH:focus{outline:none}
+.trilha #tModulosH:focus-visible{outline:3px solid var(--bright);outline-offset:3px}
+@container (min-width:720px){
+  .trilha .tcert-ok .tc-in{grid-template-columns:minmax(220px,27%) minmax(0,1fr)}
+  .trilha .tc-art{flex-direction:column;justify-content:center;text-align:center;gap:14px;padding:28px 34px 28px 24px;clip-path:ellipse(100% 125% at 0 50%)}
+  .trilha .tc-medal-wrap{width:min(150px,80%)}
+  .trilha .tc-hrs{font-size:1.2rem}
+  .trilha .tc-hrs b{font-size:3rem}
+  .trilha .tc-body{padding:30px 34px 26px 30px}
+  .trilha .tc-row{flex-direction:row;flex-wrap:wrap;align-items:flex-start}
+  .trilha .tc-pills{flex:1 1 300px}
+  .trilha .tc-acts{flex:0 1 auto;min-width:260px}
+  .trilha .tc-btn{gap:12px;padding:8px 26px;font-size:1.1rem}
+}
 .trilha .tfinal .hint{margin-top:12px}
 .trilha .passo .player video{width:100%;display:block;border-radius:12px;background:#000;aspect-ratio:16/9}
 .trilha .passo .parts{margin-bottom:10px}

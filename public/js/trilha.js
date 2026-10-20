@@ -21,6 +21,27 @@ window.Trilha = (function () {
   var querAulaCompleta = false; // pedido de "Assistir à aula completa" antes da tela montar
 
   var LOCK = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2" fill="none"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4" fill="none"></path></svg>';
+  // Card de conclusão (encerramento): medalha decorativa, check das pílulas e ícone de download.
+  var CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 12.5l4 4 8-9"/></svg>';
+  var DOWNLOAD = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3v12M7 10l5 5 5-5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>';
+  var MEDAL = (function () {
+    var folhas = '';
+    [118, 138, 158, 178, 198].forEach(function (a) {
+      [a, 180 - a].forEach(function (g) {
+        var r = g * Math.PI / 180, x = (60 + 28 * Math.cos(r)).toFixed(1), y = (56 + 28 * Math.sin(r)).toFixed(1);
+        folhas += '<ellipse cx="' + x + '" cy="' + y + '" rx="5.2" ry="2.4" transform="rotate(' + (g + (g > 90 ? 60 : 120)) + ' ' + x + ' ' + y + ')"/>';
+      });
+    });
+    return '<svg class="tc-medal" viewBox="0 0 120 132" aria-hidden="true" focusable="false"><defs>' +
+      '<linearGradient id="tcmG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffeaa0"/><stop offset=".5" stop-color="#ffc72c"/><stop offset="1" stop-color="#e08a00"/></linearGradient>' +
+      '<linearGradient id="tcmR" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7b500"/><stop offset="1" stop-color="#c47400"/></linearGradient></defs>' +
+      '<path d="M40 84 27 124l15-7 9 13 12-38zM80 84l13 40-15-7-9 13-12-38z" fill="url(#tcmR)"/>' +
+      '<path d="M15 16l7 9M6 37l10 3M105 16l-7 9M114 37l-10 3" stroke="#ffc72c" stroke-width="3.2" stroke-linecap="round"/>' +
+      '<circle cx="60" cy="56" r="43" fill="url(#tcmG)"/><circle cx="60" cy="56" r="43" fill="none" stroke="#b97300" stroke-opacity=".45" stroke-width="2"/>' +
+      '<circle cx="60" cy="56" r="35" fill="none" stroke="#c98500" stroke-opacity=".5" stroke-width="1.6"/>' +
+      '<g fill="#d99400">' + folhas + '</g>' +
+      '<path d="M60 33l6.6 13.4 14.8 2.2-10.7 10.4 2.5 14.7L60 66.8l-13.2 6.9 2.5-14.7-10.7-10.4 14.8-2.2z" fill="#ffe27a" stroke="#c07c00" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+  })();
   var HELP_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/><path d="M19 20c0 1.5-2 2-5 2"/></svg>';
 
   function loadPrefs() {
@@ -128,10 +149,20 @@ window.Trilha = (function () {
     var box = $('#tCert');
     if (!box) return;
     if (ok || emitido) {
-      box.className = 'tcert is-ok';
-      box.innerHTML = '<p><b>' + (emitido && !ok ? 'Você já emitiu o seu certificado.' : 'Você concluiu a Aula Inaugural!') + '</b> ' +
-        d + ' de ' + tot + ' módulos e ' + num(S.xp) + ' pontos. Certificado de participação de ' + horas() + ' horas.</p>' +
-        '<button type="button" class="btn" data-gerar-certificado><span data-cert-txt>' + (emitido ? 'Gerar o PDF de novo' : 'Emitir meu certificado') + '</span></button>';
+      box.className = 'tcert tcert-ok';
+      var ck = '<span class="tc-ck">' + CHECK + '</span>';
+      var sub = !emitido ? 'Você concluiu todos os módulos. Seu certificado está liberado.'
+        : ok ? 'Você concluiu todos os módulos e já emitiu o seu certificado. Pode gerar o PDF de novo quando quiser.'
+          : 'Você já emitiu o seu certificado. Pode gerar o PDF de novo quando quiser.';
+      box.innerHTML =
+        '<div class="tc-in"><div class="tc-art"><span class="tc-medal-wrap">' + MEDAL + '</span><p class="tc-hrs">Certificado de <b>' + horas() + ' horas</b></p></div>' +
+        '<div class="tc-body"><div class="tc-top"><span class="tc-k">Aula Inaugural concluída</span><span class="tc-badge">' + ck + (emitido ? 'Emitido' : 'Concluído') + '</span></div>' +
+        '<h3 class="tc-h">Sua jornada começou com uma conquista!</h3><p class="tc-sub">' + sub + '</p>' +
+        '<div class="tc-row"><ul class="tc-pills" aria-label="Seu resultado">' +
+        '<li>' + (d >= tot ? ck : '') + d + ' de ' + tot + ' módulos</li>' +
+        '<li>' + (S.xp >= meta() ? ck : '') + num(S.xp) + ' pontos</li></ul>' +
+        '<div class="tc-acts"><button type="button" class="tc-btn" data-gerar-certificado>' + DOWNLOAD + '<span data-cert-txt>' + (emitido ? 'Gerar o PDF de novo' : 'Emitir meu certificado') + '</span></button>' +
+        '<button type="button" class="tc-link" data-rever-modulos>Rever os módulos <span aria-hidden="true">→</span></button></div></div></div></div>';
     } else {
       box.className = 'tcert';
       box.innerHTML = LOCK + '<p><b>Certificado de ' + horas() + ' horas</b><br>Conclua os ' + tot + ' módulos (' + pm() + ' pontos cada, ' + num(meta()) + ' no total). ' + falta + '</p>';
@@ -224,7 +255,7 @@ window.Trilha = (function () {
     h += '<div class="hudmain"><div class="rank"><small>Sua conquista</small><b id="tRank">Visitante</b></div><div class="xpbar"><i id="tXpFill"></i></div>';
     h += '<div class="xpline"><span id="tXpTxt"></span><span id="tLvTxt"></span></div><p class="certline" id="tCertTxt" aria-live="polite"></p></div></div></div>';
 
-    h += '<div class="trailhead"><div><h2 class="sec-h">Seus módulos</h2><p class="hint">Faça na ordem que quiser. A ordem sugerida é de cima para baixo.</p></div>';
+    h += '<div class="trailhead" id="tModulos"><div><h2 class="sec-h" id="tModulosH" tabindex="-1">Seus módulos</h2><p class="hint">Faça na ordem que quiser. A ordem sugerida é de cima para baixo.</p></div>';
     h += '<div class="tools"><button class="chipbtn" id="tReview" type="button" aria-pressed="false">Ver tudo sem jogar</button>';
     h += '<button class="chipbtn" id="tReset" type="button">Começar de novo</button></div></div>';
     h += '<ol class="map" id="tMap" aria-label="Mapa dos módulos"></ol>';
@@ -576,6 +607,12 @@ window.Trilha = (function () {
     root.querySelectorAll('[data-caps]').forEach(bindCaps);
     // Palavras do EaD (A2, AF, DP, RGM…): tocar na palavra sublinhada mostra o que ela quer dizer.
     if (window.Glossario) window.Glossario.marcar(root, C.glossario);
+    // "Rever os módulos" (card de conclusão): volta para a lista de módulos.
+    $('#tCert').addEventListener('click', function (e) {
+      if (!e.target.closest('[data-rever-modulos]')) return;
+      $('#tModulos').scrollIntoView({ behavior: smooth() });
+      $('#tModulosH').focus({ preventScroll: true });
+    });
     $('#tBig').addEventListener('click', function () { P.big = !P.big; savePrefs(); applyPrefs(); });
     $('#tSlow').addEventListener('click', function () { P.slow = !P.slow; savePrefs(); applyPrefs(); });
     $('#tReview').addEventListener('click', function () { P.review = !P.review; savePrefs(); refreshUI(); });
