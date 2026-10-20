@@ -1,11 +1,7 @@
-Prefere cartão? Toque em Pagar com cartão.
+Prefere cartão? Na mesma tela, toca em Pagar com cartão. Escolhe se é crédito ou débito.
 
-Escolha Crédito ou Débito.
+Agora preenche os dados. O CPF do dono do cartão, o nome igual está no cartão, o número, a validade e o código de três números que fica atrás.
 
-Preencha: CPF do dono do cartão, nome, número, validade e o código de trás (CVC).
+No crédito, dá para dividir em parcelas e o desconto continua valendo. Confere o total aqui do lado e toca em Enviar pagamento.
 
-No crédito, dá para dividir. O desconto continua.
-
-Confira o Total e toque em Enviar pagamento.
-
-Nunca mande foto do cartão nem o código para ninguém, nem por WhatsApp.
+E uma dica de segurança, nunca manda foto do cartão, nem esse código de trás para ninguém, nem por WhatsApp.
