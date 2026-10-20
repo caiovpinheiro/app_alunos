@@ -66,7 +66,7 @@
     if (name === 'tutoriais') loadTuts();
     if (name === 'contatos') loadContatos();
     if (name === 'indicacoes') loadInds();
-    if (name === 'planos') { loadPlanos(); loadMaterias(); loadImagensPreview(); }
+    if (name === 'planos') { paintScopeButtons(); loadPlanos(); loadMaterias(); loadImagensPreview(); }
   }
 
   function closeModal() {
@@ -209,6 +209,41 @@
     }).join('') || '<p class="text-sm text-gray-500">Nenhuma indicação.</p>';
   }
 
+  var statusScope = 'filtro';
+
+  function statusQuery() {
+    if (statusScope === 'total') return '?total=1';
+    var f = matriculaFilterBody();
+    var qs = [];
+    if (f.de) qs.push('de=' + encodeURIComponent(f.de));
+    if (f.ate) qs.push('ate=' + encodeURIComponent(f.ate));
+    return qs.length ? '?' + qs.join('&') : '';
+  }
+
+  function paintScopeButtons() {
+    var filtro = document.getElementById('planos-scope-filtro');
+    var total = document.getElementById('planos-scope-total');
+    var label = document.getElementById('planos-scope-label');
+    if (!filtro || !total) return;
+    var isFiltro = statusScope === 'filtro';
+    filtro.className = 'text-sm font-semibold px-3 py-1.5 rounded-full ' +
+      (isFiltro ? 'bg-cruzeiro text-white' : 'bg-gray-100 text-gray-700');
+    total.className = 'text-sm font-semibold px-3 py-1.5 rounded-full ' +
+      (isFiltro ? 'bg-gray-100 text-gray-700' : 'bg-cruzeiro text-white');
+    if (label) {
+      label.textContent = isFiltro
+        ? 'Os cards abaixo são só deste período (o que você vai gerar agora).'
+        : 'Os cards abaixo são o total de todo o portal.';
+    }
+  }
+
+  function setStatusScope(scope) {
+    statusScope = scope === 'total' ? 'total' : 'filtro';
+    paintScopeButtons();
+    loadPlanos();
+    loadMaterias();
+  }
+
   function renderPlanosStatus(data) {
     var cards = [
       ['Pendentes', data && data.pendentes],
@@ -225,7 +260,7 @@
   }
 
   async function loadPlanos() {
-    var res = await request('/api/admin/planos-imagens/status');
+    var res = await request('/api/admin/planos-imagens/status' + statusQuery());
     renderPlanosStatus(res);
     var msg = document.getElementById('planos-lote-msg');
     if (msg && !msg.dataset.locked) {
@@ -252,7 +287,7 @@
   }
 
   async function loadMaterias() {
-    var res = await request('/api/admin/materias-imagens/status');
+    var res = await request('/api/admin/materias-imagens/status' + statusQuery());
     renderMateriasStatus(res);
     var msg = document.getElementById('materias-lote-msg');
     if (msg && !msg.dataset.locked) {
@@ -367,7 +402,13 @@
 
   function scheduleImagensPreview() {
     clearTimeout(previewTimer);
-    previewTimer = setTimeout(function () { loadImagensPreview(); }, 350);
+    previewTimer = setTimeout(function () {
+      loadImagensPreview();
+      if (statusScope === 'filtro') {
+        loadPlanos();
+        loadMaterias();
+      }
+    }, 350);
   }
 
   ['planos-de', 'planos-ate'].forEach(function (id) {
@@ -376,6 +417,11 @@
     el.addEventListener('change', scheduleImagensPreview);
     el.addEventListener('input', scheduleImagensPreview);
   });
+
+  var scopeFiltro = document.getElementById('planos-scope-filtro');
+  var scopeTotal = document.getElementById('planos-scope-total');
+  if (scopeFiltro) scopeFiltro.addEventListener('click', function () { setStatusScope('filtro'); });
+  if (scopeTotal) scopeTotal.addEventListener('click', function () { setStatusScope('total'); });
 
   document.getElementById('btn-planos-lote').addEventListener('click', async function () {
     var btn = document.getElementById('btn-planos-lote');

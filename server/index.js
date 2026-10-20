@@ -177,6 +177,29 @@ async function resolveMatriculaFilter(body) {
   return { ...range, rgms, alunos };
 }
 
+async function resolveStatusFilter(query) {
+  if (String(query?.total || '') === '1') return { filter: null, scoped: false };
+  const filter = await resolveMatriculaFilter(query);
+  return { filter, scoped: Boolean(filter) };
+}
+
+function emptyImageStatus(filter, extras) {
+  return {
+    success: true,
+    scoped: true,
+    de: filter.de,
+    ate: filter.ate,
+    matriculados: 0,
+    running: false,
+    pendentes: 0,
+    processando: 0,
+    concluidas: 0,
+    erros: 0,
+    total: 0,
+    ...extras,
+  };
+}
+
 async function ensureFilterAlunos(appPool, filter) {
   if (!filter || !Array.isArray(filter.alunos) || !filter.alunos.length) {
     return { created: 0, updated: 0 };
@@ -637,11 +660,24 @@ app.get('/api/admin/imagens/previsualizar', requireAdmin, async (req, res) => {
 app.get('/api/admin/planos-imagens/status', requireAdmin, async (req, res) => {
   if (!pool) return unavailable(res);
   try {
-    const status = await planoImagem.getStatus(pool);
-    return res.json({ success: true, ...status });
+    const { filter, scoped } = await resolveStatusFilter(req.query);
+    if (filter && filter.rgms.size === 0) return res.json(emptyImageStatus(filter));
+    const status = await planoImagem.getStatus(pool, filter);
+    return res.json({
+      success: true,
+      scoped,
+      de: filter ? filter.de : null,
+      ate: filter ? filter.ate : null,
+      matriculados: filter ? filter.rgms.size : null,
+      ...status,
+    });
   } catch (err) {
     console.error('Falha ao consultar status das imagens:', err.message);
-    return res.status(500).json({ success: false, message: 'Não foi possível consultar o status.' });
+    const status = err.status || 500;
+    return res.status(status).json({
+      success: false,
+      message: status === 422 ? err.message : 'Não foi possível consultar o status.',
+    });
   }
 });
 
@@ -700,11 +736,26 @@ app.post('/api/admin/materias-imagens/gerar-lote', requireAdmin, async (req, res
 app.get('/api/admin/materias-imagens/status', requireAdmin, async (req, res) => {
   if (!pool) return unavailable(res);
   try {
-    const status = await planoMateriasImagem.getStatus(pool);
-    return res.json({ success: true, ...status });
+    const { filter, scoped } = await resolveStatusFilter(req.query);
+    if (filter && filter.rgms.size === 0) {
+      return res.json(emptyImageStatus(filter, { materias_synced: 0 }));
+    }
+    const status = await planoMateriasImagem.getStatus(pool, filter);
+    return res.json({
+      success: true,
+      scoped,
+      de: filter ? filter.de : null,
+      ate: filter ? filter.ate : null,
+      matriculados: filter ? filter.rgms.size : null,
+      ...status,
+    });
   } catch (err) {
     console.error('Falha ao consultar status das matérias:', err.message);
-    return res.status(500).json({ success: false, message: 'Não foi possível consultar o status.' });
+    const status = err.status || 500;
+    return res.status(status).json({
+      success: false,
+      message: status === 422 ? err.message : 'Não foi possível consultar o status.',
+    });
   }
 });
 
