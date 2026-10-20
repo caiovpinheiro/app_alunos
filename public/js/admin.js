@@ -644,6 +644,23 @@
 
   document.getElementById('admin-modal-close').addEventListener('click', closeModal);
 
+  var helpBox = document.getElementById('planos-help');
+  function openPlanosHelp() {
+    if (helpBox) helpBox.classList.remove('hidden');
+  }
+  function closePlanosHelp() {
+    if (helpBox) helpBox.classList.add('hidden');
+  }
+  var helpBtn = document.getElementById('planos-help-btn');
+  var helpClose = document.getElementById('planos-help-close');
+  if (helpBtn) helpBtn.addEventListener('click', openPlanosHelp);
+  if (helpClose) helpClose.addEventListener('click', closePlanosHelp);
+  if (helpBox) {
+    helpBox.addEventListener('click', function (event) {
+      if (event.target === helpBox) closePlanosHelp();
+    });
+  }
+
   document.addEventListener('click', async function (event) {
     if (event.target.closest('[data-aviso-new]')) {
       state.editing = { type: 'aviso' };
