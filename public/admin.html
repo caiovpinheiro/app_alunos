@@ -107,10 +107,16 @@
       </div>
 
       <div id="tab-planos" class="admin-panel hidden">
-        <h2 class="text-xl font-bold mb-2">Imagens dos planos</h2>
-        <p class="text-sm text-gray-500 mb-4">Gera PNG/SVG só para alunos ativos com plano cadastrado. A fila continua após reiniciar o servidor.</p>
+        <div class="flex flex-wrap items-start justify-between gap-3 mb-2">
+          <div>
+            <h2 class="text-xl font-bold">Imagens dos planos</h2>
+            <p class="text-sm text-gray-500 mt-1">Escolha as datas. Cada card mostra o que ainda falta gerar.</p>
+          </div>
+          <button type="button" id="planos-scope-toggle" class="text-sm font-medium text-cruzeiro hover:underline">Ver todo o portal</button>
+        </div>
+
         <div class="bg-white border rounded-xl p-4 mb-4">
-          <p class="text-sm font-medium text-gray-700 mb-3">Filtrar por data de matrícula</p>
+          <p class="text-sm font-medium text-gray-700 mb-3">Quem entra no lote</p>
           <div class="flex flex-wrap items-end gap-3">
             <label class="text-sm text-gray-600">
               De
@@ -120,34 +126,49 @@
               Até
               <input id="planos-ate" type="date" class="mt-1 block px-3 py-2 rounded-lg border bg-white">
             </label>
-            <p class="text-xs text-gray-500 pb-2">Vazio = todos. Uma data só = só aquele dia. Usa a data de matrícula do relatório (EM CURSO).</p>
           </div>
-          <div class="mt-3 flex flex-wrap gap-2">
-            <button type="button" id="planos-scope-filtro" class="text-sm font-semibold px-3 py-1.5 rounded-full bg-cruzeiro text-white">Neste período</button>
-            <button type="button" id="planos-scope-total" class="text-sm font-semibold px-3 py-1.5 rounded-full bg-gray-100 text-gray-700">Total</button>
-          </div>
-          <p id="planos-scope-label" class="mt-2 text-xs text-gray-500">Os cards abaixo seguem o período das datas.</p>
-          <div id="planos-preview" class="mt-3 rounded-lg bg-slate-50 border px-3 py-3 text-sm text-gray-700">
-            Escolha as datas para ver quantas pessoas entram no lote.
-          </div>
+          <p id="planos-preview" class="mt-4 text-gray-800">Escolha as datas para ver quantas pessoas entram.</p>
+          <p id="planos-scope-note" class="hidden mt-1 text-xs text-gray-500"></p>
         </div>
-        <div class="flex flex-wrap gap-3 mb-4">
-          <button type="button" id="btn-planos-lote" class="bg-cruzeiro text-white text-sm font-semibold px-4 py-2 rounded-lg">Gerar lote</button>
-          <button type="button" id="btn-planos-status" class="bg-gray-100 text-cruzeiro text-sm font-semibold px-4 py-2 rounded-lg">Atualizar totais</button>
-        </div>
-        <p id="planos-lote-msg" class="text-sm text-gray-500 mb-4"></p>
-        <div id="admin-planos-status" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-8"></div>
 
-        <h3 class="text-lg font-bold mb-2">Planos por matérias (WhatsApp / CRM)</h3>
-        <p class="text-sm text-gray-500 mb-4">Sincroniza <code>materias_alunos</code> do Postgres (<code>eduit</code>), cruza por RGM, gera PNG + URL pública e salva em <code>csu_materias_imagens</code>. O lote só gera alunos ainda sem imagem.</p>
-        <div class="flex flex-wrap gap-3 mb-4">
-          <button type="button" id="btn-materias-sync" class="bg-cruzeiro text-white text-sm font-semibold px-4 py-2 rounded-lg">Sincronizar matérias</button>
-          <button type="button" id="btn-materias-lote" class="bg-cruzeiro text-white text-sm font-semibold px-4 py-2 rounded-lg">Gerar lote matérias</button>
-          <button type="button" id="btn-materias-status" class="bg-gray-100 text-cruzeiro text-sm font-semibold px-4 py-2 rounded-lg">Atualizar matérias</button>
-          <button type="button" id="btn-materias-export" class="bg-gray-100 text-cruzeiro text-sm font-semibold px-4 py-2 rounded-lg">Exportar CSV</button>
+        <div class="grid md:grid-cols-2 gap-4">
+          <article class="bg-white border rounded-xl p-5 flex flex-col">
+            <h3 class="font-semibold text-gray-800">Plano do semestre</h3>
+            <p id="planos-faltam" class="mt-3 text-3xl font-bold text-gray-900">—</p>
+            <p class="text-sm text-gray-500">vamos criar</p>
+            <p id="planos-ja" class="mt-1 text-base text-gray-800">— já têm</p>
+            <div class="mt-3 h-2 rounded-full bg-slate-100 overflow-hidden">
+              <div id="planos-bar" class="h-full bg-cruzeiro rounded-full" style="width:0%"></div>
+            </div>
+            <p id="planos-meta" class="mt-2 text-sm text-gray-500"></p>
+            <p id="planos-erros" class="hidden mt-2 text-sm text-red-600"></p>
+            <p id="planos-lote-msg" class="mt-2 text-sm text-gray-500"></p>
+            <button type="button" id="btn-planos-lote" class="mt-4 bg-cruzeiro text-white text-sm font-semibold px-4 py-2 rounded-lg self-start">Gerar planos</button>
+          </article>
+
+          <article class="bg-white border rounded-xl p-5 flex flex-col">
+            <h3 class="font-semibold text-gray-800">Plano por matérias</h3>
+            <p id="materias-faltam" class="mt-3 text-3xl font-bold text-gray-900">—</p>
+            <p class="text-sm text-gray-500">vamos criar</p>
+            <p id="materias-ja" class="mt-1 text-base text-gray-800">— já têm</p>
+            <div class="mt-3 h-2 rounded-full bg-slate-100 overflow-hidden">
+              <div id="materias-bar" class="h-full bg-cruzeiro rounded-full" style="width:0%"></div>
+            </div>
+            <p id="materias-meta" class="mt-2 text-sm text-gray-500"></p>
+            <p id="materias-erros" class="hidden mt-2 text-sm text-red-600"></p>
+            <p id="materias-lote-msg" class="mt-2 text-sm text-gray-500">Atualize a lista do SIAA antes de gerar. Sem isso o card fica zerado.</p>
+            <div class="mt-4 flex flex-wrap gap-2">
+              <button type="button" id="btn-materias-sync" class="bg-cruzeiro text-white text-sm font-semibold px-4 py-2 rounded-lg">Sincronizar matérias</button>
+              <button type="button" id="btn-materias-lote" class="bg-gray-100 text-cruzeiro text-sm font-semibold px-4 py-2 rounded-lg">Gerar matérias</button>
+            </div>
+            <details class="mt-4 text-sm text-gray-500">
+              <summary class="cursor-pointer text-gray-600">Mais opções</summary>
+              <div class="mt-3 flex flex-wrap gap-2">
+                <button type="button" id="btn-materias-export" class="bg-gray-100 text-cruzeiro text-sm font-semibold px-3 py-1.5 rounded-lg">Exportar CSV</button>
+              </div>
+            </details>
+          </article>
         </div>
-        <p id="materias-lote-msg" class="text-sm text-gray-500 mb-4"></p>
-        <div id="admin-materias-status" class="grid sm:grid-cols-2 lg:grid-cols-5 gap-3"></div>
       </div>
     </div>
   </section>
@@ -162,6 +183,6 @@
     </div>
   </div>
 
-  <script src="/js/admin.js?v=18"></script>
+  <script src="/js/admin.js?v=22"></script>
 </body>
 </html>

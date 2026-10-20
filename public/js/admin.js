@@ -255,6 +255,10 @@
 
   var statusScope = 'filtro';
 
+  function fmtNum(n) {
+    return Number(n || 0).toLocaleString('pt-BR');
+  }
+
   function statusQuery() {
     if (statusScope === 'total') return '?total=1';
     var f = matriculaFilterBody();
@@ -265,82 +269,147 @@
   }
 
   function paintScopeButtons() {
-    var filtro = document.getElementById('planos-scope-filtro');
-    var total = document.getElementById('planos-scope-total');
-    var label = document.getElementById('planos-scope-label');
-    if (!filtro || !total) return;
-    var isFiltro = statusScope === 'filtro';
-    filtro.className = 'text-sm font-semibold px-3 py-1.5 rounded-full ' +
-      (isFiltro ? 'bg-cruzeiro text-white' : 'bg-gray-100 text-gray-700');
-    total.className = 'text-sm font-semibold px-3 py-1.5 rounded-full ' +
-      (isFiltro ? 'bg-gray-100 text-gray-700' : 'bg-cruzeiro text-white');
-    if (label) {
-      label.textContent = isFiltro
-        ? 'Os cards abaixo são só deste período (o que você vai gerar agora).'
-        : 'Os cards abaixo são o total de todo o portal.';
+    var toggle = document.getElementById('planos-scope-toggle');
+    var note = document.getElementById('planos-scope-note');
+    if (toggle) toggle.textContent = statusScope === 'total' ? 'Voltar ao período' : 'Ver todo o portal';
+    if (note) {
+      note.textContent = statusScope === 'total' ? 'Os números dos cards são de todo o portal. O lote ainda usa as datas.' : '';
+      note.classList.toggle('hidden', statusScope !== 'total');
     }
   }
 
   function setStatusScope(scope) {
     statusScope = scope === 'total' ? 'total' : 'filtro';
     paintScopeButtons();
+    loadImagensPreview();
     loadPlanos();
     loadMaterias();
   }
 
-  function renderPlanosStatus(data) {
-    var cards = [
-      ['Pendentes', data && data.pendentes],
-      ['Processando', data && data.processando],
-      ['Concluídas', data && data.concluidas],
-      ['Erros', data && data.erros],
-    ];
-    document.getElementById('admin-planos-status').innerHTML = cards.map(function (item) {
-      return '<article class="bg-white border rounded-xl p-4">' +
-        '<p class="text-sm text-gray-500">' + escapeHtml(item[0]) + '</p>' +
-        '<p class="text-2xl font-bold text-gray-800">' + Number(item[1] || 0) + '</p>' +
-        '</article>';
-    }).join('');
+  function renderPreviewJob(prefix, block) {
+    var gerar = Number(block && block.gerar || 0);
+    var jaTem = Number(block && block.ja_tem || 0);
+    var comPlano = block && block.com_plano != null ? Number(block.com_plano) : null;
+    var total = comPlano != null ? comPlano : (jaTem + gerar);
+    var faltamEl = document.getElementById(prefix + '-faltam');
+    var jaEl = document.getElementById(prefix + '-ja');
+    var bar = document.getElementById(prefix + '-bar');
+    var meta = document.getElementById(prefix + '-meta');
+    if (faltamEl) faltamEl.textContent = fmtNum(gerar);
+    if (jaEl) jaEl.textContent = fmtNum(jaTem) + ' já têm';
+    if (bar) bar.style.width = (total > 0 ? Math.min(100, Math.round(jaTem / total * 100)) : 0) + '%';
+    if (meta) {
+      meta.textContent = comPlano != null
+        ? (fmtNum(comPlano) + ' com plano neste recorte')
+        : (total ? fmtNum(jaTem) + ' de ' + fmtNum(total) : '');
+    }
+  }
+
+  function jobButton(prefix) {
+    return document.getElementById(prefix === 'planos' ? 'btn-planos-lote' : 'btn-materias-lote');
+  }
+
+  function renderStatusOverlay(prefix, data) {
+    var erros = Number(data && data.erros || 0);
+    var err = document.getElementById(prefix + '-erros');
+    var msg = document.getElementById(prefix + '-lote-msg');
+    if (err) {
+      err.textContent = erros ? (fmtNum(erros) + (erros === 1 ? ' erro' : ' erros') + ' neste recorte.') : '';
+      err.classList.toggle('hidden', !erros);
+    }
+    if (msg && !msg.dataset.locked) {
+      msg.textContent = data && data.running ? 'Geração em andamento.' : (msg.textContent || '');
+    }
+  }
+
+  function applyLiveProgress(prefix, data) {
+    var concluidas = Number(data && data.concluidas || 0);
+    var fila = Number(data && data.pendentes || 0) + Number(data && data.processando || 0);
+    var total = Number(data && data.total || 0) || (concluidas + fila);
+    var faltamEl = document.getElementById(prefix + '-faltam');
+    var jaEl = document.getElementById(prefix + '-ja');
+    var bar = document.getElementById(prefix + '-bar');
+    var meta = document.getElementById(prefix + '-meta');
+    var msg = document.getElementById(prefix + '-lote-msg');
+    var btn = jobButton(prefix);
+    if (faltamEl) faltamEl.textContent = fmtNum(fila);
+    if (jaEl) jaEl.textContent = fmtNum(concluidas) + ' já têm';
+    if (bar) bar.style.width = (total > 0 ? Math.min(100, Math.round(concluidas / total * 100)) : 0) + '%';
+    if (meta) meta.textContent = 'Gerando agora · ' + fmtNum(concluidas) + ' de ' + fmtNum(total);
+    if (msg) {
+      msg.dataset.locked = '1';
+      msg.textContent = 'Gerando ' + fmtNum(concluidas) + ' de ' + fmtNum(total) + '...';
+    }
+    if (btn) btn.disabled = true;
+    renderStatusOverlay(prefix, data);
+  }
+
+  var watchers = { planos: null, materias: null };
+  var watchStartedAt = { planos: 0, materias: 0 };
+
+  function stopWatch(prefix) {
+    if (watchers[prefix]) {
+      clearInterval(watchers[prefix]);
+      watchers[prefix] = null;
+    }
+    watchStartedAt[prefix] = 0;
+  }
+
+  async function fetchJobStatus(prefix) {
+    var url = prefix === 'planos'
+      ? '/api/admin/planos-imagens/status'
+      : '/api/admin/materias-imagens/status';
+    return request(url + statusQuery());
+  }
+
+  async function tickWatch(prefix) {
+    try {
+      var res = await fetchJobStatus(prefix);
+      if (res.running) {
+        applyLiveProgress(prefix, res);
+        return;
+      }
+      if (watchers[prefix] && Date.now() - watchStartedAt[prefix] < 8000) {
+        var starting = document.getElementById(prefix + '-lote-msg');
+        if (starting) starting.textContent = 'Iniciando geração...';
+        return;
+      }
+      var wasWatching = Boolean(watchers[prefix]);
+      stopWatch(prefix);
+      var btn = jobButton(prefix);
+      if (btn) btn.disabled = false;
+      var msg = document.getElementById(prefix + '-lote-msg');
+      if (msg) {
+        delete msg.dataset.locked;
+        if (wasWatching) msg.textContent = 'Geração concluída.';
+      }
+      renderStatusOverlay(prefix, res);
+      if (wasWatching) await loadImagensPreview();
+    } catch (err) {
+      var msg = document.getElementById(prefix + '-lote-msg');
+      if (msg && watchers[prefix]) msg.textContent = 'Ainda gerando. Tentando atualizar...';
+    }
+  }
+
+  function startWatch(prefix) {
+    if (watchers[prefix]) return;
+    watchStartedAt[prefix] = Date.now();
+    watchers[prefix] = setInterval(function () { tickWatch(prefix); }, 3000);
+    tickWatch(prefix);
   }
 
   async function loadPlanos() {
-    var res = await request('/api/admin/planos-imagens/status' + statusQuery());
-    renderPlanosStatus(res);
-    var msg = document.getElementById('planos-lote-msg');
-    if (msg && !msg.dataset.locked) {
-      msg.textContent = res.running
-        ? 'Geração em andamento. Atualize os totais para acompanhar.'
-        : (msg.textContent || '');
-    }
-  }
-
-  function renderMateriasStatus(data) {
-    var cards = [
-      ['Sincronizados', data && data.materias_synced],
-      ['Pendentes', data && data.pendentes],
-      ['Processando', data && data.processando],
-      ['Concluídas', data && data.concluidas],
-      ['Erros', data && data.erros],
-    ];
-    document.getElementById('admin-materias-status').innerHTML = cards.map(function (item) {
-      return '<article class="bg-white border rounded-xl p-4">' +
-        '<p class="text-sm text-gray-500">' + escapeHtml(item[0]) + '</p>' +
-        '<p class="text-2xl font-bold text-gray-800">' + Number(item[1] || 0) + '</p>' +
-        '</article>';
-    }).join('');
+    var res = await fetchJobStatus('planos');
+    renderStatusOverlay('planos', res);
+    if (res.running) startWatch('planos');
+    return res;
   }
 
   async function loadMaterias() {
-    var res = await request('/api/admin/materias-imagens/status' + statusQuery());
-    renderMateriasStatus(res);
-    var msg = document.getElementById('materias-lote-msg');
-    if (msg && !msg.dataset.locked) {
-      msg.textContent = res.running
-        ? 'Geração de matérias em andamento. Atualize os totais para acompanhar.'
-        : (res.last_rgm
-          ? ('Último RGM processado: ' + res.last_rgm + '. O próximo lote gera só alunos novos.')
-          : (msg.textContent || ''));
-    }
+    var res = await fetchJobStatus('materias');
+    renderStatusOverlay('materias', res);
+    if (res.running) startWatch('materias');
+    return res;
   }
 
   function showInd(item) {
@@ -421,23 +490,14 @@
       var qs = [];
       if (f.de) qs.push('de=' + encodeURIComponent(f.de));
       if (f.ate) qs.push('ate=' + encodeURIComponent(f.ate));
-      var res = await request('/api/admin/imagens/previsualizar' + (qs.length ? '?' + qs.join('&') : ''));
+      var previewQs = statusScope === 'total' ? '' : (qs.length ? '?' + qs.join('&') : '');
+      var res = await request('/api/admin/imagens/previsualizar' + previewQs);
       if (seq !== previewSeq) return;
-      var planosGerar = Number(res.planos && res.planos.gerar);
-      var materiasGerar = Number(res.materias && res.materias.gerar);
-      var comPlano = res.planos && res.planos.com_plano;
-      var periodo = res.matriculados == null
-        ? 'Sem filtro de data: vale para todos os alunos ativos.'
-        : '<strong>' + Number(res.matriculados) + '</strong> matriculados EM CURSO neste período.';
-      var planoExtra = res.matriculados == null
-        ? Number(res.planos && res.planos.ja_tem) + ' já têm imagem de plano.'
-        : Number(comPlano) + ' com plano cadastrado · ' + Number(res.planos && res.planos.ja_tem) + ' já têm imagem.';
-      box.innerHTML =
-        '<p class="mb-2">' + periodo + '</p>' +
-        '<p class="text-base font-semibold text-gray-900">Gerar lote: ' + planosGerar + ' ' + (planosGerar === 1 ? 'pessoa' : 'pessoas') + '</p>' +
-        '<p class="text-xs text-gray-500 mb-2">' + planoExtra + '</p>' +
-        '<p class="text-base font-semibold text-gray-900">Gerar lote matérias: ' + materiasGerar + ' ' + (materiasGerar === 1 ? 'pessoa' : 'pessoas') + '</p>' +
-        '<p class="text-xs text-gray-500">' + Number(res.materias && res.materias.ja_tem) + ' já têm imagem de matérias.</p>';
+      box.innerHTML = statusScope === 'total' || res.matriculados == null
+        ? 'Sem datas: o lote vale para todos os alunos ativos.'
+        : ('<span class="text-2xl font-bold text-gray-900">' + fmtNum(res.matriculados) + '</span> pessoas neste período');
+      renderPreviewJob('planos', res.planos);
+      renderPreviewJob('materias', res.materias);
     } catch (err) {
       if (seq !== previewSeq) return;
       box.textContent = err.message || 'Não foi possível contar os alunos.';
@@ -462,10 +522,12 @@
     el.addEventListener('input', scheduleImagensPreview);
   });
 
-  var scopeFiltro = document.getElementById('planos-scope-filtro');
-  var scopeTotal = document.getElementById('planos-scope-total');
-  if (scopeFiltro) scopeFiltro.addEventListener('click', function () { setStatusScope('filtro'); });
-  if (scopeTotal) scopeTotal.addEventListener('click', function () { setStatusScope('total'); });
+  var scopeToggle = document.getElementById('planos-scope-toggle');
+  if (scopeToggle) {
+    scopeToggle.addEventListener('click', function () {
+      setStatusScope(statusScope === 'total' ? 'filtro' : 'total');
+    });
+  }
 
   document.getElementById('btn-planos-lote').addEventListener('click', async function () {
     var btn = document.getElementById('btn-planos-lote');
@@ -482,21 +544,13 @@
         body: JSON.stringify(matriculaFilterBody()),
       });
       if (msg) msg.textContent = res.message || 'Geração em lote iniciada.';
-      await loadPlanos();
-      await loadImagensPreview();
+      startWatch('planos');
     } catch (err) {
-      if (msg) msg.textContent = err.message || 'Não foi possível iniciar o lote.';
-    } finally {
       btn.disabled = false;
-      if (msg) delete msg.dataset.locked;
-    }
-  });
-
-  document.getElementById('btn-planos-status').addEventListener('click', async function () {
-    try {
-      await loadPlanos();
-    } catch (err) {
-      document.getElementById('planos-lote-msg').textContent = err.message || 'Não foi possível consultar o status.';
+      if (msg) {
+        delete msg.dataset.locked;
+        msg.textContent = err.message || 'Não foi possível iniciar o lote.';
+      }
     }
   });
 
@@ -512,6 +566,7 @@
       var res = await request('/api/admin/materias-imagens/sync', { method: 'POST' });
       if (msg) msg.textContent = res.message || 'Sincronização concluída.';
       await loadMaterias();
+      await loadImagensPreview();
     } catch (err) {
       if (msg) msg.textContent = err.message || 'Não foi possível sincronizar.';
     } finally {
@@ -535,21 +590,13 @@
         body: JSON.stringify(matriculaFilterBody()),
       });
       if (msg) msg.textContent = res.message || 'Geração em lote iniciada.';
-      await loadMaterias();
-      await loadImagensPreview();
+      startWatch('materias');
     } catch (err) {
-      if (msg) msg.textContent = err.message || 'Não foi possível iniciar o lote.';
-    } finally {
       btn.disabled = false;
-      if (msg) delete msg.dataset.locked;
-    }
-  });
-
-  document.getElementById('btn-materias-status').addEventListener('click', async function () {
-    try {
-      await loadMaterias();
-    } catch (err) {
-      document.getElementById('materias-lote-msg').textContent = err.message || 'Não foi possível consultar o status.';
+      if (msg) {
+        delete msg.dataset.locked;
+        msg.textContent = err.message || 'Não foi possível iniciar o lote.';
+      }
     }
   });
 
