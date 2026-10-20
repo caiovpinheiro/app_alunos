@@ -42,6 +42,17 @@
    "capa": "/trilha-midia/capas/tut_dp.webp"
   },
   {
+   "id": "tut_extensao",
+   "titulo": "Atividade de Extensão: o que é e como entregar",
+   "resumo": "É um projeto com a comunidade, ligado a um ODS e ao seu curso. Leia o Tema e Propostas, pegue a Carta de Apresentação assinada, tire fotos e entregue o relatório no prazo.",
+   "categoria": "Aulas",
+   "duracao": "1:26",
+   "v": "/trilha-midia/central/tut_extensao",
+   "nivel_trilha": 3,
+   "capa": "/trilha-midia/capas/tut_extensao.webp",
+   "termos": "extensão extensionista ODS beneficiário carta de apresentação relatório"
+  },
+  {
    "id": "tut_14",
    "titulo": "Enviar horas complementares",
    "resumo": "Mande o certificado e acompanhe se as horas foram aceitas.",
