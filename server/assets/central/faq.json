@@ -496,6 +496,19 @@
      "confirmar": false
     },
     {
+     "id": "estagio-como-fazer",
+     "q": "Meu curso tem estágio obrigatório. Como eu faço?",
+     "a": "São três passos. <b>1.</b> No AVA, na disciplina de estágio, baixe o <b>Manual de Estágio</b>: ali estão a carga horária do seu curso e onde você pode estagiar. <b>2.</b> Baixe a <b>Carta de Apresentação</b> da sua marca, preencha, imprima e leve na escola ou na empresa. <b>3.</b> Com o aceite, preencha o <b>TCE</b> na Área do Aluno, em <b>CAA Online → Solicitação de Termo de Estágio</b>. Atenção: em Disciplina, escolha <b>Estágio Curricular Supervisionado</b>. Se escolher Orientação de Estágio, o TCE é indeferido. <button type=\"button\" class=\"c-trilha\" data-c-video=\"estagio-comecar\">Ver a série em vídeo: estágio obrigatório</button>",
+     "nivel_trilha": 7,
+     "tags": [
+      "estágio",
+      "TCE",
+      "CAA Online",
+      "carta de apresentação"
+     ],
+     "confirmar": true
+    },
+    {
      "id": "diploma",
      "q": "Como recebo o meu diploma?",
      "a": "Com tudo pronto, a Cruzeiro do Sul avisa a data da <b>colação de grau</b> (a formatura oficial). O diploma é <b>digital</b>: fica no computador ou no celular, sem papel. Leia os e-mails da Cruzeiro do Sul e olhe também a pasta de <b>spam</b> (lixo eletrônico), porque os avisos às vezes caem lá.",

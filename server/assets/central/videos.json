@@ -141,6 +141,42 @@
    "v": "/trilha-midia/videos/nivel5_parte4",
    "nivel_trilha": 5,
    "capa": "/trilha-midia/capas/pagar-boleto.webp"
+  },
+  {
+   "id": "estagio-comecar",
+   "titulo": "Estágio obrigatório: por onde começar",
+   "resumo": "Confira se o seu curso tem estágio, baixe o Manual e a Carta de Apresentação e anote o que pedir na instituição.",
+   "categoria": "Estágio",
+   "duracao": "1:14",
+   "v": "/trilha-midia/central/estagio-comecar",
+   "nivel_trilha": 7,
+   "capa": "/trilha-midia/capas/estagio-comecar.webp",
+   "serie": "estagio",
+   "parte": 1
+  },
+  {
+   "id": "estagio-tce",
+   "titulo": "Preencher o TCE no CAA Online",
+   "resumo": "Passo a passo do Termo de Compromisso de Estágio, o erro que indefere e como acompanhar.",
+   "categoria": "Estágio",
+   "duracao": "1:45",
+   "v": "/trilha-midia/central/estagio-tce",
+   "nivel_trilha": 7,
+   "capa": "/trilha-midia/capas/estagio-tce.webp",
+   "serie": "estagio",
+   "parte": 2
+  },
+  {
+   "id": "estagio-entregar",
+   "titulo": "Terminou o estágio: fichas, relatório e entrega",
+   "resumo": "Ficha de Acompanhamento, Ficha de Avaliação, TCE assinado em um PDF e o relatório, enviados no AVA.",
+   "categoria": "Estágio",
+   "duracao": "1:20",
+   "v": "/trilha-midia/central/estagio-entregar",
+   "nivel_trilha": 7,
+   "capa": "/trilha-midia/capas/estagio-entregar.webp",
+   "serie": "estagio",
+   "parte": 3
   }
  ]
 }

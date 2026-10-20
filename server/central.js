@@ -57,6 +57,9 @@ function publicContent(whatsapp, nivelTitulo) {
         yt: /^[\w-]{11}$/.test(v.yt || '') ? v.yt : null,
         termos: [narracao(v.v), v.termos || ''].join(' ').trim(),
         trilha: nivel(v.nivel_trilha),
+        // Série de vídeos (ex.: "estagio", partes 1..3): a Central mostra juntos e em ordem.
+        serie: v.serie || null,
+        parte: Number(v.parte) || null,
       }))
       // Capítulos da Aula Inaugural que explicam o que os vídeos rápidos não cobrem (na_central):
       // entram na mesma grade, com a categoria "Entenda como funciona".

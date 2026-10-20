@@ -128,6 +128,9 @@ window.Central = (function () {
     comJoinhas = comJoinhas === true && !!window.Avaliacao;
     var nJoinhas = comJoinhas ? window.Avaliacao.joinhas('video', v.id) : 0;
     var cat = v.categoria + (/\/videos\/nivel/.test(v.v || '') && v.trilha ? ' · passo a passo do módulo ' + v.trilha.nivel : '');
+    // Série (ex.: Estágio): "Estágio · 1 de 3".
+    var naSerie = v.serie ? ((C && C.videos) || []).filter(function (x) { return x.serie === v.serie; }).length : 0;
+    if (naSerie > 1 && v.parte) cat += ' · ' + v.parte + ' de ' + naSerie;
     return (
       '<article class="portal-vcard' + (v.tipo === 'entenda' ? ' portal-vcard--entenda' : '') + '">' +
         '<button type="button" class="portal-vthumb' + (v.capa ? ' has-capa' : '') + '" data-c-video="' + esc(v.id) + '" tabindex="-1" aria-hidden="true">' +
@@ -152,10 +155,24 @@ window.Central = (function () {
     // Busca também na narração do vídeo (termos), além de título, resumo e categoria.
     return (C.videos || []).filter(function (v) { return bate(v.titulo + ' ' + v.resumo + ' ' + v.categoria + ' ' + (v.termos || ''), nivelDe(v)); })
       .map(function (v, i) { return { v: v, i: i }; })
+      .map(function (x, _, todos) {
+        // Vídeos da mesma série (campo `serie`) ficam juntos, na ordem de `parte`:
+        // o bloco usa a chave do melhor vídeo dele (mais 👍, menor nível, primeiro no JSON).
+        var grupo = x.v.serie ? todos.filter(function (y) { return y.v.serie === x.v.serie; }) : [x];
+        x.k = grupo.reduce(function (k, y) {
+          return {
+            j: Math.max(k.j, joinhasDe(y.v)),
+            n: Math.min(k.n, nivelDe(y.v) || 99),
+            e: Math.min(k.e, y.v.tipo === 'entenda' ? 1 : 0),
+            i: Math.min(k.i, y.i)
+          };
+        }, { j: -1, n: 99, e: 1, i: Infinity });
+        return x;
+      })
       .sort(function (a, b) {
         // Mais curtidos primeiro (👍 dos alunos); no empate, a ordem da jornada.
-        return joinhasDe(b.v) - joinhasDe(a.v) ||
-          (nivelDe(a.v) || 99) - (nivelDe(b.v) || 99) || (a.v.tipo === 'entenda') - (b.v.tipo === 'entenda') || a.i - b.i;
+        return b.k.j - a.k.j || a.k.n - b.k.n || a.k.e - b.k.e || a.k.i - b.k.i ||
+          (a.v.parte || 0) - (b.v.parte || 0) || a.i - b.i;
       })
       .map(function (x) { return x.v; });
   }
