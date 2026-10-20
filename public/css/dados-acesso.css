@@ -1,0 +1,97 @@
+/* Dados de acesso à faculdade (public/js/dados-acesso.js): cartão do Início e faixa do módulo 1 / Central. */
+[data-dados-acesso-slot][hidden]{display:none}
+
+.dac-card{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px 20px;padding:18px 22px;margin:0;
+  border-radius:var(--portal-radius,18px);border:1px solid var(--portal-border,#d3dfee);background:var(--portal-surface,#fff);box-shadow:var(--portal-shadow)}
+.dac-ico{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;background:var(--portal-blue-soft,#e3edfc);color:var(--portal-blue,#0a4fa6)}
+.dac-ico svg.lucide{width:24px;height:24px}
+.dac-body{min-width:0}
+.dac-card h2{margin:0;font:700 clamp(1.08rem,2.2vw,1.25rem)/1.3 var(--portal-display);color:var(--portal-navy,#0a2a5e)}
+.dac-sub{margin:2px 0 0;color:var(--portal-muted,#45566e);font-size:.96rem}
+.dac-list{display:grid;gap:8px;margin:14px 0 0}
+.dac-list > div{display:grid;grid-template-columns:150px minmax(0,1fr);gap:4px 12px;align-items:center;padding:8px 12px;border-radius:12px;background:var(--portal-surface-2,#f5f9fe)}
+.dac-list dt{font-size:.88rem;color:var(--portal-muted,#45566e)}
+.dac-list dd,.dac-faixa-l dd{margin:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;min-width:0}
+.dac-val{font-weight:700;color:var(--portal-text,#0b1f38);font-size:1.02rem;overflow-wrap:anywhere;user-select:all}
+.dac-curso{font-weight:600;user-select:auto}
+.dac-falta{font-size:.92rem;color:var(--portal-muted,#45566e)}
+.dac-copy{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:4px 12px;border-radius:99px;border:1px solid var(--portal-border,#d3dfee);
+  background:#fff;color:var(--portal-blue,#0a4fa6);font:600 .85rem/1 var(--portal-body);cursor:pointer}
+.dac-copy:hover{background:var(--portal-blue-soft,#e3edfc)}
+.dac-copy:focus-visible,.dac-link:focus-visible{outline:3px solid var(--portal-bright,#5e92fa);outline-offset:2px}
+.dac-copy svg.lucide{width:15px;height:15px}
+.dac-copy.is-ok{border-color:#9ad3b1;background:#e3f5ea;color:#16794a}
+.dac-nota{display:flex;gap:8px;margin:12px 0 0;font-size:.92rem;color:var(--portal-muted,#45566e)}
+.dac-nota svg.lucide{flex:none;width:18px;height:18px;margin-top:2px;color:var(--portal-blue,#0a4fa6)}
+.dac-link{display:inline-flex;align-items:center;gap:4px;text-align:left;margin-top:8px;padding:6px 0;min-height:40px;border:0;background:none;
+  color:var(--portal-blue,#0a4fa6);font:600 .95rem/1.2 var(--portal-body);text-decoration:underline;cursor:pointer}
+.dac-link svg.lucide{width:16px;height:16px}
+.dac-cta{margin-top:12px}
+.dac-card.is-preparo{border-color:#f1d48a;background:linear-gradient(90deg,#fff7e0,#fffaf0)}
+.dac-card.is-preparo .dac-ico{background:#ffe8a8;color:#7a5200}
+@media (max-width:640px){
+  .dac-card{grid-template-columns:1fr;padding:16px}
+  .dac-ico{width:44px;height:44px}
+  .dac-list > div{grid-template-columns:1fr}
+  .dac-cta{width:100%;justify-content:center}
+}
+
+/* Faixa compacta (módulo 1 da Aula Inaugural e Central de ajuda) */
+.dac-faixa{margin:0 0 14px;padding:12px 14px;border-radius:14px;border:1px solid #bcd3f2;background:var(--portal-blue-soft,#e3edfc);color:var(--portal-text,#0b1f38);font-size:.95rem}
+.dac-faixa-t{display:flex;align-items:center;gap:8px;margin:0 0 8px;color:var(--portal-navy,#0a2a5e)}
+.dac-faixa-t svg.lucide{width:18px;height:18px}
+.dac-faixa-l{display:flex;flex-wrap:wrap;gap:8px 22px;margin:0}
+.dac-faixa-l > div{display:flex;align-items:center;gap:8px;min-width:0}
+.dac-faixa-l dt{font-size:.85rem;color:var(--portal-muted,#45566e)}
+.dac-faixa-n{margin:8px 0 0;font-size:.9rem;color:var(--portal-muted,#45566e)}
+.dac-faixa.is-preparo{display:flex;gap:10px;align-items:flex-start;border-color:#f1d48a;background:#fff7e0}
+.dac-faixa.is-preparo p{margin:0}
+.dac-faixa.is-preparo svg.lucide{flex:none;width:18px;height:18px;margin-top:2px;color:#7a5200}
+@media (max-width:640px){.dac-faixa-l > div{flex-wrap:wrap}}
+
+/* Dentro do modal de vídeo da Central */
+.c-mdados{margin:12px 0 0}
+.c-mdados .dac-faixa{margin:0}
+
+/* Primeira senha: regra, exemplo em 4 blocos e o montador (CPF digitado pelo aluno, só na tela) */
+.dac-senha{margin-top:16px;padding:14px 16px;border-radius:14px;border:1px dashed #bcd3f2;background:#f8fbff}
+.dac-h3{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:0;font:700 1.02rem/1.3 var(--portal-display);color:var(--portal-navy,#0a2a5e)}
+.dac-tag{font:600 .75rem/1.2 var(--portal-body);padding:3px 8px;border-radius:99px;background:#fff1c6;color:#7a5200}
+.dac-txt{margin:6px 0 0;font-size:.95rem;color:var(--portal-text,#0b1f38)}
+.dac-ex{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:10px 0 0;font-size:.88rem;color:var(--portal-muted,#45566e)}
+.dac-ex-l{flex-basis:100%}
+.dac-ex-r{font-weight:700;color:var(--portal-text,#0b1f38)}
+.dac-pw{display:inline-flex;flex-wrap:wrap;gap:4px}
+.dac-pw b{display:inline-block;min-width:34px;padding:4px 9px;border-radius:8px;border:2px solid var(--portal-yellow,#ffc72c);background:#fff;
+  font:700 1rem/1.2 ui-monospace,"SF Mono",Menlo,Consolas,monospace;color:var(--portal-navy,#0a2a5e);text-align:center;letter-spacing:.02em}
+.dac-btn{margin-top:12px}
+.dac-montar{margin-top:12px;padding:12px;border-radius:12px;background:#fff;border:1px solid var(--portal-border,#d3dfee)}
+.dac-montar[hidden]{display:none}
+.dac-m-l{margin:0 0 8px;font-size:.95rem}
+.dac-m-l label{color:var(--portal-text,#0b1f38)}
+.dac-pw-ini{font:700 1.05rem/1.2 ui-monospace,"SF Mono",Menlo,Consolas,monospace;color:var(--portal-navy,#0a2a5e)}
+.dac-cpf{width:9ch;min-height:44px;padding:6px 10px;border-radius:10px;border:2px solid var(--portal-border,#d3dfee);
+  font:700 1.15rem/1 ui-monospace,"SF Mono",Menlo,Consolas,monospace;letter-spacing:.2em;text-align:center}
+.dac-cpf:focus-visible{outline:3px solid var(--portal-bright,#5e92fa);outline-offset:2px;border-color:var(--portal-blue,#0a4fa6)}
+.dac-m-res{margin-top:12px}
+.dac-m-res[hidden]{display:none}
+.dac-m-t{margin:0 0 6px;font-weight:700;color:var(--portal-navy,#0a2a5e)}
+.dac-m-pw{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.dac-m-pw .dac-val{user-select:all}
+.dac-m-pw .dac-pw b{font-size:1.15rem;padding:6px 11px}
+.dac-m-dica{margin:8px 0 0;font-size:.85rem;color:var(--portal-muted,#45566e)}
+.dac-m-aviso{display:flex;gap:6px;align-items:flex-start;margin:10px 0 0;font-size:.85rem;color:#16794a}
+.dac-m-aviso svg.lucide{flex:none;width:15px;height:15px;margin-top:2px}
+.dac-faixa-pw{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-top:10px}
+.dac-faixa-pw p{margin:0}
+.dac-faixa .dac-montar{margin-top:10px}
+.dac-faixa.is-preparo > div > p{margin:0 0 6px}
+.dac-card.is-preparo .dac-senha{background:#fffdf5;border-color:#f1d48a}
+.dac-m-pw .dac-pw{flex-wrap:nowrap}
+@media (max-width:640px){
+  .dac-senha{padding:12px}
+  .dac-montar{padding:10px}
+  .dac-btn{width:100%;justify-content:center;text-align:center;padding-inline:14px}
+  .dac-m-pw .dac-pw b{font-size:1.05rem;padding:5px 7px;min-width:28px}
+}
+.dac-list dd.dac-falta,.dac-faixa-l dd.dac-falta{display:block}
