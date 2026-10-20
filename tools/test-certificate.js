@@ -99,13 +99,13 @@ async function main() {
   const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
   mkdirSync(OUT_DIR, { recursive: true });
 
+  // Modelo "Certificado de participação": fundo JPG (sem os valores de exemplo) + Montserrat.
   const assets = {
-    templateBytes: new Uint8Array(readFileSync(path.join(ROOT, 'public/assets/certificado-template.pdf'))),
+    backgroundBytes: new Uint8Array(readFileSync(path.join(ROOT, 'public/assets/certificado-modelo.jpg'))),
     fontBytes: new Uint8Array(readFileSync(path.join(ROOT, 'public/assets/fonts/Montserrat-Regular.ttf'))),
+    boldBytes: new Uint8Array(readFileSync(path.join(ROOT, 'public/assets/fonts/Montserrat-Bold.ttf'))),
   };
-
-  const original = await extract(pdfjs, assets.templateBytes);
-  console.log(`Template original: ${original.width}x${original.height}, imagens=${original.images.length}`);
+  const colunaX = CertificateGenerator.LAYOUT.coluna.x * 842 / 1600;
 
   for (const c of CASES) {
     console.log(`\n=== Caso: ${c.label} ===`);
@@ -115,35 +115,29 @@ async function main() {
     console.log(`  gerado: ${outFile} (${pdfBytes.length} bytes)`);
 
     const got = await extract(pdfjs, pdfBytes);
-    // Texto normalizado em linha única (a quebra de linha do parágrafo vira espaço).
     const fullText = got.textLines.map((l) => l.text).join(' ').replace(/\s+/g, ' ');
+    // Texto com espaçamento entre letras: o pdf.js devolve "R G M 1 2 3"; compara sem espaços.
+    const compacto = fullText.replace(/\s+/g, '');
+    const tem = (t) => compacto.includes(String(t).replace(/\s+/g, ''));
 
-    check('página mantém dimensões', got.width === original.width && got.height === original.height, `${got.width}x${got.height}`);
-    check('título CERTIFICADO preservado', fullText.includes('CERTIFICADO'));
-    check('linha de assinatura preservada', fullText.includes('_____'));
-    check('5 imagens preservadas', got.images.length === 5, got.images.join(' | '));
-    check('imagens nas mesmas posições', JSON.stringify(got.images.sort()) === JSON.stringify(original.images.sort()),
-      `orig=${original.images.sort().join('|')} got=${got.images.sort().join('|')}`);
+    check('página A4 deitada (842 x ~595 pt)', Math.round(got.width) === 842 && Math.abs(got.height - 595.2) < 1, `${got.width}x${got.height}`);
+    check('fundo do modelo (1 imagem cobrindo a página)', got.images.length === 1 && got.images[0].startsWith('0,0,842,'), got.images.join(' | '));
 
-    check('nome presente', fullText.includes(c.nome));
-    check('RGM presente', fullText.includes(`RGM ${c.rgm}`));
-    check('unidade presente', fullText.includes(`polo ${c.unidade},`));
-    const dataAulaBR = CertificateGenerator.formatDataAula(c.dataAulaISO);
-    check('data da aula presente', fullText.includes(`realizado em ${dataAulaBR}.`));
-    check('data de emissão presente', fullText.includes('São Paulo, 19/08/2026 12:37:00'));
+    const nome = c.nome.toLocaleUpperCase('pt-BR');
+    check('nome presente (em maiúsculas)', fullText.includes(nome) || nome.split(' ').every((p) => fullText.includes(p)));
+    check('RGM presente', tem(`RGM ${c.rgm}`));
+    check('evento presente', fullText.includes('AULA INAUGURAL'));
+    check('data presente', tem(CertificateGenerator.formatDataAula(c.dataAulaISO)));
+    check('carga horária presente', tem('04 HORAS'));
+    check('polo presente', fullText.includes(CertificateGenerator.textoPolo(c.unidade)));
+    check('data de emissão presente', fullText.includes('Emitido em 19/08/2026 às 12:37'));
 
     for (const antigo of DADOS_ANTIGOS) {
-      check(`dado antigo removido: "${antigo}"`, !fullText.includes(antigo));
+      check(`dado antigo ausente: "${antigo}"`, !fullText.includes(antigo));
     }
-
-    const bodyLines = got.textLines.filter((l) => l.y <= 397 && l.y >= 340 && l.text.length > 10 && !l.text.includes('São Paulo'));
-    check('corpo em até 4 linhas', bodyLines.length >= 3 && bodyLines.length <= 4, `${bodyLines.length} linhas`);
-    for (const l of bodyLines) {
-      check(`linha y=${l.y} começa em x≈56.7`, Math.abs(l.x0 - 56.7) < 1.5, `x0=${l.x0.toFixed(1)}`);
-    }
-
-    const dateLine = got.textLines.find((l) => l.text.includes('São Paulo'));
-    check('data de emissão na baseline y=322', dateLine && dateLine.y === 322, dateLine && `y=${dateLine.y}`);
+    const linhasNome = got.textLines.filter((l) => nome.split(' ').some((p) => p.length > 3 && l.text.includes(p)));
+    check('nome em 1 ou 2 linhas, na coluna da direita', linhasNome.length >= 1 && linhasNome.length <= 2 && linhasNome.every((l) => Math.abs(l.x0 - colunaX) < 1.5),
+      linhasNome.map((l) => `x0=${l.x0.toFixed(1)}`).join(' '));
   }
 
   console.log(process.exitCode ? '\n*** HOUVE FALHAS ***' : '\nTodos os testes passaram.');

@@ -10,18 +10,23 @@
   function loadAssets() {
     if (!assetPromises) {
       assetPromises = Promise.all([
-        fetch('/assets/certificado-template.pdf').then(function (r) {
-          if (!r.ok) throw new Error('template não encontrado');
+        fetch('/assets/certificado-modelo.jpg?v=1').then(function (r) {
+          if (!r.ok) throw new Error('modelo do certificado não encontrado');
           return r.arrayBuffer();
         }),
         fetch('/assets/fonts/Montserrat-Regular.ttf').then(function (r) {
           if (!r.ok) throw new Error('fonte não encontrada');
           return r.arrayBuffer();
         }),
+        fetch('/assets/fonts/Montserrat-Bold.ttf').then(function (r) {
+          if (!r.ok) throw new Error('fonte não encontrada');
+          return r.arrayBuffer();
+        }),
       ]).then(function (results) {
         return {
-          templateBytes: new Uint8Array(results[0]),
+          backgroundBytes: new Uint8Array(results[0]),
           fontBytes: new Uint8Array(results[1]),
+          boldBytes: new Uint8Array(results[2]),
         };
       });
       assetPromises.catch(function () { assetPromises = null; });
