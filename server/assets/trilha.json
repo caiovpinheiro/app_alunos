@@ -714,11 +714,13 @@
   ],
   [
    "Microsoft Authenticator",
-   "Aplicativo que confirma que é você mesmo quem está entrando. Ele mostra um aviso, e você digita o número que aparece na tela."
+   "Aplicativo que confirma que é você mesmo quem está entrando. Ele mostra um aviso, e você digita o número que aparece na tela.",
+   ["Microsoft Authenticator", "Authenticator"]
   ],
   [
    "E-mail acadêmico",
-   "E-mail que a faculdade cria para você. É com ele que você entra nos sites."
+   "E-mail que a faculdade cria para você. É com ele que você entra nos sites.",
+   ["e-mail acadêmico", "e-mail da faculdade"]
   ],
   [
    "RGM",
@@ -726,11 +728,13 @@
   ],
   [
    "Disciplina",
-   "Matéria. Cada uma dura um mês."
+   "Matéria. Cada uma dura um mês.",
+   ["disciplinas", "disciplina"]
   ],
   [
    "Tutor ou tutoria",
-   "Professor que tira suas dúvidas pelo AVA."
+   "Professor que tira suas dúvidas pelo AVA.",
+   ["tutoria", "tutores", "tutor"]
   ],
   [
    "A2",
@@ -746,35 +750,43 @@
   ],
   [
    "Emissão de Documentos",
-   "Parte da Área do Aluno onde você tira, na hora, declarações e o Histórico."
+   "Parte da Área do Aluno onde você tira, na hora, declarações e o Histórico.",
+   ["Emissão de Documentos"]
   ],
   [
    "CAA On-line",
-   "Atendimento pela internet para os pedidos que não estão em Emissão de Documentos. Cada pedido gera um protocolo."
+   "Atendimento pela internet para os pedidos que não estão em Emissão de Documentos. Cada pedido gera um protocolo.",
+   ["CAA On-line", "CAA"]
   ],
   [
    "Protocolo",
-   "Número do seu pedido, para acompanhar o andamento."
+   "Número do seu pedido, para acompanhar o andamento.",
+   ["protocolo"]
   ],
   [
    "Rematrícula",
-   "Renovar a matrícula, em janeiro e julho: aceitar o contrato, conferir e gravar as matérias (com DP ou adaptação, se tiver), pagar no boleto ou no cartão e conferir se foi realizada."
+   "Renovar a matrícula, em janeiro e julho: aceitar o contrato, conferir e gravar as matérias (com DP ou adaptação, se tiver), pagar no boleto ou no cartão e conferir se foi realizada.",
+   ["rematrícula"]
   ],
   [
    "DP (dependência)",
-   "Matéria em que você foi reprovado. Você pode cursar de novo: inclua na rematrícula (bloco DPs/Adaptações) ou nos meses em que ela for oferecida."
+   "Matéria em que você foi reprovado. Você pode cursar de novo: inclua na rematrícula (bloco DPs/Adaptações) ou nos meses em que ela for oferecida.",
+   ["DPs", "DP", "dependência"]
   ],
   [
    "Adaptação",
-   "Matéria que ficou para você cursar, quase sempre porque você aproveitou disciplinas de outro curso ou faculdade e avançou de semestre."
+   "Matéria que ficou para você cursar, quase sempre porque você aproveitou disciplinas de outro curso ou faculdade e avançou de semestre.",
+   ["adaptações", "adaptação"]
   ],
   [
    "Horas complementares",
-   "Horas de cursos, palestras e eventos que você precisa juntar para se formar."
+   "Horas de cursos, palestras e eventos que você precisa juntar para se formar.",
+   ["horas complementares"]
   ],
   [
    "MB (megabyte)",
-   "Tamanho de um arquivo. Uma foto comum de celular tem de 2 a 5 MB."
+   "Tamanho de um arquivo. Uma foto comum de celular tem de 2 a 5 MB.",
+   ["MB", "megabytes", "megabyte"]
   ],
   [
    "PDF",
@@ -782,7 +794,8 @@
   ],
   [
    "Digitalizar",
-   "Transformar um papel em arquivo: tirar uma foto bem nítida ou escanear."
+   "Transformar um papel em arquivo: tirar uma foto bem nítida ou escanear.",
+   ["digitalizar", "digitalize", "digitalizado", "digitalizada"]
   ],
   [
    "ENADE",
@@ -790,15 +803,18 @@
   ],
   [
    "Colação de grau",
-   "A formatura oficial, quando você recebe o título."
+   "A formatura oficial, quando você recebe o título.",
+   ["colação de grau", "colação"]
   ],
   [
    "Estágio obrigatório",
-   "Tempo de prática na área que alguns cursos exigem para a formatura. Aparece no Histórico, em Emissão de Documentos."
+   "Tempo de prática na área que alguns cursos exigem para a formatura. Aparece no Histórico, em Emissão de Documentos.",
+   ["estágio obrigatório", "estágio"]
   ],
   [
    "Spam ou lixo eletrônico",
-   "Pasta do e-mail onde às vezes caem avisos importantes por engano."
+   "Pasta do e-mail onde às vezes caem avisos importantes por engano.",
+   ["spam", "lixo eletrônico"]
   ]
  ],
  "ajuda": [

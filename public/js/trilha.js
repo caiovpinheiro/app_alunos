@@ -245,9 +245,8 @@ window.Trilha = (function () {
     h += '<div id="tCert" class="tcert"></div><div class="perr" data-cert-erro hidden></div>';
     h += '<p class="hint">Releia qualquer módulo quando quiser. Na dúvida, vale o que está no Manual do Aluno e no Calendário Acadêmico.</p></section>';
 
-    h += '<section class="glos card" aria-labelledby="tGlosTitle"><h2 id="tGlosTitle">Dicionário do aluno: o que quer dizer cada palavra</h2><dl>';
-    C.glossario.forEach(function (g) { h += '<div><dt>' + g[0] + '</dt><dd>' + g[1] + '</dd></div>'; });
-    h += '</dl></section></div>';
+    // O antigo "Dicionário do aluno" virou explicação no próprio texto (public/js/glossario.js).
+    h += '</div>';
 
     h += '<dialog class="lb" id="tLb" aria-label="Tela ampliada"><button class="lbclose" id="tLbClose" type="button">Fechar</button>';
     h += '<div class="lbin"><img id="tLbImg" alt=""><p class="lbcap" id="tLbCap"></p></div></dialog>';
@@ -575,6 +574,8 @@ window.Trilha = (function () {
       lv.appendChild(sec);
     });
     root.querySelectorAll('[data-caps]').forEach(bindCaps);
+    // Palavras do EaD (A2, AF, DP, RGM…): tocar na palavra sublinhada mostra o que ela quer dizer.
+    if (window.Glossario) window.Glossario.marcar(root, C.glossario);
     $('#tBig').addEventListener('click', function () { P.big = !P.big; savePrefs(); applyPrefs(); });
     $('#tSlow').addEventListener('click', function () { P.slow = !P.slow; savePrefs(); applyPrefs(); });
     $('#tReview').addEventListener('click', function () { P.review = !P.review; savePrefs(); refreshUI(); });

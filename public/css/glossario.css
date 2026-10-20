@@ -1,0 +1,28 @@
+/* Palavras do EaD explicadas no próprio texto (public/js/glossario.js). Usa as variáveis da .trilha. */
+.trilha .glo-t{font:inherit;color:inherit;background:none;border:0;margin:0;padding:0 1px;cursor:pointer;border-radius:4px;
+  text-decoration:underline dotted;text-decoration-color:var(--accent);text-decoration-thickness:2px;text-underline-offset:.22em;
+  -webkit-tap-highlight-color:transparent;transition:background-color .15s var(--ease),color .15s var(--ease)}
+.trilha .glo-t:hover, .trilha .glo-t[aria-expanded="true"]{background:var(--accent-soft);color:var(--accent);text-decoration-style:solid}
+.trilha .glo-t:focus-visible{outline:3px solid var(--bright);outline-offset:2px}
+
+/* Balão: fica no <body> (fora da .trilha), então leva as próprias variáveis. */
+.glo-pop{--bubble-bg:#00244d;--bubble-fg:#ffffff;--xp:#ffc72c;--r-md:14px;--ease:cubic-bezier(.2,.8,.2,1);
+  --shadow-lg:0 2px 6px rgba(0,40,90,.08),0 28px 56px -24px rgba(0,40,90,.4);
+  --display:"Poppins","Segoe UI",system-ui,sans-serif;--body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+  box-sizing:border-box;position:fixed;z-index:40;top:0;left:0;width:min(22rem,calc(100vw - 32px));padding:14px 46px 15px 16px;
+  background:var(--bubble-bg);color:var(--bubble-fg);border-radius:var(--r-md);box-shadow:var(--shadow-lg);
+  font:400 1rem/1.5 var(--body);text-align:left}
+.glo-pop::before{content:"";position:absolute;top:-6px;left:var(--seta,50%);width:14px;height:14px;background:inherit;border-radius:2px;transform:translateX(-50%) rotate(45deg)}
+.glo-pop.em-cima::before{top:auto;bottom:-6px}
+.glo-in{position:relative}
+.glo-in b{display:block;margin-bottom:3px;font:700 1rem/1.3 var(--display);color:var(--xp)}
+.glo-x{position:absolute;top:6px;right:6px;width:34px;height:34px;display:grid;place-items:center;border:0;border-radius:50%;
+  background:transparent;color:inherit;font:400 1.5rem/1 var(--body);cursor:pointer}
+.glo-x:hover{background:rgba(255,255,255,.14)}
+/* Fechado: fica no DOM (região role=status), mas sem ocupar espaço nem aparecer. */
+.glo-pop:not(.is-open){width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;box-shadow:none}
+.glo-pop:not(.is-open) .glo-x{display:none}
+.glo-pop.glo-big{font-size:1.15rem}
+.glo-pop.glo-big .glo-in b{font-size:1.15rem}
+@media (prefers-reduced-motion:no-preference){.glo-pop.is-open{animation:glo-in .16s var(--ease)}}
+@keyframes glo-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
