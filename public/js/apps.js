@@ -124,9 +124,13 @@ window.Apps = (function () {
     if (foco) btn.focus();
   }
 
+  function soNoInicio(el) { return !!el.closest('#dashboard-page'); }
+
   // Preenche os lugares vazios (ou os de uma raiz que acabou de ser redesenhada).
   function render(raiz) {
     (raiz || document).querySelectorAll('[data-apps-slot]').forEach(function (slot) {
+      // Só no Início (pedido do usuário em 20/10): nas outras telas o lugar fica vazio e oculto.
+      if (!soNoInicio(slot)) { slot.innerHTML = ''; slot.hidden = true; return; }
       if (slot.getAttribute('data-apps-pronto') === '1') return;
       slot.innerHTML = html(slot.getAttribute('data-apps-variant') === 'compacta');
       slot.setAttribute('data-apps-pronto', '1');

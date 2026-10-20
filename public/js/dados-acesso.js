@@ -187,7 +187,9 @@ window.DadosAcesso = (function () {
     var d = dados;
     (raiz || document).querySelectorAll('[data-dados-acesso-slot]').forEach(function (slot) {
       var tipo = slot.getAttribute('data-dados-acesso-slot');
-      var html = !d ? '' : tipo === 'cartao' ? cartao(d) : tipo === 'aba' ? aba(d) : faixa(d, slot.getAttribute('data-dados-acesso-onde'));
+      // Os dados do aluno só aparecem no Início (pedido do usuário em 20/10): fora dele, o lugar fica vazio.
+      var noInicio = !!slot.closest('#dashboard-page');
+      var html = !d || !noInicio ? '' : tipo === 'cartao' ? cartao(d) : tipo === 'aba' ? aba(d) : faixa(d, slot.getAttribute('data-dados-acesso-onde'));
       // Aba da ajuda do acesso: com dados, some o texto padrão; com e-mail, a aba ganha o ✓.
       if (tipo === 'aba') {
         var pan = slot.closest('.apps-pan');

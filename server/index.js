@@ -18,6 +18,7 @@ const planoImagem = require('./planoImagem');
 const planoMateriasImagem = require('./planoMateriasImagem');
 const materiasAlunos = require('./materiasAlunos');
 const trilha = require('./trilha');
+const versao = require('./versao');
 const trilhaAdmin = require('./trilha-admin');
 const trilhaRelatorios = require('./trilha-relatorios');
 const central = require('./central');
@@ -645,6 +646,15 @@ app.get('/api/recursos', authMiddleware, async (req, res) => {
     rastreio: acompanhamento.liberadoPara(req.aluno),
     preparo: !req.aluno.rgm,
   });
+});
+
+// Versão das telas da conta logada (VERSAO_NOVA_PARA). Grava o cookie que escolhe o index.html;
+// a página (public/js/auth.js) recarrega se estiver na versão errada.
+app.get('/api/versao', authMiddleware, (req, res) => {
+  const nova = versao.novaPara(req.aluno);
+  versao.gravarCookie(req, res, nova);
+  res.set('Cache-Control', 'no-store');
+  res.json({ success: true, versao: nova ? 'nova' : 'antiga' });
 });
 
 // Enquanto a trilha estiver em teste, só as contas de TRILHA_LIBERADA_PARA acessam.
@@ -1556,7 +1566,18 @@ app.patch('/api/admin/indicacoes/:id/status', requireAdmin, async (req, res) => 
   }
 });
 
-app.use(express.static(path.join(__dirname, '..', 'public')));
+// Telas do aluno em duas versões (server/versao.js): a nova (public/) para as contas de
+// VERSAO_NOVA_PARA e a congelada da produção anterior (public-antigo/) para as demais.
+// Só o index.html muda de acordo com o cookie; os JS/CSS antigos têm endereço próprio (/antigo/...).
+const PUBLIC_DIR = path.join(__dirname, '..', 'public');
+const ANTIGO_DIR = path.join(__dirname, '..', 'public-antigo');
+function enviarIndex(req, res) {
+  res.set({ 'Cache-Control': 'no-cache', Vary: 'Cookie' });
+  res.sendFile(path.join(versao.verNova(req) ? PUBLIC_DIR : ANTIGO_DIR, 'index.html'));
+}
+app.get(['/', '/index.html'], enviarIndex);
+app.use('/antigo', express.static(ANTIGO_DIR, { index: false }));
+app.use(express.static(PUBLIC_DIR));
 
 const STUDENT_PAGES = [
   '/login',
@@ -1570,9 +1591,7 @@ const STUDENT_PAGES = [
   '/certificado',
   '/sucesso',
 ];
-app.get(STUDENT_PAGES, (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
-});
+app.get(STUDENT_PAGES, enviarIndex);
 
 app.use('/api', (req, res) => {
   res.status(404).json({ success: false, message: 'Recurso não encontrado.' });

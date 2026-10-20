@@ -6,6 +6,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const versao = require('./versao');
 
 const CONTEUDO = JSON.parse(fs.readFileSync(path.join(__dirname, 'assets', 'trilha.json'), 'utf8'));
 const NIVEIS = CONTEUDO.niveis;
@@ -108,11 +109,14 @@ function listaLiberada() {
     .filter(Boolean);
 }
 
+// Além desta lista, a conta precisa estar na versão nova das telas (VERSAO_NOVA_PARA, server/versao.js):
+// as telas congeladas da produção anterior não conversam com a trilha deste servidor.
 function liberadaParaTodos() {
-  return listaLiberada().includes('*');
+  return listaLiberada().includes('*') && versao.paraTodos();
 }
 
 function liberadaPara(aluno) {
+  if (!versao.novaPara(aluno)) return false;
   const lista = listaLiberada();
   if (lista.includes('*')) return true;
   if (!aluno) return false;
