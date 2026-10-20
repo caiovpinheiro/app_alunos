@@ -79,7 +79,45 @@ window.AdminAcomp = (function () {
     );
   }
 
+  // Funil por dia de matrícula (dia em que a conta foi criada). Dias antes de VERSAO_NOVA_DESDE ficam
+  // marcados "versão antiga": quem está nela não vê a Aula Inaugural, então essas colunas ficam perto de zero.
+  function pct(n, d) { return d ? Math.round(n / d * 100) + '%' : '—'; }
+  function celula(n, d) {
+    return '<td class="px-3 py-2 text-right whitespace-nowrap"><b>' + n + '</b> <span class="text-gray-400">' + pct(n, d) + '</span></td>';
+  }
+  function diaBr(iso) { var p = String(iso).split('-'); return p[2] + '/' + p[1]; }
+  async function carregarFunil() {
+    var box = document.getElementById('acomp-funil');
+    if (!box) return;
+    var dias = Math.min(90, Number(filtros().get('dias')) || 30);
+    try {
+      var r = await C().request('/api/admin/acompanhamento/funil?dias=' + dias);
+      var desde = r.versao_nova_desde ? new Date(r.versao_nova_desde) : null;
+      var linha = function (c, total) {
+        var antiga = !total && !r.versao_nova_todos && (!desde || new Date(c.dia + 'T23:59:59-03:00') < desde);
+        return '<tr class="border-t' + (total ? ' font-semibold bg-slate-50' : '') + '">' +
+          '<th scope="row" class="px-3 py-2 text-left whitespace-nowrap">' + (total ? 'Total' : esc(diaBr(c.dia))) +
+            (antiga ? ' <span class="text-xs font-normal text-gray-400">versão antiga</span>' : '') + '</th>' +
+          '<td class="px-3 py-2 text-right">' + c.contas + '</td>' + celula(c.entraram, c.contas) + celula(c.entraram_24h, c.contas) +
+          celula(c.comecaram, c.contas) + celula(c.concluiram, c.contas) + celula(c.certificado, c.contas) + '</tr>';
+      };
+      var th = function (t, esq) { return '<th scope="col" class="px-3 py-2 font-semibold ' + (esq ? 'text-left' : 'text-right') + '">' + t + '</th>'; };
+      box.innerHTML = '<section class="bg-white border rounded-xl p-4" aria-labelledby="acomp-funil-h">' +
+        '<h3 id="acomp-funil-h" class="font-bold text-gray-800">Funil por dia de matrícula</h3>' +
+        '<p class="text-xs text-gray-500 mb-3">Alunos agrupados pelo dia em que a conta foi criada (até 30 min depois de aparecerem no relatório de matriculados). Porcentagens sobre as contas do dia.</p>' +
+        (r.coortes.length
+          ? '<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="text-xs text-gray-500">' +
+            th('Dia', true) + th('Contas') + th('Entraram') + th('Em até 24 h') + th('Começaram a Aula') + th('Concluíram (' + r.total_modulos + ' módulos)') + th('Certificado') +
+            '</tr></thead><tbody>' + r.coortes.map(function (c) { return linha(c, false); }).join('') + linha(r.total, true) + '</tbody></table></div>'
+          : '<p class="text-sm text-gray-500">Nenhuma conta criada no período.</p>') +
+        '</section>';
+    } catch (err) {
+      box.innerHTML = '<p class="text-sm text-red-700">' + esc(err.message || 'Não foi possível carregar o funil.') + '</p>';
+    }
+  }
+
   async function load() {
+    carregarFunil();
     var msg = document.getElementById('acomp-msg');
     msg.textContent = 'Carregando...';
     try {
@@ -191,20 +229,22 @@ window.AdminAcomp = (function () {
   function fecharModal() { document.getElementById('acomp-modal').classList.add('hidden'); }
 
   // ---------- Regras dos sinais ----------
-  var VARIAVEIS = '{nome} {nivel} {nivel_titulo} {termo} {data_primeiro_acesso} {dias_sem_acesso}';
+  var VARIAVEIS = '{nome} {nivel} {nivel_titulo} {termo} {data_primeiro_acesso} {dias_sem_acesso} {email} {senha_inicial} {link}';
+  var UNIDADE = { dias: 'dias', horas: 'horas', vezes: 'vez(es)' };
+  var MAXIMO = { dias: 365, horas: 720, vezes: 50 };
 
   function formRegras(r) {
     var cfg = r.regras;
     var linhas = r.catalogo.map(function (c) {
       var x = cfg.sinais[c.id];
-      var unidade = c.tipo === 'dias' ? 'dias' : 'vez(es)';
+      var unidade = UNIDADE[c.tipo] || 'vez(es)';
       return (
         '<fieldset class="border rounded-xl p-3" data-regra="' + esc(c.id) + '">' +
           '<legend class="px-1 font-bold">' + esc(c.rotulo) + '</legend>' +
           '<p class="text-xs text-gray-500 mb-2">' + esc(c.descricao) + '</p>' +
           '<div class="flex flex-wrap gap-4 items-end mb-2">' +
             '<label class="flex items-center gap-2"><input type="checkbox" name="ativo"' + (x.ativo ? ' checked' : '') + '> Ligado</label>' +
-            '<label class="flex flex-col gap-1"><span class="text-xs text-gray-600">N (' + unidade + ')</span><input type="number" name="limite" min="1" max="' + (c.tipo === 'dias' ? 365 : 50) + '" value="' + Number(x.limite) + '" class="border rounded-lg px-2 py-1 w-24"></label>' +
+            '<label class="flex flex-col gap-1"><span class="text-xs text-gray-600">N (' + unidade + ')</span><input type="number" name="limite" min="1" max="' + (MAXIMO[c.tipo] || 50) + '" value="' + Number(x.limite) + '" class="border rounded-lg px-2 py-1 w-24"></label>' +
             '<label class="flex flex-col gap-1"><span class="text-xs text-gray-600">Prioridade (1 = primeiro)</span><input type="number" name="prioridade" min="1" max="20" value="' + Number(x.prioridade) + '" class="border rounded-lg px-2 py-1 w-24"></label>' +
           '</div>' +
           '<label class="flex flex-col gap-1"><span class="text-xs text-gray-600">Mensagem sugerida</span><textarea name="mensagem" rows="3" maxlength="700" class="border rounded-lg px-2 py-1">' + esc(x.mensagem) + '</textarea></label>' +

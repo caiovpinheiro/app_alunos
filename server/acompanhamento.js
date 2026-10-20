@@ -153,8 +153,11 @@ async function registrarLote(pool, aluno, body) {
 // Regras dos sinais: padrão aqui, ajustes salvos pelo admin em csu_acomp_config (uma linha).
 // limite = o número que dispara o sinal (dias ou vezes, conforme "tipo").
 // mensagem aceita: {nome} {nivel} {nivel_titulo} {termo} {data_primeiro_acesso} {dias_sem_acesso}
+//                  {email} {senha_inicial} {link}
 const OI = 'Oi, {nome}! Aqui é da equipe do seu polo na Cruzeiro do Sul Virtual.';
 const SINAIS = {
+  nunca_entrou: { rotulo: 'Ainda não entrou no portal', tipo: 'horas', descricao: 'Conta criada há pelo menos N horas (dentro do período escolhido) e nenhum login até agora',
+    padrao: { ativo: true, prioridade: 1, limite: 24, mensagem: `${OI} Seu acesso ao portal do polo já está pronto: {link} Entre com o e-mail {email} e a senha {senha_inicial}. Lá você faz a Aula Inaugural, que vale certificado de 4 horas, e vê o passo a passo para entrar no AVA. Se travar em alguma parte, é só me responder aqui.` } },
   travou_trilha: { rotulo: 'Travou na Aula Inaugural', tipo: 'vezes', descricao: 'Tocou em "Travei" pelo menos N vezes e não concluiu a Aula Inaugural',
     padrao: { ativo: true, prioridade: 1, limite: 1, mensagem: `${OI} Vi que você marcou que travou no módulo {nivel} da Aula Inaugural ({nivel_titulo}). Quer ajuda com essa parte?` } },
   certificado_erro: { rotulo: 'Erro no certificado', tipo: 'vezes', descricao: 'Teve N erros ao gerar o certificado (no período) e não gerou depois',
@@ -166,13 +169,14 @@ const SINAIS = {
   nunca_voltou: { rotulo: 'Entrou uma vez e não voltou', tipo: 'dias', descricao: 'Só 1 acesso e N dias sem voltar',
     padrao: { ativo: true, prioridade: 5, limite: 2, mensagem: `${OI} Você entrou no portal no dia {data_primeiro_acesso} e não voltou mais. Ficou alguma dúvida no primeiro acesso?` } },
   sumiu: { rotulo: 'Sem acessar há dias', tipo: 'dias', descricao: 'N dias ou mais sem entrar no portal',
-    padrao: { ativo: true, prioridade: 6, limite: 7, mensagem: `${OI} Faz {dias_sem_acesso} dias que você não entra na Área do Aluno. Está tudo certo com os estudos? Se precisar de algo, é só responder aqui.` } },
+    padrao: { ativo: true, prioridade: 6, limite: 7, mensagem: `${OI} Faz {dias_sem_acesso} dias que você não entra no portal do polo. Está tudo certo com os estudos? Se precisar de algo, é só responder aqui.` } },
   video_incompleto: { rotulo: 'Vídeos pela metade', tipo: 'vezes', descricao: 'Começou N vídeos ou mais sem terminar (no período)',
     padrao: { ativo: true, prioridade: 7, limite: 2, mensagem: `${OI} Vi que você começou alguns vídeos de ajuda e não terminou. Ficou alguma dúvida que eu possa responder?` } },
 };
 // Padrões antigos (antes da Aula Inaugural, 20/10/2026). Se o admin salvou a config sem mexer
 // nessas mensagens, elas trocam sozinhas pelo padrão novo; mensagens personalizadas ficam como estão.
 const MENSAGENS_ANTIGAS = new Set([
+  `${OI} Faz {dias_sem_acesso} dias que você não entra na Área do Aluno. Está tudo certo com os estudos? Se precisar de algo, é só responder aqui.`,
   `${OI} Vi que você marcou que travou no Nível {nivel} da Trilha EaD ({nivel_titulo}). Quer ajuda com essa parte?`,
   `${OI} Você começou a Trilha EaD para Iniciantes e parou no Nível {nivel}. Falta pouco! Precisa de ajuda para continuar?`,
 ]);
@@ -204,7 +208,7 @@ function normalizaConfig(raw) {
     out.sinais[id] = {
       ativo: typeof x.ativo === 'boolean' ? x.ativo : p.ativo,
       prioridade: inteiro(x.prioridade, 1, 20, p.prioridade),
-      limite: inteiro(x.limite, 1, SINAIS[id].tipo === 'dias' ? 365 : 50, p.limite),
+      limite: inteiro(x.limite, 1, { dias: 365, horas: 720 }[SINAIS[id].tipo] || 50, p.limite),
       mensagem: msg,
     };
   });
@@ -252,6 +256,16 @@ function dataBr(d) {
   return x.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit' });
 }
 
+// Senha inicial do portal (mesma regra do login: primeiro nome + "123@", ver matriculados.derivedPassword).
+function senhaInicial(nome) {
+  const p = primeiroNome(nome);
+  return p ? `${p}123@` : '';
+}
+
+function linkPortal() {
+  return String(envValue('APP_PUBLIC_URL') || 'https://app.cruzeiroead.com.br').trim().replace(/\/$/, '');
+}
+
 // Mensagem sugerida para o WhatsApp (o atendente revisa antes de enviar).
 function mensagem(modelo, r) {
   const valores = {
@@ -261,6 +275,9 @@ function mensagem(modelo, r) {
     termo: r.ultima_busca_vazia || 'uma dúvida',
     data_primeiro_acesso: dataBr(r.primeiro_acesso),
     dias_sem_acesso: r.dias_sem_acesso == null ? '' : r.dias_sem_acesso,
+    email: r.email || 'o seu e-mail',
+    senha_inicial: senhaInicial(r.nome) || 'a senha que o polo te passou',
+    link: linkPortal(),
   };
   return String(modelo || '').replace(/\{(\w+)\}/g, (m, k) => (k in valores ? String(valores[k]) : m));
 }
@@ -275,6 +292,10 @@ function sinaisDo(r, cfg) {
   if (on('certificado_erro') && r.cert_erros >= lim('certificado_erro') && !r.cert_ok) s.push('certificado_erro');
   if (on('busca_sem_resultado') && r.buscas_vazias >= lim('busca_sem_resultado')) s.push('busca_sem_resultado');
   if (on('parou_trilha') && r.trilha_ultima && trilhaAberta && semTrilha != null && semTrilha >= lim('parou_trilha')) s.push('parou_trilha');
+  // Nunca entrou: conta com pelo menos N horas, criada dentro do período (sem pegar contas antigas esquecidas).
+  const horasConta = r.created_at ? (Date.now() - new Date(r.created_at).getTime()) / 3600000 : null;
+  if (on('nunca_entrou') && !r.primeiro_acesso && horasConta != null && horasConta >= lim('nunca_entrou')
+    && horasConta <= (r.periodo_dias || 30) * 24) s.push('nunca_entrou');
   const umaVez = r.acessos_total <= 1;
   if (on('nunca_voltou') && umaVez && r.dias_sem_acesso != null && r.dias_sem_acesso >= lim('nunca_voltou')) s.push('nunca_voltou');
   else if (on('sumiu') && r.dias_sem_acesso != null && r.dias_sem_acesso >= lim('sumiu')) s.push('sumiu');
@@ -318,9 +339,10 @@ async function listar(pool, opts) {
        FROM csu_followups ORDER BY aluno_id, criado_em DESC)
      SELECT a.id, a.nome, a.rgm, a.email, a.curso, a.unidade, a.created_at,
        COALESCE(ac.acessos,0) AS acessos, COALESCE(ac.segundos,0) AS segundos, COALESCE(ac.cliques,0) AS cliques, COALESCE(ac.telas,0) AS telas,
-       GREATEST(COALESCE(tot.acessos_total,0), COALESCE(lg.logins,0)) AS acessos_total,
-       LEAST(tot.primeiro, lg.primeiro) AS primeiro_acesso,
-       GREATEST(tot.ultimo, lg.ultimo) AS ultimo_acesso,
+       GREATEST(COALESCE(tot.acessos_total,0), COALESCE(lg.logins,0), COALESCE(a.logins,0)) AS acessos_total,
+       LEAST(tot.primeiro, lg.primeiro, a.primeiro_login_em) AS primeiro_acesso,
+       GREATEST(tot.ultimo, lg.ultimo, a.ultimo_login_em) AS ultimo_acesso,
+       $1::int AS periodo_dias,
        COALESCE(ev.videos_inicio,0) AS videos_inicio, COALESCE(ev.videos_fim,0) AS videos_fim,
        COALESCE(ev.buscas_vazias,0) AS buscas_vazias, COALESCE(ev.cert_erros,0) AS cert_erros, COALESCE(ev.cert_ok,0) AS cert_ok,
        COALESCE(ev.whatsapp,0) AS whatsapp, ev.ultima_busca_vazia,

@@ -271,4 +271,39 @@ async function dashboardUso(pool) {
   return { acessos: acessosOut, videos: videosOut, avaliacoes: avaliacoesOut };
 }
 
-module.exports = { porAluno, csvPorAluno, dashboardUso, CATALOGO };
+// Funil por coorte: alunos agrupados pelo dia em que a conta foi criada (≈ dia da matrícula: a conta nasce
+// na sincronização do relatório de matriculados). Para cada dia: contas, quantas entraram (e em até 24 h),
+// começaram a Aula Inaugural, concluíram os módulos e emitiram o certificado. "Entrou" também conta quem
+// tem progresso ou certificado, para os dias de antes do registro de login (20/10/2026).
+async function funilCoortes(pool, opts = {}) {
+  const dias = Math.max(1, Math.min(90, Number(opts.dias) || 14));
+  const totalModulos = trilha.NIVEIS.length;
+  const { rows } = await pool.query(
+    `WITH base AS (
+       SELECT a.id, (a.created_at AT TIME ZONE 'America/Sao_Paulo')::date AS dia, a.created_at, a.primeiro_login_em
+       FROM csu_alunos a
+       WHERE a.ativo
+         AND a.created_at >= (date_trunc('day', now() AT TIME ZONE 'America/Sao_Paulo') - (($1::int - 1) * interval '1 day')) AT TIME ZONE 'America/Sao_Paulo'),
+     tr AS (
+       SELECT aluno_id, COUNT(*) FILTER (WHERE concluido_em IS NOT NULL)::int AS feitos
+       FROM csu_trilha_progresso WHERE aluno_id IN (SELECT id FROM base) GROUP BY aluno_id),
+     ce AS (SELECT DISTINCT aluno_id FROM csu_certificados WHERE aluno_id IN (SELECT id FROM base))
+     SELECT to_char(b.dia, 'YYYY-MM-DD') AS dia,
+       COUNT(*)::int AS contas,
+       COUNT(*) FILTER (WHERE b.primeiro_login_em IS NOT NULL OR tr.aluno_id IS NOT NULL OR ce.aluno_id IS NOT NULL)::int AS entraram,
+       COUNT(*) FILTER (WHERE b.primeiro_login_em <= b.created_at + interval '24 hours')::int AS entraram_24h,
+       COUNT(*) FILTER (WHERE tr.aluno_id IS NOT NULL)::int AS comecaram,
+       COUNT(*) FILTER (WHERE tr.feitos >= $2::int)::int AS concluiram,
+       COUNT(*) FILTER (WHERE ce.aluno_id IS NOT NULL)::int AS certificado
+     FROM base b LEFT JOIN tr ON tr.aluno_id = b.id LEFT JOIN ce ON ce.aluno_id = b.id
+     GROUP BY b.dia ORDER BY b.dia DESC`,
+    [dias, totalModulos],
+  );
+  const total = { dia: 'total' };
+  ['contas', 'entraram', 'entraram_24h', 'comecaram', 'concluiram', 'certificado'].forEach((k) => {
+    total[k] = rows.reduce((n, r) => n + r[k], 0);
+  });
+  return { dias, total_modulos: totalModulos, coortes: rows, total };
+}
+
+module.exports = { porAluno, csvPorAluno, dashboardUso, funilCoortes, CATALOGO };

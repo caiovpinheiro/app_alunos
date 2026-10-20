@@ -302,6 +302,32 @@ async function ensureSchema(pool) {
     ALTER TABLE csu_alunos
     ADD COLUMN IF NOT EXISTS unidade TEXT
   `);
+  // Primeiro e último login (acompanhamento e funil por coorte). csu_sessoes não serve para isso:
+  // a sessão é apagada quando expira ou o aluno sai. Na primeira vez, preenche com o histórico que existe.
+  const temLogin = await pool.query(
+    `SELECT 1 FROM information_schema.columns
+     WHERE table_schema = current_schema() AND table_name = 'csu_alunos' AND column_name = 'primeiro_login_em'`,
+  );
+  if (!temLogin.rowCount) {
+    await pool.query(`
+      ALTER TABLE csu_alunos
+        ADD COLUMN IF NOT EXISTS primeiro_login_em TIMESTAMPTZ,
+        ADD COLUMN IF NOT EXISTS ultimo_login_em TIMESTAMPTZ,
+        ADD COLUMN IF NOT EXISTS logins INTEGER NOT NULL DEFAULT 0
+    `);
+    await pool.query(`
+      UPDATE csu_alunos a SET primeiro_login_em = x.primeiro, ultimo_login_em = x.ultimo, logins = x.n
+      FROM (SELECT aluno_id, MIN(created_at) AS primeiro, MAX(created_at) AS ultimo, COUNT(*)::int AS n
+            FROM csu_sessoes GROUP BY aluno_id) x
+      WHERE x.aluno_id = a.id
+    `);
+    await pool.query(`
+      UPDATE csu_alunos a SET primeiro_login_em = c.primeiro,
+        ultimo_login_em = COALESCE(a.ultimo_login_em, c.primeiro), logins = GREATEST(a.logins, 1)
+      FROM (SELECT aluno_id, MIN(created_at) AS primeiro FROM csu_certificados GROUP BY aluno_id) c
+      WHERE c.aluno_id = a.id AND (a.primeiro_login_em IS NULL OR c.primeiro < a.primeiro_login_em)
+    `);
+  }
   // Acesso em preparação: o polo cria a conta antes de a faculdade gerar o RGM.
   // Sem RGM é NULL (nunca ''): '' casaria com qualquer login por e-mail sem números.
   const rgmCols = await pool.query(
@@ -496,13 +522,24 @@ async function createSession(pool, alunoId, token) {
     'INSERT INTO csu_sessoes (token, aluno_id, expires_at) VALUES ($1, $2, $3)',
     [token, alunoId, expiresAt],
   );
+  // Login e primeiro acesso passam por aqui. Falhar ao registrar nunca impede a entrada.
+  try {
+    await pool.query(
+      `UPDATE csu_alunos SET primeiro_login_em = COALESCE(primeiro_login_em, now()),
+         ultimo_login_em = now(), logins = logins + 1
+       WHERE id = $1`,
+      [alunoId],
+    );
+  } catch (err) {
+    console.error('Falha ao registrar o login:', err.message);
+  }
   return expiresAt;
 }
 
 async function getSessionAluno(pool, token) {
   if (!token) return null;
   const result = await pool.query(
-    `SELECT a.id, a.email, a.rgm, a.nome, a.ativo, s.expires_at
+    `SELECT a.id, a.email, a.rgm, a.nome, a.ativo, a.created_at, s.expires_at
      FROM csu_sessoes s
      JOIN csu_alunos a ON a.id = s.aluno_id
      WHERE s.token = $1
@@ -515,7 +552,7 @@ async function getSessionAluno(pool, token) {
     await pool.query('DELETE FROM csu_sessoes WHERE token = $1', [token]);
     return null;
   }
-  return { id: row.id, email: row.email, rgm: row.rgm, nome: row.nome };
+  return { id: row.id, email: row.email, rgm: row.rgm, nome: row.nome, created_at: row.created_at };
 }
 
 async function deleteSession(pool, token) {

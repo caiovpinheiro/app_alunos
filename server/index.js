@@ -1394,6 +1394,20 @@ app.get('/api/admin/acompanhamento/export.csv', requireAdmin, async (req, res) =
   }
 });
 
+// Funil por coorte de matrícula (dia em que a conta foi criada): entrou, começou a Aula, concluiu, certificado.
+app.get('/api/admin/acompanhamento/funil', requireAdmin, async (req, res) => {
+  if (!pool) return unavailable(res);
+  try {
+    await ensureAcompanhamento();
+    const funil = await trilhaRelatorios.funilCoortes(pool, { dias: req.query.dias });
+    const desde = versao.desde();
+    return res.json({ success: true, ...funil, versao_nova_desde: desde ? desde.toISOString() : null, versao_nova_todos: versao.paraTodos() });
+  } catch (err) {
+    console.error('Falha no funil:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível carregar o funil.' });
+  }
+});
+
 app.get('/api/admin/acompanhamento/:id', requireAdmin, async (req, res) => {
   if (!pool) return unavailable(res);
   const id = Number(req.params.id);
