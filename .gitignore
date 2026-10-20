@@ -17,3 +17,4 @@ CLAUDE.md
 .claude-flow/
 .swarm/
 ruvector.db
+.playwright-mcp/
