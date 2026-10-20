@@ -43,6 +43,8 @@
     horas: { x: 1164, baseline: 866, size: 8.3, tracking: 0.9 },
     polo: { baseline: 1015, size: 9.5, min: 7, tracking: 0.1 },
     emissao: { x: 80, baseline: 1080, size: 6 },
+    // Assinatura sobre a linha de cima do polo, à direita (não encosta na carga horária, que termina em x=1263).
+    assinatura: { x: 1290, base: 1000, altura: 150 },
   };
 
   function formatDataAula(isoDate) {
@@ -114,7 +116,8 @@
   /**
    * @param {object} data { nome, rgm, unidade, dataAulaISO, emissaoISO, horas?, evento? }
    * @param {object} assets { backgroundBytes: Uint8Array (JPG do modelo), fontBytes: Uint8Array (Montserrat Regular),
-   *                          boldBytes?: Uint8Array (Montserrat Bold, para o nome e os valores) }
+   *                          boldBytes?: Uint8Array (Montserrat Bold, para o nome e os valores),
+   *                          assinaturaBytes?: Uint8Array (PNG transparente da assinatura) }
    * @returns {Promise<Uint8Array>} bytes do PDF final
    */
   async function generateCertificate(data, assets) {
@@ -170,6 +173,15 @@
     var polo = textoPolo(data.unidade);
     var sizePolo = tamanhoQueCabe(polo, fontB, LAYOUT.polo, largura);
     desenhar(page, polo, x, LAYOUT.polo.baseline, sizePolo, fonts, MARINHO, LAYOUT.polo.tracking, true);
+
+    // Assinatura (PNG com fundo transparente), sobre a linha acima do polo.
+    if (assets.assinaturaBytes) {
+      var ass = await doc.embedPng(assets.assinaturaBytes);
+      var cfgA = LAYOUT.assinatura;
+      var alt = px(cfgA.altura);
+      var larg = alt * ass.width / ass.height;
+      page.drawImage(ass, { x: px(cfgA.x), y: yPdf(cfgA.base), width: larg, height: alt });
+    }
 
     // Data de emissão, discreta, no canto de baixo à esquerda.
     desenhar(page, 'Emitido em ' + formatEmissao(data.emissaoISO), px(LAYOUT.emissao.x), LAYOUT.emissao.baseline, LAYOUT.emissao.size, fonts, CINZA, 0.2, false);

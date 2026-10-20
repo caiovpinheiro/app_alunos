@@ -104,6 +104,7 @@ async function main() {
     backgroundBytes: new Uint8Array(readFileSync(path.join(ROOT, 'public/assets/certificado-modelo.jpg'))),
     fontBytes: new Uint8Array(readFileSync(path.join(ROOT, 'public/assets/fonts/Montserrat-Regular.ttf'))),
     boldBytes: new Uint8Array(readFileSync(path.join(ROOT, 'public/assets/fonts/Montserrat-Bold.ttf'))),
+    assinaturaBytes: new Uint8Array(readFileSync(path.join(ROOT, 'public/assets/certificado-assinatura.png'))),
   };
   const colunaX = CertificateGenerator.LAYOUT.coluna.x * 842 / 1600;
 
@@ -121,7 +122,7 @@ async function main() {
     const tem = (t) => compacto.includes(String(t).replace(/\s+/g, ''));
 
     check('página A4 deitada (842 x ~595 pt)', Math.round(got.width) === 842 && Math.abs(got.height - 595.2) < 1, `${got.width}x${got.height}`);
-    check('fundo do modelo (1 imagem cobrindo a página)', got.images.length === 1 && got.images[0].startsWith('0,0,842,'), got.images.join(' | '));
+    check('fundo do modelo + assinatura (2 imagens)', got.images.length === 2 && got.images.some((i) => i.startsWith('0,0,842,')), got.images.join(' | '));
 
     const nome = c.nome.toLocaleUpperCase('pt-BR');
     check('nome presente (em maiúsculas)', fullText.includes(nome) || nome.split(' ').every((p) => fullText.includes(p)));

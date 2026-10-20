@@ -22,11 +22,16 @@
           if (!r.ok) throw new Error('fonte não encontrada');
           return r.arrayBuffer();
         }),
+        // Assinatura: se não carregar, o certificado sai sem ela (não trava a emissão).
+        fetch('/assets/certificado-assinatura.png?v=1').then(function (r) {
+          return r.ok ? r.arrayBuffer() : null;
+        }).catch(function () { return null; }),
       ]).then(function (results) {
         return {
           backgroundBytes: new Uint8Array(results[0]),
           fontBytes: new Uint8Array(results[1]),
           boldBytes: new Uint8Array(results[2]),
+          assinaturaBytes: results[3] ? new Uint8Array(results[3]) : null,
         };
       });
       assetPromises.catch(function () { assetPromises = null; });
