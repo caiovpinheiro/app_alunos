@@ -1,5 +1,7 @@
 'use strict';
 
+const { guiaTrilha } = require('./trilha');
+
 const ITEM_TIPOS = ['disciplina', 'atividade', 'avaliacao_integrada'];
 const EVENTO_TIPOS = ['prova', 'prazo', 'financeiro', 'encerramento', 'recuperacao', 'divulgacao', 'disciplina'];
 const MENSALIDADE_STATUS = ['aberto', 'pago', 'atrasado'];
@@ -104,6 +106,7 @@ function mapItem(row) {
     prazo_preferencial: toIsoDate(row.prazo_preferencial),
     tutorial_categoria: row.tutorial_categoria || null,
     tutorial_hint: row.tutorial_hint || null,
+    trilha: guiaTrilha(row.tutorial_categoria, row.tipo),
     destaque: Boolean(row.destaque),
     ordem: Number(row.ordem) || 0,
   };
@@ -261,14 +264,15 @@ function collectTutoriais(disciplinas, atividades, avaliacao) {
   const seen = new Set();
   const list = [];
   function add(item) {
-    if (!item || !item.tutorial_categoria) return;
-    const key = `${item.tutorial_categoria}|${item.tutorial_hint || ''}`;
+    if (!item || (!item.tutorial_categoria && !item.trilha)) return;
+    const key = item.trilha ? `n${item.trilha.nivel}` : `${item.tutorial_categoria}|${item.tutorial_hint || ''}`;
     if (seen.has(key)) return;
     seen.add(key);
     list.push({
       categoria: item.tutorial_categoria,
       hint: item.tutorial_hint || 'Ver tutoriais',
       titulo: item.titulo,
+      trilha: item.trilha || null,
     });
   }
   atividades.forEach(add);
@@ -398,7 +402,7 @@ function assembleSemestre({ aluno, plano, itens, eventos, mensalidadesRows, toda
 
 async function getMeuSemestre(pool, alunoId) {
   const today = todayIsoSaoPaulo();
-  const avisoPagamento = 'A 1ª parcela vence no dia 25. As demais mensalidades devem ser pagas até o dia 10 de cada mês.';
+  const avisoPagamento = 'A mensalidade vence todo dia 25. Pague até o dia 10 para ter o desconto. Na 1ª mensalidade, o desconto vale até o dia 25.';
   const empty = {
     plano: null,
     curso: null,

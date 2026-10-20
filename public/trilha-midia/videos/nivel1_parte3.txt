@@ -1,0 +1,19 @@
+Parte três: ligar o Authenticator! É ele que confirma que é você mesmo quem está entrando, pra deixar a sua conta protegida.
+
+Sai do Duda, mas sem fechar. E abre o Authenticator, o aplicativo do cadeado.
+
+Toca em Entrar. Não toca no código QR, tá?
+
+Se aparecer uma conta aqui, toca em Use outra conta. Se não aparecer, é só seguir.
+
+Entra com o seu e-mail da Cruzeiro do Sul e com a sua senha nova.
+
+Agora toca em Abrir navegador.
+
+Ele vai pedir pra você entrar de novo. Calma, é assim mesmo! Entra e toca em Avançar.
+
+Como você já baixou o aplicativo, é só tocar em Próximo.
+
+Agora, o passo mais importante: toca nesse link azul, Emparelhe a sua conta com o aplicativo.
+
+Se aparecer um aviso de bloqueio, toca em OK. Prontinho! O Authenticator está ligado na sua conta!

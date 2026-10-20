@@ -69,6 +69,7 @@
       window.showScreen(nextScreen, { replace: true });
       window.Avisos.refresh();
       if (window.MeuSemestre) window.MeuSemestre.refresh();
+      carregarRecursos();
     } catch (err) {
       UI.showLoginError(err.status === 401
         ? 'Credenciais inválidas. Verifique seu acesso e tente novamente.'
@@ -101,6 +102,7 @@
       window.showScreen('dashboard-page', { replace: true });
       window.Avisos.refresh();
       if (window.MeuSemestre) window.MeuSemestre.refresh();
+      carregarRecursos();
     } catch (err) {
       if (err.details) UI.showFieldErrors(mapRegisterErrors(err.details));
       UI.showRegisterError(err.message || 'Não foi possível concluir o cadastro. Tente novamente.');
@@ -244,9 +246,47 @@
     document.body.appendChild(frame);
   }
 
+  // Trilha em teste: mostra a trilha e os links para ela só se a conta estiver liberada.
+  var recursosCarregados = false;
+  function carregarRecursos() {
+    if (!window.Auth.isAuthenticated()) return Promise.resolve();
+    return window.Api.getRecursos().then(function (r) {
+      recursosCarregados = true;
+      var on = !!(r && r.trilha);
+      document.body.classList.toggle('trilha-on', on);
+      carregarWebchat(r && r.webchat);
+      if (on && window.Trilha) window.Trilha.refreshDashboard();
+      if (!on && window.UI.screenFromPath(window.location.pathname) === 'trilha-page') {
+        window.showScreen('dashboard-page', { replace: true });
+      }
+      if (window.MeuSemestre) window.MeuSemestre.refresh();
+      if (window.Tutoriais) window.Tutoriais.refresh();
+      if (on && window.Central && window.UI.screenFromPath(window.location.pathname) === 'tutoriais-page') window.Central.refresh();
+    }).catch(function () { /* sem a informação, fica tudo como antes (trilha escondida) */ });
+  }
+
+  // Chat do CRM: só entra na página para quem o servidor liberou (WEBCHAT_LIBERADO_PARA).
+  var webchatCarregado = false;
+  function carregarWebchat(cfg) {
+    if (webchatCarregado || !cfg || !cfg.src || !cfg.key) return;
+    webchatCarregado = true;
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = cfg.src;
+    s.setAttribute('data-key', cfg.key);
+    document.body.appendChild(s);
+  }
+
   async function logout() {
     await window.Api.logout();
     window.Auth.clear();
+    if (webchatCarregado) {
+      // O widget do chat não tem "descarregar": recarrega a página já na tela de entrada.
+      window.location.replace('/login');
+      return;
+    }
+    document.body.classList.remove('trilha-on');
+    recursosCarregados = false;
     if (window.Avisos) window.Avisos.closeDropdown();
     releaseCurrentPdf();
     window.UI.clearPreview();
@@ -310,10 +350,13 @@
     window.CursoAutocomplete.init();
     window.Avisos.init();
     window.Tutoriais.init();
+    if (window.Trilha) window.Trilha.init();
+    if (window.Central) window.Central.init();
     window.Atendimento.init();
     if (window.MeuSemestre) window.MeuSemestre.init();
 
     if (window.Auth.isAuthenticated()) {
+      carregarRecursos();
       window.UI.setUserName(window.Auth.getUserName());
       var startScreen = window.UI.screenFromPath(window.location.pathname);
       if (startScreen === 'login-page' || startScreen === 'first-access-page') startScreen = 'dashboard-page';
@@ -330,6 +373,7 @@
   window.printCert = printCert;
   window.logout = logout;
   window.showScreen = function (id, options) {
+    if (id === 'trilha-page' && recursosCarregados && !document.body.classList.contains('trilha-on')) id = 'dashboard-page';
     if (id === 'form-page') prefillForm();
     if (window.Avisos) window.Avisos.closeDropdown();
     if (window.Tutoriais) window.Tutoriais.closeModal();
@@ -341,6 +385,11 @@
       window.MeuSemestre.refresh();
     }
     if (id === 'tutoriais-page' && window.Tutoriais) window.Tutoriais.refresh();
+    if (id === 'tutoriais-page' && window.Central) window.Central.refresh();
+    if (id !== 'tutoriais-page' && window.Central) window.Central.close();
+    if (id === 'trilha-page' && window.Trilha) window.Trilha.refresh();
+    if (id === 'dashboard-page' && window.Trilha && document.body.classList.contains('trilha-on')) window.Trilha.refreshDashboard();
+    if (id !== 'trilha-page' && window.Trilha) window.Trilha.pause();
     if (id === 'atendimento-page' && window.Atendimento) window.Atendimento.refresh();
   };
 

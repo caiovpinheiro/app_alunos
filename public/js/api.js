@@ -82,8 +82,32 @@ window.Api = (function () {
     return request('/api/tutoriais', { headers: authHeaders() });
   }
 
+  async function getCentral() {
+    return request('/api/central', { headers: authHeaders() });
+  }
+
   async function getMeuSemestre() {
     return request('/api/meu-semestre', { headers: authHeaders() });
+  }
+
+  async function getRecursos() {
+    return request('/api/recursos', { headers: authHeaders() });
+  }
+
+  async function getTrilha() {
+    return request('/api/trilha', { headers: authHeaders() });
+  }
+
+  async function getTrilhaResumo() {
+    return request('/api/trilha/resumo', { headers: authHeaders() });
+  }
+
+  async function trilhaPost(acao, payload) {
+    return request('/api/trilha/' + acao, {
+      method: 'POST',
+      headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+      body: JSON.stringify(payload || {}),
+    });
   }
 
   async function getAtendimento() {
@@ -129,10 +153,15 @@ window.Api = (function () {
     countAvisosNaoLidas: countAvisosNaoLidas,
     markAvisoRead: markAvisoRead,
     listTutoriais: listTutoriais,
+    getCentral: getCentral,
     getMeuSemestre: getMeuSemestre,
     downloadPlanoPng: downloadPlanoPng,
     getPlanoImageUrl: getPlanoImageUrl,
     getAtendimento: getAtendimento,
+    getRecursos: getRecursos,
+    getTrilha: getTrilha,
+    getTrilhaResumo: getTrilhaResumo,
+    trilhaPost: trilhaPost,
     createIndicacao: createIndicacao,
   };
 })();

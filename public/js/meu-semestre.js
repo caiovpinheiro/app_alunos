@@ -97,7 +97,7 @@ window.MeuSemestre = (function () {
     var periodo = disc ? formatRange(disc.data_inicio, disc.data_fim) : '';
     var provaTxt = prova ? formatRange(prova.prova_inicio, prova.prova_fim) : '';
     var prazoTxt = prazo ? (prazo.titulo + ' · ' + formatDayMonth(prazo.data)) : '';
-    var payTxt = '1ª parcela dia 25 · demais até o dia 10';
+    var payTxt = 'Vence dia 25 · desconto até o dia 10';
 
     wrap.innerHTML =
       '<dl class="ms-dash-facts">' +
@@ -157,11 +157,7 @@ window.MeuSemestre = (function () {
     var prazoFinal = item.prazo ? 'Disponível até ' + formatDate(item.prazo) : '';
     var prazo = prazoPref || prazoFinal;
     var extra = prazoPref && prazoFinal ? prazoFinal : '';
-    var link = item.tutorial_categoria
-      ? '<button type="button" class="ms-text-link" data-open-tutoriais="' + escapeHtml(item.tutorial_categoria) + '">' +
-          escapeHtml(item.tutorial_hint || 'Ver tutoriais') +
-          ' <i data-lucide="chevron-right" class="w-4 h-4"></i></button>'
-      : '';
+    var link = guiaLink(item);
     return (
       '<article class="ms-obligation">' +
         '<span class="ms-obligation-icon"><i data-lucide="' + atividadeIcon(item.titulo) + '" class="w-5 h-5"></i></span>' +
@@ -197,6 +193,20 @@ window.MeuSemestre = (function () {
     );
   }
 
+  // Link de ajuda de um item: o nível da trilha que ensina o assunto; sem nível, os tutoriais.
+  function guiaLink(item) {
+    if (!item) return '';
+    if (item.trilha) {
+      return '<button type="button" class="ms-text-link" data-open-trilha="' + Number(item.trilha.nivel) + '">' +
+          escapeHtml(item.tutorial_hint ? item.tutorial_hint + ' · Nível ' + item.trilha.nivel + ' da trilha' : 'Aprenda no Nível ' + item.trilha.nivel + ' da trilha') +
+          ' <i data-lucide="chevron-right" class="w-4 h-4"></i></button>';
+    }
+    if (!item.tutorial_categoria) return '';
+    return '<button type="button" class="ms-text-link" data-open-tutoriais="' + escapeHtml(item.tutorial_categoria) + '">' +
+        escapeHtml(item.tutorial_hint || 'Ver tutoriais') +
+        ' <i data-lucide="chevron-right" class="w-4 h-4"></i></button>';
+  }
+
   function tutorialLinks(list) {
     var cats = {};
     (list || []).forEach(function (item) {
@@ -216,6 +226,24 @@ window.MeuSemestre = (function () {
       );
     }).join('') +
       '<button type="button" class="ms-secondary-btn" onclick="showScreen(\'tutoriais-page\')">Ver todos os tutoriais</button>';
+  }
+  function trilhaLinks(list) {
+    var niveis = {};
+    (list || []).forEach(function (item) {
+      if (item.trilha && !niveis[item.trilha.nivel]) niveis[item.trilha.nivel] = item.trilha;
+    });
+    var keys = Object.keys(niveis).sort(function (a, b) { return a - b; });
+    var html = keys.map(function (n) {
+      return (
+        '<button type="button" class="ms-guide-link" data-open-trilha="' + Number(n) + '">' +
+          '<span>Nível ' + Number(n) + ' · ' + escapeHtml(niveis[n].titulo) + '</span>' +
+          '<small class="ms-guide-level">Vídeo, resumo e perguntas</small>' +
+        '</button>'
+      );
+    }).join('');
+    html += '<button type="button" class="ms-secondary-btn" data-open-trilha="">Ver a trilha completa</button>';
+    html += ' <button type="button" class="ms-secondary-btn" data-open-tutoriais="">Consultar tutoriais</button>';
+    return html;
   }
 
   function renderPage() {
@@ -271,7 +299,7 @@ window.MeuSemestre = (function () {
           '</div>' +
           '<small>Mensalidades</small>' +
           '<h2>Vencimentos fixos</h2>' +
-          '<p>A 1ª parcela vence no <strong>dia 25</strong>. As demais devem ser pagas até o <strong>dia 10</strong> de cada mês.</p>' +
+          '<p>A mensalidade vence <strong>todo dia 25</strong>. Pague até o <strong>dia 10</strong> para ter o desconto. Na <strong>1ª mensalidade</strong>, o desconto vale até o dia 25.</p>' +
         '</article>';
 
     var avaliacaoHtml = avaliacao
@@ -280,19 +308,15 @@ window.MeuSemestre = (function () {
           '<small>Avaliação integrada</small>' +
           '<h3>' + escapeHtml(avaliacao.titulo) + '</h3>' +
           (avaliacao.prazo ? '<p>Prazo até <strong>' + escapeHtml(formatDate(avaliacao.prazo)) + '</strong></p>' : '') +
-          (avaliacao.tutorial_categoria
-            ? '<button type="button" class="ms-text-link" data-open-tutoriais="' + escapeHtml(avaliacao.tutorial_categoria) + '">' +
-                escapeHtml(avaliacao.tutorial_hint || 'Ver tutoriais') +
-                ' <i data-lucide="chevron-right" class="w-4 h-4"></i></button>'
-            : '') +
+          guiaLink(avaliacao) +
         '</article>'
       )
       : '';
 
     var financeNote =
       '<article class="ms-finance">' +
-        '<p>A <strong>1ª parcela</strong> vence no <strong>dia 25</strong>.</p>' +
-        '<p>As demais mensalidades devem ser pagas até o <strong>dia 10</strong> de cada mês.</p>' +
+        '<p>A mensalidade vence <strong>todo dia 25</strong>. Pague até o <strong>dia 10</strong> para ter o desconto.</p>' +
+        '<p>Na <strong>1ª mensalidade</strong>, o desconto vale até o <strong>dia 25</strong>.</p>' +
       '</article>';
 
     root.innerHTML =
@@ -331,12 +355,19 @@ window.MeuSemestre = (function () {
           '<div class="ms-section-title ms-compact"><div><p class="ms-eyebrow">Próximas datas</p><h3>Calendário</h3></div><i data-lucide="calendar-days" class="w-6 h-6"></i></div>' +
           (calendario.length ? calendario.map(calendarItem).join('') : '<p class="ms-muted">Sem datas cadastradas.</p>') +
         '</article>' +
-        '<article class="ms-guides">' +
-          '<p class="ms-eyebrow">Guias e tutoriais</p>' +
-          '<h3>Não sabe como começar?</h3>' +
-          '<p>Veja os tutoriais já disponíveis no portal sobre provas, atividades e financeiro.</p>' +
-          '<div class="ms-guide-list">' + tutorialLinks(cache.tutoriais) + '</div>' +
-        '</article>' +
+        (document.body.classList.contains('trilha-on')
+          ? '<article class="ms-guides">' +
+              '<p class="ms-eyebrow">Trilha EaD para Iniciantes</p>' +
+              '<h3>Não sabe como começar?</h3>' +
+              '<p>A trilha ensina passo a passo o que este semestre pede: AVA, provas, notas e pagamentos.</p>' +
+              '<div class="ms-guide-list">' + trilhaLinks(cache.tutoriais) + '</div>' +
+            '</article>'
+          : '<article class="ms-guides">' +
+              '<p class="ms-eyebrow">Guias e tutoriais</p>' +
+              '<h3>Não sabe como começar?</h3>' +
+              '<p>Veja os tutoriais já disponíveis no portal sobre provas, atividades e financeiro.</p>' +
+              '<div class="ms-guide-list">' + tutorialLinks(cache.tutoriais) + '</div>' +
+            '</article>') +
       '</section>' +
       '<section class="ms-section">' +
         '<div class="ms-section-title"><div><p class="ms-eyebrow">Financeiro</p><h3>Mensalidades</h3></div></div>' +

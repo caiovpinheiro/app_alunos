@@ -1,0 +1,17 @@
+Primeira vez entrando? Dá um frio na barriga, mas é mais fácil do que parece.
+
+Baixe dois aplicativos: o Duda e o Microsoft Authenticator, o do cadeado azul.
+
+No Duda, digite o CPF. Na primeira vez, toque em Não sei meus dados de acesso.
+
+O Duda mostra o seu e-mail acadêmico e a primeira senha. Anote os dois num papel.
+
+Depois, você cria a sua senha nova. Anote também: ela vale pro curso inteiro.
+
+O Authenticator confirma que é você: digite o número que aparece e toque em SIM.
+
+Pronto! No Duda, o botão Acessar Blackboard abre as suas aulas.
+
+E o seu RGM, o número da matrícula, fica no cartão do curso.
+
+Vai pedir e-mail e senha algumas vezes. É normal! O passo a passo completo está no Nível 1 da Trilha.

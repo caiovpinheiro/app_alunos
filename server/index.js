@@ -11,11 +11,14 @@ const atendimento = require('./atendimento');
 const adminAuth = require('./adminAuth');
 const { UNIDADES } = require('./unidades');
 const matriculados = require('./matriculados');
+const webchat = require('./webchat');
 const syncAcessos = require('./sync-acessos');
 const meuSemestre = require('./meuSemestre');
 const planoImagem = require('./planoImagem');
 const planoMateriasImagem = require('./planoMateriasImagem');
 const materiasAlunos = require('./materiasAlunos');
+const trilha = require('./trilha');
+const central = require('./central');
 const app = express();
 app.set('trust proxy', 1);
 const PORT = Number(process.env.PORT) || 80;
@@ -529,7 +532,8 @@ app.get('/api/tutoriais', authMiddleware, async (req, res) => {
   if (!pool) return unavailable(res);
   try {
     const list = await tutoriais.listPublic(pool);
-    return res.json({ success: true, categorias: tutoriais.CATEGORIAS, tutoriais: list });
+    const comTrilha = trilha.liberadaPara(req.aluno);
+    return res.json({ success: true, categorias: tutoriais.CATEGORIAS, tutoriais: comTrilha ? list : trilha.semTrilha(list) });
   } catch (err) {
     console.error('Falha ao listar tutoriais:', err.message);
     return res.status(500).json({ success: false, message: 'Não foi possível carregar os tutoriais.' });
@@ -550,11 +554,152 @@ app.get('/api/tutoriais/:id', authMiddleware, async (req, res) => {
   }
 });
 
+// ---------- Trilha EaD para Iniciantes ----------
+
+// Recursos liberados para o aluno logado (a tela usa para mostrar ou esconder a trilha).
+app.get('/api/recursos', authMiddleware, (req, res) => {
+  res.json({ success: true, trilha: trilha.liberadaPara(req.aluno), webchat: webchat.configPara(req.aluno) });
+});
+
+// Enquanto a trilha estiver em teste, só as contas de TRILHA_LIBERADA_PARA acessam.
+app.use('/api/trilha', authMiddleware, (req, res, next) => {
+  if (trilha.liberadaPara(req.aluno)) return next();
+  return res.status(404).json({ success: false, message: 'Recurso não encontrado.' });
+});
+
+let trilhaSchemaReady = null;
+function ensureTrilha() {
+  if (!trilhaSchemaReady) {
+    trilhaSchemaReady = trilha.ensureSchema(pool).catch((err) => {
+      trilhaSchemaReady = null;
+      throw err;
+    });
+  }
+  return trilhaSchemaReady;
+}
+
+async function trilhaWhatsapp(alunoId) {
+  try {
+    const info = await atendimento.getAtendimento(pool, alunoId);
+    return info && info.academico ? info.academico : null;
+  } catch (err) {
+    return null;
+  }
+}
+
+app.get('/api/trilha', authMiddleware, async (req, res) => {
+  if (!pool) return unavailable(res);
+  try {
+    await ensureTrilha();
+    const [whatsapp, progresso] = await Promise.all([
+      trilhaWhatsapp(req.aluno.id),
+      trilha.getProgresso(pool, req.aluno.id),
+    ]);
+    const conteudo = trilha.publicContent(whatsapp && whatsapp.telefone);
+    // Link do polo só quando o número tem DDD; senão, o do setor acadêmico.
+    conteudo.whatsapp_url = whatsapp && whatsapp.url && trilha.formatPhone(whatsapp.telefone)
+      ? whatsapp.url
+      : 'https://wa.me/5511915184535';
+    return res.json({ success: true, conteudo, progresso, nome: req.aluno.nome, rgm: req.aluno.rgm });
+  } catch (err) {
+    console.error('Falha ao carregar trilha:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível carregar a trilha.' });
+  }
+});
+
+// Central de ajuda: mesma liberação da trilha (contas de TRILHA_LIBERADA_PARA).
+app.get('/api/central', authMiddleware, async (req, res) => {
+  if (!trilha.liberadaPara(req.aluno)) return res.status(404).json({ success: false, message: 'Recurso não encontrado.' });
+  const whatsapp = pool ? await trilhaWhatsapp(req.aluno.id) : null;
+  const numero = (whatsapp && trilha.formatPhone(whatsapp.telefone)) || '(11) 91518-4535';
+  const conteudo = central.publicContent(numero, (n) => (trilha.NIVEIS[n - 1] ? trilha.NIVEIS[n - 1].t : null));
+  conteudo.whatsapp = numero;
+  conteudo.whatsapp_url = whatsapp && whatsapp.url && trilha.formatPhone(whatsapp.telefone)
+    ? whatsapp.url
+    : 'https://wa.me/5511915184535';
+  return res.json({ success: true, conteudo });
+});
+
+async function trilhaAction(req, res, fn) {
+  if (!pool) return unavailable(res);
+  const nivel = trilha.nivelValido(req.body?.nivel);
+  if (!nivel) return res.status(400).json({ success: false, message: 'Nível inválido.' });
+  try {
+    await ensureTrilha();
+    const out = await fn(nivel);
+    if (!out) return res.status(400).json({ success: false, message: 'Dados inválidos.' });
+    const progresso = await trilha.getProgresso(pool, req.aluno.id);
+    return res.json({ success: true, ...out, pontos: progresso.pontos, concluidos: progresso.concluidos });
+  } catch (err) {
+    console.error('Falha ao salvar trilha:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível salvar seu progresso.' });
+  }
+}
+
+app.get('/api/trilha/resumo', authMiddleware, async (req, res) => {
+  if (!pool) return unavailable(res);
+  try {
+    await ensureTrilha();
+    const p = await trilha.getProgresso(pool, req.aluno.id);
+    const atual = p.niveis.findIndex((n) => !n.concluido);
+    return res.json({
+      success: true,
+      total: trilha.NIVEIS.length,
+      concluidos: p.concluidos,
+      pontos: p.pontos,
+      maximo: trilha.MAX_PONTOS,
+      atual: atual === -1 ? null : { nivel: atual + 1, titulo: trilha.NIVEIS[atual].t },
+      comecou: p.niveis.some((n) => n.video_ok || n.pulou_video || n.partes_vistas.length || Object.keys(n.respostas).length),
+    });
+  } catch (err) {
+    console.error('Falha no resumo da trilha:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível carregar a trilha.' });
+  }
+});
+
+app.post('/api/trilha/video', authMiddleware, (req, res) =>
+  trilhaAction(req, res, (nivel) => trilha.marcarVideo(pool, req.aluno.id, nivel, req.body?.parte)));
+
+app.post('/api/trilha/pular', authMiddleware, (req, res) =>
+  trilhaAction(req, res, (nivel) => trilha.pularVideo(pool, req.aluno.id, nivel)));
+
+app.post('/api/trilha/travei', authMiddleware, (req, res) =>
+  trilhaAction(req, res, (nivel) => trilha.marcarTravei(pool, req.aluno.id, nivel, req.body?.parte)));
+
+app.post('/api/trilha/resposta', authMiddleware, (req, res) =>
+  trilhaAction(req, res, (nivel) => trilha.responder(pool, req.aluno.id, nivel, req.body?.pergunta, req.body?.opcao)));
+
+app.post('/api/trilha/tarefa', authMiddleware, async (req, res) => {
+  if (!pool) return unavailable(res);
+  try {
+    await ensureTrilha();
+    const ok = await trilha.marcarTarefa(pool, req.aluno.id, String(req.body?.tarefa || ''), Boolean(req.body?.feita));
+    if (!ok) return res.status(400).json({ success: false, message: 'Tarefa inválida.' });
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Falha ao salvar tarefa da trilha:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível salvar a tarefa.' });
+  }
+});
+
+app.post('/api/trilha/reiniciar', authMiddleware, async (req, res) => {
+  if (!pool) return unavailable(res);
+  try {
+    await ensureTrilha();
+    await trilha.reiniciar(pool, req.aluno.id);
+    const progresso = await trilha.getProgresso(pool, req.aluno.id);
+    return res.json({ success: true, progresso });
+  } catch (err) {
+    console.error('Falha ao reiniciar trilha:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível reiniciar a trilha.' });
+  }
+});
+
 app.get('/api/meu-semestre', authMiddleware, async (req, res) => {
   if (!pool) return unavailable(res);
   try {
     const data = await meuSemestre.getMeuSemestre(pool, req.aluno.id);
-    return res.json({ success: true, ...data });
+    return res.json({ success: true, ...(trilha.liberadaPara(req.aluno) ? data : trilha.semTrilha(data)) });
   } catch (err) {
     console.error('Falha ao carregar Meu Semestre:', err.message);
     return res.status(500).json({ success: false, message: 'Não foi possível carregar o semestre.' });
@@ -990,6 +1135,38 @@ app.delete('/api/admin/tutoriais/:id', requireAdmin, async (req, res) => {
   }
 });
 
+app.get('/api/admin/trilha', requireAdmin, async (req, res) => {
+  if (!pool) return unavailable(res);
+  try {
+    await ensureTrilha();
+    return res.json({ success: true, ...(await trilha.resumoAdmin(pool)) });
+  } catch (err) {
+    console.error('Falha no resumo da trilha:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível carregar a trilha.' });
+  }
+});
+
+app.get('/api/admin/trilha/export.csv', requireAdmin, async (req, res) => {
+  if (!pool) return unavailable(res);
+  try {
+    await ensureTrilha();
+    const rows = await trilha.exportAlunos(pool);
+    const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const total = trilha.NIVEIS.length;
+    const lines = ['nome;rgm;email;niveis_concluidos;total_niveis;pontos;ultimo_acesso'];
+    rows.forEach((r) => {
+      lines.push([r.nome, r.rgm, r.email, r.niveis_concluidos, total, r.pontos,
+        r.ultimo_acesso ? new Date(r.ultimo_acesso).toISOString() : ''].map(esc).join(';'));
+    });
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="trilha-alunos.csv"');
+    return res.send(String.fromCharCode(0xfeff) + lines.join('\n'));
+  } catch (err) {
+    console.error('Falha no CSV da trilha:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível exportar.' });
+  }
+});
+
 app.get('/api/admin/contatos', requireAdmin, async (req, res) => {
   if (!pool) return unavailable(res);
   try {
@@ -1064,6 +1241,7 @@ const STUDENT_PAGES = [
   '/meu-semestre',
   '/avisos',
   '/tutoriais',
+  '/trilha',
   '/atendimento',
   '/certificado',
   '/sucesso',
@@ -1098,7 +1276,10 @@ async function start() {
   try {
     await db.ensureSchema(pool);
     await db.seedAlunoIfEmpty(pool);
-    await tutoriais.seedIfEmpty(pool);
+    // Os tutoriais de exemplo só saem do ar quando a trilha for liberada para todos.
+    if (trilha.liberadaParaTodos()) await tutoriais.retirarExemplos(pool);
+    else await tutoriais.seedIfEmpty(pool);
+    await ensureTrilha();
     await adminAuth.seedAdminIfEmpty(pool);
   } catch (err) {
     console.error('Banco indisponível no boot:', err.message);

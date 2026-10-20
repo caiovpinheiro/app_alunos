@@ -1,0 +1,17 @@
+Marque a caixinha do mês que você quer pagar.
+
+Do lado, aparece o Total. Esse é o valor que você paga.
+
+Este aviso quer dizer: use sempre o último boleto ou código que você gerou. Os antigos não valem.
+
+O jeito mais fácil é o Pix. Toque em Pagar com pix.
+
+Toque em Copiar Código.
+
+O código vale só 15 minutos. Pague logo em seguida.
+
+Abra o app do seu banco e toque em Pix copia e cola.
+
+Cole o código, confira se o valor é o mesmo do Total e confirme.
+
+O tempo acabou? É só tocar em Pagar com pix de novo.

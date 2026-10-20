@@ -7,6 +7,73 @@
 - Push em `main` dispara `.github/workflows/deploy.yml`: publica `ghcr.io/caiovpinheiro/app_alunos:latest` e chama o webhook do EasyPanel (`secrets.EASYPANEL_DEPLOY_APP`).
 - Não invente outro fluxo de deploy (n8n, branch de homologação, etc.) sem pedido explícito.
 
+### 2026-10-17 - Chat do CRM (webchat) no portal, só para contas de teste
+
+**Decisão**
+- O script do webchat do CRM (`embed.js` + `data-key`) **não fica no HTML**. `GET /api/recursos` devolve `webchat: { src, key }` só para as contas em `WEBCHAT_LIBERADO_PARA` (Environment do EasyPanel): RGM ou e-mail, separados por vírgula. `*` = todos. **Vazio = ninguém** (padrão seguro, igual à trilha). Quem não está na lista recebe `webchat: null` e nada é carregado.
+- `app.js` monta a tag `<script async src data-key>` uma vez, depois do login, a partir desse retorno (`server/webchat.js`). No logout, se o chat estava na página, recarrega em `/login` (o widget não tem como ser descarregado).
+- `WEBCHAT_EMBED_URL` e `WEBCHAT_KEY` (o `data-key` do embed) vêm **só** do Environment do EasyPanel; não há valor padrão no código. Sem os dois, o chat não carrega.
+
+**Contexto**
+- Pedido: colocar o chat no site, mas só o aluno de teste deve ver. O CRM só aceita ser embutido em `app.cruzeiroead.com.br` (CSP `frame-ancestors`), então em `localhost` o script carrega mas o widget não abre; o teste real é em produção.
+
+**Impacto**
+- Para ligar: no EasyPanel, `WEBCHAT_EMBED_URL` (URL do `embed.js`), `WEBCHAT_KEY` (o `data-key`) e `WEBCHAT_LIBERADO_PARA=<RGM ou e-mail do aluno de teste>`, e reiniciar. Para todos: `*`. Para desligar: apagar a variável.
+
+### 2026-10-15 - Trilha é o guia principal; tutoriais viram consulta
+
+**Decisão**
+- Mapa assunto → nível em `server/trilha.js` (`guiaTrilha`): categoria do tutorial (Primeiros passos 1, Área do Aluno/Documentos 2, Blackboard/Atividades 3, Provas 4, Financeiro 5); sem categoria, o tipo do item do Meu Semestre (atividade 3, disciplina/avaliação integrada 4).
+- `/api/tutoriais` e `/api/meu-semestre` mandam `trilha: { nivel, titulo }` em cada item. Botões `data-open-trilha="N"` abrem `/trilha#nivel-N`, rolam até o nível e o deixam aberto mesmo sem terminar o anterior (consulta). O link funciona colado direto na barra.
+- Meu Semestre: links de atividades/avaliação e o quadro "Não sabe como começar?" apontam para os níveis da trilha; tutoriais ficam como botão secundário.
+- `/tutoriais`: faixa "Começando agora? Faça a trilha", link do nível em cada card e estado vazio que leva à trilha. No painel, o card Tutoriais passa a "consulta rápida" com botão de texto.
+- Os 9 tutoriais de exemplo não são mais criados no boot. `tutoriais.retirarExemplos` desliga (`ativo = FALSE`, sem apagar) só as linhas com título **e** vídeo de teste originais; tutorial editado no admin com vídeo real fica no ar.
+
+**Contexto**
+- Trilha e tutoriais ensinavam os mesmos assuntos em dois lugares, com duas portas no painel; o Meu Semestre só conhecia os tutoriais, que eram todos o mesmo vídeo de exemplo.
+
+**Alternativas descartadas**
+- Apagar `csu_tutoriais` ou a tela de tutoriais: o admin continua podendo publicar vídeos curtos de consulta.
+- Coluna `nivel_trilha` no banco: o mapa por categoria cobre os casos sem migração.
+
+**Impacto**
+- No primeiro boot após o deploy, os exemplos saem do ar e `/tutoriais` mostra o estado vazio até o admin cadastrar tutoriais reais. Para reativar um exemplo, troque o vídeo no admin (senão o boot desliga de novo).
+
+### 2026-10-15 - Trilha "EaD Digital para Iniciantes" (`/trilha`)
+
+**Decisão**
+- Nova tela `trilha-page` (`/trilha`) + card no dashboard + aba **Trilha** no `/admin`. Stack atual: JS vanilla (`public/js/trilha.js`), CSS escopado em `.trilha` (`public/css/trilha.css`), Express e Postgres.
+- Conteúdo (7 níveis: resumo, dicas, telas, perguntas; o Nível 1 tem 4 partes de vídeo) em `server/assets/trilha.json`, exportado do artefato original. Mudar texto = commit.
+- `GET /api/trilha` envia o conteúdo **sem gabarito**. `POST /api/trilha/resposta` corrige no servidor e só devolve a resposta certa e a explicação depois do acerto. Pontos calculados no servidor: 100 de primeira, 40 depois, 50 pelo vídeo.
+- Progresso por aluno em `csu_trilha_progresso` (PK `aluno_id, nivel`; partes vistas, vídeo ok, pulou, respostas, "Travei") e tarefas da semana em `csu_trilha_tarefas`. Criadas com `CREATE TABLE IF NOT EXISTS` no boot e na primeira chamada. Sempre por `req.aluno.id`.
+- Vídeos MP4 (~100 MB), capas, legendas `.vtt` e narração `.txt` em `public/trilha-midia/videos/`; telas WebP em `public/trilha-midia/telas/`. Servidos pelo `express.static`, com suporte a Range. Pasta **não** se chama `/trilha` para não colidir com a rota da tela.
+- WhatsApp da ajuda vem de `atendimento.getAtendimento` (número do polo). Sem DDD válido, usa (11) 91518-4535.
+- Preferências de leitura (letra maior, vídeo mais devagar, ver tudo) ficam no `localStorage` do aparelho (`csu-trilha-prefs`).
+- Admin: `GET /api/admin/trilha` (por nível, perguntas com mais erros, onde tocaram "Travei") e `GET /api/admin/trilha/export.csv` (para o CRM chamar quem parou).
+
+**Contexto**
+- A trilha vivia num artefato público com progresso só no `localStorage`. No portal, o aluno logado continua de qualquer aparelho, e a equipe vê onde a turma trava.
+
+**Alternativas descartadas**
+- YouTube não listado (pedido: vídeos no próprio servidor).
+- Gabarito no front (aluno veria a resposta no código).
+- Volume do EasyPanel para os vídeos (exigiria upload manual; o repositório mantém tudo versionado).
+
+**Impacto**
+- A imagem Docker cresce ~100 MB por causa dos vídeos. Trocar um vídeo = substituir o arquivo em `public/trilha-midia/videos/` com o mesmo nome e fazer push.
+- O progresso do artefato antigo não migra (era `localStorage` de outro domínio).
+
+### 2026-10-15 - Trilha liberada só para contas de teste (`TRILHA_LIBERADA_PARA`)
+
+**Decisão**
+- A trilha e tudo que aponta para ela só aparecem para contas em `TRILHA_LIBERADA_PARA` (Environment do EasyPanel): RGM ou e-mail, separados por vírgula. `*` = todos. **Vazio = ninguém** (padrão seguro).
+- Quem não está na lista vê o portal como antes: sem card da trilha, sem faixa nos Tutoriais, sem links "Nível N da trilha" nos Tutoriais/Meu Semestre (o servidor remove o campo `trilha`), textos antigos de volta. As rotas `/api/trilha*` respondem 404 e `/trilha` volta ao início.
+- `GET /api/recursos` informa à tela se a conta tem a trilha (`body.trilha-on`; CSS `.so-trilha` / `.sem-trilha`).
+- Os 9 tutoriais de exemplo só são desligados no boot quando `TRILHA_LIBERADA_PARA=*`; antes disso o boot volta a usar `seedIfEmpty` (nada muda em produção).
+
+**Impacto**
+- Para liberar para todos: `TRILHA_LIBERADA_PARA=*` no EasyPanel e reiniciar. Para desligar: apagar a variável.
+
 ### 2026-09-02 - Deploy na `main` via GitHub Actions + EasyPanel
 
 **Decisão**

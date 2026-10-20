@@ -1,0 +1,13 @@
+Quer saber se passou? Veja as suas notas na Área do Aluno.
+
+Toque em Vida Acadêmica.
+
+Toque em Minhas Notas - Detalhado.
+
+Em Selecione o ano letivo, escolha o semestre.
+
+Cada matéria mostra a Média Final e o Resultado.
+
+Toque em ver mais detalhes. A1 é a prova. A2 são os exercícios do AVA.
+
+Ficou com menos de 6? Calma, tem a Avaliação Final. Veja a data no Calendário Acadêmico.

@@ -1,0 +1,745 @@
+{
+ "versao": 1,
+ "pontos_video": 50,
+ "pontos_certa_1a": 100,
+ "pontos_certa_depois": 40,
+ "niveis": [
+  {
+   "t": "Primeiro acesso",
+   "short": "Entrar",
+   "rank": "Já sei entrar",
+   "learn": [
+    "Você vai precisar de <b>dois aplicativos</b> no celular: o <b>Duda</b> (estrela branca no fundo azul) e o <b>Microsoft Authenticator</b> (cadeado azul). Baixe os dois na Play Store (Android) ou na App Store (iPhone).",
+    "A Cruzeiro do Sul cria um <b>e-mail só seu</b>, chamado e-mail acadêmico. Ele termina em <b>@cs.cruzeirodosul.edu.br</b> (em alguns cursos, @cs.unicid.edu.br, outra marca do grupo). Não é o seu Gmail nem o seu Hotmail.",
+    "<b>Parte 1. Descobrir e-mail e senha.</b> Abra o Duda, digite seu CPF, <b>marque a caixinha</b> e toque em Continuar. Toque em <b>Não sei meus dados de acesso</b> (o botão branco). Digite só o seu <b>primeiro nome</b>, depois o CPF de novo, e toque na <b>seta azul</b>. O Duda mostra seu e-mail e sua primeira senha: <b>anote os dois num papel</b> e toque em Fazer login.",
+    "<b>Parte 2. Criar a sua senha.</b> Abre uma tela da Microsoft. Entre com o e-mail e a senha anotados. Em <b>Senha atual</b>, coloque a senha anotada; em <b>Nova senha</b> e <b>Confirmar senha</b>, crie a sua. <b>Anote a senha nova</b>: ela vale para o curso inteiro.",
+    "<b>Parte 3. Ligar o Authenticator.</b> Saia do Duda (sem fechar) e abra o Authenticator. Toque em <b>Entrar</b>, depois em <b>Use outra conta</b>, e entre com o e-mail e a senha nova. Toque em <b>Abrir navegador</b>, entre de novo e vá em <b>Avançar</b> e <b>Próximo</b> até aparecer o link azul <b>Emparelhe a sua conta com o aplicativo</b>. Toque nele.",
+    "<b>Parte 4. Entrar no Duda.</b> Volte ao Duda, digite o CPF e toque em <b>Fazer login</b> (o botão azul). Vai aparecer um <b>número</b>: saia do Duda sem fechar, abra o Authenticator, digite o número e toque em <b>SIM</b>.",
+    "Pronto! Na tela inicial do Duda, o botão <b>Acessar Blackboard</b> abre as aulas, e o seu <b>RGM</b> (número de matrícula) aparece no cartão do curso."
+   ],
+   "tip": "Vai pedir e-mail e senha várias vezes (até 4). É normal! Antes de começar, deixe papel e caneta do seu lado. Nos vídeos, a Ana Souza é uma aluna inventada: use os SEUS dados.",
+   "formula": null,
+   "tallShots": true,
+   "shots": [
+    {
+     "img": "d01",
+     "w": 486,
+     "h": 864,
+     "cap": "<b>Os dois aplicativos.</b> Duda (estrela) e Microsoft Authenticator (cadeado)."
+    },
+    {
+     "img": "d02",
+     "w": 486,
+     "h": 864,
+     "cap": "<b>Primeira vez:</b> toque em Não sei meus dados de acesso, o botão branco."
+    },
+    {
+     "img": "d03",
+     "w": 486,
+     "h": 864,
+     "cap": "<b>Seu e-mail e sua primeira senha.</b> Anote os dois num papel."
+    },
+    {
+     "img": "d04",
+     "w": 486,
+     "h": 864,
+     "cap": "<b>Criar a senha nova.</b> Escreva igualzinho nos dois campos."
+    },
+    {
+     "img": "d05",
+     "w": 486,
+     "h": 864,
+     "cap": "<b>Ligar o Authenticator.</b> Toque no link azul Emparelhe a sua conta."
+    },
+    {
+     "img": "d06",
+     "w": 486,
+     "h": 864,
+     "cap": "<b>Aprovar a entrada.</b> Digite o número que apareceu no Duda e toque em SIM."
+    },
+    {
+     "img": "d07",
+     "w": 486,
+     "h": 864,
+     "cap": "<b>Deu certo!</b> O botão Acessar Blackboard abre as aulas."
+    }
+   ],
+   "qs": [
+    {
+     "q": "Você vai fazer o primeiro acesso. Quais aplicativos precisa ter no celular?",
+     "opts": [
+      "Só o Duda",
+      "O Duda e o Microsoft Authenticator",
+      "O WhatsApp e o Gmail",
+      "Nenhum, é só pelo site"
+     ],
+     "certa": 1,
+     "exp": "O Duda é o app da faculdade, e o Authenticator confirma que é você mesmo quem está entrando. Sem ele, não dá para terminar o acesso."
+    },
+    {
+     "q": "É a sua primeira vez no Duda. Depois do CPF aparecem dois botões. Qual você toca?",
+     "opts": [
+      "Fazer login",
+      "Não sei meus dados de acesso",
+      "Nenhum, fecho o app",
+      "Esqueci minha senha"
+     ],
+     "certa": 1,
+     "exp": "Na primeira vez você ainda não sabe o e-mail nem a senha. O botão Não sei meus dados de acesso mostra os dois. O Fazer login é para depois."
+    },
+    {
+     "q": "Apareceu o número 14 no Duda, pedindo para aprovar a entrada. O que você faz?",
+     "opts": [
+      "Fecha o Duda e começa tudo de novo",
+      "Sai do Duda sem fechar, abre o Authenticator, digita 14 e toca em SIM",
+      "Toca em NÃO, NÃO SOU EU",
+      "Digita 14 no lugar da senha"
+     ],
+     "certa": 1,
+     "exp": "O número confirma que é você. Ele é digitado no Authenticator, e o Duda precisa continuar aberto por trás."
+    }
+   ],
+   "parts": [
+    {
+     "t": "Descobrir e-mail e senha",
+     "v": "/trilha-midia/videos/nivel1_parte1",
+     "erro": "O botão Continuar está cinza? Marque a caixinha da política de privacidade. Apareceu a tela da Microsoft pedindo e-mail e senha? Você tocou em Fazer login: volte e toque em Não sei meus dados de acesso, o botão branco."
+    },
+    {
+     "t": "Criar a sua senha",
+     "v": "/trilha-midia/videos/nivel1_parte2",
+     "erro": "A senha nova não foi aceita? Confira se ela está igualzinha nos dois campos e siga as regras que aparecem na tela. A senha anotada não funcionou? Fale com o setor acadêmico pelo WhatsApp {whatsapp}."
+    },
+    {
+     "t": "Ligar o Authenticator",
+     "v": "/trilha-midia/videos/nivel1_parte3",
+     "erro": "Tocou em Leia um código QR? Toque em Cancelar e escolha Entrar. Não achou o link? Procure, no meio da página, o texto azul Emparelhe a sua conta com o aplicativo."
+    },
+    {
+     "t": "Entrar no Duda",
+     "v": "/trilha-midia/videos/nivel1_parte4",
+     "erro": "Fechou o Duda sem querer? Abra de novo e faça o login outra vez: vai aparecer um número novo. O aviso não chegou? Abra o Authenticator e deslize a tela para baixo."
+    }
+   ]
+  },
+  {
+   "t": "Conhecendo a Área do Aluno",
+   "short": "Área do Aluno",
+   "rank": "Conheço a Área do Aluno",
+   "learn": [
+    "A <b>Área do Aluno</b> é o site da sua matrícula. No computador, as opções ficam numa coluna do lado esquerdo da tela.",
+    "<b>Vida Acadêmica</b>: suas notas, o calendário, o manual do aluno e o lugar onde se fazem as provas (Plataforma de Prova).",
+    "<b>Calendário Acadêmico</b>: uma tabela com as datas das provas, dos prazos e dos feriados. Olhe todo mês.",
+    "<b>CAA On-line</b>: é o balcão de atendimento pela internet. Você faz um pedido (uma declaração, por exemplo) e recebe um <b>número de protocolo</b>, que serve para acompanhar o pedido.",
+    "<b>Minha Conta</b>: onde você muda telefone, endereço e e-mail.",
+    "<b>Documentos Pendentes</b>: mostra se a faculdade já aceitou seus documentos. Verde com a palavra <b>Entregue</b> quer dizer tudo certo. Para enviar, tire uma foto bem nítida do documento ou mande em PDF, com até <b>5 MB</b> (uma foto comum de celular costuma caber)."
+   ],
+   "tip": "Muito importante: documento faltando pode cancelar o curso. Confira hoje se os seus estão como Entregue. A conferência pode levar até 90 dias.",
+   "formula": null,
+   "tallShots": false,
+   "shots": [
+    {
+     "img": "t11",
+     "w": 1800,
+     "h": 892,
+     "cap": "<b>Página inicial da Área do Aluno.</b> As opções ficam na coluna escura da esquerda."
+    },
+    {
+     "img": "t12",
+     "w": 1098,
+     "h": 1100,
+     "cap": "<b>Vida Acadêmica.</b> Notas, provas, biblioteca, diploma e documentos."
+    },
+    {
+     "img": "t13a",
+     "w": 1247,
+     "h": 619,
+     "cap": "<b>Calendário Acadêmico 2025.</b> Datas de provas e prazos, mês a mês."
+    },
+    {
+     "img": "t17",
+     "w": 443,
+     "h": 401,
+     "cap": "<b>CAA Online.</b> Fazer um pedido, acompanhar e pagar."
+    },
+    {
+     "img": "t65",
+     "w": 1211,
+     "h": 448,
+     "cap": "<b>Documentos Pendentes.</b> Verde com Entregue = documento aceito."
+    }
+   ],
+   "qs": [
+    {
+     "q": "Você precisa de uma declaração da faculdade e quer acompanhar o pedido. Onde pede?",
+     "opts": [
+      "Na Biblioteca",
+      "No CAA On-line, que dá um número de protocolo",
+      "Por e-mail para qualquer professor",
+      "No Calendário"
+     ],
+     "certa": 1,
+     "exp": "O CAA On-line é o atendimento pela internet: registra o pedido e dá um protocolo para acompanhar."
+    },
+    {
+     "q": "Onde você descobre em que dia vai ser a prova?",
+     "opts": [
+      "No Calendário Acadêmico",
+      "No boleto",
+      "Na rematrícula",
+      "No Office"
+     ],
+     "certa": 0,
+     "exp": "O Calendário Acadêmico mostra as datas de provas, prazos e feriados."
+    },
+    {
+     "q": "O site avisou que o seu arquivo é grande demais (8 MB). O que você faz?",
+     "opts": [
+      "Envia de novo do mesmo jeito",
+      "Tira uma nova foto ou diminui o arquivo até ficar com menos de 5 MB",
+      "Desiste de enviar",
+      "Manda o documento pelo WhatsApp de um colega"
+     ],
+     "certa": 1,
+     "exp": "O limite é 5 MB. Tirar uma nova foto ou usar um aplicativo que diminui o PDF resolve."
+    }
+   ],
+   "video": "/trilha-midia/videos/nivel2"
+  },
+  {
+   "t": "Estudando no AVA",
+   "short": "Aulas (AVA)",
+   "rank": "Sei estudar no AVA",
+   "learn": [
+    "O <b>AVA</b> é o site onde ficam as aulas. Às vezes ele aparece com o nome <b>Blackboard</b>: é a mesma coisa.",
+    "Como entrar: na Área do Aluno, toque em <b>Acesso ao Ambiente Virtual</b>. Ou, no app Duda, toque em <b>Acessar Blackboard</b>.",
+    "Cada matéria (o AVA chama de disciplina) dura <b>um mês</b>. Toque em <b>Disciplinas</b> para ver as matérias do mês. Às vezes tem mais de uma no mesmo mês.",
+    "A primeira matéria se chama <b>Ambientação Digital</b> e ensina a usar o AVA. Ela aparece em até <b>3 dias (72 horas)</b> depois da matrícula. Comece por ela.",
+    "Dentro da matéria, o conteúdo vem em partes chamadas <b>Unidades</b>. Cada uma tem um texto, uma videoaula e uma <b>Atividade de Sistematização</b>, que é um exercício que vale nota.",
+    "Ficou com dúvida? Toque em <b>Fale com a Tutoria</b> e mande uma mensagem. O tutor é o professor que acompanha você.",
+    "Leia sempre os <b>Avisos</b> da matéria. É lá que o tutor dá os recados importantes."
+   ],
+   "tip": "Em Recursos Gerais tem a Biblioteca A: livros digitais de graça, que o próprio site pode ler em voz alta.",
+   "formula": null,
+   "tallShots": false,
+   "shots": [
+    {
+     "img": "t24",
+     "w": 1413,
+     "h": 767,
+     "cap": "<b>Suas matérias.</b> Separadas por mês: Março 2025, Abril 2025..."
+    },
+    {
+     "img": "t26",
+     "w": 1290,
+     "h": 558,
+     "cap": "<b>Ambientação Digital.</b> A primeira matéria, que ensina a usar o AVA."
+    },
+    {
+     "img": "t25",
+     "w": 1800,
+     "h": 859,
+     "cap": "<b>Dentro da matéria.</b> Apresentação, Conteúdo, Fale com a Tutoria e Recursos Gerais."
+    },
+    {
+     "img": "t43",
+     "w": 715,
+     "h": 607,
+     "cap": "<b>Unidades.</b> Texto, videoaula e o exercício, com a data de entrega."
+    },
+    {
+     "img": "t60a",
+     "w": 722,
+     "h": 364,
+     "cap": "<b>Fale com a Tutoria.</b> Para mandar suas dúvidas."
+    },
+    {
+     "img": "t58",
+     "w": 726,
+     "h": 454,
+     "cap": "<b>Recursos Gerais.</b> Cruzeiro Play e Biblioteca A."
+    },
+    {
+     "img": "t55",
+     "w": 1054,
+     "h": 483,
+     "cap": "<b>Avisos.</b> Recados do tutor sobre exercícios e notas."
+    }
+   ],
+   "qs": [
+    {
+     "q": "Você acabou de se matricular e ainda não vê nenhuma matéria no AVA. É normal?",
+     "opts": [
+      "Não, o curso foi cancelado",
+      "Sim, a primeira matéria aparece em até 72 horas (3 dias)",
+      "Só aparece daqui a 30 dias",
+      "Precisa pagar uma taxa extra"
+     ],
+     "certa": 1,
+     "exp": "A Ambientação Digital aparece em até 72 horas depois que a matrícula é confirmada."
+    },
+    {
+     "q": "O exercício da Unidade I diz: entregar até 01/03. De que mês é essa matéria?",
+     "opts": [
+      "Janeiro",
+      "Fevereiro",
+      "Março",
+      "Abril"
+     ],
+     "certa": 1,
+     "exp": "O prazo dos exercícios é sempre o dia 1º do mês seguinte. Entrega em 1º de março = matéria de fevereiro."
+    },
+    {
+     "q": "Você não entendeu uma parte da matéria. O que faz?",
+     "opts": [
+      "Toca em Fale com a Tutoria e manda sua dúvida",
+      "Vai no Financeiro",
+      "Faz a rematrícula",
+      "Espera a prova"
+     ],
+     "certa": 0,
+     "exp": "O tutor responde as dúvidas da matéria dentro do AVA."
+    }
+   ],
+   "video": "/trilha-midia/videos/nivel3"
+  },
+  {
+   "t": "Provas e notas",
+   "short": "Notas",
+   "rank": "Entendo minhas notas",
+   "learn": [
+    "Cada matéria vale <b>10 pontos</b>, divididos em duas partes.",
+    "<b>A2 = os exercícios</b> do AVA, feitos durante o mês. Valem até <b>4 pontos</b>. Você pode tentar <b>3 vezes</b> e fica a maior nota. Prazo: dia 1º do mês seguinte.",
+    "<b>A1 = a prova</b> do começo do mês seguinte, feita pela internet, na Plataforma de Prova. Vale até <b>6 pontos</b>.",
+    "Somou <b>6 ou mais</b>? Passou. Somou menos? Você tem uma segunda chance: a <b>AF (Avaliação Final)</b>, uma prova de recuperação no fim do semestre. Se a nota da AF for maior que a da A1, ela entra no lugar da A1.",
+    "Exceção: as matérias de <b>junho</b> abrem em fevereiro e a prova delas é no <b>fim de maio</b>.",
+    "Algumas matérias duram o semestre todo e <b>não têm a prova A1</b>: PAC, Projetos, Extensão, Estágio e Ambientação. Cada uma tem regras próprias, que o tutor explica."
+   ],
+   "tip": null,
+   "formula": "Exercícios (até 4) + Prova (até 6) = 6 ou mais → passou<small>Menos de 6: prova de recuperação (AF) no fim do semestre</small>",
+   "tallShots": false,
+   "shots": [
+    {
+     "img": "t64",
+     "w": 1164,
+     "h": 597,
+     "cap": "<b>Notas dos exercícios no AVA.</b> Aqui o aluno já tem 2,64 dos 4 pontos."
+    },
+    {
+     "img": "t54a",
+     "w": 601,
+     "h": 346,
+     "cap": "<b>Minhas Notas.</b> Escolha o semestre para ver as notas."
+    },
+    {
+     "img": "t54b",
+     "w": 599,
+     "h": 409,
+     "cap": "<b>Resultado.</b> Prova (A1) 6 + exercícios (A2) 3,84 = Aprovado. O sistema arredonda a média."
+    }
+   ],
+   "qs": [
+    {
+     "q": "Maria tirou 3 nos exercícios (A2) e 2,5 na prova (A1). O que acontece?",
+     "opts": [
+      "Passou, porque fez tudo",
+      "Faz a prova de recuperação (AF), porque 3 + 2,5 = 5,5, menos que 6",
+      "Reprovou sem chance",
+      "Refaz a matéria no mês seguinte"
+     ],
+     "certa": 1,
+     "exp": "3 + 2,5 = 5,5. Como é menos que 6, ela vai para a AF."
+    },
+    {
+     "q": "Na recuperação (AF), Maria tirou 4. A AF entra no lugar da prova A1. Qual é a nota final dela?",
+     "opts": [
+      "5,5, reprovada",
+      "7, aprovada",
+      "4, reprovada",
+      "6,5, aprovada"
+     ],
+     "certa": 1,
+     "exp": "A AF (4) é maior que a A1 (2,5), então entra no lugar dela: 3 + 4 = 7."
+    },
+    {
+     "q": "Você errou um exercício do AVA. E agora?",
+     "opts": [
+      "Perdeu a nota, não dá para refazer",
+      "Pode tentar de novo: são 3 tentativas e fica a maior nota",
+      "Precisa pedir no CAA",
+      "Só na recuperação"
+     ],
+     "certa": 1,
+     "exp": "Cada exercício tem 3 tentativas. O sistema guarda a melhor nota."
+    },
+    {
+     "q": "O Estágio Supervisionado tem a prova A1 todo mês?",
+     "opts": [
+      "Sim, como as outras matérias",
+      "Não, ele tem uma forma de avaliação própria",
+      "Só em junho",
+      "Só se o aluno pedir"
+     ],
+     "certa": 1,
+     "exp": "Estágio, PAC, Projetos, Extensão e Ambientação duram o semestre e não têm A1."
+    }
+   ],
+   "video": "/trilha-midia/videos/nivel4"
+  },
+  {
+   "t": "Dinheiro e rematrícula",
+   "short": "Pagamentos",
+   "rank": "Contas em dia",
+   "learn": [
+    "A mensalidade vence <b>todo dia 25</b>.",
+    "Quanto antes pagar, mais barato: até o <b>dia 10</b>, <b>25% de desconto</b>. Do dia 11 ao dia 25, <b>15%</b>. Se o dia 10 cair em fim de semana ou feriado, os 25% valem até o próximo dia útil.",
+    "<b>Primeira mensalidade:</b> nela, o desconto total vale até o <b>dia 25</b>, o próprio vencimento.",
+    "Pagou depois do dia 25? Você perde <b>só o desconto de pontualidade</b> (no sistema aparece como Pagamento antecipado). <b>Bolsa e outros descontos continuam.</b>",
+    "Para pagar: na Área do Aluno, vá em <b>Financeiro → Fazer Pagamentos / Acordos</b>. Dá para pagar com boleto, Pix ou cartão. O app Duda também mostra os boletos.",
+    "O <b>Demonstrativo</b> é a lista das suas mensalidades: mostra o que já está pago e o que está em aberto.",
+    "<b>Rematrícula</b> é renovar a matrícula para continuar estudando. Acontece duas vezes por ano, em <b>janeiro e julho</b>. Basta pagar o boleto: em 1 ou 2 dias úteis a renovação acontece sozinha.",
+    "Se você tem matéria atrasada (dependência) ou de adaptação, organize essas matérias depois da rematrícula."
+   ],
+   "tip": null,
+   "formula": null,
+   "tallShots": false,
+   "shots": [
+    {
+     "img": "t15",
+     "w": 410,
+     "h": 228,
+     "cap": "<b>Menu Financeiro.</b> Pagamentos, Demonstrativo e Confissão de Dívida."
+    },
+    {
+     "img": "t16",
+     "w": 876,
+     "h": 542,
+     "cap": "<b>Pagamentos.</b> O valor em verde (Valor até 10/04) é o mais barato."
+    },
+    {
+     "img": "t50",
+     "w": 1219,
+     "h": 495,
+     "cap": "<b>Demonstrativo.</b> Cada mensalidade: paga ou em aberto."
+    },
+    {
+     "img": "t18",
+     "w": 1319,
+     "h": 572,
+     "cap": "<b>Rematrícula.</b> Pagou o boleto → espere 1 a 2 dias úteis → pronto."
+    },
+    {
+     "img": "t57",
+     "w": 1248,
+     "h": 743,
+     "cap": "<b>Matérias atrasadas.</b> Dependências e adaptações aparecem aqui."
+    }
+   ],
+   "qs": [
+    {
+     "q": "Você pagou a sua 3ª mensalidade no dia 15. Qual desconto ganhou?",
+     "opts": [
+      "25%",
+      "15%",
+      "Nenhum",
+      "10%"
+     ],
+     "certa": 1,
+     "exp": "Do dia 11 até o dia 25, o desconto é de 15%. Só na 1ª mensalidade o desconto total vale até o dia 25."
+    },
+    {
+     "q": "E se pagar no dia 26?",
+     "opts": [
+      "Perde só o desconto de pontualidade; bolsa e outros descontos continuam",
+      "Perde todos os descontos",
+      "Ganha 15%",
+      "Ganha 25%"
+     ],
+     "certa": 0,
+     "exp": "Você perde só o desconto de pontualidade. Bolsa e outros descontos continuam valendo."
+    },
+    {
+     "q": "Você pagou o boleto da rematrícula. Precisa fazer mais alguma coisa?",
+     "opts": [
+      "Ligar para a faculdade",
+      "Não: espere 1 ou 2 dias úteis e ela acontece sozinha",
+      "Pagar de novo",
+      "Mandar o comprovante pelo WhatsApp"
+     ],
+     "certa": 1,
+     "exp": "A rematrícula é automática depois que o pagamento é confirmado."
+    }
+   ],
+   "parts": [
+    {
+     "t": "Quanto eu pago?",
+     "v": "/trilha-midia/videos/nivel5_parte1",
+     "erro": "Ficou em dúvida sobre o valor? O valor certo é sempre o Total que aparece no sistema. Ainda com dúvida? Chame o atendimento pelo WhatsApp {whatsapp}."
+    },
+    {
+     "t": "Pagar com Pix",
+     "v": "/trilha-midia/videos/nivel5_parte2",
+     "erro": "O código Pix não funcionou? Ele vale só por alguns minutos: gere um novo e cole no app do banco em Pix Copia e Cola. O valor no banco está diferente do sistema? Não pague e chame o atendimento pelo WhatsApp {whatsapp}."
+    },
+    {
+     "t": "Pagar com cartão",
+     "v": "/trilha-midia/videos/nivel5_parte3",
+     "erro": "O cartão foi recusado? Confira o número, a validade e o código de trás (CVC). Se continuar, tente outro cartão ou pague com Pix."
+    },
+    {
+     "t": "Pagar com boleto",
+     "v": "/trilha-midia/videos/nivel5_parte4",
+     "erro": "O boleto mostra o valor cheio? É normal: o desconto está escrito nas Instruções. Use sempre o último boleto gerado. O valor no banco está diferente? Não pague e chame o atendimento pelo WhatsApp {whatsapp}."
+    }
+   ]
+  },
+  {
+   "t": "Horas complementares",
+   "short": "Horas extras",
+   "rank": "Juntando horas",
+   "learn": [
+    "Além das aulas, você precisa juntar <b>horas complementares</b>: cursos, palestras, eventos e oficinas. A quantidade de horas depende do seu curso.",
+    "Elas são <b>obrigatórias</b>: sem completar as horas, você não recebe o diploma. Comece a juntar desde já.",
+    "Fez um curso ou palestra? Guarde o certificado. Depois tire uma foto (ou salve o PDF) e envie em <b>Atividades Complementares → Envio de comprovantes</b>. O arquivo pode ter até <b>1 MB</b>, menor que o limite dos documentos.",
+    "A faculdade confere em até <b>30 dias</b>. Em <b>Consulta</b> você vê quantas horas já valeram e quantas faltam.",
+    "A matéria <b>Temas Transversais</b> já conta <b>40 horas</b>: tirando nota 6 ou mais, as horas entram sozinhas no fim do semestre."
+   ],
+   "tip": "Dica: leia o Regulamento das Atividades Complementares para saber o que vale hora antes de fazer um curso.",
+   "formula": null,
+   "tallShots": false,
+   "shots": [
+    {
+     "img": "t48",
+     "w": 689,
+     "h": 299,
+     "cap": "<b>Regras e tutorial.</b> Leia antes de enviar."
+    },
+    {
+     "img": "t52",
+     "w": 1157,
+     "h": 453,
+     "cap": "<b>Envio do certificado.</b> Tipo, nome, data, horas e o arquivo."
+    },
+    {
+     "img": "t53",
+     "w": 1130,
+     "h": 503,
+     "cap": "<b>Consulta.</b> Cada certificado com as horas e a palavra Aprovado."
+    }
+   ],
+   "qs": [
+    {
+     "q": "Você mandou o certificado de uma palestra. Em quanto tempo a faculdade confere?",
+     "opts": [
+      "Até 30 dias",
+      "Na hora",
+      "Até 90 dias",
+      "Só no fim do curso"
+     ],
+     "certa": 0,
+     "exp": "A conferência leva até 30 dias."
+    },
+    {
+     "q": "A matéria Temas Transversais vale quantas horas complementares?",
+     "opts": [
+      "10 horas",
+      "20 horas",
+      "40 horas",
+      "80 horas"
+     ],
+     "certa": 2,
+     "exp": "Com nota 6 ou mais, ela vale 40 horas, que entram sozinhas."
+    },
+    {
+     "q": "Chegou ao fim do curso e faltam horas complementares. O que acontece?",
+     "opts": [
+      "Nada",
+      "Paga uma multa",
+      "Não recebe o diploma até completar",
+      "Faz uma prova extra"
+     ],
+     "certa": 2,
+     "exp": "As horas são obrigatórias para terminar o curso."
+    }
+   ],
+   "video": "/trilha-midia/videos/nivel6"
+  },
+  {
+   "t": "Rumo à formatura",
+   "short": "Formatura",
+   "rank": "Formando",
+   "learn": [
+    "Para se formar, você precisa passar em <b>todas as matérias</b>, completar as <b>horas complementares</b> e a matéria <b>Temas Transversais</b>. Alguns cursos também exigem <b>Estágio</b> (trabalhar um tempo na área) e <b>TCC</b> (um trabalho final).",
+    "Para saber se o seu curso exige estágio ou TCC: Área do Aluno → <b>Emissão de Documentos → Histórico</b>.",
+    "<b>ENADE</b> é uma prova do governo federal feita no fim do curso. Ela é <b>obrigatória</b> para quem está terminando.",
+    "Com tudo pronto (documentos entregues, aprovação em tudo e ENADE em dia), a faculdade avisa a data da <b>colação de grau</b> (a formatura oficial) e emite o seu <b>diploma digital</b>, que fica no computador ou no celular, sem papel.",
+    "Leia os e-mails da faculdade. Olhe também a pasta de <b>spam (lixo eletrônico)</b>, porque às vezes os avisos caem lá."
+   ],
+   "tip": "Certificado desta aula: preencha a lista de presença com o seu RGM até as 23h59 de hoje. Em até 2 dias ele aparece no AVA.",
+   "formula": null,
+   "tallShots": false,
+   "shots": [
+    {
+     "img": "t49",
+     "w": 850,
+     "h": 219,
+     "cap": "<b>Certificado da aula inaugural.</b> Aparece como uma matéria no AVA."
+    }
+   ],
+   "qs": [
+    {
+     "q": "O que você precisa ter para se formar?",
+     "opts": [
+      "Só TCC e estágio",
+      "Documentos entregues, aprovação em tudo e ENADE em dia",
+      "Só passar nas matérias",
+      "Mensalidades pagas e TCC"
+     ],
+     "certa": 1,
+     "exp": "São os três requisitos para a colação de grau."
+    },
+    {
+     "q": "Como saber se o seu curso exige TCC?",
+     "opts": [
+      "Perguntar no grupo da turma",
+      "Área do Aluno → Emissão de Documentos → Histórico",
+      "No app do banco",
+      "Não tem como saber"
+     ],
+     "certa": 1,
+     "exp": "O Histórico mostra todas as matérias do curso, inclusive estágio e TCC quando houver."
+    },
+    {
+     "q": "O ENADE é:",
+     "opts": [
+      "Opcional",
+      "Obrigatório para quem está terminando o curso",
+      "Só para quem quer bolsa",
+      "Uma prova de matemática da faculdade"
+     ],
+     "certa": 1,
+     "exp": "É uma prova do governo, obrigatória por lei para quem está concluindo."
+    }
+   ],
+   "video": "/trilha-midia/videos/nivel7"
+  }
+ ],
+ "tarefas": [
+  {
+   "id": "td1",
+   "html": "<b>Descobrir seu e-mail da faculdade</b> e criar a sua senha nova <em>(nível 1)</em>"
+  },
+  {
+   "id": "td2",
+   "html": "<b>Baixar o Duda e o Microsoft Authenticator</b> e entrar no Duda <em>(nível 1)</em>"
+  },
+  {
+   "id": "td3",
+   "html": "<b>Conferir seus documentos</b>: todos precisam estar como Entregue <em>(nível 2)</em>"
+  },
+  {
+   "id": "td4",
+   "html": "<b>Abrir a Ambientação Digital</b>, sua primeira matéria no AVA <em>(nível 3)</em>"
+  },
+  {
+   "id": "td5",
+   "html": "<b>Pagar a mensalidade até o dia 10</b> para ter 25% de desconto <em>(nível 5)</em>"
+  },
+  {
+   "id": "td6",
+   "html": "<b>Preencher a lista de presença</b> desta aula até as 23h59, para ganhar o certificado <em>(nível 7)</em>"
+  }
+ ],
+ "glossario": [
+  [
+   "Área do Aluno",
+   "Site da sua matrícula: boletos, documentos, notas e pedidos."
+  ],
+  [
+   "AVA ou Blackboard",
+   "Site das aulas. Os dois nomes são a mesma coisa."
+  ],
+  [
+   "Microsoft Authenticator",
+   "Aplicativo que confirma que é você mesmo quem está entrando. Ele mostra um aviso, e você digita o número que aparece na tela."
+  ],
+  [
+   "E-mail acadêmico",
+   "E-mail que a faculdade cria para você. É com ele que você entra nos sites."
+  ],
+  [
+   "RGM",
+   "Seu número de matrícula. Aparece no app Duda, embaixo do nome do curso."
+  ],
+  [
+   "Disciplina",
+   "Matéria. Cada uma dura um mês."
+  ],
+  [
+   "Tutor ou tutoria",
+   "Professor que tira suas dúvidas pelo AVA."
+  ],
+  [
+   "A2",
+   "Exercícios do mês no AVA. Valem até 4 pontos."
+  ],
+  [
+   "A1",
+   "Prova do começo do mês seguinte. Vale até 6 pontos."
+  ],
+  [
+   "AF",
+   "Avaliação Final: prova de recuperação no fim do semestre."
+  ],
+  [
+   "CAA On-line",
+   "Atendimento pela internet para fazer pedidos."
+  ],
+  [
+   "Protocolo",
+   "Número do seu pedido, para acompanhar o andamento."
+  ],
+  [
+   "Rematrícula",
+   "Renovar a matrícula, em janeiro e julho."
+  ],
+  [
+   "Horas complementares",
+   "Horas de cursos, palestras e eventos que você precisa juntar para se formar."
+  ],
+  [
+   "MB (megabyte)",
+   "Tamanho de um arquivo. Uma foto comum de celular tem de 2 a 5 MB."
+  ],
+  [
+   "PDF",
+   "Tipo de arquivo de documento. Muitos celulares salvam fotos de documentos em PDF."
+  ],
+  [
+   "Digitalizar",
+   "Transformar um papel em arquivo: tirar uma foto bem nítida ou escanear."
+  ],
+  [
+   "ENADE",
+   "Prova do governo feita no fim do curso. É obrigatória."
+  ],
+  [
+   "Colação de grau",
+   "A formatura oficial, quando você recebe o título."
+  ],
+  [
+   "TCC",
+   "Trabalho de Conclusão de Curso: um trabalho final que alguns cursos exigem."
+  ],
+  [
+   "Spam ou lixo eletrônico",
+   "Pasta do e-mail onde às vezes caem avisos importantes por engano."
+  ]
+ ],
+ "ajuda": [
+  "<b>Primeiro acesso travou?</b> Chame o setor acadêmico pelo WhatsApp <b>{whatsapp}</b>.",
+  "<b>Pelo app Duda:</b> toque em <b>Ajuda → Teleatendimento</b>. Uma pessoa atende por chat ou vídeo, de segunda a sexta, das 9h às 21h.",
+  "<b>Pela Área do Aluno:</b> use o <b>CAA On-line</b> para fazer um pedido por escrito. Você recebe um número de protocolo para acompanhar.",
+  "<b>Sobre a matéria:</b> dentro do AVA, toque em <b>Fale com a Tutoria</b>."
+ ]
+}

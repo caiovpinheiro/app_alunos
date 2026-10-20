@@ -7,7 +7,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/styles.css?v=25">
+    <link rel="stylesheet" href="/css/styles.css?v=28">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/trilha.css?v=2">
+    <link rel="stylesheet" href="/css/central.css?v=1">
 </head>
 <body>
 
@@ -187,6 +190,27 @@
                         </div>
                     </div>
 
+
+                    <!-- Card: Trilha EaD para Iniciantes -->
+                    <div class="so-trilha dash-card bento-cell bento-trilha bg-white p-6 rounded-3xl shadow-sm border border-gray-100 group">
+                        <div class="flex items-start justify-between gap-3 mb-4">
+                            <div class="dash-card-icon dash-card-icon--amber w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
+                                <i data-lucide="map" class="w-6 h-6"></i>
+                            </div>
+                            <span class="ms-dash-kicker">Para começar</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-800 mb-2">Trilha EaD para Iniciantes</h3>
+                        <p class="text-gray-500 text-sm mb-4 leading-relaxed">7 níveis com vídeo, resumo e perguntas: do primeiro acesso à formatura.</p>
+                        <div id="dashboard-trilha-body" class="trilha-dash">
+                            <div class="trilha-dash-bar"><i style="width:0%"></i></div>
+                            <p class="trilha-dash-txt">Carregando seu progresso...</p>
+                        </div>
+                        <button type="button" onclick="showScreen('trilha-page')" class="btn-plastic dash-card-btn w-full flex items-center justify-center gap-2 bg-gray-50 text-cruzeiro font-semibold py-2.5 rounded-lg mt-4">
+                            <span data-trilha-cta>Começar a trilha</span>
+                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+
                     <!-- Card: Gerar Certificado -->
                     <div class="dash-card bento-cell bento-feature bg-white p-6 rounded-3xl shadow-sm border border-gray-100 group">
                         <div class="dash-card-icon dash-card-icon--blue w-12 h-12 bg-blue-50 text-cruzeiro rounded-xl flex items-center justify-center mb-4">
@@ -219,9 +243,14 @@
                             <i data-lucide="play-circle" class="w-6 h-6"></i>
                         </div>
                         <h3 class="text-lg font-bold text-gray-800 mb-2">Tutoriais</h3>
-                        <p class="text-gray-500 text-sm mb-6 leading-relaxed">Videoaulas para Área do Aluno, Blackboard, provas, boleto e documentos.</p>
-                        <button onclick="showScreen('tutoriais-page')" class="btn-plastic dash-card-btn w-full flex items-center justify-center gap-2 bg-gray-50 text-cruzeiro font-semibold py-2.5 rounded-lg">
+                        <p class="sem-trilha text-gray-500 text-sm mb-6 leading-relaxed">Videoaulas para Área do Aluno, Blackboard, provas, boleto e documentos.</p>
+                        <button onclick="showScreen('tutoriais-page')" class="sem-trilha btn-plastic dash-card-btn w-full flex items-center justify-center gap-2 bg-gray-50 text-cruzeiro font-semibold py-2.5 rounded-lg">
                             Ver tutoriais
+                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                        </button>
+                        <p class="so-trilha text-gray-500 text-sm mb-6 leading-relaxed">Consulta rápida para uma dúvida pontual. Começando agora? A trilha acima ensina tudo passo a passo.</p>
+                        <button onclick="showScreen('tutoriais-page')" class="so-trilha w-full flex items-center justify-center gap-2 text-cruzeiro text-sm font-semibold py-2 hover:underline">
+                            Consultar tutoriais
                             <i data-lucide="chevron-right" class="w-4 h-4"></i>
                         </button>
                     </div>
@@ -324,6 +353,49 @@
             </main>
         </section>
 
+
+        <!-- 2d. TRILHA EAD PARA INICIANTES -->
+        <section id="trilha-page" class="hidden min-h-screen">
+            <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="bg-cruzeiro rounded-lg overflow-hidden w-9 h-9"><img src="/assets/logo-login.jpg" alt="Cruzeiro do Sul Educacional" class="w-full h-full object-cover"></div>
+                        <span class="font-bold text-gray-800 hidden sm:block">Cruzeiro do Sul <span class="text-blue-600">Virtual</span></span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="notif-wrap relative">
+                            <button type="button" class="notif-bell p-2 text-gray-500 hover:text-cruzeiro transition" data-notif-toggle aria-label="Avisos">
+                                <i data-lucide="bell" class="w-5 h-5"></i>
+                                <span class="notif-badge hidden" data-notif-badge>0</span>
+                            </button>
+                            <div class="notif-dropdown hidden">
+                                <div class="notif-dropdown-head">
+                                    <strong>Avisos</strong>
+                                    <button type="button" onclick="showScreen('avisos-page')">Ver todos</button>
+                                </div>
+                                <div class="notif-dropdown-list"></div>
+                            </div>
+                        </div>
+                        <div class="text-right hidden sm:block">
+                            <p class="text-sm font-semibold text-gray-800" data-user-name>Aluno</p>
+                            <p class="text-xs text-gray-500">Graduação</p>
+                        </div>
+                        <button onclick="logout()" class="p-2 text-gray-400 hover:text-red-500 transition" title="Sair">
+                            <i data-lucide="log-out" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+            <main class="max-w-5xl mx-auto px-4 py-6">
+                <button onclick="showScreen('dashboard-page')" class="flex items-center gap-2 text-gray-500 hover:text-cruzeiro mb-4 transition">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar ao início
+                </button>
+                <div id="trilha-root" class="trilha">
+                    <p class="trilha-loading">Carregando sua trilha...</p>
+                </div>
+            </main>
+        </section>
+
         <!-- 2c. TUTORIAIS -->
         <section id="tutoriais-page" class="hidden min-h-screen">
             <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
@@ -360,11 +432,23 @@
                 <button onclick="showScreen('dashboard-page')" class="flex items-center gap-2 text-gray-500 hover:text-cruzeiro mb-6 transition">
                     <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar ao Dashboard
                 </button>
+                <div id="central-ajuda" class="so-trilha central"></div>
+                <div class="sem-trilha">
                 <h2 class="text-2xl font-bold text-gray-800 mb-2">Tutoriais</h2>
                 <p class="text-gray-500 text-sm mb-6">Assista só quando quiser: o vídeo carrega ao clicar no card.</p>
+                <div class="hidden tutoriais-trilha-banner">
+                    <div class="tutoriais-trilha-icon"><i data-lucide="map" class="w-6 h-6"></i></div>
+                    <div class="flex-1 min-w-0">
+                        <p class="tutoriais-trilha-kicker">Começando agora?</p>
+                        <h3>Faça a Trilha EaD para Iniciantes</h3>
+                        <p>7 níveis com vídeo, resumo e perguntas, do primeiro acesso à formatura. É o caminho mais completo para aprender a usar tudo.</p>
+                    </div>
+                    <button type="button" data-open-trilha="" class="btn-plastic tutoriais-trilha-btn">Ir para a trilha <i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+                </div>
                 <input id="tutoriais-search" type="search" class="w-full mb-4 px-4 py-3 rounded-xl border border-gray-200" placeholder="Buscar tutorial...">
                 <div id="tutoriais-filters" class="flex flex-wrap gap-2 mb-6"></div>
                 <div id="tutoriais-grid" class="tutorial-grid"></div>
+                </div>
             </main>
         </section>
 
@@ -606,15 +690,17 @@
     <!-- Módulos da aplicação -->
     <script src="/js/config.js?v=7"></script>
     <script src="/js/auth.js?v=7"></script>
-    <script src="/js/api.js?v=10"></script>
+    <script src="/js/api.js?v=13"></script>
     <script src="/js/validation.js?v=7"></script>
     <script src="/js/cursos.js?v=7"></script>
     <script src="/js/certificate.js?v=7"></script>
     <script src="/js/avisos.js?v=7"></script>
-    <script src="/js/tutoriais.js?v=8"></script>
+    <script src="/js/tutoriais.js?v=10"></script>
+    <script src="/js/trilha.js?v=3"></script>
+    <script src="/js/central.js?v=1"></script>
     <script src="/js/atendimento.js?v=8"></script>
-    <script src="/js/meu-semestre.js?v=10"></script>
-    <script src="/js/ui.js?v=12"></script>
-    <script src="/js/app.js?v=10"></script>
+    <script src="/js/meu-semestre.js?v=13"></script>
+    <script src="/js/ui.js?v=13"></script>
+    <script src="/js/app.js?v=14"></script>
 </body>
 </html>

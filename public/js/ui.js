@@ -2,7 +2,7 @@
 window.UI = (function () {
   'use strict';
 
-  var SCREENS = ['login-page', 'first-access-page', 'dashboard-page', 'meu-semestre-page', 'avisos-page', 'tutoriais-page', 'atendimento-page', 'form-page', 'success-page'];
+  var SCREENS = ['login-page', 'first-access-page', 'dashboard-page', 'meu-semestre-page', 'avisos-page', 'tutoriais-page', 'trilha-page', 'atendimento-page', 'form-page', 'success-page'];
   var PUBLIC_SCREENS = ['login-page', 'first-access-page'];
   var PATHS = {
     'login-page': '/login',
@@ -11,6 +11,7 @@ window.UI = (function () {
     'meu-semestre-page': '/meu-semestre',
     'avisos-page': '/avisos',
     'tutoriais-page': '/tutoriais',
+    'trilha-page': '/trilha',
     'atendimento-page': '/atendimento',
     'form-page': '/certificado',
     'success-page': '/sucesso',
@@ -22,6 +23,7 @@ window.UI = (function () {
     'meu-semestre-page': 'Meu Semestre',
     'avisos-page': 'Avisos',
     'tutoriais-page': 'Tutoriais',
+    'trilha-page': 'Trilha EaD para Iniciantes',
     'atendimento-page': 'Atendimento',
     'form-page': 'Certificado',
     'success-page': 'Certificado gerado',
