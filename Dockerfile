@@ -8,6 +8,8 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
 COPY public ./public
+# Telas congeladas da versão anterior (quem não está em VERSAO_NOVA_PARA vê estas; ver server/versao.js).
+COPY public-antigo ./public-antigo
 COPY server ./server
 
 RUN mkdir -p /usr/share/fonts/planos /data/planos-estudos \
