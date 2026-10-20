@@ -44,15 +44,45 @@
     </header>
     <div class="max-w-6xl mx-auto px-4 py-6">
       <nav class="flex flex-wrap gap-2 mb-6">
-        <button type="button" class="admin-tab is-active" data-tab="avisos">Avisos</button>
+        <button type="button" class="admin-tab is-active" data-tab="acompanhamento">Acompanhamento</button>
+        <button type="button" class="admin-tab" data-tab="alunos">Alunos</button>
+        <button type="button" class="admin-tab" data-tab="avisos">Avisos</button>
         <button type="button" class="admin-tab" data-tab="tutoriais">Tutoriais</button>
         <button type="button" class="admin-tab" data-tab="contatos">Contatos</button>
         <button type="button" class="admin-tab" data-tab="indicacoes">Indicações</button>
         <button type="button" class="admin-tab" data-tab="planos">Imagens dos planos</button>
-        <button type="button" class="admin-tab" data-tab="trilha">Trilha</button>
+        <button type="button" class="admin-tab" data-tab="trilha">Aula Inaugural</button>
       </nav>
 
-      <div id="tab-avisos" class="admin-panel">
+      <!-- Aba Alunos: acessos em preparação (admin-preparo.js); a sessão "dados de acesso" acrescenta a importação aqui. -->
+      <div id="tab-alunos" class="admin-panel hidden">
+        <div id="admin-alunos-preparo"></div>
+      </div>
+
+      <div id="tab-acompanhamento" class="admin-panel">
+        <div class="flex flex-wrap justify-between items-center gap-3 mb-2">
+          <h2 class="text-xl font-bold">Acompanhamento dos alunos</h2>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" id="btn-acomp-regras" class="bg-white border text-sm font-semibold px-4 py-2 rounded-lg">Regras dos sinais</button>
+            <button type="button" id="btn-acomp-export" class="bg-cruzeiro text-white text-sm font-semibold px-4 py-2 rounded-lg">Baixar CSV (para o CRM)</button>
+          </div>
+        </div>
+        <p class="text-sm text-gray-500 mb-4">Acessos, tempo de uso, vídeos e onde o aluno travou. A lista mostra primeiro quem mais precisa de contato, com a mensagem de WhatsApp já sugerida (revise antes de enviar).</p>
+        <form id="acomp-filtros" class="flex flex-wrap items-end gap-3 mb-4 text-sm">
+          <label class="flex flex-col gap-1"><span class="text-gray-600">Período</span>
+            <select name="dias" class="border rounded-lg px-3 py-2 bg-white"><option value="7">Últimos 7 dias</option><option value="30" selected>Últimos 30 dias</option><option value="90">Últimos 90 dias</option></select></label>
+          <label class="flex flex-col gap-1"><span class="text-gray-600">Mostrar</span>
+            <select name="sinal" id="acomp-sinal" class="border rounded-lg px-3 py-2 bg-white"><option value="com_sinal">Quem precisa de contato</option><option value="em_espera">Contatados recentemente (em espera)</option><option value="todos">Todos os alunos</option></select></label>
+          <label class="flex flex-col gap-1 flex-1 min-w-[200px]"><span class="text-gray-600">Buscar aluno</span>
+            <input name="q" type="search" placeholder="Nome, RGM ou e-mail" class="border rounded-lg px-3 py-2"></label>
+          <button type="submit" class="bg-white border text-sm font-semibold px-4 py-2 rounded-lg">Atualizar</button>
+        </form>
+        <p id="acomp-msg" class="text-sm text-gray-500 mb-3" role="status"></p>
+        <div id="acomp-totais" class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6"></div>
+        <div id="acomp-lista" class="space-y-3"></div>
+      </div>
+
+      <div id="tab-avisos" class="admin-panel hidden">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-xl font-bold">Avisos</h2>
           <button type="button" class="bg-cruzeiro text-white text-sm font-semibold px-4 py-2 rounded-lg" data-aviso-new>Novo aviso</button>
@@ -92,14 +122,24 @@
 
       <div id="tab-trilha" class="admin-panel hidden">
         <div class="flex flex-wrap justify-between items-center gap-3 mb-2">
-          <h2 class="text-xl font-bold">Trilha EaD para Iniciantes</h2>
+          <h2 class="text-xl font-bold">Aula Inaugural</h2>
           <button type="button" id="btn-trilha-export" class="bg-cruzeiro text-white text-sm font-semibold px-4 py-2 rounded-lg">Baixar CSV dos alunos</button>
         </div>
-        <p class="text-sm text-gray-500 mb-4">Quem começou, até onde chegou e onde trava. O CSV traz nome, RGM, e-mail, níveis concluídos e último acesso, para o CRM chamar quem parou.</p>
+        <p class="text-sm text-gray-500 mb-4">7 módulos obrigatórios em ordem livre; cada módulo concluído vale 10 pontos e os 7 (70 pontos) liberam o certificado de 4 horas. Quem começou, até onde chegou e onde trava. O CSV traz nome, RGM, e-mail, módulos concluídos, pontos, certificado emitido e último acesso, para o CRM chamar quem parou.</p>
         <p id="trilha-msg" class="text-sm text-gray-500 mb-4"></p>
-        <div id="admin-trilha-totais" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6"></div>
-        <h3 class="text-lg font-bold mb-2">Por nível</h3>
-        <div class="overflow-x-auto bg-white border rounded-xl mb-6"><table class="w-full text-sm"><thead class="bg-slate-50 text-left"><tr><th class="px-3 py-2">Nível</th><th class="px-3 py-2">Abriram</th><th class="px-3 py-2">Viram o vídeo</th><th class="px-3 py-2">Concluíram</th></tr></thead><tbody id="admin-trilha-niveis"></tbody></table></div>
+        <div id="admin-trilha-totais" class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6"></div>
+        <div class="grid lg:grid-cols-2 gap-6 mb-6">
+          <div><h3 class="text-lg font-bold mb-2">Funil</h3><ol id="admin-trilha-funil" class="bg-white border rounded-xl p-4 space-y-3 text-sm"></ol></div>
+          <div><h3 class="text-lg font-bold mb-2">Vídeo de abertura (sem pontos)</h3><div id="admin-trilha-abertura" class="bg-white border rounded-xl p-4 text-sm"></div></div>
+        </div>
+        <h3 class="text-lg font-bold mb-2">Por módulo</h3>
+        <div class="overflow-x-auto bg-white border rounded-xl mb-6"><table class="w-full text-sm"><thead class="bg-slate-50 text-left"><tr><th class="px-3 py-2">Módulo</th><th class="px-3 py-2">Abriram</th><th class="px-3 py-2">Viram o vídeo</th><th class="px-3 py-2">Concluíram</th><th class="px-3 py-2" title="Concluíram acertando todas as perguntas de primeira (% de quem concluiu)">Sem errar</th></tr></thead><tbody id="admin-trilha-niveis"></tbody></table></div>
+        <h3 class="text-lg font-bold mb-1">Onde trava</h3>
+        <p id="admin-trilha-onde-nota" class="text-sm text-gray-500 mb-2"></p>
+        <div class="overflow-x-auto bg-white border rounded-xl mb-6"><table class="w-full text-sm whitespace-nowrap"><thead class="bg-slate-50 text-left"><tr><th class="px-3 py-2">Módulo</th><th class="px-3 py-2">Atrito</th><th class="px-3 py-2">Pararam aqui</th><th class="px-3 py-2">Travei</th><th class="px-3 py-2">👎 / 👍</th><th class="px-3 py-2">Erros</th><th class="px-3 py-2">Vídeo abandonado</th><th class="px-3 py-2">Pausas</th><th class="px-3 py-2">WhatsApp</th><th class="px-3 py-2">Tempo no módulo</th></tr></thead><tbody id="admin-trilha-onde"></tbody></table></div>
+        <h3 class="text-lg font-bold mb-1">Alunos presos</h3>
+        <p class="text-sm text-gray-500 mb-2">Quem começou e não concluiu os 7 módulos: onde parou, há quantos dias e o motivo provável. Mais tempo parado primeiro.</p>
+        <div id="admin-trilha-presos" class="grid lg:grid-cols-2 gap-3 mb-6 text-sm"></div>
         <div class="grid lg:grid-cols-2 gap-6">
           <div><h3 class="text-lg font-bold mb-2">Perguntas com mais erros</h3><ol id="admin-trilha-perguntas" class="space-y-2 text-sm"></ol></div>
           <div><h3 class="text-lg font-bold mb-2">Onde tocaram em "Travei"</h3><ol id="admin-trilha-travei" class="space-y-2 text-sm"></ol></div>
@@ -157,6 +197,21 @@
     </div>
   </div>
 
-  <script src="/js/admin.js?v=18"></script>
+  <div id="acomp-modal" class="hidden video-modal" role="dialog" aria-modal="true" aria-labelledby="acomp-modal-title">
+    <div class="video-modal-card admin-modal-card" style="width:min(760px,100%)">
+      <div class="flex justify-between items-center mb-4 gap-3">
+        <h3 id="acomp-modal-title" class="font-bold text-lg">Percurso</h3>
+        <button type="button" id="acomp-modal-close" class="text-gray-500 font-semibold">Fechar</button>
+      </div>
+      <div id="acomp-modal-body" class="text-sm"></div>
+    </div>
+  </div>
+
+  <script src="/js/admin.js?v=24"></script>
+  <script src="/js/admin-acompanhamento.js?v=4"></script>
+  <script src="/js/admin-aula.js?v=1"></script>
+  <script src="/js/admin-avaliacoes.js?v=1"></script>
+  <script src="/js/admin-preparo.js?v=1" defer></script>
+  <script src="/js/admin-alunos.js?v=2" defer></script>
 </body>
 </html>

@@ -132,6 +132,7 @@ function mapRow(data) {
     nome,
     rgm,
     email: email || emailAcad,
+    email_academico: emailAcad,
     situacao,
     curso: formatCurso(data?.Curso),
     unidade: formatPolo(data?.Polo) || formatPolo(data?.Instituição),
@@ -153,7 +154,8 @@ async function getLatestSnapshotId(pool) {
   return id;
 }
 
-async function findByIdentifier(pool, identifier) {
+// Linha do relatório para o RGM/e-mail, em qualquer situação de matrícula (ou null se não está lá).
+async function lookupByIdentifier(pool, identifier) {
   const raw = String(identifier ?? '').replace(/\s+/g, ' ').trim();
   if (!raw) return null;
 
@@ -189,8 +191,14 @@ async function findByIdentifier(pool, identifier) {
     [snapshotId, email, rgm],
   );
 
-  const aluno = mapRow(result.rows[0]?.data);
-  if (!aluno.nome || !aluno.email || aluno.situacao !== SITUACAO_ATIVA) return null;
+  if (!result.rows[0]) return null;
+  return mapRow(result.rows[0].data);
+}
+
+// Só aluno ativo ("Em curso") com nome e e-mail.
+async function findByIdentifier(pool, identifier) {
+  const aluno = await lookupByIdentifier(pool, identifier);
+  if (!aluno || !aluno.nome || !aluno.email || aluno.situacao !== SITUACAO_ATIVA) return null;
   return aluno;
 }
 
@@ -295,6 +303,8 @@ async function phonesByRgms(pool, rgms) {
 
 module.exports = {
   isConfigured,
+  lookupByIdentifier,
+  SITUACAO_ATIVA,
   createPool,
   derivedPassword,
   passwordMatches,

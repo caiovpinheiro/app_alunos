@@ -11,13 +11,20 @@ const atendimento = require('./atendimento');
 const adminAuth = require('./adminAuth');
 const { UNIDADES } = require('./unidades');
 const matriculados = require('./matriculados');
+const webchat = require('./webchat');
 const syncAcessos = require('./sync-acessos');
 const meuSemestre = require('./meuSemestre');
 const planoImagem = require('./planoImagem');
 const planoMateriasImagem = require('./planoMateriasImagem');
 const materiasAlunos = require('./materiasAlunos');
 const trilha = require('./trilha');
+const trilhaAdmin = require('./trilha-admin');
+const trilhaRelatorios = require('./trilha-relatorios');
 const central = require('./central');
+const acompanhamento = require('./acompanhamento');
+const avaliacoes = require('./avaliacoes');
+const preparo = require('./preparo');
+const dadosAcesso = require('./dadosAcesso');
 const app = express();
 app.set('trust proxy', 1);
 const PORT = Number(process.env.PORT) || 80;
@@ -339,13 +346,45 @@ app.post('/api/auth/register', async (req, res) => {
     return res.status(422).json({ success: false, message: 'Dados inválidos.', errors });
   }
 
+  // Com a base de matriculados configurada: RGM que está no relatório com matrícula
+  // inativa (cancelada, trancada...) não cria acesso. RGM que ainda não está no relatório
+  // pode criar (a matrícula de hoje só aparece lá em até 2 dias úteis); curso, polo e
+  // certificado ficam para quando o cadastro chegar. Sem a base (local), segue como antes.
+  let matriculado = null;
+  let cadastroPendente = false;
+  const sourcePool = getMatriculadosPool();
+  if (sourcePool) {
+    try {
+      const encontrado = await matriculados.lookupByIdentifier(sourcePool, rgm);
+      if (encontrado && encontrado.situacao && encontrado.situacao !== matriculados.SITUACAO_ATIVA) {
+        return res.status(422).json({
+          success: false,
+          message: 'Matrícula inativa.',
+          errors: { rgm: `Esse RGM está com a matrícula "${encontrado.situacao.toLowerCase()}". Chame o setor acadêmico para regularizar antes de criar o acesso.` },
+        });
+      }
+      matriculado = encontrado && encontrado.curso && encontrado.unidade ? encontrado : null;
+      cadastroPendente = !encontrado;
+    } catch (lookupErr) {
+      console.error('Falha ao conferir RGM no cadastro:', lookupErr.message);
+    }
+  }
+
   try {
     const aluno = await db.createAluno(pool, { email, nome, rgm, password });
+    if (matriculado && matriculado.curso && matriculado.unidade) {
+      try {
+        await db.upsertAcessoDerived(pool, { email, rgm, nome, curso: matriculado.curso, unidade: matriculado.unidade });
+      } catch (deriveErr) {
+        console.error('Falha ao gravar curso/polo do novo acesso:', deriveErr.message);
+      }
+    }
     const token = crypto.randomBytes(32).toString('hex');
     await db.createSession(pool, aluno.id, token);
     return res.status(201).json({
       success: true,
       token,
+      cadastro_pendente: cadastroPendente,
       user: { name: aluno.nome, email: aluno.email, rgm: aluno.rgm },
     });
   } catch (err) {
@@ -436,6 +475,35 @@ app.post('/api/certificates', authMiddleware, async (req, res) => {
       return res.status(401).json({ success: false, message: 'Sessão inválida ou expirada.' });
     }
 
+    // Aula Inaugural como programa: com a trilha liberada, o certificado de 4 horas exige os
+    // 7 módulos concluídos e a meta de pontos. Quem já emitiu antes continua podendo emitir.
+    if (trilha.liberadaPara(req.aluno)) {
+      const ja = await certificadoEmitido(aluno.id);
+      if (!ja.emitido) {
+        await ensureTrilha();
+        const st = trilha.statusCertificado(await trilha.getProgresso(pool, aluno.id));
+        if (!st.liberado) {
+          // Cada módulo vale 10 pontos: o que falta em módulos é o que falta em pontos.
+          const falta = `${st.faltam_modulos === 1 ? 'Falta 1 módulo' : `Faltam ${st.faltam_modulos} módulos`} (${st.faltam_pontos} pontos)`;
+          return res.status(422).json({
+            success: false,
+            codigo: 'aula_incompleta',
+            certificado: st,
+            message: `Para emitir o certificado de ${st.horas} horas, conclua os ${st.total} módulos da Aula Inaugural (${st.meta} pontos). ${falta}.`,
+          });
+        }
+      }
+    }
+
+    // Acesso em preparação: o certificado leva o RGM, então espera ele chegar (o progresso fica salvo).
+    if (!aluno.rgm) {
+      return res.status(422).json({
+        success: false,
+        codigo: 'sem_rgm',
+        message: 'Você concluiu a Aula Inaugural! O certificado sai assim que o seu RGM chegar: o polo já está providenciando. Seu progresso fica salvo.',
+      });
+    }
+
     let curso = matriculados.formatCurso(aluno.curso);
     let unidade = matriculados.formatPolo(aluno.unidade);
     const sourcePool = getMatriculadosPool();
@@ -468,7 +536,7 @@ app.post('/api/certificates', authMiddleware, async (req, res) => {
     if (!curso || !unidade) {
       return res.status(422).json({
         success: false,
-        message: 'Não encontramos curso e unidade da sua matrícula para emitir o certificado.',
+        message: 'Ainda não encontramos o curso e o polo da sua matrícula, então o certificado não pode ser emitido agora. O cadastro costuma ser atualizado em até 1 dia útil: tente de novo amanhã ou chame o acadêmico.',
       });
     }
 
@@ -533,8 +601,27 @@ app.get('/api/tutoriais/:id', authMiddleware, async (req, res) => {
 // ---------- Trilha EaD para Iniciantes ----------
 
 // Recursos liberados para o aluno logado (a tela usa para mostrar ou esconder a trilha).
-app.get('/api/recursos', authMiddleware, (req, res) => {
-  res.json({ success: true, trilha: trilha.liberadaPara(req.aluno) });
+app.get('/api/recursos', authMiddleware, async (req, res) => {
+  const chat = webchat.configPara(req.aluno);
+  if (chat && pool) {
+    // Curso e polo vêm da última emissão/derivação gravada no portal (podem ainda não existir).
+    let perfil = null;
+    try {
+      const r = await pool.query('SELECT curso, unidade FROM csu_alunos WHERE id = $1', [req.aluno.id]);
+      perfil = r.rows[0] || null;
+    } catch (err) {
+      console.error('Falha ao ler curso/polo para o chat:', err.message);
+    }
+    chat.identity = webchat.identidadePara(req.aluno, { curso: perfil && perfil.curso, polo: perfil && perfil.unidade });
+  }
+  // preparo: conta sem RGM ("acesso em preparação"); a tela leva à Aula Inaugural.
+  res.json({
+    success: true,
+    trilha: trilha.liberadaPara(req.aluno),
+    webchat: chat,
+    rastreio: acompanhamento.liberadoPara(req.aluno),
+    preparo: !req.aluno.rgm,
+  });
 });
 
 // Enquanto a trilha estiver em teste, só as contas de TRILHA_LIBERADA_PARA acessam.
@@ -612,6 +699,26 @@ async function trilhaAction(req, res, fn) {
   }
 }
 
+// Já emitiu o certificado da Aula Inaugural? (quem emitiu antes da regra de pontos continua valendo)
+async function certificadoEmitido(alunoId) {
+  try {
+    const r = await pool.query('SELECT created_at FROM csu_certificados WHERE aluno_id = $1 ORDER BY created_at ASC LIMIT 1', [alunoId]);
+    return { emitido: Boolean(r.rows[0]), emitido_em: r.rows[0] ? r.rows[0].created_at : null };
+  } catch (err) {
+    return { emitido: false, emitido_em: null };
+  }
+}
+
+// Mesma fonte, para o painel admin: { [aluno_id]: data da 1ª emissão } de todos os alunos.
+async function certificadosEmitidos() {
+  try {
+    const r = await pool.query('SELECT aluno_id, MIN(created_at) AS emitido_em FROM csu_certificados GROUP BY aluno_id');
+    return r.rows.reduce((m, row) => { m[row.aluno_id] = row.emitido_em; return m; }, {});
+  } catch (err) {
+    return {};
+  }
+}
+
 app.get('/api/trilha/resumo', authMiddleware, async (req, res) => {
   if (!pool) return unavailable(res);
   try {
@@ -622,10 +729,12 @@ app.get('/api/trilha/resumo', authMiddleware, async (req, res) => {
       success: true,
       total: trilha.NIVEIS.length,
       concluidos: p.concluidos,
+      feitos: p.niveis.map((n) => n.concluido),
       pontos: p.pontos,
       maximo: trilha.MAX_PONTOS,
       atual: atual === -1 ? null : { nivel: atual + 1, titulo: trilha.NIVEIS[atual].t },
       comecou: p.niveis.some((n) => n.video_ok || n.pulou_video || n.partes_vistas.length || Object.keys(n.respostas).length),
+      certificado: { ...trilha.statusCertificado(p), ...(await certificadoEmitido(req.aluno.id)) },
     });
   } catch (err) {
     console.error('Falha no resumo da trilha:', err.message);
@@ -887,6 +996,10 @@ app.get('/api/admin/materias-imagens/crm', requireAdmin, async (req, res) => {
   }
 });
 
+app.get('/api/atendimento/padrao', (req, res) => {
+  return res.json({ success: true, ...atendimento.getAtendimentoPadrao() });
+});
+
 app.get('/api/atendimento', authMiddleware, async (req, res) => {
   if (!pool) return unavailable(res);
   try {
@@ -1083,14 +1196,187 @@ app.delete('/api/admin/tutoriais/:id', requireAdmin, async (req, res) => {
   }
 });
 
+// ---------- Acompanhamento do aluno (acessos, tempo, cliques, vídeos, onde travou) ----------
+let acompSchemaReady = null;
+function ensureAcompanhamento() {
+  if (!acompSchemaReady) {
+    acompSchemaReady = Promise.all([ensureTrilha(), acompanhamento.ensureSchema(pool)]).catch((err) => {
+      acompSchemaReady = null;
+      throw err;
+    });
+  }
+  return acompSchemaReady;
+}
+
+// Lote de eventos do navegador (fetch com keepalive ao sair da página).
+app.post('/api/eventos', authMiddleware, async (req, res) => {
+  if (!pool) return unavailable(res);
+  if (!acompanhamento.liberadoPara(req.aluno)) return res.status(204).end();
+  try {
+    await ensureAcompanhamento();
+    const r = await acompanhamento.registrarLote(pool, req.aluno, req.body);
+    if (!r.ok) return res.status(400).json({ success: false, message: 'Lote inválido.' });
+    return res.status(204).end();
+  } catch (err) {
+    console.error('Falha ao gravar eventos:', err.message);
+    return res.status(500).json({ success: false });
+  }
+});
+
+async function telefonesDe(rgms) {
+  const mapa = new Map();
+  if (!rgms.length) return mapa;
+  try {
+    const r = await pool.query('SELECT rgm, telefone FROM csu_materias_alunos WHERE rgm = ANY($1::text[]) AND telefone IS NOT NULL', [rgms]);
+    r.rows.forEach((x) => mapa.set(x.rgm, x.telefone));
+  } catch (err) { /* tabela pode não existir neste ambiente */ }
+  const source = getMatriculadosPool();
+  if (source) {
+    try {
+      const m = await matriculados.phonesByRgms(source, rgms);
+      m.forEach((tel, rgm) => { if (tel) mapa.set(rgm, tel); });
+    } catch (err) {
+      console.error('Telefones de matriculados indisponíveis no acompanhamento:', err.message);
+    }
+  }
+  return mapa;
+}
+
+function waNumero(tel) {
+  let d = String(tel || '').replace(/\D/g, '');
+  if (!d) return null;
+  if (!d.startsWith('55')) d = '55' + d;
+  return d.length >= 12 ? d : null;
+}
+
+async function listaAcompanhamento(req) {
+  await ensureAcompanhamento();
+  const { dias, rows } = await acompanhamento.listar(pool, { dias: req.query.dias, q: req.query.q });
+  const cfg = await acompanhamento.lerConfig(pool);
+  let lista = acompanhamento.montar(rows, trilha.NIVEIS, cfg);
+  const filtro = String(req.query.sinal || 'com_sinal');
+  if (filtro === 'com_sinal') lista = lista.filter((x) => x.sinais.length);
+  else if (filtro !== 'todos' && filtro !== 'em_espera') lista = lista.filter((x) => x.sinais.some((s) => s.id === filtro));
+  else if (filtro === 'em_espera') lista = lista.filter((x) => x.em_espera);
+  lista.sort((a, b) => a.prioridade - b.prioridade || new Date(b.ultimo_acesso || 0) - new Date(a.ultimo_acesso || 0));
+  return { dias, lista, rows, cfg };
+}
+
+app.get('/api/admin/acompanhamento', requireAdmin, async (req, res) => {
+  if (!pool) return unavailable(res);
+  try {
+    const { dias, lista, rows, cfg } = await listaAcompanhamento(req);
+    const pagina = lista.slice(0, 300);
+    const tels = await telefonesDe(pagina.map((x) => x.rgm));
+    pagina.forEach((x) => { const n = waNumero(tels.get(x.rgm)); x.whatsapp_numero = n; });
+    const ativos = rows.filter((r) => r.acessos > 0);
+    const totais = {
+      alunos: rows.length,
+      ativos_periodo: ativos.length,
+      acessos_periodo: ativos.reduce((n, r) => n + r.acessos, 0),
+      minutos_medio: ativos.length ? Math.round(ativos.reduce((n, r) => n + r.segundos, 0) / ativos.length / 60) : 0,
+      videos_iniciados: rows.reduce((n, r) => n + r.videos_inicio, 0),
+      videos_concluidos: rows.reduce((n, r) => n + r.videos_fim, 0),
+      com_sinal: acompanhamento.montar(rows, trilha.NIVEIS, cfg).filter((x) => x.sinais.length).length,
+    };
+    const sinais = acompanhamento.catalogo().filter((x) => cfg.sinais[x.id].ativo);
+    return res.json({ success: true, dias, totais, sinais, total_filtrado: lista.length, alunos: pagina });
+  } catch (err) {
+    console.error('Falha no acompanhamento:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível carregar o acompanhamento.' });
+  }
+});
+
+// Regras dos sinais (editáveis no admin). PUT com { reset: true } volta ao padrão.
+app.get('/api/admin/acompanhamento/regras', requireAdmin, async (req, res) => {
+  if (!pool) return unavailable(res);
+  try {
+    await ensureAcompanhamento();
+    return res.json({ success: true, regras: await acompanhamento.lerConfig(pool), padrao: acompanhamento.configPadrao(), catalogo: acompanhamento.catalogo() });
+  } catch (err) {
+    console.error('Falha ao ler regras do acompanhamento:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível carregar as regras.' });
+  }
+});
+
+app.put('/api/admin/acompanhamento/regras', requireAdmin, async (req, res) => {
+  if (!pool) return unavailable(res);
+  try {
+    await ensureAcompanhamento();
+    const regras = await acompanhamento.salvarConfig(pool, req.body && req.body.reset ? null : req.body, req.admin && req.admin.id);
+    return res.json({ success: true, regras });
+  } catch (err) {
+    console.error('Falha ao salvar regras do acompanhamento:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível salvar as regras.' });
+  }
+});
+
+app.get('/api/admin/acompanhamento/export.csv', requireAdmin, async (req, res) => {
+  if (!pool) return unavailable(res);
+  try {
+    const { lista } = await listaAcompanhamento(req);
+    const tels = await telefonesDe(lista.map((x) => x.rgm));
+    const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const lines = ['nome;rgm;email;telefone;curso;polo;sinal;mensagem_sugerida;acessos_periodo;minutos_periodo;ultimo_acesso;niveis_trilha;ultimo_followup'];
+    lista.forEach((x) => {
+      const s = x.sinais[0];
+      lines.push([x.nome, x.rgm, x.email, waNumero(tels.get(x.rgm)) || '', x.curso, x.unidade, s ? s.rotulo : '', s ? s.mensagem : '',
+        x.acessos, Math.round(x.segundos / 60), x.ultimo_acesso ? new Date(x.ultimo_acesso).toISOString() : '',
+        x.niveis_concluidos, x.followup_em ? new Date(x.followup_em).toISOString() : ''].map(esc).join(';'));
+    });
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="acompanhamento-alunos.csv"');
+    return res.send(String.fromCharCode(0xfeff) + lines.join('\n'));
+  } catch (err) {
+    console.error('Falha no CSV do acompanhamento:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível exportar.' });
+  }
+});
+
+app.get('/api/admin/acompanhamento/:id', requireAdmin, async (req, res) => {
+  if (!pool) return unavailable(res);
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ success: false });
+  try {
+    await ensureAcompanhamento();
+    return res.json({ success: true, ...(await acompanhamento.percurso(pool, id)) });
+  } catch (err) {
+    console.error('Falha no percurso do aluno:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível carregar o percurso.' });
+  }
+});
+
+app.post('/api/admin/acompanhamento/:id/followup', requireAdmin, async (req, res) => {
+  if (!pool) return unavailable(res);
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ success: false });
+  try {
+    await ensureAcompanhamento();
+    await acompanhamento.registrarFollowup(pool, id, req.admin && req.admin.id, req.body);
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Falha ao registrar follow-up:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível registrar.' });
+  }
+});
+
+// ---------- Avaliação dos conteúdos (joinha pra cima / pra baixo) ----------
+avaliacoes.registrarRotas(app, { getPool: () => pool, authMiddleware, requireAdmin });
+// Acesso em preparação (aluno sem RGM): o polo cria a conta e depois informa o RGM.
+preparo.registrar(app, { pool, requireAdmin });
+// Dados de acesso à faculdade (RGM, curso, e-mail acadêmico): o polo sobe; o aluno consulta.
+dadosAcesso.registrar(app, { pool, authMiddleware, requireAdmin, getMatriculadosPool });
+
 app.get('/api/admin/trilha', requireAdmin, async (req, res) => {
   if (!pool) return unavailable(res);
   try {
     await ensureTrilha();
-    return res.json({ success: true, ...(await trilha.resumoAdmin(pool)) });
+    const certificados = await certificadosEmitidos();
+    const [resumo, ondeTrava] = await Promise.all([trilhaAdmin.resumoAdmin(pool, certificados), trilhaAdmin.ondeTrava(pool)]);
+    return res.json({ success: true, ...resumo, onde_trava: ondeTrava });
   } catch (err) {
-    console.error('Falha no resumo da trilha:', err.message);
-    return res.status(500).json({ success: false, message: 'Não foi possível carregar a trilha.' });
+    console.error('Falha no resumo da Aula Inaugural:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível carregar a Aula Inaugural.' });
   }
 });
 
@@ -1098,20 +1384,59 @@ app.get('/api/admin/trilha/export.csv', requireAdmin, async (req, res) => {
   if (!pool) return unavailable(res);
   try {
     await ensureTrilha();
-    const rows = await trilha.exportAlunos(pool);
+    const rows = await trilhaAdmin.exportAlunos(pool, await certificadosEmitidos());
     const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const total = trilha.NIVEIS.length;
-    const lines = ['nome;rgm;email;niveis_concluidos;total_niveis;pontos;ultimo_acesso'];
+    const data = (d) => (d ? new Date(d).toISOString().slice(0, 10) : '');
+    const lines = ['nome;rgm;email;modulos_concluidos;total_modulos;pontos;meta_pontos;certificado_emitido;certificado_emitido_em;ultimo_acesso'];
     rows.forEach((r) => {
-      lines.push([r.nome, r.rgm, r.email, r.niveis_concluidos, total, r.pontos,
+      lines.push([r.nome, r.rgm, r.email, r.certificado.concluidos, r.certificado.total, r.certificado.pontos, r.certificado.meta,
+        r.certificado_emitido ? 'sim' : 'não', data(r.certificado_emitido_em),
         r.ultimo_acesso ? new Date(r.ultimo_acesso).toISOString() : ''].map(esc).join(';'));
     });
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', 'attachment; filename="trilha-alunos.csv"');
+    res.setHeader('Content-Disposition', 'attachment; filename="aula-inaugural-alunos.csv"');
     return res.send(String.fromCharCode(0xfeff) + lines.join('\n'));
   } catch (err) {
-    console.error('Falha no CSV da trilha:', err.message);
+    console.error('Falha no CSV da Aula Inaugural:', err.message);
     return res.status(500).json({ success: false, message: 'Não foi possível exportar.' });
+  }
+});
+
+// Relatório por aluno × módulo (fez / não fez / parou onde), para o painel e para o CRM.
+app.get('/api/admin/trilha/alunos', requireAdmin, async (req, res) => {
+  if (!pool) return unavailable(res);
+  try {
+    await ensureTrilha();
+    return res.json({ success: true, total_modulos: trilha.NIVEIS.length, alunos: await trilhaRelatorios.porAluno(pool, await certificadosEmitidos()) });
+  } catch (err) {
+    console.error('Falha no relatório por aluno:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível carregar o relatório por aluno.' });
+  }
+});
+
+app.get('/api/admin/trilha/alunos.csv', requireAdmin, async (req, res) => {
+  if (!pool) return unavailable(res);
+  try {
+    await ensureTrilha();
+    const alunos = await trilhaRelatorios.porAluno(pool, await certificadosEmitidos());
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="aula-inaugural-por-aluno-modulo.csv"');
+    return res.send(trilhaRelatorios.csvPorAluno(alunos));
+  } catch (err) {
+    console.error('Falha no CSV por aluno:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível exportar.' });
+  }
+});
+
+// Dashboard de uso: tempo ativo, minutos de vídeo, vídeos mais vistos, 👍/👎.
+app.get('/api/admin/trilha/uso', requireAdmin, async (req, res) => {
+  if (!pool) return unavailable(res);
+  try {
+    await ensureTrilha();
+    return res.json({ success: true, ...(await trilhaRelatorios.dashboardUso(pool)) });
+  } catch (err) {
+    console.error('Falha no dashboard de uso:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível carregar o uso.' });
   }
 });
 

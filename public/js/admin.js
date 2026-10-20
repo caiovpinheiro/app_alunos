@@ -25,6 +25,11 @@
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
+  // Aluno sem RGM = acesso em preparação (o polo informa o RGM depois).
+  function rgmTxt(rgm) {
+    return rgm ? 'RGM ' + escapeHtml(rgm) : 'Em preparação (sem RGM)';
+  }
+
   async function request(url, options) {
     var opts = options || {};
     opts.headers = Object.assign({}, opts.headers || {});
@@ -45,6 +50,8 @@
     return body;
   }
 
+  window.AdminCore = { request: function (u, o) { return request(u, o); }, token: function () { return token(); }, escapeHtml: function (t) { return escapeHtml(t); }, showLogin: function () { showLogin(); } };
+
   function showLogin() {
     document.getElementById('admin-login').classList.remove('hidden');
     document.getElementById('admin-app').classList.add('hidden');
@@ -62,6 +69,7 @@
     document.querySelectorAll('.admin-panel').forEach(function (el) {
       el.classList.toggle('hidden', el.id !== 'tab-' + name);
     });
+    if (name === 'acompanhamento' && window.AdminAcomp) window.AdminAcomp.load();
     if (name === 'avisos') loadAvisos();
     if (name === 'tutoriais') loadTuts();
     if (name === 'contatos') loadContatos();
@@ -70,29 +78,75 @@
     if (name === 'trilha') loadTrilha();
   }
 
+  // Aba "Aula Inaugural" (ids e rota continuam "trilha"): números de GET /api/admin/trilha.
   async function loadTrilha() {
     var msg = document.getElementById('trilha-msg');
     msg.textContent = 'Carregando...';
     try {
       var r = await request('/api/admin/trilha');
       msg.textContent = '';
-      var card = function (label, value) {
-        return '<div class="bg-white border rounded-xl p-4"><p class="text-xs text-gray-500">' + escapeHtml(label) + '</p><p class="text-2xl font-bold text-gray-800">' + escapeHtml(value) + '</p></div>';
+      var num = function (n) { return Number(n || 0).toLocaleString('pt-BR'); };
+      var pct = function (n, de) { return de ? Math.round(n / de * 100) + '%' : '—'; };
+      var card = function (label, value, sub) {
+        return '<div class="bg-white border rounded-xl p-4"><p class="text-xs text-gray-500">' + escapeHtml(label) + '</p><p class="text-2xl font-bold text-gray-800">' + escapeHtml(value) + '</p>' +
+          (sub ? '<p class="text-xs text-gray-500 mt-1">' + escapeHtml(sub) + '</p>' : '') + '</div>';
       };
-      var taxa = r.iniciaram ? Math.round(r.concluiram / r.iniciaram * 100) + '%' : '—';
+      var total = r.total_modulos || 7;
+      var meta = num(r.meta || 70); // 10 pontos por módulo: 7 módulos = meta
+      var certSub = r.certificados_total > r.certificados_emitidos
+        ? r.certificados_total + ' no total, contando quem emitiu antes da Aula Inaugural'
+        : 'Certificado de ' + (r.horas || 4) + ' horas';
       document.getElementById('admin-trilha-totais').innerHTML =
-        card('Alunos que começaram', r.iniciaram) + card('Concluíram os 7 níveis', r.concluiram) + card('Taxa de conclusão', taxa);
-      document.getElementById('admin-trilha-niveis').innerHTML = r.niveis.map(function (n) {
-        return '<tr class="border-t"><td class="px-3 py-2">' + n.nivel + '. ' + escapeHtml(n.titulo) + '</td><td class="px-3 py-2">' + n.abriram + '</td><td class="px-3 py-2">' + n.viram_video + '</td><td class="px-3 py-2">' + n.concluiram + '</td></tr>';
+        card('Alunos que começaram', num(r.iniciaram)) +
+        card('Concluíram os ' + total + ' módulos', num(r.concluiram), meta + ' pontos · ' + num(r.pontos_modulo || 10) + ' por módulo') +
+        card('Certificados emitidos', num(r.certificados_emitidos), certSub) +
+        card('Taxa de conclusão', pct(r.concluiram, r.iniciaram), total + ' módulos ÷ começaram');
+      var base = r.funil.length ? r.funil[0].n : 0;
+      document.getElementById('admin-trilha-funil').innerHTML = r.funil.map(function (f, i) {
+        var w = base ? Math.max(4, Math.round(f.n / base * 100)) : 0;
+        return '<li><div class="flex justify-between gap-3"><span>' + (i + 1) + '. ' + escapeHtml(f.etapa) + '</span><b>' + num(f.n) + (i ? ' <span class="font-normal text-gray-500">(' + pct(f.n, base) + ')</span>' : '') + '</b></div>' +
+          '<div class="h-2 bg-slate-100 rounded mt-1"><div class="h-2 bg-cruzeiro rounded" style="width:' + w + '%"></div></div></li>';
       }).join('');
+      var ab = r.abertura;
+      document.getElementById('admin-trilha-abertura').innerHTML = ab
+        ? '<p class="font-semibold text-gray-800">' + escapeHtml(ab.titulo) + '</p>' +
+          '<p class="mt-2"><b>' + num(ab.iniciaram) + '</b> aluno(s) deram play · <b>' + num(ab.terminaram) + '</b> viram até o fim</p>' +
+          '<p class="text-xs text-gray-500 mt-2">Conta só quem tem o rastreio ligado (eventos de vídeo do Acompanhamento). A "Aula completa" usa os mesmos arquivos dos módulos, por isso não aparece aqui.</p>'
+        : '<p class="text-gray-500">Sem eventos de vídeo ainda (o rastreio do Acompanhamento precisa estar ligado).</p>';
+      document.getElementById('admin-trilha-niveis').innerHTML = r.modulos.map(function (n) {
+        return '<tr class="border-t"><td class="px-3 py-2">' + n.modulo + '. ' + escapeHtml(n.titulo) + '</td><td class="px-3 py-2">' + n.abriram + '</td><td class="px-3 py-2">' + n.viram_video + '</td><td class="px-3 py-2">' + n.concluiram + '</td>' +
+          '<td class="px-3 py-2">' + num(n.sem_erro) + (n.concluiram ? ' <span class="text-gray-500">(' + pct(n.sem_erro, n.concluiram) + ')</span>' : '') + '</td></tr>';
+      }).join('');
+      var ot = r.onde_trava || { modulos: [], alunos_presos: [] };
+      document.getElementById('admin-trilha-onde-nota').textContent = 'Atrito = Travei×3 + 👎×3 + pararam aqui×2 + vídeos abandonados + erros. Tempo, vídeo abandonado, pausas e WhatsApp vêm do rastreio' +
+        (ot.rastreio_disponivel ? ' (' + num(ot.alunos_rastreados) + ' aluno(s) rastreado(s); paradas acima de ' + ot.gap_ativo_min + ' min não contam como tempo)' : ' (ainda sem eventos)') + '; o resto vale para todos os alunos.';
+      var maxAtrito = ot.modulos.reduce(function (m, x) { return Math.max(m, x.atrito); }, 0);
+      document.getElementById('admin-trilha-onde').innerHTML = ot.modulos.map(function (m) {
+        var cor = !m.atrito ? 'bg-slate-100 text-gray-500' : m.atrito === maxAtrito ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-800';
+        var td = function (v) { return '<td class="px-3 py-2">' + v + '</td>'; };
+        return '<tr class="border-t">' + td(m.modulo + '. ' + escapeHtml(m.titulo)) +
+          td('<span class="inline-block rounded px-2 font-semibold ' + cor + '">' + m.atrito + '</span>') +
+          td(m.abandonaram_aqui) + td(m.travei) + td(m.negativos + ' / ' + m.positivos) + td(m.erros) +
+          td(m.videos_abandonados + (m.videos_abandonados ? ' de ' + m.videos_iniciados + ' <span class="text-gray-500">(param em ~' + m.parou_em_pct + '%)</span>' : '')) +
+          td(m.pausas) + td(m.whatsapp) +
+          td(m.tempo_mediano_min == null ? '—' : m.tempo_mediano_min + ' min <span class="text-gray-500">(' + m.alunos_rastreados + ' aluno(s))</span>') + '</tr>';
+      }).join('');
+      document.getElementById('admin-trilha-presos').innerHTML = ot.alunos_presos.length
+        ? ot.alunos_presos.map(function (a) {
+          return '<div class="bg-white border rounded-xl px-4 py-3"><div class="flex flex-wrap justify-between gap-2"><b>' + escapeHtml(a.nome) + '</b><span class="text-gray-500">' + rgmTxt(a.rgm) + '</span></div>' +
+            '<p class="mt-1">Parou no <b>Módulo ' + a.modulo + '</b> (' + escapeHtml(a.modulo_titulo) + ') · ' + (a.dias_parado ? 'há ' + a.dias_parado + ' dia(s)' : 'hoje') + ' · ' + a.concluidos + ' de ' + total + ' módulos · ' + num(a.pontos) + ' pts</p>' +
+            '<p class="text-gray-600 mt-1">' + a.motivos.map(escapeHtml).join(' · ') + '</p></div>';
+        }).join('')
+        : '<p class="text-gray-500">Ninguém parado: todos que começaram concluíram os ' + total + ' módulos.</p>';
+      if (window.AdminAula) window.AdminAula.load(r);
       document.getElementById('admin-trilha-perguntas').innerHTML = r.perguntas_dificeis.length
-        ? r.perguntas_dificeis.map(function (q) { return '<li class="bg-white border rounded-lg px-3 py-2"><b>' + q.erros + ' erro(s)</b> · Nível ' + q.nivel + ': ' + escapeHtml(q.pergunta) + '</li>'; }).join('')
+        ? r.perguntas_dificeis.map(function (q) { return '<li class="bg-white border rounded-lg px-3 py-2"><b>' + q.erros + ' erro(s)</b> · Módulo ' + q.modulo + ': ' + escapeHtml(q.pergunta) + '</li>'; }).join('')
         : '<li class="text-gray-500">Ainda sem respostas erradas.</li>';
       document.getElementById('admin-trilha-travei').innerHTML = r.travei.length
-        ? r.travei.map(function (t) { return '<li class="bg-white border rounded-lg px-3 py-2"><b>' + t.vezes + 'x</b> · Nível ' + t.nivel + ': ' + escapeHtml(t.parte) + '</li>'; }).join('')
+        ? r.travei.map(function (t) { return '<li class="bg-white border rounded-lg px-3 py-2"><b>' + t.vezes + 'x</b> · Módulo ' + t.modulo + ': ' + escapeHtml(t.parte) + '</li>'; }).join('')
         : '<li class="text-gray-500">Ninguém tocou em Travei ainda.</li>';
     } catch (err) {
-      msg.textContent = err.message || 'Não foi possível carregar a trilha.';
+      msg.textContent = err.message || 'Não foi possível carregar a Aula Inaugural.';
     }
   }
 
@@ -104,7 +158,7 @@
       if (res.status === 401) { setToken(null); showLogin(); throw new Error('Sessão expirada.'); }
       if (!res.ok) throw new Error('Não foi possível exportar o CSV.');
       var url = URL.createObjectURL(await res.blob());
-      var link = document.createElement('a'); link.href = url; link.download = 'trilha-alunos.csv';
+      var link = document.createElement('a'); link.href = url; link.download = 'aula-inaugural-alunos.csv';
       document.body.appendChild(link); link.click(); link.remove();
       setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
       msg.textContent = 'CSV baixado.';
@@ -241,7 +295,7 @@
       return '<article class="bg-white border rounded-xl p-4 flex justify-between gap-3">' +
         '<div><strong>' + escapeHtml(item.indicado_nome) + '</strong>' +
         '<p class="text-sm text-gray-500">' + escapeHtml(item.indicado_whatsapp) + ' · indicado por ' + escapeHtml(item.indicador_nome) +
-        ' (RGM ' + escapeHtml(item.indicador_rgm) + ')</p></div>' +
+        ' (' + rgmTxt(item.indicador_rgm) + ')</p></div>' +
         '<div class="flex gap-2 items-center text-sm">' +
           '<select data-ind-status="' + item.id + '">' +
             ['novo', 'contatado', 'convertido', 'descartado'].map(function (st) {
@@ -315,7 +369,7 @@
       '<p><strong>E-mail:</strong> ' + escapeHtml(item.indicado_email || '—') + '</p>' +
       '<p><strong>Curso:</strong> ' + escapeHtml(item.curso_interesse || '—') + '</p>' +
       '<p><strong>Obs:</strong> ' + escapeHtml(item.observacao || '—') + '</p>' +
-      '<p class="mt-2"><strong>Indicador:</strong> ' + escapeHtml(item.indicador_nome) + ' · RGM ' + escapeHtml(item.indicador_rgm) +
+      '<p class="mt-2"><strong>Indicador:</strong> ' + escapeHtml(item.indicador_nome) + ' · ' + rgmTxt(item.indicador_rgm) +
       ' · polo ' + escapeHtml(item.indicador_polo || '—') + '</p>' +
       '<p><strong>Status:</strong> ' + escapeHtml(item.status) + '</p>';
   }
@@ -326,7 +380,7 @@
       var me = await request('/api/admin/me');
       document.getElementById('admin-name').textContent = me.user.nome || me.user.email;
       showApp();
-      switchTab('avisos');
+      switchTab('acompanhamento');
     } catch (err) {
       showLogin();
     }
@@ -350,7 +404,7 @@
       setToken(body.token);
       document.getElementById('admin-name').textContent = body.user.name;
       showApp();
-      switchTab('avisos');
+      switchTab('acompanhamento');
     } catch (err) {
       errEl.textContent = err.message;
       errEl.classList.remove('hidden');

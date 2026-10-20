@@ -9,16 +9,18 @@ function digits(value) {
 }
 
 function defaultAcademic() {
-  return digits(process.env.WHATSAPP_ACADEMICO_PADRAO || '915184535');
+  return digits(process.env.WHATSAPP_ACADEMICO_PADRAO || '11915184535');
 }
 
 function defaultCommercial() {
-  return digits(process.env.WHATSAPP_COMERCIAL_PADRAO || '917479873');
+  return digits(process.env.WHATSAPP_COMERCIAL_PADRAO || '11917479873');
 }
 
 function toWaNumber(phone) {
   let d = digits(phone);
   if (!d) return '';
+  // Número sem DDD (8 ou 9 dígitos): assume São Paulo, onde fica o atendimento padrão.
+  if (d.length === 8 || d.length === 9) d = `11${d}`;
   if (!d.startsWith('55')) d = `55${d}`;
   return d;
 }
@@ -78,13 +80,25 @@ async function resolvePhones(pool, polo) {
   };
 }
 
+// Contato padrão, sem login: usado em "Esqueci minha senha" na tela de entrada.
+function getAtendimentoPadrao() {
+  const texto = 'Olá! Não consigo entrar no Portal do Aluno. Meu RGM é: ';
+  return {
+    academico: { telefone: defaultAcademic(), url: waLink(defaultAcademic(), texto) },
+  };
+}
+
 async function getAtendimento(pool, alunoId) {
   const perfil = await getAlunoPerfil(pool, alunoId);
   if (!perfil) return null;
-  const poloLabel = perfil.polo || 'não informado';
+  const quem = !perfil.rgm
+    ? `Olá! Sou ${perfil.nome}, ainda sem RGM (acesso em preparação pelo polo).`
+    : perfil.polo
+      ? `Olá! Sou ${perfil.nome}, RGM ${perfil.rgm}, aluno(a) do polo ${perfil.polo}.`
+      : `Olá! Sou ${perfil.nome}, RGM ${perfil.rgm} (ainda sem polo no cadastro).`;
   const phones = await resolvePhones(pool, perfil.polo);
-  const academica = `Olá! Sou ${perfil.nome}, RGM ${perfil.rgm}, aluno(a) do polo ${poloLabel}. Preciso de ajuda acadêmica.`;
-  const comercial = `Olá! Sou ${perfil.nome}, RGM ${perfil.rgm}, aluno(a) do polo ${poloLabel}. Gostaria de falar com o comercial.`;
+  const academica = `${quem} Preciso de ajuda acadêmica.`;
+  const comercial = `${quem} Gostaria de falar com o comercial.`;
   return {
     nome: perfil.nome,
     rgm: perfil.rgm,
@@ -273,6 +287,7 @@ async function upsertContato(pool, polo, academico, comercial) {
 }
 
 module.exports = {
+  getAtendimentoPadrao,
   STATUS,
   getAtendimento,
   validateIndicacao,

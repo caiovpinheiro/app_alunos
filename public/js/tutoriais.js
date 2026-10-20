@@ -39,7 +39,7 @@ window.Tutoriais = (function () {
           (item.duracao ? '<span class="tutorial-dur">' + escapeHtml(item.duracao) + '</span>' : '') +
           (item.trilha
             ? '<button type="button" class="tutorial-trilha-link" data-open-trilha="' + item.trilha.nivel + '">' +
-                'Passo a passo no Nível ' + item.trilha.nivel + ' da trilha: ' + escapeHtml(item.trilha.titulo) +
+                'Módulo ' + item.trilha.nivel + ' da Aula Inaugural: ' + escapeHtml(item.trilha.titulo) +
               '</button>'
             : '') +
         '</div>' +

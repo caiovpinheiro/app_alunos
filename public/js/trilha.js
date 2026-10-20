@@ -1,4 +1,6 @@
-/* Trilha "EaD Digital para Iniciantes": 7 níveis com vídeo, resumo e perguntas.
+/* Aula Inaugural (antiga Trilha "EaD Digital para Iniciantes"): programa único com 7 módulos.
+   Cada módulo = capítulo(s) da aula + resumo + perguntas com pontos. Ordem livre (sugerida).
+   Certificado de 4 horas: 7 módulos concluídos + meta de pontos (a regra vale no servidor).
    Conteúdo e progresso vêm de /api/trilha; a correção das respostas é feita no servidor.
    Só as preferências de leitura (letra maior, vídeo devagar, ver tudo) ficam no aparelho. */
 window.Trilha = (function () {
@@ -15,6 +17,8 @@ window.Trilha = (function () {
   var root = null;
   var peek = {};           // níveis abertos por link (tutoriais, Meu Semestre) mesmo sem terminar o anterior
   var alvo = null;         // nível (0-based) para rolar quando a trilha terminar de montar
+  var emitido = false;     // certificado já emitido (vem de /api/trilha/resumo)
+  var querAulaCompleta = false; // pedido de "Assistir à aula completa" antes da tela montar
 
   var LOCK = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2" fill="none"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4" fill="none"></path></svg>';
   var HELP_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/><path d="M19 20c0 1.5-2 2-5 2"/></svg>';
@@ -74,7 +78,14 @@ window.Trilha = (function () {
 
   var L = function () { return C.niveis; };
   function doneCount() { return L().filter(function (_, i) { return S.done[i]; }).length; }
-  function unlocked(i) { return !!P.review || !!peek[i] || i === 0 || !!S.done[i - 1]; }
+  // Ordem livre: todos os módulos ficam abertos; a ordem de cima para baixo é só a sugerida.
+  function unlocked() { return true; }
+  function num(n) { return Number(n || 0).toLocaleString('pt-BR'); }
+  function meta() { return (C.certificado && C.certificado.meta) || C.pontos.meta || C.pontos.maximo; }
+  // Pontuação simples: cada módulo concluído vale 10 pontos (7 módulos = 70 = meta).
+  function pm() { return (C.pontos && C.pontos.modulo) || 10; }
+  function horas() { return (C.certificado && C.certificado.horas) || 4; }
+  function liberado() { return doneCount() >= L().length && S.xp >= meta(); }
   function currentIdx() { for (var i = 0; i < L().length; i++) if (!S.done[i]) return i; return L().length; }
 
   // ---------- topo, mapa, estado dos níveis ----------
@@ -84,19 +95,47 @@ window.Trilha = (function () {
     var md = $('#tMedal');
     md.textContent = d; md.style.setProperty('--lv', d / L().length * 100);
     $('#tRank').textContent = d ? L()[d - 1].rank : 'Visitante';
-    $('#tXpTxt').textContent = S.xp + ' de ' + C.pontos.maximo + ' pontos';
-    $('#tLvTxt').textContent = d + ' de ' + L().length + ' níveis';
-    $('#tXpFill').style.width = (S.xp / C.pontos.maximo * 100) + '%';
+    $('#tXpTxt').textContent = num(S.xp) + ' de ' + num(meta()) + ' pontos para o certificado';
+    $('#tLvTxt').textContent = d + ' de ' + L().length + ' módulos';
+    $('#tXpFill').style.width = Math.min(100, S.xp / meta() * 100) + '%';
     $('#tReview').setAttribute('aria-pressed', P.review ? 'true' : 'false');
-    var fin = $('#tFinal');
-    fin.hidden = d < L().length;
-    $('#tFinalTxt').textContent = 'Você fez ' + S.xp + ' de ' + C.pontos.maximo + ' pontos nos ' + L().length + ' níveis.';
+    certStatus();
     if (lastXp !== null && S.xp > lastXp) {
       var h = $('#tHud');
       $('#tGain').textContent = '+' + (S.xp - lastXp);
       h.classList.remove('bump'); void h.offsetWidth; h.classList.add('bump');
     }
     lastXp = S.xp;
+  }
+
+  // Linha do certificado no placar e bloco de encerramento.
+  function certStatus() {
+    var tot = L().length;
+    var d = doneCount();
+    // Cada módulo vale 10 pontos: o que falta em módulos é o que falta em pontos.
+    var faltam = Math.max(0, tot - d);
+    var falta = (faltam === 1 ? 'Falta 1 módulo' : 'Faltam ' + faltam + ' módulos') + ' (' + num(faltam * pm()) + ' pontos).';
+    var ok = liberado();
+    var linha = $('#tCertTxt');
+    if (linha) {
+      linha.classList.toggle('is-ok', ok || emitido);
+      linha.textContent = emitido
+        ? 'Certificado já emitido. Pode gerar o PDF de novo no fim da página.'
+        : ok
+          ? 'Certificado de ' + horas() + ' horas liberado! Emita no fim da página.'
+          : 'Certificado de ' + horas() + ' horas: conclua os ' + tot + ' módulos (' + num(meta()) + ' pontos). ' + falta;
+    }
+    var box = $('#tCert');
+    if (!box) return;
+    if (ok || emitido) {
+      box.className = 'tcert is-ok';
+      box.innerHTML = '<p><b>' + (emitido && !ok ? 'Você já emitiu o seu certificado.' : 'Você concluiu a Aula Inaugural!') + '</b> ' +
+        d + ' de ' + tot + ' módulos e ' + num(S.xp) + ' pontos. Certificado de participação de ' + horas() + ' horas.</p>' +
+        '<button type="button" class="btn" data-gerar-certificado><span data-cert-txt>' + (emitido ? 'Gerar o PDF de novo' : 'Emitir meu certificado') + '</span></button>';
+    } else {
+      box.className = 'tcert';
+      box.innerHTML = LOCK + '<p><b>Certificado de ' + horas() + ' horas</b><br>Conclua os ' + tot + ' módulos (' + pm() + ' pontos cada, ' + num(meta()) + ' no total). ' + falta + '</p>';
+    }
   }
 
   function map() {
@@ -109,7 +148,7 @@ window.Trilha = (function () {
       var st = S.done[i] ? 'done' : (i === cur ? 'current' : (unlocked(i) ? 'open' : 'locked'));
       b.className = 'node ' + st;
       b.innerHTML = '<span class="dot">' + (S.done[i] ? '✓' : (i + 1)) + '</span><span class="nm">' + esc(l.short) + '</span>';
-      b.setAttribute('aria-label', 'Nível ' + (i + 1) + ': ' + l.t + (st === 'locked' ? ' (bloqueado)' : st === 'done' ? ' (concluído)' : ''));
+      b.setAttribute('aria-label', 'Módulo ' + (i + 1) + ': ' + l.t + (st === 'done' ? ' (concluído)' : ''));
       b.addEventListener('click', function () { if (unlocked(i)) document.getElementById('tlv' + i).scrollIntoView({ behavior: smooth() }); });
       li.appendChild(b); m.appendChild(li);
     });
@@ -134,8 +173,12 @@ window.Trilha = (function () {
     if (S.watched[i]) {
       var p = sec.querySelector('.vidbar .prog');
       p.className = 'prog seen';
-      p.textContent = 'Vídeo assistido · você ganhou ' + C.pontos.video + ' pontos';
+      p.textContent = 'Vídeo assistido';
       sec.querySelector('.vmeter i').style.width = '100%';
+    } else if (S.skipped[i] || S.done[i]) {
+      sec.querySelector('.vidbar .prog').textContent = S.done[i] && !S.skipped[i]
+        ? 'Módulo concluído.'
+        : 'Você pulou o vídeo. Pode voltar a ele quando quiser.';
     }
   }
 
@@ -152,21 +195,24 @@ window.Trilha = (function () {
     var h = '';
     h += '<div class="wrap">';
     h += '<header class="hero"><div class="hero-txt">';
-    h += '<div class="eyebrow">' + (primeiro ? 'Olá, ' + esc(primeiro) + '! · ' : '') + 'Graduação EaD Digital</div>';
-    h += '<h1>EaD Digital para <span class="hl">Iniciantes</span></h1>';
-    h += '<p class="lede">Aqui você aprende, passo a passo, a usar tudo o que precisa no curso. São ' + L().length + ' partes. Em cada uma: assista ao vídeo, leia o resumo e responda as perguntas. Pode errar à vontade. O que você já fez fica salvo na sua conta: dá para continuar no celular ou no computador.</p>';
-    h += '<ol class="how" aria-label="Em cada nível"><li><span>1</span>Assista</li><li><span>2</span>Leia</li><li><span>3</span>Responda</li></ol>';
+    h += '<div class="eyebrow">' + (primeiro ? 'Olá, ' + esc(primeiro) + '! · ' : '') + 'Aula Inaugural · Graduação EaD</div>';
+    h += '<h1>Aula <span class="hl">Inaugural</span></h1>';
+    h += '<p class="lede">Tudo o que você precisa para começar, em ' + L().length + ' módulos curtos. Em cada um: assista ao capítulo da aula, leia o resumo e responda às perguntas. Pode errar à vontade: cada módulo concluído vale ' + pm() + ' pontos. Concluiu os ' + L().length + ' (' + num(meta()) + ' pontos)? Emita o certificado de ' + horas() + ' horas. O que você já fez fica salvo na sua conta.</p>';
+    h += '<p class="lede lede-atalho">Já sabe algum assunto? Em cada módulo, toque em <b>Já sei isso</b> para ir direto às perguntas. Prefere ver tudo de uma vez? <button type="button" class="linkbtn lede-link" data-open-aula>Assistir à aula completa (sem pontos)</button></p>';
+    h += '<ol class="how" aria-label="Em cada módulo"><li><span>1</span>Assista</li><li><span>2</span>Leia</li><li><span>3</span>Responda</li></ol>';
     h += '<div class="a11y" role="group" aria-label="Facilidades de leitura">';
     h += '<button class="chipbtn" id="tBig" type="button" aria-pressed="false">A+ Letra maior</button>';
     h += '<button class="chipbtn" id="tSlow" type="button" aria-pressed="false">Vídeos mais devagar</button></div>';
     h += '</div></header>';
+    h += '<div data-apps-slot data-apps-variant="compacta" class="t-apps"></div>';
 
     h += '<div class="intro"><section class="start card" aria-labelledby="tStartTitle"><div class="cardhead"><div>';
-    h += '<h2 id="tStartTitle">Comece por aqui: ' + C.tarefas.length + ' tarefas da primeira semana</h2>';
-    h += '<p class="hint">Marque cada uma quando terminar. Se não souber fazer, o nível indicado ensina.</p></div>';
+    // Lista automática: cada item se marca sozinho pelo progresso real (módulos concluídos, certificado emitido).
+    h += '<h2 id="tStartTitle">Sua primeira semana</h2>';
+    h += '<p class="hint">Se marca sozinho conforme você avança nos módulos.</p></div>';
     h += '<span class="count" id="tTodoCount" aria-live="polite"></span></div><ul class="todo" id="tTodo">';
-    C.tarefas.forEach(function (t) {
-      h += '<li><label><input type="checkbox" data-tarefa="' + esc(t.id) + '"> <span>' + t.html + '</span></label></li>';
+    C.tarefas.forEach(function (t, k) {
+      h += '<li data-todo="' + k + '"><span class="tk" aria-hidden="true"></span><span class="tx">' + t.html + '<span class="sr"></span></span></li>';
     });
     h += '</ul></section>';
     h += '<aside class="help" aria-labelledby="tHelpTitle"><div class="hh">' + HELP_ICON + '<h2 id="tHelpTitle">Travou? Peça ajuda, é normal</h2></div>';
@@ -176,15 +222,28 @@ window.Trilha = (function () {
 
     h += '<div class="hud" id="tHud"><div class="in"><span class="medal" id="tMedal">0</span><span class="gain" id="tGain" aria-hidden="true"></span>';
     h += '<div class="hudmain"><div class="rank"><small>Sua conquista</small><b id="tRank">Visitante</b></div><div class="xpbar"><i id="tXpFill"></i></div>';
-    h += '<div class="xpline"><span id="tXpTxt"></span><span id="tLvTxt"></span></div></div></div></div>';
+    h += '<div class="xpline"><span id="tXpTxt"></span><span id="tLvTxt"></span></div><p class="certline" id="tCertTxt" aria-live="polite"></p></div></div></div>';
 
-    h += '<div class="trailhead"><div><h2 class="sec-h">Sua trilha</h2><p class="hint">Toque em um nível aberto para ir até ele.</p></div>';
+    h += '<div class="trailhead"><div><h2 class="sec-h">Seus módulos</h2><p class="hint">Faça na ordem que quiser. A ordem sugerida é de cima para baixo.</p></div>';
     h += '<div class="tools"><button class="chipbtn" id="tReview" type="button" aria-pressed="false">Ver tudo sem jogar</button>';
     h += '<button class="chipbtn" id="tReset" type="button">Começar de novo</button></div></div>';
-    h += '<ol class="map" id="tMap" aria-label="Mapa de níveis"></ol><div id="tLevels" class="levels"></div>';
-
-    h += '<div class="final" id="tFinal" hidden><div class="eyebrow" style="color:inherit">Trilha concluída</div><h2>Você é Formando!</h2><p id="tFinalTxt"></p>';
-    h += '<p>Releia qualquer nível quando quiser. Na dúvida, vale o que está no Manual do Aluno e no Calendário Acadêmico.</p></div>';
+    h += '<ol class="map" id="tMap" aria-label="Mapa dos módulos"></ol>';
+    // Aula completa: todos os capítulos em sequência, sem pontos (os pontos vêm dos módulos).
+    if (C.aula_completa && C.aula_completa.length) {
+      var seg = C.aula_completa.reduce(function (n, c) { var p = String(c.duracao || '0:0').split(':'); return n + (Number(p[0]) * 60 + Number(p[1] || 0)); }, 0);
+      h += '<details class="level tcaps-sec taula" id="tAulaCompleta"><summary><span class="lvbadge" aria-hidden="true">▶</span><span class="tt"><span class="lvnum">Sem pontos</span><b>Aula completa</b>' +
+        '<small>' + C.aula_completa.length + ' capítulos em sequência' + (seg ? ' · ' + Math.round(seg / 60) + ' min' : '') + '. Para quem prefere ver tudo de uma vez.</small></span></summary>' +
+        capsPlayer(C.aula_completa, 'tAc') + '</details>';
+    }
+    // Abertura (sem pontos), os 7 módulos e o encerramento com o certificado.
+    if (C.abertura && C.abertura.length) {
+      h += '<section class="level tcaps-sec" aria-labelledby="tAbertura"><div class="lvhead"><span class="lvbadge" aria-hidden="true">▶</span><div class="tt"><div class="lvmeta"><span class="lvnum">Abertura</span><span class="state">Sem pontos</span></div><h2 id="tAbertura">Boas-vindas</h2></div></div>' + capsPlayer(C.abertura, 'tAb') + '</section>';
+    }
+    h += '<div id="tLevels" class="levels"></div>';
+    h += '<section class="level tcaps-sec tfinal" id="tFinal" data-cert-area aria-labelledby="tFinalH"><div class="lvhead"><span class="lvbadge" aria-hidden="true">★</span><div class="tt"><div class="lvmeta"><span class="lvnum">Encerramento</span></div><h2 id="tFinalH">Encerramento e certificado</h2></div></div>';
+    if (C.encerramento && C.encerramento.length) h += capsPlayer(C.encerramento, 'tEn');
+    h += '<div id="tCert" class="tcert"></div><div class="perr" data-cert-erro hidden></div>';
+    h += '<p class="hint">Releia qualquer módulo quando quiser. Na dúvida, vale o que está no Manual do Aluno e no Calendário Acadêmico.</p></section>';
 
     h += '<section class="glos card" aria-labelledby="tGlosTitle"><h2 id="tGlosTitle">Dicionário do aluno: o que quer dizer cada palavra</h2><dl>';
     C.glossario.forEach(function (g) { h += '<div><dt>' + g[0] + '</dt><dd>' + g[1] + '</dd></div>'; });
@@ -195,31 +254,101 @@ window.Trilha = (function () {
     return h;
   }
 
+  // Joinha pra cima / pra baixo no vídeo (public/js/avaliacao.js): 'modulo-N' ou 'boasvindas'.
+  function avaliacao(id) {
+    return window.Avaliacao ? window.Avaliacao.html('aula', id) : '';
+  }
+
+  // Player simples de capítulos sem pontos (abertura e encerramento): troca o vídeo pelo botão do capítulo.
+  function capsPlayer(caps, id) {
+    var h = '<div class="tcaps" data-caps="' + id + '"><div class="player"><video controls playsinline preload="metadata" poster="' + esc(caps[0].v) + '.jpg"><source src="' + esc(caps[0].v) + '.mp4" type="video/mp4"></video></div>';
+    if (caps.length === 1 && id === 'tAb') {
+      h += '<div class="tcaps-info"><b>' + esc(caps[0].t) + (caps[0].duracao ? ' · ' + esc(caps[0].duracao) : '') + '</b>' +
+        '<p>Um recado rápido antes de começar: como funciona o estudo, os 7 módulos, os pontos e o certificado de ' + horas() + ' horas.</p>' +
+        '<p class="hint">Não vale pontos. Pode pular, se quiser.</p></div>';
+    }
+    if (id === 'tAb') h += avaliacao('boasvindas');
+    if (caps.length > 1) {
+      h += '<div class="parts" role="group" aria-label="Capítulos">' + caps.map(function (c, k) {
+        return '<button type="button" class="pbtn" data-cap-v="' + esc(c.v) + '" aria-pressed="' + (k ? 'false' : 'true') + '"><span class="pk">' + (k + 1) + '</span><span>' + esc(c.t) + (c.duracao ? ' · ' + esc(c.duracao) : '') + '</span></button>';
+      }).join('') + '</div>';
+    }
+    return h + '</div>';
+  }
+
+  function bindCaps(box) {
+    var v = box.querySelector('video');
+    var btns = box.querySelectorAll('[data-cap-v]');
+    btns.forEach(function (b, k) {
+      b.addEventListener('click', function () {
+        btns.forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+        var src = b.getAttribute('data-cap-v');
+        v.querySelector('source').setAttribute('src', src + '.mp4'); v.poster = src + '.jpg'; v.load();
+        var pr = v.play(); if (pr && pr.catch) pr.catch(function () {});
+      });
+    });
+    // Terminou um capítulo: segue para o próximo, como a aula contínua.
+    v.addEventListener('ended', function () {
+      var atual = Array.prototype.findIndex.call(btns, function (x) { return x.getAttribute('aria-pressed') === 'true'; });
+      if (atual > -1 && btns[atual + 1]) btns[atual + 1].click();
+    });
+  }
+
   function levelHtml(l, i) {
-    var h = '<div class="lvhead"><span class="lvbadge" aria-hidden="true">' + (i + 1) + '</span><div class="tt"><div class="lvmeta"><span class="lvnum">Nível ' + (i + 1) + '</span><span class="state"></span></div><h2>' + esc(l.t) + '</h2></div></div>';
-    h += '<div class="lockpanel">' + LOCK + '<span>Termine o nível ' + i + ' para abrir este. Ou toque em Ver tudo sem jogar, mais acima.</span></div>';
+    var h = '<div class="lvhead"><span class="lvbadge" aria-hidden="true">' + (i + 1) + '</span><div class="tt"><div class="lvmeta"><span class="lvnum">Módulo ' + (i + 1) + '</span><span class="state"></span></div><h2>' + esc(l.t) + '</h2></div></div>';
+    h += '<div class="lockpanel" hidden></div>';
     h += '<div class="lvbody">';
-    h += '<div class="step s1"><div class="part"><span class="pn">1</span><span class="pt">Assista ao vídeo</span><span class="pts">vale ' + C.pontos.video + ' pontos</span></div>';
+    // Vídeo e resumo ficam juntos: em tela larga aparecem lado a lado (ver trilha.css).
+    h += '<div class="lvpair">';
+    var capsTxt = l.capitulos && l.capitulos.length
+      ? (l.capitulos.length > 1 ? 'Assista aos capítulos da aula' : 'Assista ao capítulo da aula')
+      : 'Assista ao vídeo';
+    h += '<div class="step s1"><div class="part"><span class="pn">1</span><span class="pt">' + capsTxt + '</span></div>';
     var vb = l.parts ? l.parts[0].v : l.video;
     h += '<div class="player"><video controls playsinline preload="metadata" poster="' + esc(vb) + '.jpg"><source src="' + esc(vb) + '.mp4" type="video/mp4"></video></div>';
     if (l.parts) {
-      h += '<div class="parts" role="group" aria-label="Partes do vídeo">' + l.parts.map(function (p, k) {
+      h += '<div class="parts" role="group" aria-label="Capítulos do módulo">' + l.parts.map(function (p, k) {
         return '<button type="button" class="pbtn" data-k="' + k + '" aria-pressed="' + (k ? 'false' : 'true') + '"><span class="pk">' + (k + 1) + '</span><span>' + esc(p.t) + '</span><span class="pok" aria-hidden="true">✓</span></button>';
       }).join('') + '</div>';
       h += '<div class="partnext" hidden><span class="pq"></span><button type="button" class="btn pgo"></button><button type="button" class="linkbtn pstuck">Travei nesta parte</button><p class="perr" hidden></p></div>';
     }
     h += '<div class="vmeter" aria-hidden="true"><i></i></div>';
-    h += '<div class="vidbar"><span class="prog">Assista até o fim para liberar as perguntas.</span><button class="linkbtn skip" type="button">Já sei isso, quero ir direto para as perguntas</button></div>';
-    h += '<details class="more transcript-box"><summary>Ler a narração do vídeo</summary><div class="inner transcript"><p>Carregando…</p></div></details></div>';
-    h += '<div class="step s2"><div class="part"><span class="pn">2</span><span class="pt">Leia o resumo</span></div><ul class="learn">' + l.learn.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul>';
+    h += '<div class="vidbar"><span class="prog">Assista até o fim para liberar as perguntas.</span><button class="linkbtn skip" type="button">Já sei isso, quero ir direto para as perguntas</button>' +
+      (l.parts ? '' : '<button class="linkbtn stuck1" type="button">Travei neste módulo</button>') + '</div>';
+    if (!l.parts) h += '<p class="perr stuck1-msg" hidden>Sem problema! Leia o resumo, veja os vídeos curtos de como fazer ou toque em <b>Ajuda</b>, no topo da página, para falar com a equipe do seu polo.</p>';
+    h += avaliacao('modulo-' + (i + 1));
+    h += '</div>';
+    // Coluna do resumo: tópicos curtos, regra em destaque e, fechado, tudo o que é para aprofundar.
+    var topicos = l.topicos && l.topicos.length ? l.topicos : l.learn;
+    h += '<div class="step s2"><div class="part"><span class="pn">2</span><span class="pt">Leia o resumo</span></div>';
+    // Módulo 1 (Primeiro acesso): RGM e e-mail acadêmico do próprio aluno, quando o app tem (dados-acesso.js).
+    if (i === 0) h += '<div data-dados-acesso-slot="faixa" data-dados-acesso-onde="modulo" hidden></div>';
+    h += '<ul class="learn topicos">' + topicos.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul>';
     if (l.formula) h += '<div class="formula">' + l.formula + '</div>';
-    if (l.tip) h += '<p class="tip">' + l.tip + '</p>';
+    // O texto vai num <span>: a caixa é flex (ícone "!" + texto) e links/negritos soltos virariam colunas.
+    if (l.tip) h += '<p class="tip"><span>' + l.tip + '</span></p>';
+    h += '<div class="extras">';
+    // Vídeos antigos do módulo (sem pontos): o "como fazer" mostrando as telas. Com passo_aberto, já vem aberto.
+    var passo = l.passo_a_passo || [];
+    if (passo.length) {
+      var passoTit = passo.length > 1 ? 'Vídeos curtos: como fazer no portal (' + passo.length + ')' : 'Vídeo extra: veja como fazer, tela por tela';
+      h += '<details class="more passo"' + (l.passo_aberto ? ' open' : '') + '><summary><span>' + passoTit + '<small>Opcional, não vale pontos</small></span></summary><div class="inner">' +
+        (passo.length > 1 ? '<div class="parts" role="group" aria-label="Vídeos curtos">' + passo.map(function (p, k) {
+          return '<button type="button" class="pbtn" data-passo-v="' + esc(p.v) + '" aria-pressed="' + (k ? 'false' : 'true') + '"><span class="pk">' + (k + 1) + '</span><span>' + esc(p.t) + '</span></button>';
+        }).join('') + '</div>' : '') +
+        '<div class="player"><video controls playsinline preload="none" poster="' + esc(passo[0].v) + '.jpg"><source src="' + esc(passo[0].v) + '.mp4" type="video/mp4"></video></div></div></details>';
+    }
+    if (l.topicos && l.topicos.length) {
+      h += '<details class="more resumo-full"><summary>Ver resumo completo</summary><div class="inner"><ul class="learn">' + l.learn.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul></div></details>';
+    }
+    h += '<details class="more transcript-box"><summary>Ler a narração do vídeo</summary><div class="inner transcript"><p>Carregando…</p></div></details>';
     h += '<details class="more"><summary>Ver as telas em alta resolução (' + l.shots.length + ')</summary><div class="inner"><div class="shots' + (l.tallShots ? ' tall' : '') + '">' + l.shots.map(function (s) {
       var src = '/trilha-midia/telas/' + s.img + '.webp';
       return '<figure class="shot"><button type="button" data-src="' + src + '" aria-label="Ampliar tela"><img src="' + src + '" width="' + s.w + '" height="' + s.h + '" loading="lazy" alt=""></button><figcaption>' + s.cap + '</figcaption></figure>';
-    }).join('') + '</div></div></details></div>';
-    h += '<div class="step s3"><div class="part"><span class="pn">3</span><span class="pt">Responda as perguntas</span><span class="pts">vale ' + l.qs.length * C.pontos.certa_1a + ' pontos</span></div><div class="gate">' + LOCK + '<span>As perguntas aparecem quando você terminar de assistir ao vídeo.</span></div><div class="mission"></div></div>';
-    h += '<div class="cleared" hidden><span><b>Nível concluído!</b><br>Sua conquista: ' + esc(l.rank) + '</span>' + (i < L().length - 1 ? '<button class="btn" type="button">Ir para o nível ' + (i + 2) + '</button>' : '') + '</div></div>';
+    }).join('') + '</div></div></details></div></div>';
+    h += '</div>';
+    h += '<div class="step s3"><div class="part"><span class="pn">3</span><span class="pt">Responda as perguntas</span><span class="pts">módulo vale ' + pm() + ' pontos</span></div><div class="gate">' + LOCK + '<span>As perguntas aparecem quando você terminar de assistir ao vídeo.</span></div><div class="mission"></div></div>';
+    h += '<div class="cleared" hidden><span><b>Módulo concluído! +' + pm() + ' pontos</b><br>Sua conquista: ' + esc(l.rank) + '</span>' + (i < L().length - 1 ? '<button class="btn" type="button">Ir para o módulo ' + (i + 2) + '</button>' : '<button class="btn" type="button">Ir para o certificado</button>') + '</div></div>';
     return h;
   }
 
@@ -229,7 +358,23 @@ window.Trilha = (function () {
     });
     sec.querySelectorAll('.shot img').forEach(function (im) { im.alt = im.closest('figure').querySelector('figcaption').textContent; });
     var nb = sec.querySelector('.cleared .btn');
-    if (nb) nb.addEventListener('click', function () { document.getElementById('tlv' + (i + 1)).scrollIntoView({ behavior: smooth() }); });
+    if (nb) nb.addEventListener('click', function () { (document.getElementById('tlv' + (i + 1)) || document.getElementById('tFinal')).scrollIntoView({ behavior: smooth() }); });
+    // Passo a passo opcional (vídeos antigos do módulo, sem pontos)
+    var pv = sec.querySelector('.passo video');
+    sec.querySelectorAll('[data-passo-v]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        sec.querySelectorAll('[data-passo-v]').forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+        var src = b.getAttribute('data-passo-v');
+        pv.querySelector('source').setAttribute('src', src + '.mp4'); pv.poster = src + '.jpg'; pv.load();
+        var pr = pv.play(); if (pr && pr.catch) pr.catch(function () {});
+      });
+    });
+    var st1 = sec.querySelector('.stuck1');
+    if (st1) st1.addEventListener('click', function () {
+      sec.querySelector('.stuck1-msg').hidden = false; st1.hidden = true;
+      post('travei', { nivel: i + 1, parte: 0 }).catch(function () {});
+      window.Rastreio && window.Rastreio.track('trilha_travei', { nivel: i + 1, nivel_titulo: l.t, parte: 1, parte_titulo: l.t }, { importante: true });
+    });
     var ms = sec.querySelector('.mission');
     l.qs.forEach(function (q, k) { ms.appendChild(question(i, k, q)); });
 
@@ -243,7 +388,10 @@ window.Trilha = (function () {
       var key = i + '-' + parte;
       if (S.pseen[key] || sending[key]) return;
       sending[key] = true;
-      post('video', { nivel: i + 1, parte: parte }).then(function () { refreshUI(); if (paintParts) paintParts(); })
+      post('video', { nivel: i + 1, parte: parte }).then(function () {
+        window.Rastreio && window.Rastreio.track('trilha_video_assistido', { nivel: i + 1, nivel_titulo: l.t, parte: l.parts ? parte + 1 : null, parte_titulo: l.parts ? l.parts[parte].t : null });
+        refreshUI(); if (paintParts) paintParts();
+      })
         .catch(function () { /* tenta de novo no próximo avanço do vídeo */ })
         .then(function () { sending[key] = false; });
     }
@@ -253,7 +401,7 @@ window.Trilha = (function () {
       var cur = 0; var pn = sec.querySelector('.partnext'); var last = l.parts.length - 1;
       tb.dataset.src = l.parts[0].v + '.txt';
       paintParts = function () {
-        sec.querySelectorAll('.pbtn').forEach(function (b, k) {
+        sec.querySelectorAll('.pbtn[data-k]').forEach(function (b, k) {
           b.setAttribute('aria-pressed', k === cur ? 'true' : 'false');
           b.classList.toggle('seen', !!S.pseen[i + '-' + k]);
         });
@@ -264,11 +412,11 @@ window.Trilha = (function () {
         if (play) { var pr = v.play(); if (pr && pr.catch) pr.catch(function () {}); }
         pn.hidden = true; tb.dataset.src = p.v + '.txt'; delete tb.dataset.loaded; tb.open = false; paintParts();
       };
-      sec.querySelectorAll('.pbtn').forEach(function (b) { b.addEventListener('click', function () { go(+b.dataset.k, true); }); });
+      sec.querySelectorAll('.pbtn[data-k]').forEach(function (b) { b.addEventListener('click', function () { go(+b.dataset.k, true); }); });
       v.addEventListener('ended', function () {
         markSeen(cur); paintParts();
-        pn.querySelector('.pq').textContent = cur < last ? 'Conseguiu fazer a Parte ' + (cur + 1) + ' no seu celular?' : 'Pronto! Você terminou as ' + l.parts.length + ' partes.';
-        pn.querySelector('.pgo').textContent = cur < last ? 'Sim! Ir para a Parte ' + (cur + 2) : 'Ir para as perguntas';
+        pn.querySelector('.pq').textContent = cur < last ? 'Capítulo ' + (cur + 1) + ' de ' + l.parts.length + ' visto.' : 'Pronto! Você viu os ' + l.parts.length + ' capítulos.';
+        pn.querySelector('.pgo').textContent = cur < last ? 'Ir para o capítulo ' + (cur + 2) : 'Ir para as perguntas';
         var e = pn.querySelector('.perr'); e.hidden = true; e.textContent = l.parts[cur].erro;
         pn.querySelector('.pstuck').hidden = false; pn.hidden = false;
       });
@@ -279,6 +427,7 @@ window.Trilha = (function () {
       pn.querySelector('.pstuck').addEventListener('click', function () {
         pn.querySelector('.perr').hidden = false; pn.querySelector('.pstuck').hidden = true;
         post('travei', { nivel: i + 1, parte: cur }).catch(function () {});
+        window.Rastreio && window.Rastreio.track('trilha_travei', { nivel: i + 1, nivel_titulo: l.t, parte: cur + 1, parte_titulo: l.parts[cur].t }, { importante: true });
       });
       v.addEventListener('timeupdate', function () {
         if (!v.duration) return;
@@ -287,7 +436,7 @@ window.Trilha = (function () {
         var seen = l.parts.filter(function (_, k) { return S.pseen[i + '-' + k]; }).length;
         var all = (seen + (S.pseen[i + '-' + cur] ? 0 : pct)) / l.parts.length;
         if (!S.watched[i]) {
-          prog.textContent = 'Parte ' + (cur + 1) + ' de ' + l.parts.length + '. Você já viu ' + Math.round(all * 100) + '% do vídeo.';
+          prog.textContent = 'Capítulo ' + (cur + 1) + ' de ' + l.parts.length + '. Você já viu ' + Math.round(all * 100) + '% do módulo.';
           meter.style.width = Math.min(100, all * 100) + '%';
         }
       });
@@ -309,6 +458,7 @@ window.Trilha = (function () {
       S.skipped[i] = true; refreshUI();
       sec.querySelector('.mission').scrollIntoView({ block: 'nearest', behavior: smooth() });
       post('pular', { nivel: i + 1 }).catch(function () {});
+      window.Rastreio && window.Rastreio.track('trilha_video_pulado', { nivel: i + 1, nivel_titulo: l.t });
     });
 
     tb.addEventListener('toggle', function () {
@@ -328,7 +478,6 @@ window.Trilha = (function () {
     var d = document.createElement('div'); d.className = 'q';
     var fs = document.createElement('fieldset');
     var lg = document.createElement('legend');
-    lg.innerHTML = '<span class="qx">vale ' + C.pontos.certa_1a + ' pontos</span>';
     lg.appendChild(document.createTextNode(q.q)); fs.appendChild(lg);
     var opts = document.createElement('div'); opts.className = 'opts';
     var fb = document.createElement('p'); fb.className = 'fb'; fb.hidden = true;
@@ -354,19 +503,24 @@ window.Trilha = (function () {
       if (r.ok) {
         btns.forEach(function (b) { b.disabled = true; });
         btns[r.certa].classList.add('right');
-        var gain = r.tries.length <= 1 ? C.pontos.certa_1a : C.pontos.certa_depois;
-        fb.className = 'fb ok'; fb.innerHTML = 'Certo! Você ganhou ' + gain + ' pontos.<span class="ex"></span>';
+        fb.className = 'fb ok'; fb.innerHTML = 'Certo!<span class="ex"></span>';
         fb.querySelector('.ex').textContent = r.exp || ''; fb.hidden = false;
       } else if (r.tries.length) {
-        fb.className = 'fb no'; fb.textContent = 'Ainda não. Sem problema: escolha outra resposta (agora vale ' + C.pontos.certa_depois + ' pontos).'; fb.hidden = false;
+        fb.className = 'fb no'; fb.textContent = 'Ainda não. Sem problema: escolha outra resposta. Errar não tira pontos.'; fb.hidden = false;
       }
     }
     function pick(j) {
       if (rec().ok || pending) return;
       pending = true; d.classList.add('live');
       btns.forEach(function (b) { b.disabled = true; });
+      var eraConcluido = !!S.done[i];
       post('resposta', { nivel: i + 1, pergunta: k, opcao: j }).then(function () {
         pending = false;
+        var r = rec();
+        window.Rastreio && window.Rastreio.track('trilha_resposta', { nivel: i + 1, pergunta: q.q, resposta: q.opts[j], acertou: !!r.ok, tentativa: r.tries.length || 1 });
+        if (!eraConcluido && S.done[i]) {
+          window.Rastreio && window.Rastreio.track('trilha_nivel_concluido', { nivel: i + 1, nivel_titulo: L()[i].t, pontos_total: S.xp });
+        }
         btns.forEach(function (b) { if (!b.classList.contains('wrong')) b.disabled = false; });
         paint(); refreshUI();
       }).catch(function () {
@@ -384,10 +538,22 @@ window.Trilha = (function () {
     var lb = $('#tLb'); if (lb.showModal) lb.showModal(); else lb.setAttribute('open', '');
   }
 
+  // Item feito = todos os módulos dele concluídos, ou o certificado já emitido.
+  function todoFeito(t) {
+    if (t.certificado) return emitido;
+    var m = t.modulos || [];
+    return m.length > 0 && m.every(function (n) { return S.done[n - 1]; });
+  }
   function todoCount() {
-    var c = root.querySelectorAll('#tTodo input');
-    var n = 0; c.forEach(function (x) { if (x.checked) n++; });
-    $('#tTodoCount').textContent = n + ' de ' + c.length + ' feitas';
+    var lis = root.querySelectorAll('#tTodo [data-todo]');
+    var n = 0;
+    lis.forEach(function (li) {
+      var ok = todoFeito(C.tarefas[li.dataset.todo]);
+      if (ok) n++;
+      li.classList.toggle('is-done', ok);
+      li.querySelector('.sr').textContent = ok ? ' (feito)' : ' (a fazer)';
+    });
+    $('#tTodoCount').textContent = n + ' de ' + lis.length;
   }
 
   function applyPrefs() {
@@ -399,22 +565,16 @@ window.Trilha = (function () {
 
   function build() {
     root.innerHTML = shell();
+    if (window.Apps) window.Apps.render(root);
     var lv = $('#tLevels');
+    if (window.DadosAcesso) setTimeout(function () { window.DadosAcesso.render(root); }, 0);
     L().forEach(function (l, i) {
       var sec = document.createElement('section'); sec.className = 'level'; sec.id = 'tlv' + i;
       sec.innerHTML = levelHtml(l, i);
       bindLevel(sec, l, i);
       lv.appendChild(sec);
     });
-    root.querySelectorAll('#tTodo input').forEach(function (c) {
-      c.checked = !!S.tarefas[c.dataset.tarefa];
-      c.addEventListener('change', function () {
-        S.tarefas[c.dataset.tarefa] = c.checked; todoCount();
-        post('tarefa', { tarefa: c.dataset.tarefa, feita: c.checked }).catch(function () {
-          c.checked = !c.checked; S.tarefas[c.dataset.tarefa] = c.checked; todoCount();
-        });
-      });
-    });
+    root.querySelectorAll('[data-caps]').forEach(bindCaps);
     $('#tBig').addEventListener('click', function () { P.big = !P.big; savePrefs(); applyPrefs(); });
     $('#tSlow').addEventListener('click', function () { P.slow = !P.slow; savePrefs(); applyPrefs(); });
     $('#tReview').addEventListener('click', function () { P.review = !P.review; savePrefs(); refreshUI(); });
@@ -438,6 +598,29 @@ window.Trilha = (function () {
     refreshUI();
     built = true;
     irParaAlvo();
+    if (querAulaCompleta) { querAulaCompleta = false; mostrarAulaCompleta(); }
+  }
+
+  // "Assistir à aula completa" (de qualquer tela): abre o bloco da aula completa nesta tela.
+  function mostrarAulaCompleta() {
+    var d = document.getElementById('tAulaCompleta');
+    if (!d) return;
+    d.open = true;
+    setTimeout(function () {
+      d.scrollIntoView({ behavior: 'instant', block: 'start' }); // sem animação (o html tem scroll-behavior: smooth)
+      var s = d.querySelector('summary'); if (s) s.focus({ preventScroll: true });
+    }, 200);
+  }
+  // A troca de tela recarrega e redesenha a aula: o pedido fica guardado até o próximo build()
+  // (ou abre na hora, se não houver redesenho em seguida).
+  function abrirAulaCompleta() {
+    querAulaCompleta = true;
+    window.showScreen('trilha-page');
+    setTimeout(function () {
+      if (!querAulaCompleta || loading) return;
+      querAulaCompleta = false;
+      if (built) mostrarAulaCompleta();
+    }, 1500);
   }
 
   // ---------- link direto para um nível (/trilha#nivel-3) ----------
@@ -463,6 +646,8 @@ window.Trilha = (function () {
   function openLevel(n) {
     n = Number(n);
     if (!n || n < 1) { window.showScreen('trilha-page'); return; }
+    var lv = C && L()[n - 1];
+    window.Rastreio && window.Rastreio.track('trilha_nivel_aberto', { nivel: n, nivel_titulo: lv ? lv.t : null });
     alvo = n - 1;
     window.showScreen('trilha-page');
     try { window.history.replaceState(window.history.state, '', '/trilha#nivel-' + n); } catch (e) { /* ignore */ }
@@ -477,11 +662,15 @@ window.Trilha = (function () {
     var doHash = nivelDoHash();
     if (doHash) alvo = doHash - 1;
     loading = true;
-    if (!built) root.innerHTML = '<p class="trilha-loading">Carregando sua trilha...</p>';
+    if (!built) root.innerHTML = '<p class="trilha-loading">Carregando a Aula Inaugural...</p>';
     if (built && alvo != null) irParaAlvo();
     window.Api.getTrilha().then(function (res) {
       C = res.conteudo; nome = res.nome || ''; S = fromServer(res.progresso);
       build();
+      window.Api.getTrilhaResumo().then(function (r) {
+        emitido = !!(r && r.certificado && r.certificado.emitido);
+        if (built) { certStatus(); todoCount(); }
+      }).catch(function () { /* sem o resumo, vale a regra de pontos */ });
     }).catch(function (err) {
       if (err && err.status === 401) {
         window.Auth.clear();
@@ -493,24 +682,18 @@ window.Trilha = (function () {
         window.showScreen('dashboard-page', { replace: true });
         return;
       }
-      if (!built) root.innerHTML = '<p class="trilha-loading">Não foi possível carregar a trilha. Confira a internet e tente de novo.</p>';
+      if (!built) root.innerHTML = '<p class="trilha-loading">Não foi possível carregar a Aula Inaugural. Confira a internet e tente de novo.</p>';
     }).then(function () { loading = false; });
   }
 
+  // Início: o banner (window.Inicio) usa o progresso real para escolher frase e ação.
   function refreshDashboard() {
-    var body = document.getElementById('dashboard-trilha-body');
-    if (!body || !window.Auth.isAuthenticated() || !document.body.classList.contains('trilha-on')) return;
+    if (!window.Inicio || !window.Auth.isAuthenticated() || !document.body.classList.contains('trilha-on')) return;
     window.Api.getTrilhaResumo().then(function (r) {
-      var pct = Math.round(r.concluidos / r.total * 100);
-      var txt;
-      if (r.concluidos >= r.total) txt = '<b>Trilha concluída!</b> ' + r.pontos + ' de ' + r.maximo + ' pontos.';
-      else if (!r.comecou && !r.concluidos) txt = 'Você ainda não começou. Leva uns <b>10 minutos por nível</b>.';
-      else txt = '<b>' + r.concluidos + ' de ' + r.total + ' níveis</b> · ' + r.pontos + ' pontos · Agora: ' + esc(r.atual ? r.atual.titulo : '');
-      body.innerHTML = '<div class="trilha-dash-bar"><i style="width:' + pct + '%"></i></div><p class="trilha-dash-txt">' + txt + '</p>';
-      var cta = document.querySelector('[data-trilha-cta]');
-      if (cta) cta.textContent = r.concluidos >= r.total ? 'Rever a trilha' : (r.comecou || r.concluidos ? 'Continuar a trilha' : 'Começar a trilha');
+      window.Inicio.setTrilha(r);
     }).catch(function () {
-      body.innerHTML = '<p class="trilha-dash-txt">Não foi possível carregar seu progresso agora.</p>';
+      // Sem o progresso, o banner fica no estado "primeiros passos" (sem barra).
+      window.Inicio.setTrilha(null);
     });
   }
 
@@ -530,5 +713,5 @@ window.Trilha = (function () {
     });
   }
 
-  return { init: init, refresh: refresh, refreshDashboard: refreshDashboard, pause: pause, openLevel: openLevel };
+  return { init: init, refresh: refresh, refreshDashboard: refreshDashboard, pause: pause, openLevel: openLevel, abrirAulaCompleta: abrirAulaCompleta };
 })();

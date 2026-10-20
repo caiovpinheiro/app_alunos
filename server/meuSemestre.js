@@ -402,7 +402,8 @@ function assembleSemestre({ aluno, plano, itens, eventos, mensalidadesRows, toda
 
 async function getMeuSemestre(pool, alunoId) {
   const today = todayIsoSaoPaulo();
-  const avisoPagamento = 'A mensalidade vence todo dia 25. Pague até o dia 10 para ter o desconto. Na 1ª mensalidade, o desconto vale até o dia 25.';
+  // Frase-padrão da mensalidade: é a mesma do painel, do FAQ, da Trilha e do vídeo "Quanto eu pago?".
+  const avisoPagamento = 'A mensalidade vence todo dia 25. Na 1ª mensalidade (a do mês da sua turma), todos os descontos valem até o dia 25. Da 2ª em diante: até o dia 10, 25% de desconto de pontualidade; do dia 11 ao 25, 15%; depois do dia 25, sem esse desconto (a bolsa continua). Se o dia 10 ou o 25 cair em fim de semana ou feriado, vale o próximo dia útil.';
   const empty = {
     plano: null,
     curso: null,

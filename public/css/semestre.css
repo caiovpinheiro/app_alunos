@@ -1,0 +1,148 @@
+/* Meu semestre (/meu-semestre). Mesma identidade do Início e da Central (tokens --portal-* do portal.css).
+   Texto corrido em p/li com strong inline: nenhuma regra flex/grid em parágrafos (era isso que
+   picotava o card "Vencimentos fixos": .ms-pay p { display:flex } no styles.css). */
+.sm-page{color:var(--portal-text);font:400 17px/1.55 var(--portal-body)}
+#meu-semestre-content{display:flex;flex-direction:column;gap:22px}
+.sm-page *{box-sizing:border-box}
+.sm-page button{font:inherit;cursor:pointer}
+.sm-page .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.sm-page :focus-visible{outline:3px solid var(--portal-blue);outline-offset:3px}
+.sm-page .portal-hero :focus-visible,.sm-help :focus-visible{outline-color:var(--portal-yellow)}
+.sm-page svg.lucide{width:20px;height:20px;flex:none}
+.sm-page section,.sm-page [id]{scroll-margin-top:96px}
+.sm-muted{margin:0;color:var(--portal-muted)}
+.sm-eyebrow{display:block;margin:0 0 4px;font:700 12px/1.3 var(--portal-body);letter-spacing:.14em;text-transform:uppercase;color:var(--portal-blue)}
+.sm-link{display:inline-flex;align-items:center;gap:4px;min-height:40px;padding:0;border:0;background:none;color:var(--portal-blue)!important;font:700 15px/1.25 var(--portal-body);text-decoration:underline;text-underline-offset:3px;text-align:left}
+.sm-page .sm-link svg.lucide{width:16px;height:16px}
+.sm-link[aria-expanded="true"] svg.lucide{transform:rotate(180deg)}
+.sm-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px 16px;margin-bottom:12px}
+.sm-head h2{margin:0;font:600 clamp(1.15rem,2.4vw,1.4rem)/1.25 var(--portal-display)}
+.sm-head .p-squiggle{margin-top:4px}
+.sm-h3{margin:18px 0 8px;font:700 13px/1.3 var(--portal-body);letter-spacing:.1em;text-transform:uppercase;color:var(--portal-muted)}
+.sm-card{min-width:0;background:var(--portal-surface);border:1px solid var(--portal-border);border-radius:20px;padding:20px 18px;box-shadow:var(--portal-shadow)}
+@media (min-width:900px){.sm-card{padding:24px 26px}}
+.sm-ico{flex:none;width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:var(--portal-blue-soft);color:var(--portal-blue)}
+.sm-ico--star{background:#fff1c7;color:#7a5200}
+.sm-tag{display:inline-block;margin-bottom:4px;font:700 11px/1.3 var(--portal-body);letter-spacing:.12em;text-transform:uppercase;color:var(--portal-muted)}
+.sm-tag--atual{color:var(--portal-blue)}
+.sm-tag--integrada{color:#7a5200}
+
+/* Abertura compacta, sem pessoa */
+.sm-hero.portal-hero{padding:26px 22px}
+.sm-hero h1{font-size:clamp(1.7rem,3.6vw,2.5rem)}
+.sm-hero-meta{margin:8px 0 0;font-weight:700;color:#fff}
+.sm-hero-art{display:none}
+@media (min-width:640px){
+  .sm-hero.portal-hero{padding:30px 36px}
+  .sm-hero-art{position:absolute;right:6%;top:50%;transform:translateY(-50%);display:flex;align-items:center;justify-content:center;gap:10px;width:150px;height:150px;border-radius:50%;
+    background:radial-gradient(circle at 40% 35%,#2f7bf0 0%,#0b5ad0 60%,#0848aa 100%);box-shadow:0 0 0 12px rgba(94,146,250,.12);color:#fff}
+  .sm-page .sm-hero-art svg.lucide{width:44px;height:44px}
+  .sm-page .sm-hero-art svg.lucide + svg.lucide{color:var(--portal-yellow)}
+}
+@media (min-width:1024px){.sm-hero.portal-hero{padding:34px 48px}}
+
+/* Aviso de prévia */
+.sm-note{display:flex;align-items:center;flex-wrap:wrap;gap:6px 14px;padding:10px 16px;border-radius:14px;background:var(--portal-blue-soft);border:1px solid #c8daf5;color:var(--portal-navy-2)}
+.sm-note > svg.lucide{color:var(--portal-blue)}
+.sm-note p{flex:1 1 260px;margin:0;font-size:.95rem;line-height:1.5}
+.sm-note-acts{display:flex;flex-wrap:wrap;gap:0 18px}
+.sm-stores{flex-basis:100%;display:flex;flex-wrap:wrap;gap:10px;padding:4px 0 6px}
+.sm-stores[hidden]{display:none}
+
+/* Linha principal: disciplina (2/3) + mensalidades (1/3) */
+.sm-main{display:grid;gap:18px}
+@media (min-width:1024px){.sm-main{grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:22px}}
+.sm-now{display:flex;flex-wrap:wrap;gap:14px 18px;align-items:flex-start}
+.sm-now-body{flex:1 1 180px;min-width:0}
+.sm-now-item + .sm-now-item{margin-top:14px;padding-top:14px;border-top:1px solid var(--portal-border)}
+.sm-now h2{margin:0;font:700 clamp(1.25rem,2.6vw,1.6rem)/1.25 var(--portal-display);color:var(--portal-navy);overflow-wrap:anywhere}
+.sm-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.sm-chip{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:12px;border:1px solid var(--portal-border);background:var(--portal-surface-2);color:var(--portal-muted);font-size:.95rem}
+.sm-chip strong{color:var(--portal-navy)}
+.sm-page .sm-chip svg.lucide{width:18px;height:18px;color:var(--portal-blue)}
+.sm-now-acts{flex:1 1 100%;display:flex;flex-wrap:wrap;align-items:center;gap:6px 20px}
+@media (min-width:1200px){.sm-now-acts{flex:0 0 auto;flex-direction:column;align-items:stretch;align-self:center}}
+.sm-pay{display:flex;gap:14px;align-items:flex-start;border-top:4px solid var(--portal-yellow)}
+.sm-pay-body{flex:1;min-width:0}
+.sm-pay h2{margin:0;font:700 1.2rem/1.3 var(--portal-display);color:var(--portal-navy)}
+.sm-pay .sm-muted{margin-top:4px}
+.sm-pay-acts{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;margin-top:14px}
+.sm-pay .portal-btn{min-height:46px}
+
+/* Disciplinas: 1 / 2 / 3 colunas, todas visíveis */
+.sm-discs{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr;gap:14px}
+@media (min-width:640px){.sm-discs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (min-width:1024px){.sm-discs{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.sm-disc{display:flex;gap:14px;min-width:0;padding:16px;border-radius:18px;border:1px solid var(--portal-border);background:var(--portal-surface);box-shadow:var(--portal-shadow)}
+.sm-disc.is-current{border:2px solid var(--portal-blue);padding:15px}
+.sm-month{flex:none;width:52px;height:46px;border-radius:12px;display:grid;place-items:center;background:var(--portal-blue-soft);color:var(--portal-navy);font:700 14px/1 var(--portal-display);letter-spacing:.04em}
+.sm-disc.is-current .sm-month{background:var(--portal-blue);color:#fff}
+.sm-disc-body{flex:1;min-width:0}
+.sm-disc h3{margin:0 0 8px;font:600 1.02rem/1.35 var(--portal-display);overflow-wrap:anywhere}
+.sm-dl{margin:0;display:flex;flex-wrap:wrap;gap:4px 18px;font-size:.93rem}
+.sm-dl div{display:flex;gap:6px}
+.sm-dl dt{color:var(--portal-muted)}
+.sm-dl dd{margin:0;font-weight:700;color:var(--portal-navy)}
+
+/* Atividades: 2 colunas no desktop; Avaliação integrada separada, em linha inteira */
+.sm-acts{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr;gap:12px}
+@media (min-width:900px){.sm-acts{grid-template-columns:repeat(2,minmax(0,1fr))}.sm-act--integrada{grid-column:1/-1}}
+.sm-act{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;min-width:0;padding:14px 16px;border-radius:16px;border:1px solid var(--portal-border);background:var(--portal-surface);box-shadow:var(--portal-shadow)}
+.sm-act--integrada{border-color:#f2d27a;background:linear-gradient(90deg,#fff8e1,#fff 55%)}
+.sm-act-body{flex:1 1 200px;min-width:0}
+.sm-act h3{margin:0;font:600 1rem/1.35 var(--portal-display);overflow-wrap:anywhere}
+.sm-prazos{margin:4px 0 0;color:var(--portal-muted);font-size:.92rem;line-height:1.5}
+.sm-prazos strong{color:var(--portal-navy)}
+.sm-sep{margin:0 8px;color:#9aaccc}
+.sm-act .sm-link{margin-left:auto}
+@media (max-width:520px){.sm-act .sm-link{margin-left:60px}}
+
+/* Próximas datas + apoio */
+.sm-bottom{display:grid;gap:18px}
+@media (min-width:1024px){.sm-bottom{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:22px;align-items:start}}
+.sm-cal .sm-head h2{font-size:1.25rem}
+.sm-evs{list-style:none;margin:0;padding:0}
+.sm-ev{display:flex;gap:14px;padding:10px 0;border-top:1px solid var(--portal-border)}
+.sm-evs > .sm-ev:first-child{border-top:0;padding-top:2px}
+.sm-ev-date{flex:none;width:52px;text-align:center;border-radius:12px;background:var(--portal-surface-2);border:1px solid var(--portal-border);padding:6px 0;line-height:1;align-self:flex-start}
+.sm-ev-date b{display:block;font:700 1.15rem/1 var(--portal-display);color:var(--portal-navy)}
+.sm-ev-date small{display:block;margin-top:3px;font:700 11px/1 var(--portal-body);letter-spacing:.1em;color:var(--portal-muted)}
+.sm-ev-body{flex:1;min-width:0}
+.sm-ev-t{margin:0;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:.98rem;line-height:1.35}
+.sm-ev-t strong{font-family:var(--portal-display);font-weight:600}
+.sm-page .sm-ev-t svg.lucide{width:18px;height:18px;color:var(--portal-blue)}
+.sm-ev-kind{font:700 11px/1.3 var(--portal-body);letter-spacing:.1em;text-transform:uppercase;color:var(--portal-blue)}
+.sm-ev-next{padding:2px 8px;border-radius:999px;background:var(--portal-yellow);color:#2b1d00;font:700 12px/1.3 var(--portal-body)}
+.sm-ev-sub{margin:2px 0 0;color:var(--portal-muted);font-size:.9rem;line-height:1.45}
+.sm-ev.is-next .sm-ev-date{background:var(--portal-yellow);border-color:var(--portal-yellow)}
+.sm-ev.is-next .sm-ev-date b,.sm-ev.is-next .sm-ev-date small{color:#2b1d00}
+.sm-evs--past .sm-ev{opacity:.85}
+#sm-cal-mais[hidden]{display:none}
+.sm-help{position:relative;overflow:hidden;border-radius:20px;padding:24px 22px;color:#fff;background:linear-gradient(120deg,var(--portal-navy),var(--portal-navy-2) 60%,#06458e)}
+.sm-help .sm-eyebrow{color:#bcd3f5}
+.sm-help h2{margin:0;font:800 clamp(1.4rem,2.6vw,1.9rem)/1.15 var(--portal-display)}
+.sm-help p{position:relative;z-index:1;margin:8px 0 0;color:#d4e3f7;max-width:34ch}
+.sm-help-acts{position:relative;z-index:1;display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;margin-top:18px}
+.sm-help-link{min-height:44px;border:0;background:none;padding:0;color:#fff;font:700 15px/1.2 var(--portal-body);text-decoration:underline;text-underline-offset:4px}
+.sm-help-art{position:absolute;right:-18px;bottom:-24px;width:140px;height:140px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 40% 35%,#2f7bf0,#0848aa);opacity:.9}
+.sm-page .sm-help-art svg.lucide{width:60px;height:60px;color:#fff}
+@media (max-width:520px){.sm-help-art{display:none}}
+
+/* Orientações financeiras completas (acordeão) */
+.sm-fin{padding:0}
+.sm-fin-h{margin:0}
+.sm-fin-btn{display:flex;align-items:center;gap:14px;width:100%;padding:18px;border:0;background:none;text-align:left;color:var(--portal-text);font:600 1.08rem/1.35 var(--portal-display);border-radius:20px}
+.sm-fin-btn > span:nth-child(2){flex:1;min-width:0}
+.sm-fin-chev{color:var(--portal-blue);transition:transform .2s}
+.sm-fin-btn[aria-expanded="true"] .sm-fin-chev{transform:rotate(180deg)}
+.sm-fin-body{padding:0 18px 20px 78px;max-width:84ch;text-align:left;line-height:1.55}
+.sm-fin-body[hidden]{display:none}
+.sm-fin-body p{margin:0 0 8px}
+.sm-fin-body ul{margin:0 0 12px;padding-left:1.2em;list-style:disc}
+.sm-fin-body li{margin:0 0 6px}
+.sm-fin-body strong{font-weight:700;color:var(--portal-navy)}
+.sm-fin-body a{color:var(--portal-blue);font-weight:700;text-decoration:underline}
+@media (max-width:640px){.sm-fin-body{padding-left:18px}}
+
+@media (prefers-reduced-motion:reduce){.sm-page *{transition:none!important;animation:none!important}}
+.sm-help-link + .sm-help-link,.sm-help-acts .sm-help-link{cursor:pointer}

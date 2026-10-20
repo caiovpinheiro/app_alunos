@@ -19,7 +19,7 @@ window.Atendimento = (function () {
     try {
       var res = await window.Api.getAtendimento();
       var polo = document.getElementById('atendimento-polo');
-      if (polo) polo.textContent = res.polo ? 'Polo: ' + res.polo : 'Polo ainda não informado — usaremos o contato padrão.';
+      if (polo) polo.textContent = res.polo ? 'Polo: ' + res.polo : 'Ainda não temos o seu polo no cadastro. Por enquanto, o contato é o geral.';
       setHref('btn-whatsapp-academico', res.academico && res.academico.url);
       setHref('btn-whatsapp-comercial', res.comercial && res.comercial.url);
     } catch (err) { /* a tela continua utilizável */ }

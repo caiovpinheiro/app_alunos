@@ -19,6 +19,20 @@ function lerJson(nome, padrao) {
 }
 
 const FAQ = lerJson('faq.json', { grupos: [] });
+const PUBLIC_DIR = path.join(__dirname, '..', 'public');
+
+// Narração do vídeo (o mesmo .txt de "Ler a narração") para a busca da Central achar o assunto falado.
+const narracoes = {};
+function narracao(v) {
+  if (!v || typeof v !== 'string' || !v.startsWith('/trilha-midia/')) return '';
+  if (narracoes[v] !== undefined) return narracoes[v];
+  try {
+    narracoes[v] = fs.readFileSync(path.join(PUBLIC_DIR, v + '.txt'), 'utf8').replace(/\s+/g, ' ').trim().slice(0, 4000);
+  } catch (err) {
+    narracoes[v] = '';
+  }
+  return narracoes[v];
+}
 const AULA = lerJson('aula-inaugural.json', null);
 const VIDEOS = lerJson('videos.json', { videos: [] });
 
@@ -36,10 +50,30 @@ function publicContent(whatsapp, nivelTitulo) {
         titulo: v.titulo,
         resumo: fill(v.resumo || '', whatsapp),
         categoria: v.categoria || '',
+        capa: v.capa || null,
         duracao: v.duracao || '',
-        v: v.v,
+        v: v.v || null,
+        // Vídeo do YouTube (sem mp4 próprio): toca no modal por iframe youtube-nocookie.
+        yt: /^[\w-]{11}$/.test(v.yt || '') ? v.yt : null,
+        termos: [narracao(v.v), v.termos || ''].join(' ').trim(),
         trilha: nivel(v.nivel_trilha),
-      })),
+      }))
+      // Capítulos da Aula Inaugural que explicam o que os vídeos rápidos não cobrem (na_central):
+      // entram na mesma grade, com a categoria "Entenda como funciona".
+      .concat(AULA && Array.isArray(AULA.capitulos)
+        ? AULA.capitulos.map((c, i) => ({ c, i })).filter((x) => x.c.na_central && x.c.v).map((x) => ({
+            id: 'aula-cap-' + x.i,
+            titulo: x.c.titulo,
+            resumo: fill(x.c.resumo || '', whatsapp),
+            categoria: 'Entenda como funciona',
+            tipo: 'entenda',
+            capa: x.c.capa || null,
+            duracao: x.c.duracao || '',
+            v: x.c.v,
+            termos: narracao(x.c.v),
+            trilha: nivel(x.c.nivel_trilha),
+          }))
+        : []),
     aula: AULA && Array.isArray(AULA.capitulos)
       ? {
           // Com `v` em cada capítulo, a aula toca do próprio app (um vídeo por capítulo);

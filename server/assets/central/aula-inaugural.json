@@ -1,6 +1,6 @@
 {
  "titulo": "Aula Inaugural da Graduação EaD",
- "duracao_s": 695,
+ "duracao_s": 645,
  "capitulos": [
   {
    "titulo": "Boas-vindas",
@@ -11,80 +11,96 @@
   },
   {
    "titulo": "Como funciona o EaD",
-   "resumo": "Como é estudar a distância: uma matéria por mês, no seu ritmo.",
+   "resumo": "Como é estudar a distância: no seu ritmo, com prazos para cada matéria.",
    "v": "/trilha-midia/aula/cap_01",
-   "duracao": "1:01",
-   "nivel_trilha": null
+   "duracao": "0:39",
+   "nivel_trilha": null,
+   "na_central": true,
+   "capa": "/trilha-midia/capas/aula-cap-1.webp"
   },
   {
    "titulo": "Primeiro acesso",
    "resumo": "O app Duda, o e-mail acadêmico e a sua senha.",
    "v": "/trilha-midia/aula/cap_02",
-   "duracao": "1:00",
+   "duracao": "0:59",
    "nivel_trilha": 1
   },
   {
    "titulo": "Área do Aluno",
    "resumo": "Onde fica cada coisa no portal do aluno.",
    "v": "/trilha-midia/aula/cap_03",
-   "duracao": "1:03",
-   "nivel_trilha": 2
+   "duracao": "0:56",
+   "nivel_trilha": 2,
+   "na_central": true,
+   "capa": "/trilha-midia/capas/aula-cap-3.webp"
   },
   {
    "titulo": "Seu mês de estudo",
    "resumo": "Como funciona o mês: unidades, videoaulas e atividades.",
    "v": "/trilha-midia/aula/cap_04",
-   "duracao": "1:04",
-   "nivel_trilha": 3
+   "duracao": "0:59",
+   "nivel_trilha": 3,
+   "na_central": true,
+   "capa": "/trilha-midia/capas/aula-cap-4.webp"
   },
   {
    "titulo": "Tutor e avisos",
    "resumo": "Como falar com o tutor e por que ler os avisos.",
    "v": "/trilha-midia/aula/cap_05",
-   "duracao": "0:55",
-   "nivel_trilha": 3
+   "duracao": "0:50",
+   "nivel_trilha": 3,
+   "na_central": true,
+   "capa": "/trilha-midia/capas/aula-cap-5.webp"
   },
   {
    "titulo": "Provas e notas",
    "resumo": "A2, A1 e Avaliação Final: como você é aprovado.",
    "v": "/trilha-midia/aula/cap_06",
-   "duracao": "1:05",
-   "nivel_trilha": 4
+   "duracao": "0:58",
+   "nivel_trilha": 4,
+   "na_central": true,
+   "capa": "/trilha-midia/capas/aula-cap-6.webp"
   },
   {
    "titulo": "Pagamentos",
    "resumo": "Vencimento, descontos e como pagar com segurança.",
    "v": "/trilha-midia/aula/cap_07",
-   "duracao": "1:05",
+   "duracao": "0:56",
    "nivel_trilha": 5
   },
   {
    "titulo": "Rematrícula",
-   "resumo": "Como renovar o curso em janeiro e julho.",
+   "resumo": "Contrato, matérias, DP e adaptação, Gravar, pagamento e conferir: o passo a passo.",
    "v": "/trilha-midia/aula/cap_07b",
-   "duracao": "0:39",
-   "nivel_trilha": 5
+   "duracao": "1:08",
+   "nivel_trilha": 5,
+   "na_central": true,
+   "capa": "/trilha-midia/capas/aula-cap-8.webp"
   },
   {
    "titulo": "Horas complementares",
    "resumo": "O que são e como enviar as horas complementares.",
    "v": "/trilha-midia/aula/cap_08",
-   "duracao": "1:03",
+   "duracao": "0:47",
    "nivel_trilha": 6
   },
   {
    "titulo": "Rumo à formatura",
-   "resumo": "O que falta para colar grau e pegar o diploma.",
+   "resumo": "O que falta para colar grau: matérias, horas, documentos, estágio e ENADE.",
    "v": "/trilha-midia/aula/cap_09",
-   "duracao": "1:02",
-   "nivel_trilha": 7
+   "duracao": "1:01",
+   "nivel_trilha": 7,
+   "na_central": true,
+   "capa": "/trilha-midia/capas/aula-cap-10.webp"
   },
   {
    "titulo": "Ajuda e certificado",
    "resumo": "Com quem falar quando precisar e o certificado desta aula.",
    "v": "/trilha-midia/aula/cap_10",
-   "duracao": "1:03",
-   "nivel_trilha": null
+   "duracao": "0:57",
+   "nivel_trilha": null,
+   "na_central": true,
+   "capa": "/trilha-midia/capas/aula-cap-11.webp"
   }
  ]
 }

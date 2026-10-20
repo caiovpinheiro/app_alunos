@@ -302,6 +302,20 @@ async function ensureSchema(pool) {
     ALTER TABLE csu_alunos
     ADD COLUMN IF NOT EXISTS unidade TEXT
   `);
+  // Acesso em preparação: o polo cria a conta antes de a faculdade gerar o RGM.
+  // Sem RGM é NULL (nunca ''): '' casaria com qualquer login por e-mail sem números.
+  const rgmCols = await pool.query(
+    `SELECT table_name, column_name FROM information_schema.columns
+     WHERE table_schema = current_schema() AND is_nullable = 'NO'
+       AND ((table_name = 'csu_alunos' AND column_name = 'rgm')
+         OR (table_name = 'csu_indicacoes' AND column_name = 'indicador_rgm'))`,
+  );
+  for (const col of rgmCols.rows) {
+    await pool.query(`ALTER TABLE ${col.table_name} ALTER COLUMN ${col.column_name} DROP NOT NULL`);
+    if (col.table_name === 'csu_alunos') {
+      await pool.query(`UPDATE csu_alunos SET rgm = NULL WHERE rgm IS NOT NULL AND btrim(rgm) = ''`);
+    }
+  }
   await pool.query(`
     CREATE TABLE IF NOT EXISTS csu_materias_alunos (
       rgm TEXT PRIMARY KEY,
@@ -457,7 +471,8 @@ async function findAlunoByIdentifier(pool, identifier) {
      FROM csu_alunos
      WHERE lower(email) = lower($1)
         OR rgm = $1
-        OR regexp_replace(rgm, '\\D', '', 'g') = regexp_replace($1, '\\D', '', 'g')
+        OR (regexp_replace($1, '\\D', '', 'g') <> ''
+            AND regexp_replace(rgm, '\\D', '', 'g') = regexp_replace($1, '\\D', '', 'g'))
      LIMIT 1`,
     [id],
   );
@@ -621,6 +636,7 @@ async function saveSyncState(pool, state, id = 'matriculados') {
 
 module.exports = {
   TOKEN_TTL_MS,
+  DERIVED_PW_MARKER,
   createPool,
   ensureSchema,
   seedAlunoIfEmpty,

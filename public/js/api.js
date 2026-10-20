@@ -82,6 +82,10 @@ window.Api = (function () {
     return request('/api/tutoriais', { headers: authHeaders() });
   }
 
+  async function getAtendimentoPadrao() {
+    return request('/api/atendimento/padrao');
+  }
+
   async function getCentral() {
     return request('/api/central', { headers: authHeaders() });
   }
@@ -92,6 +96,11 @@ window.Api = (function () {
 
   async function getRecursos() {
     return request('/api/recursos', { headers: authHeaders() });
+  }
+
+  // RGM, curso e e-mail acadêmico do próprio aluno (dados de acesso à faculdade).
+  async function getMeuAcesso() {
+    return request('/api/meu-acesso', { headers: authHeaders() });
   }
 
   async function getTrilha() {
@@ -143,7 +152,38 @@ window.Api = (function () {
     });
   }
 
+  // Avaliação joinha (vídeos, FAQ e Aula Inaugural): voto 1, -1 ou 0 (desfaz).
+  async function avaliar(tipo, id, voto) {
+    return request('/api/avaliacoes', {
+      method: 'POST',
+      headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+      body: JSON.stringify({ tipo: tipo, id: id, voto: voto }),
+    });
+  }
+
+  // Comentário do 👎 ("o que não ficou bom"): só vale depois de um voto -1 gravado.
+  async function comentarAvaliacao(tipo, id, comentario) {
+    return request('/api/avaliacoes/comentario', {
+      method: 'POST',
+      headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+      body: JSON.stringify({ tipo: tipo, id: id, comentario: comentario }),
+    });
+  }
+
+  async function getMinhasAvaliacoes() {
+    return request('/api/avaliacoes/minhas', { headers: authHeaders() });
+  }
+
+  // Quantos 👍 cada conteúdo do tipo recebeu: {totais: {"<id>": n}} (só positivos).
+  async function getTotaisAvaliacoes(tipo) {
+    return request('/api/avaliacoes/totais?tipo=' + encodeURIComponent(tipo), { headers: authHeaders() });
+  }
+
   return {
+    avaliar: avaliar,
+    comentarAvaliacao: comentarAvaliacao,
+    getMinhasAvaliacoes: getMinhasAvaliacoes,
+    getTotaisAvaliacoes: getTotaisAvaliacoes,
     login: login,
     register: register,
     logout: logout,
@@ -159,9 +199,11 @@ window.Api = (function () {
     getPlanoImageUrl: getPlanoImageUrl,
     getAtendimento: getAtendimento,
     getRecursos: getRecursos,
+    getMeuAcesso: getMeuAcesso,
     getTrilha: getTrilha,
     getTrilhaResumo: getTrilhaResumo,
     trilhaPost: trilhaPost,
     createIndicacao: createIndicacao,
+    getAtendimentoPadrao: getAtendimentoPadrao,
   };
 })();

@@ -8,7 +8,8 @@
    "categoria": "Financeiro",
    "duracao": "0:52",
    "v": "/trilha-midia/central/tut_11",
-   "nivel_trilha": 5
+   "nivel_trilha": 5,
+   "capa": "/trilha-midia/capas/tut_11.webp"
   },
   {
    "id": "tut_10",
@@ -17,25 +18,39 @@
    "categoria": "Provas",
    "duracao": "0:32",
    "v": "/trilha-midia/central/tut_10",
-   "nivel_trilha": 4
+   "nivel_trilha": 4,
+   "capa": "/trilha-midia/capas/tut_10.webp"
   },
   {
    "id": "tut_05",
    "titulo": "Ver o calendário acadêmico",
    "resumo": "As datas de provas e entregas de cada mês.",
    "categoria": "Área do Aluno",
-   "duracao": "0:32",
+   "duracao": "0:26",
    "v": "/trilha-midia/central/tut_05",
-   "nivel_trilha": 2
+   "nivel_trilha": 2,
+   "capa": "/trilha-midia/capas/tut_05.webp"
   },
   {
-   "id": "tut_12",
-   "titulo": "Fazer a rematrícula",
-   "resumo": "Pague o boleto da rematrícula e pronto: ela acontece sozinha.",
-   "categoria": "Financeiro",
-   "duracao": "0:32",
-   "v": "/trilha-midia/central/tut_12",
-   "nivel_trilha": 5
+   "id": "tut_dp",
+   "titulo": "Incluir DP e adaptação",
+   "resumo": "Na rematrícula ou durante o semestre, e como fica o pagamento de cada uma.",
+   "categoria": "Área do Aluno",
+   "duracao": "1:03",
+   "v": "/trilha-midia/central/tut_dp",
+   "nivel_trilha": 5,
+   "capa": "/trilha-midia/capas/tut_dp.webp"
+  },
+  {
+   "id": "yt_dp",
+   "titulo": "Rematrícula passo a passo, com DP e adaptação",
+   "resumo": "Aceite o contrato, confira as matérias, inclua DP ou adaptação, grave e pague.",
+   "categoria": "Área do Aluno",
+   "duracao": "4:14",
+   "yt": "Fw4C-Y3KoBk",
+   "nivel_trilha": 5,
+   "capa": "/trilha-midia/capas/yt_dp.webp",
+   "termos": "rematricula renovar matrícula contrato aceitar gravar boleto pagar compensação dias úteis rematriculado janeiro julho dp dependência adaptação reprovei reprovado matéria atrasada incluir disciplina rematrícula matrícula de veteranos série regular dps/adaptações gravar aproveitamento de disciplinas"
   },
   {
    "id": "tut_14",
@@ -44,16 +59,18 @@
    "categoria": "Atividades",
    "duracao": "0:49",
    "v": "/trilha-midia/central/tut_14",
-   "nivel_trilha": 6
+   "nivel_trilha": 6,
+   "capa": "/trilha-midia/capas/tut_14.webp"
   },
   {
    "id": "acesso-email-senha",
    "titulo": "Descobrir o e-mail e a senha",
-   "resumo": "Primeiro acesso no app Duda: o CPF, a caixinha e o seu e-mail acadêmico.",
+   "resumo": "Primeiro acesso no app Duda: o CPF, o seu e-mail acadêmico e como montar a primeira senha.",
    "categoria": "Primeiros passos",
-   "duracao": "1:36",
+   "duracao": "1:46",
    "v": "/trilha-midia/videos/nivel1_parte1",
-   "nivel_trilha": 1
+   "nivel_trilha": 1,
+   "capa": "/trilha-midia/capas/acesso-email-senha.webp"
   },
   {
    "id": "acesso-criar-senha",
@@ -62,7 +79,8 @@
    "categoria": "Primeiros passos",
    "duracao": "0:40",
    "v": "/trilha-midia/videos/nivel1_parte2",
-   "nivel_trilha": 1
+   "nivel_trilha": 1,
+   "capa": "/trilha-midia/capas/acesso-criar-senha.webp"
   },
   {
    "id": "acesso-authenticator",
@@ -71,25 +89,28 @@
    "categoria": "Primeiros passos",
    "duracao": "1:01",
    "v": "/trilha-midia/videos/nivel1_parte3",
-   "nivel_trilha": 1
+   "nivel_trilha": 1,
+   "capa": "/trilha-midia/capas/acesso-authenticator.webp"
   },
   {
    "id": "acesso-entrar-duda",
    "titulo": "Entrar no Duda",
    "resumo": "O número na tela e a confirmação no Authenticator.",
    "categoria": "Primeiros passos",
-   "duracao": "1:14",
+   "duracao": "1:03",
    "v": "/trilha-midia/videos/nivel1_parte4",
-   "nivel_trilha": 1
+   "nivel_trilha": 1,
+   "capa": "/trilha-midia/capas/acesso-entrar-duda.webp"
   },
   {
    "id": "pagar-quanto",
    "titulo": "Quanto eu pago?",
-   "resumo": "Vencimento no dia 25 e como ganhar o desconto.",
+   "resumo": "Vence todo dia 25. Na 1ª mensalidade, todos os descontos valem até o 25; da 2ª em diante, 25% até o dia 10 e 15% até o 25.",
    "categoria": "Financeiro",
-   "duracao": "1:31",
+   "duracao": "1:20",
    "v": "/trilha-midia/videos/nivel5_parte1",
-   "nivel_trilha": 5
+   "nivel_trilha": 5,
+   "capa": "/trilha-midia/capas/pagar-quanto.webp"
   },
   {
    "id": "pagar-pix",
@@ -98,7 +119,8 @@
    "categoria": "Financeiro",
    "duracao": "0:55",
    "v": "/trilha-midia/videos/nivel5_parte2",
-   "nivel_trilha": 5
+   "nivel_trilha": 5,
+   "capa": "/trilha-midia/capas/pagar-pix.webp"
   },
   {
    "id": "pagar-cartao",
@@ -107,16 +129,18 @@
    "categoria": "Financeiro",
    "duracao": "0:35",
    "v": "/trilha-midia/videos/nivel5_parte3",
-   "nivel_trilha": 5
+   "nivel_trilha": 5,
+   "capa": "/trilha-midia/capas/pagar-cartao.webp"
   },
   {
    "id": "pagar-boleto",
    "titulo": "Pagar com boleto",
    "resumo": "Por que o boleto mostra o valor cheio e onde está o desconto.",
    "categoria": "Financeiro",
-   "duracao": "1:11",
+   "duracao": "1:06",
    "v": "/trilha-midia/videos/nivel5_parte4",
-   "nivel_trilha": 5
+   "nivel_trilha": 5,
+   "capa": "/trilha-midia/capas/pagar-boleto.webp"
   }
  ]
 }
