@@ -511,12 +511,11 @@
     {
      "id": "certificado-aula-inaugural",
      "q": "Como pego o certificado da aula inaugural?",
-     "a": "O certificado de <b>4 horas</b> fica no fim da <b>Aula Inaugural</b>, aqui no portal. Para emitir, conclua os <b>7 módulos</b>: cada um vale <b>10 pontos</b>, e os 7 somam os <b>70 pontos</b> da meta. Preencha seus dados com atenção: o nome sai no certificado do jeito que você escrever. Se você preencheu a lista de presença com o seu RGM no dia da aula, o certificado também aparece no AVA em até <b>2 dias</b>.",
+     "a": "O certificado de <b>4 horas</b> fica no fim da <b>Aula Inaugural</b>, aqui no portal. Para emitir, conclua os <b>7 módulos</b>: cada um vale <b>10 pontos</b>, e os 7 somam os <b>70 pontos</b> da meta. Preencha seus dados com atenção: o nome sai no certificado do jeito que você escrever.",
      "nivel_trilha": 7,
      "tags": [
       "certificado",
-      "aula inaugural",
-      "lista de presença"
+      "aula inaugural"
      ],
      "confirmar": true
     }
