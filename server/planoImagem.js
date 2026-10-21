@@ -1167,11 +1167,16 @@ async function startBatch(pool, filter) {
 async function getStatus(pool, filter) {
   const rgms = filter && filter.rgms ? [...filter.rgms] : null;
   const result = await pool.query(
-    `SELECT i.status, COUNT(*)::int AS n
-     FROM csu_semestre_imagens i
-     JOIN csu_alunos a ON a.id = i.aluno_id
-     WHERE ($1::text[] IS NULL OR regexp_replace(a.rgm, '\\D', '', 'g') = ANY($1::text[]))
-     GROUP BY i.status`,
+    `SELECT status, COUNT(*)::int AS n
+     FROM (
+       SELECT DISTINCT ON (i.aluno_id) i.status
+       FROM csu_semestre_imagens i
+       JOIN csu_alunos a ON a.id = i.aluno_id
+       WHERE ($1::text[] IS NULL OR regexp_replace(a.rgm, '\\D', '', 'g') = ANY($1::text[]))
+       ORDER BY i.aluno_id,
+         CASE i.status WHEN 'processando' THEN 0 WHEN 'pendente' THEN 1 WHEN 'concluida' THEN 2 ELSE 3 END
+     ) por_aluno
+     GROUP BY status`,
     [rgms],
   );
   const counts = { pendente: 0, processando: 0, concluida: 0, erro: 0 };

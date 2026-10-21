@@ -364,11 +364,11 @@
     if (log) {
       html += '<p class="mt-2"><b>' + fmtNum(log.com_plano) + '</b> com matérias sincronizadas ou plano cadastrado · <b>' + fmtNum(log.sem_plano) + '</b> sem isso (não gera imagem de semestre).</p>';
       if (log.alunos_com_plano && log.alunos_com_plano.length) {
-        html += '<p class="mt-2 font-medium text-gray-800">Quem tem plano</p><ul class="mt-1 space-y-0.5">';
+        html += '<details class="mt-2"><summary class="cursor-pointer font-medium text-gray-800">Quem tem plano (' + fmtNum(log.alunos_com_plano.length) + ')</summary><ul class="mt-1 space-y-0.5">';
         log.alunos_com_plano.forEach(function (aluno) {
           html += '<li>' + escapeHtml(aluno.nome || '') + ' · RGM ' + escapeHtml(aluno.rgm || '') + ' · ' + escapeHtml(aluno.curso || '') + (aluno.periodo ? ' · ' + escapeHtml(aluno.periodo) : '') + '</li>';
         });
-        html += '</ul>';
+        html += '</ul></details>';
       }
       if (log.cursos_sem_plano && log.cursos_sem_plano.length) {
         html += '<details class="mt-2"><summary class="cursor-pointer text-gray-700">Cursos sem plano no portal</summary><ul class="mt-1 space-y-0.5">';
