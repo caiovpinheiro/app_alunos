@@ -346,15 +346,34 @@ function mapMateriasToItens(materias) {
 
 async function getMateriasByRgm(pool, rgm) {
   if (!rgm) return null;
-  const result = await pool.query(
+  const raw = String(rgm).trim();
+  const digits = raw.replace(/\D/g, '');
+  let fonte = { rows: [] };
+  try {
+    fonte = await pool.query(
+      `SELECT materias
+       FROM materias_alunos
+       WHERE rgm = $1
+          OR regexp_replace(rgm, '\\D', '', 'g') = $2
+       ORDER BY consultado_em DESC NULLS LAST
+       LIMIT 1`,
+      [raw, digits],
+    );
+  } catch (err) {
+    if (err.code !== '42P01') throw err;
+  }
+  const row = fonte.rows[0];
+  if (row && Array.isArray(row.materias) && row.materias.length) return row;
+
+  const copia = await pool.query(
     `SELECT materias
      FROM csu_materias_alunos
      WHERE rgm = $1
-        OR regexp_replace(rgm, '\\D', '', 'g') = regexp_replace($1, '\\D', '', 'g')
+        OR regexp_replace(rgm, '\\D', '', 'g') = $2
      LIMIT 1`,
-    [rgm],
+    [raw, digits],
   );
-  return result.rows[0] || null;
+  return copia.rows[0] || null;
 }
 
 async function getAlunoCurso(pool, alunoId) {

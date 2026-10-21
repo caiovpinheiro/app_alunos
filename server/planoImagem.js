@@ -785,12 +785,30 @@ async function sendSharedImage(pool, token, res) {
 async function materiasPorRgm(pool, rgms) {
   if (!rgms || !rgms.length) return new Map();
   const synced = await pool.query(
-    `SELECT regexp_replace(a.rgm, '\\D', '', 'g') AS rgm, m.materias
+    `SELECT regexp_replace(a.rgm, '\\D', '', 'g') AS rgm,
+            CASE
+              WHEN src.materias IS NOT NULL
+               AND jsonb_typeof(src.materias) = 'array'
+               AND jsonb_array_length(src.materias) > 0
+              THEN src.materias
+              ELSE copia.materias
+            END AS materias
      FROM csu_alunos a
-     JOIN csu_materias_alunos m
-       ON regexp_replace(m.rgm, '\\D', '', 'g') = regexp_replace(a.rgm, '\\D', '', 'g')
+     LEFT JOIN LATERAL (
+       SELECT m.materias
+       FROM materias_alunos m
+       WHERE regexp_replace(m.rgm, '\\D', '', 'g') = regexp_replace(a.rgm, '\\D', '', 'g')
+       ORDER BY m.consultado_em DESC NULLS LAST
+       LIMIT 1
+     ) src ON TRUE
+     LEFT JOIN csu_materias_alunos copia
+       ON regexp_replace(copia.rgm, '\\D', '', 'g') = regexp_replace(a.rgm, '\\D', '', 'g')
      WHERE a.ativo = TRUE
-       AND regexp_replace(a.rgm, '\\D', '', 'g') = ANY($1::text[])`,
+       AND regexp_replace(a.rgm, '\\D', '', 'g') = ANY($1::text[])
+       AND (
+         (src.materias IS NOT NULL AND jsonb_typeof(src.materias) = 'array' AND jsonb_array_length(src.materias) > 0)
+         OR (copia.materias IS NOT NULL AND jsonb_typeof(copia.materias) = 'array' AND jsonb_array_length(copia.materias) > 0)
+       )`,
     [rgms],
   );
   return new Map(synced.rows.map((row) => [row.rgm, row.materias]));
@@ -805,10 +823,24 @@ async function listEligible(pool, filter) {
   );
   const rgms = filter && filter.rgms ? [...filter.rgms] : null;
   const alunos = await pool.query(
-    `SELECT a.id, a.nome, a.curso, a.rgm, m.materias
+    `SELECT a.id, a.nome, a.curso, a.rgm,
+            CASE
+              WHEN src.materias IS NOT NULL
+               AND jsonb_typeof(src.materias) = 'array'
+               AND jsonb_array_length(src.materias) > 0
+              THEN src.materias
+              ELSE copia.materias
+            END AS materias
      FROM csu_alunos a
-     LEFT JOIN csu_materias_alunos m
-       ON regexp_replace(m.rgm, '\\D', '', 'g') = regexp_replace(a.rgm, '\\D', '', 'g')
+     LEFT JOIN LATERAL (
+       SELECT m.materias
+       FROM materias_alunos m
+       WHERE regexp_replace(m.rgm, '\\D', '', 'g') = regexp_replace(a.rgm, '\\D', '', 'g')
+       ORDER BY m.consultado_em DESC NULLS LAST
+       LIMIT 1
+     ) src ON TRUE
+     LEFT JOIN csu_materias_alunos copia
+       ON regexp_replace(copia.rgm, '\\D', '', 'g') = regexp_replace(a.rgm, '\\D', '', 'g')
      WHERE a.ativo = TRUE
        AND ($1::text[] IS NULL OR regexp_replace(a.rgm, '\\D', '', 'g') = ANY($1::text[]))`,
     [rgms],
