@@ -286,6 +286,48 @@
     loadMaterias();
   }
 
+  function renderRecorteLog(res) {
+    var box = document.getElementById('planos-recorte-log');
+    if (!box) return;
+    if (statusScope === 'total' || !res || res.matriculados == null) {
+      box.innerHTML = '';
+      box.classList.add('hidden');
+      return;
+    }
+    var recorte = res.recorte || {};
+    var excluidos = recorte.excluidos || {};
+    var parts = [];
+    if (excluidos.retorno) parts.push(fmtNum(excluidos.retorno) + ' retorno');
+    if (excluidos.recompra) parts.push(fmtNum(excluidos.recompra) + ' recompra');
+    if (excluidos.rematricula) parts.push(fmtNum(excluidos.rematricula) + ' rematrícula');
+    if (excluidos.pos_graduacao) parts.push(fmtNum(excluidos.pos_graduacao) + ' pós-graduação');
+    if (excluidos.outro) parts.push(fmtNum(excluidos.outro) + ' outro');
+    var log = res.planos && res.planos.log;
+    var html = '';
+    if (parts.length) {
+      html += '<p>Fora do recorte do SIAA: ' + parts.join(', ') + '.</p>';
+    }
+    if (log) {
+      html += '<p class="mt-2"><b>' + fmtNum(log.com_plano) + '</b> com matérias sincronizadas ou plano cadastrado · <b>' + fmtNum(log.sem_plano) + '</b> sem isso (não gera imagem de semestre).</p>';
+      if (log.alunos_com_plano && log.alunos_com_plano.length) {
+        html += '<p class="mt-2 font-medium text-gray-800">Quem tem plano</p><ul class="mt-1 space-y-0.5">';
+        log.alunos_com_plano.forEach(function (aluno) {
+          html += '<li>' + escapeHtml(aluno.nome || '') + ' · RGM ' + escapeHtml(aluno.rgm || '') + ' · ' + escapeHtml(aluno.curso || '') + (aluno.periodo ? ' · ' + escapeHtml(aluno.periodo) : '') + '</li>';
+        });
+        html += '</ul>';
+      }
+      if (log.cursos_sem_plano && log.cursos_sem_plano.length) {
+        html += '<details class="mt-2"><summary class="cursor-pointer text-gray-700">Cursos sem plano no portal</summary><ul class="mt-1 space-y-0.5">';
+        log.cursos_sem_plano.forEach(function (row) {
+          html += '<li>' + escapeHtml(row.curso) + ' · ' + fmtNum(row.n) + '</li>';
+        });
+        html += '</ul></details>';
+      }
+    }
+    box.innerHTML = html;
+    box.classList.toggle('hidden', !html);
+  }
+
   function renderPreviewJob(prefix, block) {
     var gerar = Number(block && block.gerar || 0);
     var jaTem = Number(block && block.ja_tem || 0);
@@ -493,14 +535,23 @@
       var previewQs = statusScope === 'total' ? '' : (qs.length ? '?' + qs.join('&') : '');
       var res = await request('/api/admin/imagens/previsualizar' + previewQs);
       if (seq !== previewSeq) return;
-      box.innerHTML = statusScope === 'total' || res.matriculados == null
-        ? 'Sem datas: o lote vale para todos os alunos ativos.'
-        : ('<span class="text-2xl font-bold text-gray-900">' + fmtNum(res.matriculados) + '</span> pessoas neste período');
+      if (statusScope === 'total' || res.matriculados == null) {
+        box.innerHTML = 'Sem datas: o lote vale para todos os alunos ativos.';
+      } else {
+        var recorte = res.recorte || {};
+        var emCurso = recorte.em_curso;
+        box.innerHTML = '<span class="text-2xl font-bold text-gray-900">' + fmtNum(res.matriculados) + '</span> Graduação · Nova matrícula'
+          + (emCurso != null && emCurso !== res.matriculados
+            ? '<span class="block mt-1 text-sm font-normal text-gray-500">de ' + fmtNum(emCurso) + ' EM CURSO no período</span>'
+            : '');
+      }
       renderPreviewJob('planos', res.planos);
       renderPreviewJob('materias', res.materias);
+      renderRecorteLog(res);
     } catch (err) {
       if (seq !== previewSeq) return;
       box.textContent = err.message || 'Não foi possível contar os alunos.';
+      renderRecorteLog(null);
     }
   }
 

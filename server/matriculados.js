@@ -122,6 +122,36 @@ function passwordMatches(expected, given) {
   return crypto.timingSafeEqual(left, right);
 }
 
+function fieldFromData(data, names) {
+  for (const name of names) {
+    const value = collapseSpaces(data?.[name]);
+    if (value) return value;
+  }
+  return '';
+}
+
+function normLabel(value) {
+  return collapseSpaces(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase();
+}
+
+function isGraduacaoNovaMatricula(data) {
+  return normLabel(fieldFromData(data, ['Negócio', 'Negocio'])) === 'GRADUACAO'
+    && normLabel(fieldFromData(data, ['Tipo Matrícula', 'Tipo Matricula'])) === 'NOVA MATRICULA';
+}
+
+function classifyExcluded(data) {
+  const negocio = normLabel(fieldFromData(data, ['Negócio', 'Negocio']));
+  const tipo = normLabel(fieldFromData(data, ['Tipo Matrícula', 'Tipo Matricula']));
+  if (negocio === 'POS-GRADUACAO') return 'pos_graduacao';
+  if (tipo === 'RETORNO') return 'retorno';
+  if (tipo === 'RECOMPRA') return 'recompra';
+  if (tipo === 'REMATRICULA') return 'rematricula';
+  return 'outro';
+}
+
 function mapRow(data) {
   const nome = collapseSpaces(data?.Nome);
   const rgm = normalizeRgm(data?.RGM) || normalizeRgm(data?.RGM_erp_matricula);
@@ -135,6 +165,8 @@ function mapRow(data) {
     situacao,
     curso: formatCurso(data?.Curso),
     unidade: formatPolo(data?.Polo) || formatPolo(data?.Instituição),
+    negocio: fieldFromData(data, ['Negócio', 'Negocio']),
+    tipoMatricula: fieldFromData(data, ['Tipo Matrícula', 'Tipo Matricula']),
   };
 }
 
@@ -249,17 +281,32 @@ async function alunosEnrolledBetween(pool, { de, ate } = {}) {
   );
 
   const byRgm = new Map();
+  const excluidos = { pos_graduacao: 0, retorno: 0, recompra: 0, rematricula: 0, outro: 0 };
+  let emCurso = 0;
   for (const row of result.rows) {
     const data = row.data || {};
     const iso = parseDataMatricula(data['Data Matrícula'] || data['Data Matricula']);
     if (!iso) continue;
     if (from && iso < from) continue;
     if (to && iso > to) continue;
+    emCurso += 1;
+    if (!isGraduacaoNovaMatricula(data)) {
+      excluidos[classifyExcluded(data)] += 1;
+      continue;
+    }
     const aluno = mapRow(data);
     if (!aluno.rgm || byRgm.has(aluno.rgm)) continue;
     byRgm.set(aluno.rgm, aluno);
   }
-  return { rgms: new Set(byRgm.keys()), alunos: [...byRgm.values()] };
+  return {
+    rgms: new Set(byRgm.keys()),
+    alunos: [...byRgm.values()],
+    recorte: {
+      em_curso: emCurso,
+      incluidos: byRgm.size,
+      excluidos,
+    },
+  };
 }
 
 async function rgmsEnrolledBetween(pool, range) {

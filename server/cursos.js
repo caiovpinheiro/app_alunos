@@ -26,6 +26,7 @@ async function loadCourseNames(pool) {
        UNION
        SELECT curso FROM csu_semestre_planos
        WHERE ativo = TRUE AND curso IS NOT NULL AND btrim(curso) <> ''
+         AND curso <> '__materias__'
      ) c
      ORDER BY 1`,
   );

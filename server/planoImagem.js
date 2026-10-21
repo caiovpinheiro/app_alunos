@@ -90,7 +90,7 @@ function bookIcon(x, y) {
 
 function activityKind(titulo) {
   const t = String(titulo || '').toLowerCase();
-  if (t.includes('ambient')) return 'digital';
+  if (t.includes('ambienta')) return 'digital';
   if (t.includes('carreira')) return 'carreira';
   if (t.includes('projeto')) return 'projeto';
   if (t.includes('extens')) return 'extensao';
@@ -470,6 +470,8 @@ function comparePeriodo(a, b) {
   return vb - va;
 }
 
+const MATERIAS_PLANO_CURSO = '__materias__';
+
 function pickPlano(planos, curso, today) {
   const matches = planos.filter((plano) => meuSemestre.cursosMatch(curso, plano.curso));
   if (!matches.length) return null;
@@ -477,6 +479,40 @@ function pickPlano(planos, curso, today) {
   const pool = vigentes.length ? vigentes : matches;
   pool.sort((a, b) => comparePeriodo(a.periodo, b.periodo) || b.id - a.id);
   return pool[0];
+}
+
+function materiasTemConteudo(materias) {
+  const list = Array.isArray(materias) ? materias : [];
+  return list.some((item) => {
+    if (item == null) return false;
+    if (typeof item === 'string') return item.trim();
+    return String(item.disciplina || item.nome || item.titulo || item.materia || '').trim();
+  });
+}
+
+async function ensureMateriasPlano(pool, periodo) {
+  const periodoNorm = String(periodo || process.env.MATERIAS_PERIODO || '2026/2');
+  const result = await pool.query(
+    `INSERT INTO csu_semestre_planos (curso, periodo, titulo, ativo)
+     VALUES ($1, $2, 'Meu Semestre', TRUE)
+     ON CONFLICT (curso, periodo) DO UPDATE SET titulo = EXCLUDED.titulo
+     RETURNING id, curso, periodo, titulo`,
+    [MATERIAS_PLANO_CURSO, periodoNorm],
+  );
+  return result.rows[0];
+}
+
+async function bindPlanoId(pool, data) {
+  if (!data || !data.plano) return data;
+  if (data.plano.id) return data;
+  const row = await ensureMateriasPlano(pool, data.plano.periodo);
+  data.plano = {
+    id: row.id,
+    curso: data.plano.curso || row.curso,
+    periodo: data.plano.periodo || row.periodo,
+    titulo: data.plano.titulo || row.titulo,
+  };
+  return data;
 }
 
 function concurrency() {
@@ -541,8 +577,8 @@ async function upsertRow(pool, { alunoId, planoId, hash, status, filePath, error
 }
 
 async function generateForAluno(pool, alunoId) {
-  const data = await meuSemestre.getMeuSemestre(pool, alunoId);
-  if (!data.plano) {
+  const data = await bindPlanoId(pool, await meuSemestre.getMeuSemestre(pool, alunoId));
+  if (!data.plano || !data.plano.id) {
     const err = new Error('Semestre não disponível para este aluno.');
     err.code = 'NO_PLAN';
     throw err;
@@ -746,36 +782,115 @@ async function sendSharedImage(pool, token, res) {
   }
 }
 
+async function materiasPorRgm(pool, rgms) {
+  if (!rgms || !rgms.length) return new Map();
+  const synced = await pool.query(
+    `SELECT regexp_replace(a.rgm, '\\D', '', 'g') AS rgm, m.materias
+     FROM csu_alunos a
+     JOIN csu_materias_alunos m
+       ON regexp_replace(m.rgm, '\\D', '', 'g') = regexp_replace(a.rgm, '\\D', '', 'g')
+     WHERE a.ativo = TRUE
+       AND regexp_replace(a.rgm, '\\D', '', 'g') = ANY($1::text[])`,
+    [rgms],
+  );
+  return new Map(synced.rows.map((row) => [row.rgm, row.materias]));
+}
+
 async function listEligible(pool, filter) {
   const today = meuSemestre.todayIsoSaoPaulo();
   const planos = await pool.query(
-    `SELECT id, curso, periodo, titulo FROM csu_semestre_planos WHERE ativo = TRUE`,
+    `SELECT id, curso, periodo, titulo FROM csu_semestre_planos
+     WHERE ativo = TRUE AND curso <> $1`,
+    [MATERIAS_PLANO_CURSO],
   );
-  if (!planos.rows.length) return [];
   const rgms = filter && filter.rgms ? [...filter.rgms] : null;
   const alunos = await pool.query(
-    `SELECT id, nome, curso, rgm
-     FROM csu_alunos
-     WHERE ativo = TRUE AND curso IS NOT NULL AND btrim(curso) <> ''
-       AND ($1::text[] IS NULL OR regexp_replace(rgm, '\\D', '', 'g') = ANY($1::text[]))`,
+    `SELECT a.id, a.nome, a.curso, a.rgm, m.materias
+     FROM csu_alunos a
+     LEFT JOIN csu_materias_alunos m
+       ON regexp_replace(m.rgm, '\\D', '', 'g') = regexp_replace(a.rgm, '\\D', '', 'g')
+     WHERE a.ativo = TRUE
+       AND ($1::text[] IS NULL OR regexp_replace(a.rgm, '\\D', '', 'g') = ANY($1::text[]))`,
     [rgms],
   );
   const list = [];
   for (const aluno of alunos.rows) {
+    if (materiasTemConteudo(aluno.materias)) {
+      list.push({
+        alunoId: aluno.id,
+        nome: aluno.nome,
+        rgm: aluno.rgm,
+        curso: aluno.curso,
+        planoId: null,
+        plano: null,
+        fonte: 'materias',
+      });
+      continue;
+    }
+    if (!aluno.curso || !String(aluno.curso).trim()) continue;
     const plano = pickPlano(planos.rows, aluno.curso, today);
-    if (plano) list.push({ alunoId: aluno.id, nome: aluno.nome, planoId: plano.id, plano });
+    if (plano) {
+      list.push({
+        alunoId: aluno.id,
+        nome: aluno.nome,
+        rgm: aluno.rgm,
+        curso: aluno.curso,
+        planoId: plano.id,
+        plano,
+        fonte: 'cadastro',
+      });
+    }
   }
   return list;
+}
+
+function buildPreviewLog(alunos, planos, today, materiasByRgm) {
+  const cursosSemPlano = new Map();
+  const comPlano = [];
+  const periodo = process.env.MATERIAS_PERIODO || '2026/2';
+  for (const aluno of alunos || []) {
+    const rgm = String(aluno.rgm || '').replace(/\D/g, '');
+    const viaMaterias = materiasTemConteudo(materiasByRgm && materiasByRgm.get(rgm));
+    const plano = viaMaterias
+      ? { titulo: 'Matérias sincronizadas', periodo, curso: aluno.curso }
+      : pickPlano(planos, aluno.curso, today);
+    if (plano) {
+      comPlano.push({
+        rgm: aluno.rgm,
+        nome: aluno.nome,
+        curso: aluno.curso,
+        plano: plano.titulo || plano.curso,
+        periodo: plano.periodo,
+      });
+    } else {
+      const curso = aluno.curso || 'Sem curso no relatório';
+      cursosSemPlano.set(curso, (cursosSemPlano.get(curso) || 0) + 1);
+    }
+  }
+  return {
+    com_plano: comPlano.length,
+    sem_plano: (alunos || []).length - comPlano.length,
+    alunos_com_plano: comPlano,
+    cursos_sem_plano: [...cursosSemPlano.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'pt-BR'))
+      .map(([curso, n]) => ({ curso, n })),
+  };
 }
 
 async function previewBatch(pool, filter) {
   const today = meuSemestre.todayIsoSaoPaulo();
   const planos = await pool.query(
-    `SELECT id, curso, periodo, titulo FROM csu_semestre_planos WHERE ativo = TRUE`,
+    `SELECT id, curso, periodo, titulo FROM csu_semestre_planos
+     WHERE ativo = TRUE AND curso <> $1`,
+    [MATERIAS_PLANO_CURSO],
   );
 
   if (filter && Array.isArray(filter.alunos)) {
-    const comPlano = filter.alunos.filter((aluno) => pickPlano(planos.rows, aluno.curso, today)).length;
+    const materiasByRgm = await materiasPorRgm(pool, [...(filter.rgms || [])]);
+    const comPlano = filter.alunos.filter((aluno) => {
+      const rgm = String(aluno.rgm || '').replace(/\D/g, '');
+      return materiasTemConteudo(materiasByRgm.get(rgm)) || pickPlano(planos.rows, aluno.curso, today);
+    }).length;
     const rgms = [...(filter.rgms || [])];
     let jaTem = 0;
     if (rgms.length) {
@@ -795,6 +910,7 @@ async function previewBatch(pool, filter) {
       com_plano: comPlano,
       ja_tem: jaTem,
       gerar: Math.max(0, comPlano - jaTem),
+      log: buildPreviewLog(filter.alunos, planos.rows, today, materiasByRgm),
     };
   }
 
@@ -821,33 +937,35 @@ async function enqueueOutdated(pool, filter) {
   const eligible = await listEligible(pool, filter);
   if (!eligible.length) return { queued: 0, total: 0 };
 
-  const planoIds = [...new Set(eligible.map((row) => row.planoId))];
-  const itens = await pool.query(
-    `SELECT plano_id, tipo, titulo, data_inicio, data_fim, prova_inicio, prova_fim, prazo, prazo_preferencial, ordem
-     FROM csu_semestre_itens
-     WHERE plano_id = ANY($1::int[])
-     ORDER BY ordem ASC, id ASC`,
-    [planoIds],
-  );
+  const planoIds = [...new Set(eligible.map((row) => row.planoId).filter(Boolean))];
   const byPlano = new Map();
-  for (const item of itens.rows) {
-    const list = byPlano.get(item.plano_id) || [];
-    list.push(item);
-    byPlano.set(item.plano_id, list);
-  }
-  const eventos = await pool.query(
-    `SELECT plano_id, tipo, data_inicio, data_fim
-     FROM csu_semestre_eventos
-     WHERE plano_id = ANY($1::int[])
-       AND tipo IN ('encerramento', 'recuperacao')
-     ORDER BY data_inicio ASC, ordem ASC, id ASC`,
-    [planoIds],
-  );
   const eventsByPlano = new Map();
-  for (const item of eventos.rows) {
-    const list = eventsByPlano.get(item.plano_id) || [];
-    list.push(item);
-    eventsByPlano.set(item.plano_id, list);
+  if (planoIds.length) {
+    const itens = await pool.query(
+      `SELECT plano_id, tipo, titulo, data_inicio, data_fim, prova_inicio, prova_fim, prazo, prazo_preferencial, ordem
+       FROM csu_semestre_itens
+       WHERE plano_id = ANY($1::int[])
+       ORDER BY ordem ASC, id ASC`,
+      [planoIds],
+    );
+    for (const item of itens.rows) {
+      const list = byPlano.get(item.plano_id) || [];
+      list.push(item);
+      byPlano.set(item.plano_id, list);
+    }
+    const eventos = await pool.query(
+      `SELECT plano_id, tipo, data_inicio, data_fim
+       FROM csu_semestre_eventos
+       WHERE plano_id = ANY($1::int[])
+         AND tipo IN ('encerramento', 'recuperacao')
+       ORDER BY data_inicio ASC, ordem ASC, id ASC`,
+      [planoIds],
+    );
+    for (const item of eventos.rows) {
+      const list = eventsByPlano.get(item.plano_id) || [];
+      list.push(item);
+      eventsByPlano.set(item.plano_id, list);
+    }
   }
 
   const existing = await pool.query(
@@ -861,23 +979,32 @@ async function enqueueOutdated(pool, filter) {
 
   let queued = 0;
   for (const row of eligible) {
-    const planItems = byPlano.get(row.planoId) || [];
-    const avaliacaoItem = planItems.find((rowItem) => rowItem.tipo === 'avaliacao_integrada') || null;
-    const hash = hashFingerprint(fingerprintFromParts({
-      nome: row.nome,
-      plano: row.plano,
-      disciplinas: planItems.filter((item) => item.tipo === 'disciplina'),
-      atividades: planItems.filter((item) => item.tipo === 'atividade'),
-      avaliacao: avaliacaoItem,
-      atencao: eventsByPlano.get(row.planoId) || [],
-    }));
-    const prev = current.get(`${row.alunoId}:${row.planoId}`);
+    let planoId = row.planoId;
+    let hash;
+    if (row.fonte === 'materias') {
+      const data = await bindPlanoId(pool, await meuSemestre.getMeuSemestre(pool, row.alunoId));
+      if (!data || !data.plano || !data.plano.id) continue;
+      planoId = data.plano.id;
+      hash = hashFingerprint(fingerprint(data));
+    } else {
+      const planItems = byPlano.get(planoId) || [];
+      const avaliacaoItem = planItems.find((rowItem) => rowItem.tipo === 'avaliacao_integrada') || null;
+      hash = hashFingerprint(fingerprintFromParts({
+        nome: row.nome,
+        plano: row.plano,
+        disciplinas: planItems.filter((item) => item.tipo === 'disciplina'),
+        atividades: planItems.filter((item) => item.tipo === 'atividade'),
+        avaliacao: avaliacaoItem,
+        atencao: eventsByPlano.get(planoId) || [],
+      }));
+    }
+    const prev = current.get(`${row.alunoId}:${planoId}`);
     if (prev && prev.status === 'processando') continue;
     if (prev && prev.status === 'pendente' && prev.data_hash === hash) continue;
     if (prev && prev.status === 'concluida' && prev.data_hash === hash && prev.has_imagem) continue;
     await upsertRow(pool, {
       alunoId: row.alunoId,
-      planoId: row.planoId,
+      planoId,
       hash,
       status: 'pendente',
       filePath: prev && prev.file_path,

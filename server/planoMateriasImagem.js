@@ -68,7 +68,7 @@ function normalizeMaterias(materias) {
 
 function isMandatoryActivity(title) {
   const t = String(title || '').toLowerCase();
-  return t.includes('ambient')
+  return t.includes('ambienta')
     || t.includes('carreira')
     || t.includes('extens')
     || t.includes('projeto')
@@ -78,7 +78,7 @@ function isMandatoryActivity(title) {
 
 function activityKind(titulo) {
   const t = String(titulo || '').toLowerCase();
-  if (t.includes('ambient')) return 'digital';
+  if (t.includes('ambienta')) return 'digital';
   if (t.includes('carreira')) return 'carreira';
   if (t.includes('projeto')) return 'projeto';
   if (t.includes('extens')) return 'extensao';

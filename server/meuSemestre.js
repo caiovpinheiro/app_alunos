@@ -305,7 +305,7 @@ function materiaPeriodo(item) {
 
 function isMandatoryActivity(title) {
   const t = String(title || '').toLowerCase();
-  return t.includes('ambient')
+  return t.includes('ambienta')
     || t.includes('carreira')
     || t.includes('extens')
     || t.includes('projeto')

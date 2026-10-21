@@ -113,7 +113,7 @@
               <h2 class="text-xl font-bold">Imagens dos planos</h2>
               <button type="button" id="planos-help-btn" class="w-7 h-7 rounded-full border border-cruzeiro text-cruzeiro text-sm font-bold leading-none" aria-label="Como usar esta página" title="Como usar">?</button>
             </div>
-            <p class="text-sm text-gray-500 mt-1">Ordem: datas → conferir os números → gerar. No de matérias, sincronize antes.</p>
+            <p class="text-sm text-gray-500 mt-1">Ordem: datas → conferir os números → gerar. Recorte: Graduação e Nova matrícula. No de matérias, sincronize antes.</p>
           </div>
           <button type="button" id="planos-scope-toggle" class="text-sm font-medium text-cruzeiro hover:underline">Ver todo o portal</button>
         </div>
@@ -132,6 +132,7 @@
           </div>
           <p id="planos-preview" class="mt-4 text-gray-800">Escolha as datas para ver quantas pessoas entram.</p>
           <p id="planos-scope-note" class="hidden mt-1 text-xs text-gray-500"></p>
+          <div id="planos-recorte-log" class="hidden mt-3 text-sm text-gray-600"></div>
         </div>
 
         <div class="grid md:grid-cols-2 gap-4">
@@ -185,7 +186,7 @@
       <ol class="space-y-4 text-sm text-gray-700">
         <li>
           <p class="font-semibold text-gray-900">1. Escolha as datas</p>
-          <p class="text-gray-500 mt-1">É a data de matrícula do relatório (EM CURSO). Uma data só = aquele dia. Vazio = todo mundo — só use se for isso mesmo.</p>
+          <p class="text-gray-500 mt-1">Data de matrícula EM CURSO, só Graduação e Nova matrícula — o mesmo recorte da consulta no SIAA. Vazio = todo mundo ativo no portal.</p>
         </li>
         <li>
           <p class="font-semibold text-gray-900">2. Espere a conta</p>
@@ -217,6 +218,6 @@
     </div>
   </div>
 
-  <script src="/js/admin.js?v=23"></script>
+  <script src="/js/admin.js?v=25"></script>
 </body>
 </html>

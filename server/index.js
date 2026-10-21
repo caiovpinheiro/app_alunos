@@ -176,8 +176,8 @@ async function resolveMatriculaFilter(body) {
     err.status = 422;
     throw err;
   }
-  const { rgms, alunos } = await matriculados.alunosEnrolledBetween(source, range);
-  return { ...range, rgms, alunos };
+  const { rgms, alunos, recorte } = await matriculados.alunosEnrolledBetween(source, range);
+  return { ...range, rgms, alunos, recorte };
 }
 
 async function resolveStatusFilter(query) {
@@ -494,11 +494,11 @@ app.post('/api/certificates', authMiddleware, async (req, res) => {
         success: false,
         message: 'Não encontramos curso e unidade da sua matrícula para emitir o certificado.',
       });
-    }
+  }
 
-    const createdAt = nowInSaoPaulo();
+  const createdAt = nowInSaoPaulo();
     const dataAula = createdAt.slice(0, 10);
-    const certificateId = `CSU-${createdAt.slice(0, 4)}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+  const certificateId = `CSU-${createdAt.slice(0, 4)}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
 
     await db.insertCertificate(pool, aluno.id, {
       certificate_id: certificateId,
@@ -776,6 +776,7 @@ app.get('/api/admin/imagens/previsualizar', requireAdmin, async (req, res) => {
         de: filter.de,
         ate: filter.ate,
         matriculados: 0,
+        recorte: filter.recorte || null,
         planos: { pessoas: 0, com_plano: 0, ja_tem: 0, gerar: 0 },
         materias: { pessoas: 0, ja_tem: 0, gerar: 0 },
       });
@@ -789,6 +790,7 @@ app.get('/api/admin/imagens/previsualizar', requireAdmin, async (req, res) => {
       de: filter ? filter.de : null,
       ate: filter ? filter.ate : null,
       matriculados: filter ? filter.rgms.size : null,
+      recorte: filter ? filter.recorte || null : null,
       planos,
       materias,
     });
