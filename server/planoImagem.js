@@ -782,19 +782,26 @@ async function sendSharedImage(pool, token, res) {
   }
 }
 
-async function materiasPorRgm(pool, rgms) {
-  if (!rgms || !rgms.length) return new Map();
-  const synced = await pool.query(
-    `SELECT regexp_replace(a.rgm, '\\D', '', 'g') AS rgm,
-            CASE
+// materias_alunos (scrape do SIAA) só existe quando o portal usa o mesmo banco eduit do dcz;
+// senão vale apenas a cópia csu_materias_alunos ("Sincronizar matérias").
+async function materiasJoinSql(pool) {
+  const existe = await pool.query(`SELECT to_regclass('public.materias_alunos') IS NOT NULL AS ok`);
+  if (!existe.rows[0].ok) {
+    return {
+      select: 'copia.materias AS materias',
+      join: `LEFT JOIN csu_materias_alunos copia
+       ON regexp_replace(copia.rgm, '\\D', '', 'g') = regexp_replace(a.rgm, '\\D', '', 'g')`,
+    };
+  }
+  return {
+    select: `CASE
               WHEN src.materias IS NOT NULL
                AND jsonb_typeof(src.materias) = 'array'
                AND jsonb_array_length(src.materias) > 0
               THEN src.materias
               ELSE copia.materias
-            END AS materias
-     FROM csu_alunos a
-     LEFT JOIN LATERAL (
+            END AS materias`,
+    join: `LEFT JOIN LATERAL (
        SELECT m.materias
        FROM materias_alunos m
        WHERE regexp_replace(m.rgm, '\\D', '', 'g') = regexp_replace(a.rgm, '\\D', '', 'g')
@@ -802,16 +809,26 @@ async function materiasPorRgm(pool, rgms) {
        LIMIT 1
      ) src ON TRUE
      LEFT JOIN csu_materias_alunos copia
-       ON regexp_replace(copia.rgm, '\\D', '', 'g') = regexp_replace(a.rgm, '\\D', '', 'g')
+       ON regexp_replace(copia.rgm, '\\D', '', 'g') = regexp_replace(a.rgm, '\\D', '', 'g')`,
+  };
+}
+
+async function materiasPorRgm(pool, rgms) {
+  if (!rgms || !rgms.length) return new Map();
+  const sql = await materiasJoinSql(pool);
+  const synced = await pool.query(
+    `SELECT regexp_replace(a.rgm, '\\D', '', 'g') AS rgm, ${sql.select}
+     FROM csu_alunos a
+     ${sql.join}
      WHERE a.ativo = TRUE
-       AND regexp_replace(a.rgm, '\\D', '', 'g') = ANY($1::text[])
-       AND (
-         (src.materias IS NOT NULL AND jsonb_typeof(src.materias) = 'array' AND jsonb_array_length(src.materias) > 0)
-         OR (copia.materias IS NOT NULL AND jsonb_typeof(copia.materias) = 'array' AND jsonb_array_length(copia.materias) > 0)
-       )`,
+       AND regexp_replace(a.rgm, '\\D', '', 'g') = ANY($1::text[])`,
     [rgms],
   );
-  return new Map(synced.rows.map((row) => [row.rgm, row.materias]));
+  return new Map(
+    synced.rows
+      .filter((row) => materiasTemConteudo(row.materias))
+      .map((row) => [row.rgm, row.materias]),
+  );
 }
 
 async function listEligible(pool, filter) {
@@ -822,25 +839,11 @@ async function listEligible(pool, filter) {
     [MATERIAS_PLANO_CURSO],
   );
   const rgms = filter && filter.rgms ? [...filter.rgms] : null;
+  const sql = await materiasJoinSql(pool);
   const alunos = await pool.query(
-    `SELECT a.id, a.nome, a.curso, a.rgm,
-            CASE
-              WHEN src.materias IS NOT NULL
-               AND jsonb_typeof(src.materias) = 'array'
-               AND jsonb_array_length(src.materias) > 0
-              THEN src.materias
-              ELSE copia.materias
-            END AS materias
+    `SELECT a.id, a.nome, a.curso, a.rgm, ${sql.select}
      FROM csu_alunos a
-     LEFT JOIN LATERAL (
-       SELECT m.materias
-       FROM materias_alunos m
-       WHERE regexp_replace(m.rgm, '\\D', '', 'g') = regexp_replace(a.rgm, '\\D', '', 'g')
-       ORDER BY m.consultado_em DESC NULLS LAST
-       LIMIT 1
-     ) src ON TRUE
-     LEFT JOIN csu_materias_alunos copia
-       ON regexp_replace(copia.rgm, '\\D', '', 'g') = regexp_replace(a.rgm, '\\D', '', 'g')
+     ${sql.join}
      WHERE a.ativo = TRUE
        AND ($1::text[] IS NULL OR regexp_replace(a.rgm, '\\D', '', 'g') = ANY($1::text[]))`,
     [rgms],
