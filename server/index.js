@@ -1261,7 +1261,8 @@ app.delete('/api/admin/tutoriais/:id', requireAdmin, async (req, res) => {
 let acompSchemaReady = null;
 function ensureAcompanhamento() {
   if (!acompSchemaReady) {
-    acompSchemaReady = Promise.all([ensureTrilha(), acompanhamento.ensureSchema(pool)]).catch((err) => {
+    // db.ensureSchema cria as colunas de login (primeiro_login_em...) que a lista e o funil usam.
+    acompSchemaReady = Promise.all([db.ensureSchema(pool), ensureTrilha(), acompanhamento.ensureSchema(pool)]).catch((err) => {
       acompSchemaReady = null;
       throw err;
     });
@@ -1391,6 +1392,43 @@ app.get('/api/admin/acompanhamento/export.csv', requireAdmin, async (req, res) =
   } catch (err) {
     console.error('Falha no CSV do acompanhamento:', err.message);
     return res.status(500).json({ success: false, message: 'Não foi possível exportar.' });
+  }
+});
+
+// Versão das telas: o que o servidor leu do Environment e, para os alunos da busca, qual versão
+// cada um vê e por quê (para conferir a liberação sem abrir o EasyPanel).
+app.get('/api/admin/versao', requireAdmin, async (req, res) => {
+  if (!pool) return unavailable(res);
+  try {
+    await ensureAcompanhamento();
+    const q = String(req.query.q || '').trim().toLowerCase();
+    let alunos = [];
+    if (q) {
+      const digitos = q.replace(/\D+/g, '');
+      const r = await pool.query(
+        `SELECT id, nome, rgm, email, created_at, ultimo_login_em FROM csu_alunos
+         WHERE lower(nome) LIKE '%' || $1 || '%' OR lower(email) LIKE '%' || $1 || '%'
+            OR ($2 <> '' AND regexp_replace(COALESCE(rgm, ''), '\\D', '', 'g') LIKE '%' || $2 || '%')
+         ORDER BY created_at DESC LIMIT 10`,
+        [q, digitos],
+      );
+      alunos = r.rows.map((a) => ({
+        nome: a.nome, rgm: a.rgm, email: a.email, criada_em: a.created_at, ultimo_login_em: a.ultimo_login_em,
+        motivo: versao.motivo(a), aula: trilha.liberadaPara(a),
+      }));
+    }
+    const ligada = (nome) => {
+      const v = String(process.env[nome] || '').trim();
+      return v === '*' ? 'todos' : v ? 'lista' : 'ninguém';
+    };
+    return res.json({
+      success: true,
+      config: { ...versao.configuracao(), trilha: ligada('TRILHA_LIBERADA_PARA'), rastreio: ligada('RASTREIO_LIBERADO_PARA') },
+      alunos,
+    });
+  } catch (err) {
+    console.error('Falha ao conferir a versão:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível conferir.' });
   }
 });
 

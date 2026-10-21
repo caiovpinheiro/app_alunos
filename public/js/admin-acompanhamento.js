@@ -116,6 +116,32 @@ window.AdminAcomp = (function () {
     }
   }
 
+  // Versão das telas (VERSAO_NOVA_PARA / VERSAO_NOVA_DESDE): o que o servidor leu e por que cada aluno vê uma ou outra.
+  var MOTIVO = { todos: 'versão nova (liberada para todos)', lista: 'versão nova (está em VERSAO_NOVA_PARA)', data: 'versão nova (conta criada a partir de VERSAO_NOVA_DESDE)' };
+  function dataHora(d) { return d ? new Date(d).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'; }
+  async function conferirVersao(q) {
+    var conf = document.getElementById('versao-conf');
+    var res = document.getElementById('versao-res');
+    try {
+      var r = await C().request('/api/admin/versao?q=' + encodeURIComponent(q || ''));
+      var c = r.config;
+      conf.innerHTML = '<ul class="space-y-1">' +
+        '<li><b>VERSAO_NOVA_PARA:</b> ' + (c.todos ? 'todos (*)' : c.lista.length ? esc(c.lista.join(', ')) : '<span class="text-red-700">vazia (ninguém por lista)</span>') + '</li>' +
+        '<li><b>VERSAO_NOVA_DESDE:</b> ' + (c.desde ? esc(dataHora(c.desde)) : c.desde_invalida ? '<span class="text-red-700">data inválida (use AAAA-MM-DD)</span>' : 'não definida') + '</li>' +
+        '<li><b>Aula Inaugural (TRILHA_LIBERADA_PARA):</b> ' + esc(c.trilha) + ' · <b>Rastreio:</b> ' + esc(c.rastreio) + '</li>' +
+        '<li class="text-xs text-gray-500">Mudou o Environment no EasyPanel? Só vale depois de um novo Deploy. A tela de login é sempre a antiga; a troca acontece depois de entrar.</li></ul>';
+      if (!q) { res.innerHTML = ''; return; }
+      res.innerHTML = r.alunos.length ? '<ul class="space-y-2">' + r.alunos.map(function (a) {
+        var nova = !!a.motivo;
+        return '<li class="border rounded-lg p-2"><b>' + esc(a.nome) + '</b> · ' + (a.rgm ? 'RGM ' + esc(a.rgm) : 'sem RGM') + ' · ' + esc(a.email) +
+          '<br><span class="' + (nova ? 'text-green-700' : 'text-gray-600') + ' font-semibold">' + (nova ? esc(MOTIVO[a.motivo]) : 'versão antiga') + '</span>' +
+          ' · Aula Inaugural: ' + (a.aula ? 'liberada' : 'não') + ' · conta criada em ' + esc(dataHora(a.criada_em)) + ' · último login: ' + esc(dataHora(a.ultimo_login_em)) + '</li>';
+      }).join('') + '</ul>' : '<p class="text-gray-500">Nenhum aluno encontrado.</p>';
+    } catch (err) {
+      conf.textContent = err.message || 'Não foi possível conferir.';
+    }
+  }
+
   async function load() {
     carregarFunil();
     var msg = document.getElementById('acomp-msg');
@@ -312,6 +338,11 @@ window.AdminAcomp = (function () {
   }
 
   document.addEventListener('DOMContentLoaded', function () {
+    var vbox = document.getElementById('versao-box');
+    if (vbox) {
+      vbox.addEventListener('toggle', function () { if (vbox.open) conferirVersao(document.getElementById('versao-q').value.trim()); });
+      document.getElementById('versao-busca').addEventListener('submit', function (e) { e.preventDefault(); conferirVersao(document.getElementById('versao-q').value.trim()); });
+    }
     var f = document.getElementById('acomp-filtros');
     if (!f) return;
     f.addEventListener('submit', function (e) { e.preventDefault(); load(); });

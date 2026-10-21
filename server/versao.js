@@ -36,15 +36,36 @@ function desde() {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-function novaPara(aluno) {
+// Por que a conta vê a versão nova: 'todos' (VERSAO_NOVA_PARA=*), 'lista' (RGM ou e-mail na lista),
+// 'data' (criada a partir de VERSAO_NOVA_DESDE) ou null (vê a antiga). O admin mostra isso.
+// RGM na lista vale com ou sem pontuação ("2501234-5" = "25012345").
+function motivo(aluno) {
   const l = lista();
-  if (l.includes('*')) return true;
-  if (!aluno) return false;
-  const d = desde();
-  if (d && aluno.created_at && new Date(aluno.created_at).getTime() >= d.getTime()) return true;
+  if (l.includes('*')) return 'todos';
+  if (!aluno) return null;
   const rgm = String(aluno.rgm || '').replace(/\D+/g, '');
   const email = String(aluno.email || '').trim().toLowerCase();
-  return (rgm !== '' && l.includes(rgm)) || (email !== '' && l.includes(email));
+  const rgms = l.filter((x) => !x.includes('@')).map((x) => x.replace(/\D+/g, '')).filter(Boolean);
+  if ((rgm !== '' && rgms.includes(rgm)) || (email !== '' && l.includes(email))) return 'lista';
+  const d = desde();
+  if (d && aluno.created_at && new Date(aluno.created_at).getTime() >= d.getTime()) return 'data';
+  return null;
+}
+
+function novaPara(aluno) {
+  return motivo(aluno) !== null;
+}
+
+// Resumo do que o servidor leu do Environment (para o admin conferir sem abrir o EasyPanel).
+function configuracao() {
+  const l = lista();
+  const d = desde();
+  return {
+    todos: l.includes('*'),
+    lista: l.filter((x) => x !== '*'),
+    desde: d ? d.toISOString() : null,
+    desde_invalida: !d && String(process.env.VERSAO_NOVA_DESDE || '').trim() !== '',
+  };
 }
 
 function cookieNova(req) {
@@ -63,4 +84,4 @@ function gravarCookie(req, res, nova) {
   res.append('Set-Cookie', nova ? `${COOKIE}=nova; Max-Age=31536000; ${fim}` : `${COOKIE}=; Max-Age=0; ${fim}`);
 }
 
-module.exports = { novaPara, paraTodos, verNova, gravarCookie, desde };
+module.exports = { novaPara, motivo, configuracao, paraTodos, verNova, gravarCookie, desde };

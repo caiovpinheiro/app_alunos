@@ -68,6 +68,16 @@
           </div>
         </div>
         <p class="text-sm text-gray-500 mb-4">Acessos, tempo de uso, vídeos e onde o aluno travou. A lista mostra primeiro quem mais precisa de contato, com a mensagem de WhatsApp já sugerida (revise antes de enviar).</p>
+        <details id="versao-box" class="bg-white border rounded-xl p-4 mb-4 text-sm">
+          <summary class="font-bold text-gray-800 cursor-pointer">Versão das telas: quem vê a nova</summary>
+          <div id="versao-conf" class="mt-3 text-gray-700" aria-live="polite"></div>
+          <form id="versao-busca" class="flex flex-wrap gap-2 mt-3">
+            <label class="sr-only" for="versao-q">Nome, RGM ou e-mail do aluno</label>
+            <input id="versao-q" name="q" type="search" placeholder="Nome, RGM ou e-mail do aluno" class="border rounded-lg px-3 py-2 min-w-0 flex-1">
+            <button type="submit" class="bg-cruzeiro text-white font-semibold px-4 py-2 rounded-lg">Conferir</button>
+          </form>
+          <div id="versao-res" class="mt-3" aria-live="polite"></div>
+        </details>
         <form id="acomp-filtros" class="flex flex-wrap items-end gap-3 mb-4 text-sm">
           <label class="flex flex-col gap-1"><span class="text-gray-600">Período</span>
             <select name="dias" class="border rounded-lg px-3 py-2 bg-white"><option value="7">Últimos 7 dias</option><option value="30" selected>Últimos 30 dias</option><option value="90">Últimos 90 dias</option></select></label>
@@ -269,7 +279,7 @@
   </div>
 
   <script src="/js/admin.js?v=25"></script>
-  <script src="/js/admin-acompanhamento.js?v=5"></script>
+  <script src="/js/admin-acompanhamento.js?v=6"></script>
   <script src="/js/admin-aula.js?v=1"></script>
   <script src="/js/admin-avaliacoes.js?v=1"></script>
   <script src="/js/admin-preparo.js?v=1" defer></script>
