@@ -1,17 +1,25 @@
 {
  "versao": 1,
- "pontos_video": 50,
- "pontos_certa_1a": 100,
- "pontos_certa_depois": 40,
+ "pontos_modulo": 10,
+ "meta_certificado": 70,
+ "horas_certificado": 4,
  "niveis": [
   {
    "t": "Primeiro acesso",
    "short": "Entrar",
    "rank": "Já sei entrar",
+   "topicos": [
+    "Baixe 2 apps grátis: <b>Duda</b> e <b>Microsoft Authenticator</b>.",
+    "No Duda, toque em <b>Não sei meus dados de acesso</b> e anote o seu <b>e-mail acadêmico</b>.",
+    "Monte a primeira senha: 3 letras do nome + <b>@</b> + 3 números do RGM + 4 do CPF (ex.: <b>Ana@5129876</b>).",
+    "Crie a sua senha nova na tela da Microsoft e anote.",
+    "Ligue o Authenticator: no login, digite o número e toque em <b>SIM</b>.",
+    "Pronto: o Duda abre as aulas e mostra o seu <b>RGM</b>."
+   ],
    "learn": [
-    "Você vai precisar de <b>dois aplicativos</b> no celular: o <b>Duda</b> (estrela branca no fundo azul) e o <b>Microsoft Authenticator</b> (cadeado azul). Baixe os dois na Play Store (Android) ou na App Store (iPhone).",
+    "Você vai precisar de <b>dois aplicativos</b> no celular: o <b>Duda</b> (estrela branca no fundo azul) e o <b>Microsoft Authenticator</b> (cadeado azul). Baixe os dois na Play Store (Android) ou na App Store (iPhone): procure por <b>Duda</b> e por <b>Microsoft Authenticator</b>. Para baixar, toque: Duda (<a href=\"https://play.google.com/store/apps/details?id=br.com.cruzeirodosulvirtual\" target=\"_blank\" rel=\"noopener\">Android</a> · <a href=\"https://apps.apple.com/br/app/duda/id6451416655\" target=\"_blank\" rel=\"noopener\">iPhone</a>) e Authenticator (<a href=\"https://play.google.com/store/apps/details?id=com.azure.authenticator\" target=\"_blank\" rel=\"noopener\">Android</a> · <a href=\"https://apps.apple.com/br/app/microsoft-authenticator/id983156458\" target=\"_blank\" rel=\"noopener\">iPhone</a>). Os dois são gratuitos.",
     "A Cruzeiro do Sul cria um <b>e-mail só seu</b>, chamado e-mail acadêmico. Ele termina em <b>@cs.cruzeirodosul.edu.br</b> (em alguns cursos, @cs.unicid.edu.br, outra marca do grupo). Não é o seu Gmail nem o seu Hotmail.",
-    "<b>Parte 1. Descobrir e-mail e senha.</b> Abra o Duda, digite seu CPF, <b>marque a caixinha</b> e toque em Continuar. Toque em <b>Não sei meus dados de acesso</b> (o botão branco). Digite só o seu <b>primeiro nome</b>, depois o CPF de novo, e toque na <b>seta azul</b>. O Duda mostra seu e-mail e sua primeira senha: <b>anote os dois num papel</b> e toque em Fazer login.",
+    "<b>Parte 1. Descobrir e-mail e senha.</b> Abra o Duda, digite seu CPF, <b>marque a caixinha</b> e toque em Continuar. Toque em <b>Não sei meus dados de acesso</b> (o botão branco). Digite só o seu <b>primeiro nome</b>, depois o CPF de novo, e toque na <b>seta azul</b>. O Duda mostra o seu <b>e-mail acadêmico</b>: anote num papel. A <b>primeira senha</b> você monta: as <b>3 primeiras letras do seu nome</b> (a primeira maiúscula) + <b>@</b> + os <b>3 primeiros números do RGM</b> + os <b>4 primeiros números do CPF</b>. Exemplo: Ana Souza, RGM 512…, CPF 9876… → <b>Ana@5129876</b>. O seu RGM está no topo deste app, e o cartão <b>Seus dados de acesso</b>, no Início, monta a senha com você. Anote a senha e toque em Fazer login.",
     "<b>Parte 2. Criar a sua senha.</b> Abre uma tela da Microsoft. Entre com o e-mail e a senha anotados. Em <b>Senha atual</b>, coloque a senha anotada; em <b>Nova senha</b> e <b>Confirmar senha</b>, crie a sua. <b>Anote a senha nova</b>: ela vale para o curso inteiro.",
     "<b>Parte 3. Ligar o Authenticator.</b> Saia do Duda (sem fechar) e abra o Authenticator. Toque em <b>Entrar</b>, depois em <b>Use outra conta</b>, e entre com o e-mail e a senha nova. Toque em <b>Abrir navegador</b>, entre de novo e vá em <b>Avançar</b> e <b>Próximo</b> até aparecer o link azul <b>Emparelhe a sua conta com o aplicativo</b>. Toque nele.",
     "<b>Parte 4. Entrar no Duda.</b> Volte ao Duda, digite o CPF e toque em <b>Fazer login</b> (o botão azul). Vai aparecer um <b>número</b>: saia do Duda sem fechar, abra o Authenticator, digite o número e toque em <b>SIM</b>.",
@@ -37,7 +45,7 @@
      "img": "d03",
      "w": 486,
      "h": 864,
-     "cap": "<b>Seu e-mail e sua primeira senha.</b> Anote os dois num papel."
+     "cap": "<b>Seu e-mail acadêmico.</b> Anote num papel. A primeira senha você monta: Ana · @ · 512 · 9876 (3 letras do nome, @, 3 números do RGM, 4 do CPF)."
     },
     {
      "img": "d04",
@@ -85,7 +93,7 @@
       "Esqueci minha senha"
      ],
      "certa": 1,
-     "exp": "Na primeira vez você ainda não sabe o e-mail nem a senha. O botão Não sei meus dados de acesso mostra os dois. O Fazer login é para depois."
+     "exp": "Na primeira vez você ainda não sabe o e-mail nem a senha. O botão Não sei meus dados de acesso mostra o seu e-mail acadêmico; a primeira senha você monta com a regra (3 letras do nome + @ + 3 números do RGM + 4 do CPF). O Fazer login é para depois."
     },
     {
      "q": "Apareceu o número 14 no Duda, pedindo para aprovar a entrada. O que você faz?",
@@ -108,7 +116,7 @@
     {
      "t": "Criar a sua senha",
      "v": "/trilha-midia/videos/nivel1_parte2",
-     "erro": "A senha nova não foi aceita? Confira se ela está igualzinha nos dois campos e siga as regras que aparecem na tela. A senha anotada não funcionou? Fale com o setor acadêmico pelo WhatsApp {whatsapp}."
+     "erro": "A senha nova não foi aceita? Confira se ela está igualzinha nos dois campos e siga as regras que aparecem na tela. A primeira senha não funcionou? Confira se montou certo: a primeira letra maiúscula e as outras duas minúsculas, o @, os 3 primeiros números do RGM e os 4 primeiros do CPF. Se ainda não der, fale com o setor acadêmico pelo WhatsApp {whatsapp}."
     },
     {
      "t": "Ligar o Authenticator",
@@ -126,11 +134,19 @@
    "t": "Conhecendo a Área do Aluno",
    "short": "Área do Aluno",
    "rank": "Conheço a Área do Aluno",
+   "topicos": [
+    "Área do Aluno: <b>novoportal.cruzeirodosul.edu.br</b>, com o e-mail acadêmico.",
+    "<b>Vida Acadêmica</b>: notas, calendário e provas.",
+    "<b>Emissão de Documentos</b>: declaração e Histórico na hora.",
+    "<b>CAA On-line</b>: outros pedidos, com número de protocolo.",
+    "<b>Documentos Pendentes</b>: confira se está tudo como <b>Entregue</b>."
+   ],
    "learn": [
-    "A <b>Área do Aluno</b> é o site da sua matrícula. No computador, as opções ficam numa coluna do lado esquerdo da tela.",
+    "A <b>Área do Aluno</b> é o site da sua matrícula: <a href=\"https://novoportal.cruzeirodosul.edu.br/\" target=\"_blank\" rel=\"noopener\">novoportal.cruzeirodosul.edu.br</a>. Entre com o e-mail acadêmico e a sua senha. No computador, as opções ficam numa coluna do lado esquerdo da tela.",
     "<b>Vida Acadêmica</b>: suas notas, o calendário, o manual do aluno e o lugar onde se fazem as provas (Plataforma de Prova).",
     "<b>Calendário Acadêmico</b>: uma tabela com as datas das provas, dos prazos e dos feriados. Olhe todo mês.",
-    "<b>CAA On-line</b>: é o balcão de atendimento pela internet. Você faz um pedido (uma declaração, por exemplo) e recebe um <b>número de protocolo</b>, que serve para acompanhar o pedido.",
+    "<b>Emissão de Documentos</b>: onde você tira, na hora, a <b>declaração de matrícula</b>, o <b>Histórico</b> e outros documentos prontos.",
+    "<b>CAA On-line</b>: é o balcão de atendimento pela internet para os <b>outros pedidos</b>, os que não estão em Emissão de Documentos. Cada pedido recebe um <b>número de protocolo</b>, que serve para acompanhar.",
     "<b>Minha Conta</b>: onde você muda telefone, endereço e e-mail.",
     "<b>Documentos Pendentes</b>: mostra se a faculdade já aceitou seus documentos. Verde com a palavra <b>Entregue</b> quer dizer tudo certo. Para enviar, tire uma foto bem nítida do documento ou mande em PDF, com até <b>5 MB</b> (uma foto comum de celular costuma caber)."
    ],
@@ -171,15 +187,15 @@
    ],
    "qs": [
     {
-     "q": "Você precisa de uma declaração da faculdade e quer acompanhar o pedido. Onde pede?",
+     "q": "Você precisa de uma declaração de matrícula. Onde tira?",
      "opts": [
       "Na Biblioteca",
-      "No CAA On-line, que dá um número de protocolo",
-      "Por e-mail para qualquer professor",
+      "Em Emissão de Documentos, na Área do Aluno",
+      "No CAA On-line",
       "No Calendário"
      ],
      "certa": 1,
-     "exp": "O CAA On-line é o atendimento pela internet: registra o pedido e dá um protocolo para acompanhar."
+     "exp": "Declarações e o Histórico saem na hora em Emissão de Documentos. O CAA On-line é para os outros pedidos, que não estão lá."
     },
     {
      "q": "Onde você descobre em que dia vai ser a prova?",
@@ -210,9 +226,16 @@
    "t": "Estudando no AVA",
    "short": "Aulas (AVA)",
    "rank": "Sei estudar no AVA",
+   "topicos": [
+    "O <b>AVA</b> (ou Blackboard) é onde ficam as aulas.",
+    "Cada matéria dura <b>um mês</b>; veja em Disciplinas.",
+    "Comece pela <b>Ambientação Digital</b>: aparece em até 3 dias.",
+    "Cada Unidade tem texto, videoaula e um <b>exercício que vale nota</b>.",
+    "Dúvida? <b>Fale com a Tutoria</b> e leia sempre os Avisos."
+   ],
    "learn": [
     "O <b>AVA</b> é o site onde ficam as aulas. Às vezes ele aparece com o nome <b>Blackboard</b>: é a mesma coisa.",
-    "Como entrar: na Área do Aluno, toque em <b>Acesso ao Ambiente Virtual</b>. Ou, no app Duda, toque em <b>Acessar Blackboard</b>.",
+    "Como entrar: na Área do Aluno, toque em <b>Acesso ao Ambiente Virtual</b>. Ou, no app Duda, toque em <b>Acessar Blackboard</b>. Pelo navegador: <a href=\"https://ava.cruzeirodosul.edu.br/\" target=\"_blank\" rel=\"noopener\">ava.cruzeirodosul.edu.br</a>.",
     "Cada matéria (o AVA chama de disciplina) dura <b>um mês</b>. Toque em <b>Disciplinas</b> para ver as matérias do mês. Às vezes tem mais de uma no mesmo mês.",
     "A primeira matéria se chama <b>Ambientação Digital</b> e ensina a usar o AVA. Ela aparece em até <b>3 dias (72 horas)</b> depois da matrícula. Comece por ela.",
     "Dentro da matéria, o conteúdo vem em partes chamadas <b>Unidades</b>. Cada uma tem um texto, uma videoaula e uma <b>Atividade de Sistematização</b>, que é um exercício que vale nota.",
@@ -305,14 +328,21 @@
   },
   {
    "t": "Provas e notas",
-   "short": "Notas",
+   "short": "Provas",
    "rank": "Entendo minhas notas",
+   "topicos": [
+    "Cada matéria vale <b>10 pontos</b>.",
+    "<b>A2</b>: exercícios do AVA, até 4 pontos, 3 tentativas.",
+    "<b>A1</b>: prova online no começo do mês seguinte, até 6 pontos.",
+    "Não passou? <b>AF</b> no fim do semestre; depois disso, vira <b>DP</b>."
+   ],
    "learn": [
     "Cada matéria vale <b>10 pontos</b>, divididos em duas partes.",
     "<b>A2 = os exercícios</b> do AVA, feitos durante o mês. Valem até <b>4 pontos</b>. Você pode tentar <b>3 vezes</b> e fica a maior nota. Prazo: dia 1º do mês seguinte.",
     "<b>A1 = a prova</b> do começo do mês seguinte, feita pela internet, na Plataforma de Prova. Vale até <b>6 pontos</b>.",
     "Somou <b>6 ou mais</b>? Passou. Somou menos? Você tem uma segunda chance: a <b>AF (Avaliação Final)</b>, uma prova de recuperação no fim do semestre. Se a nota da AF for maior que a da A1, ela entra no lugar da A1.",
-    "Exceção: as matérias de <b>junho</b> abrem em fevereiro e a prova delas é no <b>fim de maio</b>.",
+    "Não passou nem com a AF? A matéria vira <b>DP</b> (dependência): você refaz depois, incluindo a matéria na Área do Aluno. O módulo 5 explica.",
+    "Exceções: as matérias de <b>junho</b> abrem em fevereiro e a prova delas é no <b>fim de maio</b>; as de <b>dezembro</b> abrem em agosto e a prova é no <b>fim de novembro</b>. O Calendário Acadêmico mostra as datas certas.",
     "Algumas matérias duram o semestre todo e <b>não têm a prova A1</b>: PAC, Projetos, Extensão, Estágio e Ambientação. Cada uma tem regras próprias, que o tutor explica."
    ],
    "tip": null,
@@ -390,15 +420,23 @@
    "t": "Dinheiro e rematrícula",
    "short": "Pagamentos",
    "rank": "Contas em dia",
+   "topicos": [
+    "A mensalidade vence <b>todo dia 25</b>.",
+    "Pague <b>até o dia 10</b>: 25% de desconto. Até o 25: 15%.",
+    "Pague em <b>Pagar Mensalidade</b>: boleto, Pix ou cartão.",
+    "<b>Rematrícula</b> em janeiro e julho: não acontece sozinha.",
+    "DP e adaptação: inclua no bloco <b>DPs/Adaptações</b> da rematrícula."
+   ],
    "learn": [
     "A mensalidade vence <b>todo dia 25</b>.",
-    "Quanto antes pagar, mais barato: até o <b>dia 10</b>, <b>25% de desconto</b>. Do dia 11 ao dia 25, <b>15%</b>. Se o dia 10 cair em fim de semana ou feriado, os 25% valem até o próximo dia útil.",
-    "<b>Primeira mensalidade:</b> nela, o desconto total vale até o <b>dia 25</b>, o próprio vencimento.",
+    "Da 2ª mensalidade em diante, quanto antes pagar, mais barato: até o <b>dia 10</b>, <b>25% de desconto</b> de pontualidade. Do dia 11 ao dia 25, <b>15%</b>. Depois do dia 25, sem esse desconto. Se o dia 10 ou o dia 25 cair em fim de semana ou feriado, vale o <b>próximo dia útil</b> (o sistema mostra a data certa; em dezembro, o 25 costuma ir para o 28).",
+    "<b>Primeira mensalidade:</b> é a do mês da sua turma de entrada (turma de novembro: 25/11; turma de março: 25/03). Nela, <b>todos os descontos valem até o dia 25</b>, o próprio vencimento.",
     "Pagou depois do dia 25? Você perde <b>só o desconto de pontualidade</b> (no sistema aparece como Pagamento antecipado). <b>Bolsa e outros descontos continuam.</b>",
-    "Para pagar: na Área do Aluno, vá em <b>Financeiro → Fazer Pagamentos / Acordos</b>. Dá para pagar com boleto, Pix ou cartão. O app Duda também mostra os boletos.",
+    "Para pagar: na <a href=\"https://novoportal.cruzeirodosul.edu.br/\" target=\"_blank\" rel=\"noopener\">Área do Aluno</a>, toque em <b>Pagar Mensalidade</b> (fica também em Financeiro → Acordos e Pagamentos). Dá para pagar com boleto, Pix ou cartão. O app Duda também mostra os boletos.",
     "O <b>Demonstrativo</b> é a lista das suas mensalidades: mostra o que já está pago e o que está em aberto.",
-    "<b>Rematrícula</b> é renovar a matrícula para continuar estudando. Acontece duas vezes por ano, em <b>janeiro e julho</b>. Basta pagar o boleto: em 1 ou 2 dias úteis a renovação acontece sozinha.",
-    "Se você tem matéria atrasada (dependência) ou de adaptação, organize essas matérias depois da rematrícula."
+    "<b>Rematrícula</b> é renovar a matrícula para continuar estudando. Acontece duas vezes por ano, em <b>janeiro e julho</b>, e <b>não acontece sozinha</b>: só pagar não basta. Na Área do Aluno: <b>1.</b> toque em <b>Rematrícula</b> e <b>aceite o contrato</b>; <b>2.</b> confira as matérias da <b>Série Regular</b>; <b>3.</b> tem DP ou adaptação? Abra o bloco <b>DPs/Adaptações</b> e clique nas que quer cursar; <b>4.</b> toque em <b>Gravar</b>; <b>5.</b> pague a rematrícula no <b>boleto ou no cartão de crédito</b>; <b>6.</b> espere <b>até 3 dias úteis</b> para o pagamento compensar; <b>7.</b> volte em Rematrícula e <b>confira se ela foi realizada</b> (aparece <b>Você está rematriculado</b>).",
+    "<b>DP e adaptação:</b> <b>DP</b> (dependência) é a matéria em que você foi <b>reprovado</b>. Você tem a chance de cursar de novo: inclua na <b>rematrícula</b> ou nos meses em que ela for oferecida. <b>Adaptação</b> é a matéria que ficou para você cursar, quase sempre porque você <b>aproveitou disciplinas</b> de outro curso ou faculdade e avançou de semestre. Nenhuma das duas entra sozinha. Na rematrícula: Área do Aluno → <b>Rematrícula</b>, aceite o contrato, abra o bloco <b>DPs/Adaptações</b> (junto da <b>Série Regular</b>), clique nas matérias que quer cursar e toque em <b>Gravar</b>. Fique de olho no prazo de inclusão que aparece na tela.",
+    "Aproveitou disciplinas e entrou num semestre mais adiantado? Você pode ter <b>adaptações desde o começo</b>. Confira logo na rematrícula, no bloco DPs/Adaptações, para não ter surpresa no fim do curso."
    ],
    "tip": null,
    "formula": null,
@@ -426,7 +464,7 @@
      "img": "t18",
      "w": 1319,
      "h": 572,
-     "cap": "<b>Rematrícula.</b> Pagou o boleto → espere 1 a 2 dias úteis → pronto."
+     "cap": "<b>Rematrícula.</b> Contrato → matérias (e DP/adaptação) → Gravar → boleto ou cartão → até 3 dias úteis → conferir."
     },
     {
      "img": "t57",
@@ -445,7 +483,7 @@
       "10%"
      ],
      "certa": 1,
-     "exp": "Do dia 11 até o dia 25, o desconto é de 15%. Só na 1ª mensalidade o desconto total vale até o dia 25."
+     "exp": "Do dia 11 até o dia 25, o desconto é de 15%. Só na 1ª mensalidade todos os descontos valem até o dia 25."
     },
     {
      "q": "E se pagar no dia 26?",
@@ -459,17 +497,18 @@
      "exp": "Você perde só o desconto de pontualidade. Bolsa e outros descontos continuam valendo."
     },
     {
-     "q": "Você pagou o boleto da rematrícula. Precisa fazer mais alguma coisa?",
+     "q": "Você aceitou o contrato, gravou a rematrícula e pagou o boleto. Precisa fazer mais alguma coisa?",
      "opts": [
       "Ligar para a faculdade",
-      "Não: espere 1 ou 2 dias úteis e ela acontece sozinha",
+      "Sim: esperar até 3 dias úteis e conferir se a rematrícula foi realizada",
       "Pagar de novo",
       "Mandar o comprovante pelo WhatsApp"
      ],
      "certa": 1,
-     "exp": "A rematrícula é automática depois que o pagamento é confirmado."
+     "exp": "O pagamento pode levar até 3 dias úteis para compensar. Depois, volte em Rematrícula e confira se aparece Você está rematriculado, com as matérias (e as DPs ou adaptações) que você gravou."
     }
    ],
+   "passo_aberto": true,
    "parts": [
     {
      "t": "Quanto eu pago?",
@@ -479,7 +518,7 @@
     {
      "t": "Pagar com Pix",
      "v": "/trilha-midia/videos/nivel5_parte2",
-     "erro": "O código Pix não funcionou? Ele vale só por alguns minutos: gere um novo e cole no app do banco em Pix Copia e Cola. O valor no banco está diferente do sistema? Não pague e chame o atendimento pelo WhatsApp {whatsapp}."
+     "erro": "O código Pix não funcionou? Ele vale só 15 minutos: gere um novo e cole no app do banco em Pix Copia e Cola. O valor no banco está diferente do sistema? Não pague e chame o atendimento pelo WhatsApp {whatsapp}."
     },
     {
      "t": "Pagar com cartão",
@@ -490,21 +529,32 @@
      "t": "Pagar com boleto",
      "v": "/trilha-midia/videos/nivel5_parte4",
      "erro": "O boleto mostra o valor cheio? É normal: o desconto está escrito nas Instruções. Use sempre o último boleto gerado. O valor no banco está diferente? Não pague e chame o atendimento pelo WhatsApp {whatsapp}."
+    },
+    {
+     "t": "Incluir DP e adaptação",
+     "v": "/trilha-midia/central/tut_dp",
+     "erro": "Ficou com dúvida sobre a inclusão ou o valor? Chame o atendimento pelo WhatsApp {whatsapp}."
     }
    ]
   },
   {
    "t": "Horas complementares",
-   "short": "Horas extras",
+   "short": "Horas compl.",
    "rank": "Juntando horas",
+   "topicos": [
+    "Horas complementares são <b>obrigatórias</b> para o diploma.",
+    "Valem cursos, palestras, eventos e oficinas: guarde o certificado.",
+    "Envie em <b>Atividades Complementares</b> (arquivo até 1 MB).",
+    "A conferência leva até <b>30 dias</b>; veja o saldo em Consulta."
+   ],
    "learn": [
     "Além das aulas, você precisa juntar <b>horas complementares</b>: cursos, palestras, eventos e oficinas. A quantidade de horas depende do seu curso.",
     "Elas são <b>obrigatórias</b>: sem completar as horas, você não recebe o diploma. Comece a juntar desde já.",
     "Fez um curso ou palestra? Guarde o certificado. Depois tire uma foto (ou salve o PDF) e envie em <b>Atividades Complementares → Envio de comprovantes</b>. O arquivo pode ter até <b>1 MB</b>, menor que o limite dos documentos.",
     "A faculdade confere em até <b>30 dias</b>. Em <b>Consulta</b> você vê quantas horas já valeram e quantas faltam.",
-    "A matéria <b>Temas Transversais</b> já conta <b>40 horas</b>: tirando nota 6 ou mais, as horas entram sozinhas no fim do semestre."
+    "A matéria <b>Temas Transversais</b> é diferente das horas complementares. Quando ela é obrigatória no seu curso (confira no Histórico), as horas dela <b>não contam</b> como horas complementares: você junta as horas complementares à parte, com cursos, palestras e eventos."
    ],
-   "tip": "Dica: leia o Regulamento das Atividades Complementares para saber o que vale hora antes de fazer um curso.",
+   "tip": "Dica: antes de fazer um curso, leia o <b>Regulamento</b> e o <b>Quadro de Atividades Complementares</b>, que ficam na <a href=\"https://novoportal.cruzeirodosul.edu.br/\" target=\"_blank\" rel=\"noopener\">Área do Aluno</a>, em Atividades Complementares. É lá que diz o que vale hora.",
    "formula": null,
    "tallShots": false,
    "shots": [
@@ -540,15 +590,15 @@
      "exp": "A conferência leva até 30 dias."
     },
     {
-     "q": "A matéria Temas Transversais vale quantas horas complementares?",
+     "q": "Temas Transversais é obrigatória no seu curso. As horas dela contam como horas complementares?",
      "opts": [
-      "10 horas",
-      "20 horas",
-      "40 horas",
-      "80 horas"
+      "Sim, as 40 horas entram sozinhas",
+      "Só se o tutor aprovar",
+      "Não: matéria obrigatória não conta como hora complementar",
+      "Contam em dobro"
      ],
      "certa": 2,
-     "exp": "Com nota 6 ou mais, ela vale 40 horas, que entram sozinhas."
+     "exp": "Quando Temas Transversais é obrigatória no curso, as horas dela não entram como complementares. As horas complementares você junta à parte."
     },
     {
      "q": "Chegou ao fim do curso e faltam horas complementares. O que acontece?",
@@ -568,14 +618,21 @@
    "t": "Rumo à formatura",
    "short": "Formatura",
    "rank": "Formando",
+   "topicos": [
+    "Para se formar: passar em tudo, <b>horas complementares</b> e Temas Transversais.",
+    "Estágio obrigatório? Confira no <b>Histórico</b>.",
+    "<b>ENADE</b>: só se o seu curso for chamado no ano em que você termina.",
+    "Depois: colação de grau e <b>diploma digital</b>.",
+    "Leia os e-mails da faculdade, inclusive o <b>spam</b>."
+   ],
    "learn": [
-    "Para se formar, você precisa passar em <b>todas as matérias</b>, completar as <b>horas complementares</b> e a matéria <b>Temas Transversais</b>. Alguns cursos também exigem <b>Estágio</b> (trabalhar um tempo na área) e <b>TCC</b> (um trabalho final).",
-    "Para saber se o seu curso exige estágio ou TCC: Área do Aluno → <b>Emissão de Documentos → Histórico</b>.",
-    "<b>ENADE</b> é uma prova do governo federal feita no fim do curso. Ela é <b>obrigatória</b> para quem está terminando.",
-    "Com tudo pronto (documentos entregues, aprovação em tudo e ENADE em dia), a faculdade avisa a data da <b>colação de grau</b> (a formatura oficial) e emite o seu <b>diploma digital</b>, que fica no computador ou no celular, sem papel.",
+    "Para se formar, você precisa passar em <b>todas as matérias</b>, completar as <b>horas complementares</b> e a matéria <b>Temas Transversais</b>. Alguns cursos também têm <b>estágio obrigatório</b> (um tempo de prática na área).",
+    "Para saber se o seu curso tem estágio obrigatório: Área do Aluno → <b>Emissão de Documentos → Histórico</b>.",
+    "<b>ENADE</b> é uma prova do governo federal, organizada pelo INEP. Ela <b>não vale para todos os cursos</b>: a cada ano, o INEP escolhe quais cursos participam. Se o seu curso for chamado no ano em que você termina, a prova passa a ser exigida para a formatura.",
+    "Com tudo pronto (documentos entregues, aprovação em tudo e, se o seu curso foi chamado, o ENADE), a faculdade avisa a data da <b>colação de grau</b> (a formatura oficial) e emite o seu <b>diploma digital</b>, que fica no computador ou no celular, sem papel.",
     "Leia os e-mails da faculdade. Olhe também a pasta de <b>spam (lixo eletrônico)</b>, porque às vezes os avisos caem lá."
    ],
-   "tip": "Certificado desta aula: preencha a lista de presença com o seu RGM até as 23h59 de hoje. Em até 2 dias ele aparece no AVA.",
+   "tip": "Certificado da Aula Inaugural: o certificado de 4 horas fica no fim desta página. Conclua os 7 módulos (10 pontos cada, 70 no total) para emitir.",
    "formula": null,
    "tallShots": false,
    "shots": [
@@ -590,16 +647,16 @@
     {
      "q": "O que você precisa ter para se formar?",
      "opts": [
-      "Só TCC e estágio",
-      "Documentos entregues, aprovação em tudo e ENADE em dia",
+      "Só o estágio",
+      "Documentos entregues e aprovação em tudo (e o ENADE, se o seu curso for chamado)",
       "Só passar nas matérias",
-      "Mensalidades pagas e TCC"
+      "Mensalidades pagas e estágio"
      ],
      "certa": 1,
-     "exp": "São os três requisitos para a colação de grau."
+     "exp": "Documentos entregues e aprovação em todas as matérias, com horas complementares e Temas Transversais. O ENADE só entra se o INEP chamar o seu curso naquele ano."
     },
     {
-     "q": "Como saber se o seu curso exige TCC?",
+     "q": "Como saber se o seu curso tem estágio obrigatório?",
      "opts": [
       "Perguntar no grupo da turma",
       "Área do Aluno → Emissão de Documentos → Histórico",
@@ -607,18 +664,18 @@
       "Não tem como saber"
      ],
      "certa": 1,
-     "exp": "O Histórico mostra todas as matérias do curso, inclusive estágio e TCC quando houver."
+     "exp": "O Histórico mostra todas as matérias do curso, inclusive o estágio, quando o curso tiver."
     },
     {
      "q": "O ENADE é:",
      "opts": [
-      "Opcional",
-      "Obrigatório para quem está terminando o curso",
+      "Obrigatório para todo mundo que está se formando",
+      "Exigido só dos cursos que o INEP escolhe naquele ano",
       "Só para quem quer bolsa",
       "Uma prova de matemática da faculdade"
      ],
      "certa": 1,
-     "exp": "É uma prova do governo, obrigatória por lei para quem está concluindo."
+     "exp": "O INEP define, a cada ano, quais cursos fazem o ENADE. Se o seu curso não foi chamado, você se forma sem essa prova."
     }
    ],
    "video": "/trilha-midia/videos/nivel7"
@@ -626,28 +683,24 @@
  ],
  "tarefas": [
   {
-   "id": "td1",
-   "html": "<b>Descobrir seu e-mail da faculdade</b> e criar a sua senha nova <em>(nível 1)</em>"
+   "id": "pa1",
+   "modulos": [1],
+   "html": "<b>Primeiro acesso</b>: e-mail da faculdade, senha nova, Duda e Authenticator <em>(módulo 1)</em>"
   },
   {
-   "id": "td2",
-   "html": "<b>Baixar o Duda e o Microsoft Authenticator</b> e entrar no Duda <em>(nível 1)</em>"
+   "id": "pa2",
+   "modulos": [2, 3],
+   "html": "<b>Área do Aluno, documentos e AVA</b> <em>(módulos 2 e 3)</em>"
   },
   {
-   "id": "td3",
-   "html": "<b>Conferir seus documentos</b>: todos precisam estar como Entregue <em>(nível 2)</em>"
+   "id": "pa3",
+   "modulos": [5],
+   "html": "<b>Como pagar a mensalidade</b> <em>(módulo 5)</em><small>A 1ª vence no dia 25, com todos os descontos até o vencimento.</small>"
   },
   {
-   "id": "td4",
-   "html": "<b>Abrir a Ambientação Digital</b>, sua primeira matéria no AVA <em>(nível 3)</em>"
-  },
-  {
-   "id": "td5",
-   "html": "<b>Pagar a mensalidade até o dia 10</b> para ter 25% de desconto <em>(nível 5)</em>"
-  },
-  {
-   "id": "td6",
-   "html": "<b>Preencher a lista de presença</b> desta aula até as 23h59, para ganhar o certificado <em>(nível 7)</em>"
+   "id": "pa4",
+   "certificado": true,
+   "html": "<b>Certificado de 4 horas emitido</b> <em>(fim da página)</em>"
   }
  ],
  "glossario": [
@@ -661,11 +714,13 @@
   ],
   [
    "Microsoft Authenticator",
-   "Aplicativo que confirma que é você mesmo quem está entrando. Ele mostra um aviso, e você digita o número que aparece na tela."
+   "Aplicativo que confirma que é você mesmo quem está entrando. Ele mostra um aviso, e você digita o número que aparece na tela.",
+   ["Microsoft Authenticator", "Authenticator"]
   ],
   [
    "E-mail acadêmico",
-   "E-mail que a faculdade cria para você. É com ele que você entra nos sites."
+   "E-mail que a faculdade cria para você. É com ele que você entra nos sites.",
+   ["e-mail acadêmico", "e-mail da faculdade"]
   ],
   [
    "RGM",
@@ -673,11 +728,13 @@
   ],
   [
    "Disciplina",
-   "Matéria. Cada uma dura um mês."
+   "Matéria. Cada uma dura um mês.",
+   ["disciplinas", "disciplina"]
   ],
   [
    "Tutor ou tutoria",
-   "Professor que tira suas dúvidas pelo AVA."
+   "Professor que tira suas dúvidas pelo AVA.",
+   ["tutoria", "tutores", "tutor"]
   ],
   [
    "A2",
@@ -692,24 +749,44 @@
    "Avaliação Final: prova de recuperação no fim do semestre."
   ],
   [
+   "Emissão de Documentos",
+   "Parte da Área do Aluno onde você tira, na hora, declarações e o Histórico.",
+   ["Emissão de Documentos"]
+  ],
+  [
    "CAA On-line",
-   "Atendimento pela internet para fazer pedidos."
+   "Atendimento pela internet para os pedidos que não estão em Emissão de Documentos. Cada pedido gera um protocolo.",
+   ["CAA On-line", "CAA"]
   ],
   [
    "Protocolo",
-   "Número do seu pedido, para acompanhar o andamento."
+   "Número do seu pedido, para acompanhar o andamento.",
+   ["protocolo"]
   ],
   [
    "Rematrícula",
-   "Renovar a matrícula, em janeiro e julho."
+   "Renovar a matrícula, em janeiro e julho: aceitar o contrato, conferir e gravar as matérias (com DP ou adaptação, se tiver), pagar no boleto ou no cartão e conferir se foi realizada.",
+   ["rematrícula"]
+  ],
+  [
+   "DP (dependência)",
+   "Matéria em que você foi reprovado. Você pode cursar de novo: inclua na rematrícula (bloco DPs/Adaptações) ou nos meses em que ela for oferecida.",
+   ["DPs", "DP", "dependência"]
+  ],
+  [
+   "Adaptação",
+   "Matéria que ficou para você cursar, quase sempre porque você aproveitou disciplinas de outro curso ou faculdade e avançou de semestre.",
+   ["adaptações", "adaptação"]
   ],
   [
    "Horas complementares",
-   "Horas de cursos, palestras e eventos que você precisa juntar para se formar."
+   "Horas de cursos, palestras e eventos que você precisa juntar para se formar.",
+   ["horas complementares"]
   ],
   [
    "MB (megabyte)",
-   "Tamanho de um arquivo. Uma foto comum de celular tem de 2 a 5 MB."
+   "Tamanho de um arquivo. Uma foto comum de celular tem de 2 a 5 MB.",
+   ["MB", "megabytes", "megabyte"]
   ],
   [
    "PDF",
@@ -717,29 +794,30 @@
   ],
   [
    "Digitalizar",
-   "Transformar um papel em arquivo: tirar uma foto bem nítida ou escanear."
+   "Transformar um papel em arquivo: tirar uma foto bem nítida ou escanear.",
+   ["digitalizar", "digitalize", "digitalizado", "digitalizada"]
   ],
   [
    "ENADE",
-   "Prova do governo feita no fim do curso. É obrigatória."
+   "Prova do governo federal (INEP). A cada ano, o INEP escolhe quais cursos participam. Se o seu for chamado no ano da sua formatura, a prova é exigida."
   ],
   [
    "Colação de grau",
-   "A formatura oficial, quando você recebe o título."
+   "A formatura oficial, quando você recebe o título.",
+   ["colação de grau", "colação"]
   ],
   [
-   "TCC",
-   "Trabalho de Conclusão de Curso: um trabalho final que alguns cursos exigem."
+   "Estágio obrigatório",
+   "Tempo de prática na área que alguns cursos exigem para a formatura. Aparece no Histórico, em Emissão de Documentos.",
+   ["estágio obrigatório", "estágio"]
   ],
   [
    "Spam ou lixo eletrônico",
-   "Pasta do e-mail onde às vezes caem avisos importantes por engano."
+   "Pasta do e-mail onde às vezes caem avisos importantes por engano.",
+   ["spam", "lixo eletrônico"]
   ]
  ],
  "ajuda": [
-  "<b>Primeiro acesso travou?</b> Chame o setor acadêmico pelo WhatsApp <b>{whatsapp}</b>.",
-  "<b>Pelo app Duda:</b> toque em <b>Ajuda → Teleatendimento</b>. Uma pessoa atende por chat ou vídeo, de segunda a sexta, das 9h às 21h.",
-  "<b>Pela Área do Aluno:</b> use o <b>CAA On-line</b> para fazer um pedido por escrito. Você recebe um número de protocolo para acompanhar.",
-  "<b>Sobre a matéria:</b> dentro do AVA, toque em <b>Fale com a Tutoria</b>."
+  "Chame o setor acadêmico pelo WhatsApp <b>{whatsapp}</b>."
  ]
 }

@@ -2,6 +2,17 @@
 window.UI = (function () {
   'use strict';
 
+  // Um vídeo por vez no app todo (Aula Inaugural, passo a passo, Central de ajuda, Início):
+  // ao dar play em um <video>, pausa qualquer outro que esteja tocando. O evento 'play' não
+  // borbulha, por isso a captura no document pega também os vídeos criados depois.
+  document.addEventListener('play', function (e) {
+    var atual = e.target;
+    if (!atual || atual.tagName !== 'VIDEO') return;
+    document.querySelectorAll('video').forEach(function (v) {
+      if (v !== atual && !v.paused) v.pause();
+    });
+  }, true);
+
   var SCREENS = ['login-page', 'first-access-page', 'dashboard-page', 'meu-semestre-page', 'avisos-page', 'tutoriais-page', 'trilha-page', 'atendimento-page', 'form-page', 'success-page'];
   var PUBLIC_SCREENS = ['login-page', 'first-access-page'];
   var PATHS = {
@@ -22,8 +33,8 @@ window.UI = (function () {
     'dashboard-page': 'Início',
     'meu-semestre-page': 'Meu Semestre',
     'avisos-page': 'Avisos',
-    'tutoriais-page': 'Tutoriais',
-    'trilha-page': 'Trilha EaD para Iniciantes',
+    'tutoriais-page': 'Central de ajuda',
+    'trilha-page': 'Aula Inaugural',
     'atendimento-page': 'Atendimento',
     'form-page': 'Certificado',
     'success-page': 'Certificado gerado',
@@ -115,6 +126,15 @@ window.UI = (function () {
     void el.offsetWidth;
     el.classList.add('is-entering');
 
+    if (window.Ajuda) window.Ajuda.fechar(false); // trocar de tela fecha o painel de ajuda
+
+    // Menu do topo: marca a seção atual (Avisos, Trilha e Atendimento não têm item próprio).
+    var secao = screenId === 'trilha-page' ? 'dashboard-page' : screenId; // a Aula Inaugural começa no Início
+    document.querySelectorAll('[data-nav]').forEach(function (a) {
+      if (a.getAttribute('data-nav') === secao) a.setAttribute('aria-current', 'page');
+      else a.removeAttribute('aria-current');
+    });
+
     if (window.lucide) window.lucide.createIcons();
     window.scrollTo(0, 0);
     syncUrl(screenId, options);
@@ -123,6 +143,15 @@ window.UI = (function () {
   function setUserName(name) {
     document.querySelectorAll('[data-user-name]').forEach(function (el) {
       el.textContent = name;
+    });
+    var first = String(name || '').trim().split(/\s+/)[0] || '';
+    first = first ? first.charAt(0).toUpperCase() + first.slice(1).toLowerCase() : '';
+    document.querySelectorAll('[data-user-first]').forEach(function (el) {
+      el.textContent = first;
+    });
+    // Sem nome na sessão: "Olá! Vamos começar?" (some a vírgula e o nome).
+    document.querySelectorAll('[data-user-first-wrap]').forEach(function (el) {
+      el.hidden = !first;
     });
   }
 
@@ -229,9 +258,29 @@ window.UI = (function () {
     text.textContent = loading ? 'Gerando certificado...' : 'Gerar certificado';
   }
 
+  // Aviso informativo no topo do painel (mesma caixa do erro do certificado, em azul).
+  // Aviso geral do painel (ex.: cadastro ainda em processamento): fica no topo.
+  function showDashboardNotice(message) {
+    var el = document.getElementById('dashboard-notice');
+    if (!el) return;
+    el.textContent = message;
+    el.classList.remove('hidden');
+  }
+
   function showDashboardCertError(message) {
+    // Erro do certificado: aparece dentro do card da Aula Inaugural, perto do botão.
     var el = document.getElementById('dashboard-cert-error');
     el.textContent = message;
+    // Erro de cadastro incompleto: oferece o painel de ajuda (lá está o WhatsApp do polo).
+    if (/cadastro|matrícula|polo/i.test(message)) {
+      var link = document.createElement('button');
+      link.type = 'button';
+      link.className = 'p-link';
+      link.setAttribute('data-help-open', '');
+      link.textContent = 'Falar com a equipe';
+      el.appendChild(document.createTextNode(' '));
+      el.appendChild(link);
+    }
     el.classList.remove('hidden');
   }
 
@@ -296,6 +345,7 @@ window.UI = (function () {
     setLoginLoading: setLoginLoading,
     initCubeFlip: initCubeFlip,
     showLoginError: showLoginError,
+    showDashboardNotice: showDashboardNotice,
     hideLoginError: hideLoginError,
     setRegisterLoading: setRegisterLoading,
     showRegisterError: showRegisterError,

@@ -2,15 +2,22 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
+    <meta name="app-versao" content="nova">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Área do Aluno | Cruzeiro do Sul Educacional</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/styles.css?v=28">
+    <link rel="stylesheet" href="/css/styles.css?v=30">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/trilha.css?v=2">
-    <link rel="stylesheet" href="/css/central.css?v=1">
+    <link rel="stylesheet" href="/css/portal.css?v=9">
+    <link rel="stylesheet" href="/css/trilha.css?v=15">
+    <link rel="stylesheet" href="/css/glossario.css?v=1">
+    <link rel="stylesheet" href="/css/central.css?v=9">
+    <link rel="stylesheet" href="/css/avaliacao.css?v=2">
+    <link rel="stylesheet" href="/css/painel.css?v=8">
+    <link rel="stylesheet" href="/css/semestre.css?v=3">
+    <link rel="stylesheet" href="/css/dados-acesso.css?v=5">
 </head>
 <body>
 
@@ -25,13 +32,15 @@
             <div class="auth-card max-w-md w-full bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
                 <div class="text-center mb-8 auth-hero">
                     <div class="flex justify-center mb-4">
-                        <div class="auth-logo bg-cruzeiro rounded-xl overflow-hidden w-16 h-16">
-                            <img src="/assets/logo-login.jpg" alt="Cruzeiro do Sul Educacional" class="w-full h-full object-cover">
-                        </div>
+                        <img src="/assets/logo-csv.webp" alt="Cruzeiro do Sul Virtual, Educação a distância" class="auth-brand" width="666" height="168">
                     </div>
                     <h1 class="text-2xl font-bold text-gray-800">Área do Aluno</h1>
                     <p class="text-gray-500 text-sm">Cruzeiro do Sul Educacional</p>
                 </div>
+
+                <p class="mb-5 text-sm text-gray-600 bg-blue-50 border border-blue-100 rounded-lg px-4 py-3 leading-relaxed">
+                    <strong class="text-gray-800">Seu acesso é criado automaticamente em até 2 dias úteis depois da matrícula.</strong> Entre com o seu RGM e a senha inicial: primeiro nome com a inicial maiúscula + <strong>123@</strong> (ex.: Raphael123@).
+                </p>
 
                 <div id="login-error" class="hidden mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3" role="alert"></div>
 
@@ -58,11 +67,12 @@
                         </span>
                     </button>
                 </form>
-                <p class="mt-4 text-center text-xs text-gray-500 leading-relaxed">
-                    Senha inicial: primeiro nome com a inicial maiúscula + 123@ (ex.: Raphael123@).
+                <p class="mt-5 text-center text-sm">
+                    <a id="btn-esqueci-senha" href="#" target="_blank" rel="noopener noreferrer" class="text-cruzeiro font-medium hover:underline">Esqueci minha senha</a>
                 </p>
-                <p class="mt-3 text-center text-sm text-gray-500">
-                    <button type="button" onclick="showScreen('first-access-page')" class="text-cruzeiro font-medium hover:underline">Primeiro acesso</button>
+                <p class="mt-3 text-center text-sm text-gray-500 leading-relaxed">
+                    Matriculou há pouco e ainda não consegue entrar?
+                    <button type="button" onclick="showScreen('first-access-page')" class="text-cruzeiro font-medium hover:underline">Criar acesso agora</button>
                 </p>
             </div>
         </section>
@@ -79,8 +89,8 @@
                             <i data-lucide="user-plus" class="w-10 h-10"></i>
                         </div>
                     </div>
-                    <h1 class="text-2xl font-bold text-gray-800">Primeiro acesso</h1>
-                    <p class="text-gray-500 text-sm mt-1">Crie sua conta para gerar o certificado.</p>
+                    <h1 class="text-2xl font-bold text-gray-800">Criar acesso</h1>
+                    <p class="text-gray-500 text-sm mt-1">Para quem se matriculou há pouco e ainda não consegue entrar. Use o RGM que aparece no app Duda, no cartão do curso. Curso, polo e certificado são liberados quando o seu cadastro chegar, em até 2 dias úteis.</p>
                 </div>
 
                 <div id="register-error" class="hidden mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3" role="alert"></div>
@@ -137,12 +147,17 @@
         <section id="dashboard-page" class="hidden min-h-screen">
             <!-- Header -->
             <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                <div class="portal-container h-16 flex items-center justify-between portal-head">
                     <div class="flex items-center gap-2">
-                        <div class="bg-cruzeiro rounded-lg overflow-hidden w-9 h-9"><img src="/assets/logo-login.jpg" alt="Cruzeiro do Sul Educacional" class="w-full h-full object-cover"></div>
-                        <span class="font-bold text-gray-800 hidden sm:block">Cruzeiro do Sul <span class="text-blue-600">Virtual</span></span>
+                        <a href="/inicio" data-go="dashboard-page" class="portal-brand"><img src="/assets/logo-csv.webp" alt="Cruzeiro do Sul Virtual, Educação a distância. Ir para o início" width="666" height="168"></a>
                     </div>
+                    <nav class="portal-nav" aria-label="Menu principal">
+                        <a href="/inicio" data-nav="dashboard-page">Início</a>
+                        <a href="/meu-semestre" data-nav="meu-semestre-page">Meu semestre</a>
+                        <a href="/tutoriais" data-nav="tutoriais-page">Central de ajuda</a>
+                    </nav>
                     <div class="flex items-center gap-3">
+                        <button type="button" class="portal-help-btn" data-help-open><i data-lucide="life-buoy" aria-hidden="true"></i><span>Ajuda</span></button>
                         <div class="notif-wrap relative">
                             <button type="button" class="notif-bell p-2 text-gray-500 hover:text-cruzeiro transition" data-notif-toggle aria-label="Avisos">
                                 <i data-lucide="bell" class="w-5 h-5"></i>
@@ -158,7 +173,7 @@
                         </div>
                         <div class="text-right hidden sm:block">
                             <p class="text-sm font-semibold text-gray-800" data-user-name>Aluno</p>
-                            <p class="text-xs text-gray-500">Graduação</p>
+                            <p class="text-xs text-gray-500" data-acesso-rgm>Graduação</p>
                         </div>
                         <button onclick="logout()" class="p-2 text-gray-400 hover:text-red-500 transition" title="Sair">
                             <i data-lucide="log-out" class="w-5 h-5"></i>
@@ -167,119 +182,137 @@
                 </div>
             </header>
 
-            <main class="max-w-7xl mx-auto px-4 py-8">
-                <div class="bento-welcome mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800">Bem-vindo(a)!</h2>
-                    <p class="text-sm text-gray-500 mt-1">Acesse certificado, avisos, tutoriais e atendimento em um só lugar.</p>
+            <main class="painel portal-container py-6 lg:py-8">
+                <div id="dashboard-notice" class="hidden p-alert p-alert--info" role="status"></div>
+
+                <!-- Banner: uma ação principal (muda com o progresso real da trilha) e um link de apoio -->
+                <section class="portal-hero dash-anim" aria-labelledby="p-hero-title">
+                    <div class="portal-hero__content">
+                        <p class="portal-eyebrow">Seu espaço de apoio</p>
+                        <h1 id="p-hero-title">Olá<span data-user-first-wrap hidden>, <span data-user-first></span></span>! <span id="home-hero-tail">Vamos começar?</span></h1>
+                        <p class="portal-hero__lede" id="home-hero-lede">Seu polo está aqui para ajudar você a estudar.</p>
+                        <div class="portal-hero__acts">
+                            <button type="button" id="home-hero-cta" class="portal-btn portal-btn--primary" data-go="tutoriais-page">
+                                <span id="home-hero-cta-text">Conhecer os primeiros passos</span>
+                                <i data-lucide="chevron-right" aria-hidden="true"></i>
+                            </button>
+                            <button type="button" data-help-open class="portal-hero__link">Preciso de ajuda <i data-lucide="chevron-right" aria-hidden="true"></i></button>
+                        </div>
+                        <div id="home-hero-progress" class="portal-progress" hidden></div>
+                    </div>
+                    <div class="portal-hero__art" aria-hidden="true">
+                        <img src="/assets/portal/hero-estudante-640.webp" srcset="/assets/portal/hero-estudante-640.webp 640w, /assets/portal/hero-estudante.webp 1310w" sizes="(min-width: 1024px) 420px, 280px" width="640" height="587" alt="" decoding="async" fetchpriority="high">
+                    </div>
+                </section>
+
+                <!-- Aula Inaugural como programa (com a trilha liberada): card com 4 estados, desenhado por inicio.js -->
+                <section id="home-aula" class="ai-card so-trilha dash-anim" aria-labelledby="home-aula-h">
+                    <div class="ai-selo" aria-hidden="true"></div>
+                    <div class="ai-txt">
+                        <span class="ai-k">Aula Inaugural · certificado de 4 horas</span>
+                        <h2 id="home-aula-h">Comece pela Aula Inaugural</h2>
+                        <p>Carregando o seu progresso...</p>
+                    </div>
+                    <div class="ai-acts"></div>
+                    <div id="home-aula-erro" class="hidden p-alert" role="alert"></div>
+                </section>
+
+                <!-- Sem a trilha liberada: faixa simples (player e certificado de sempre) -->
+                <section class="p-aula-strip sem-trilha dash-anim" aria-labelledby="p-h-aula">
+                    <span class="p-ico p-ico--star" aria-hidden="true"><i data-lucide="award"></i></span>
+                    <div class="p-aula-t">
+                        <h2 id="p-h-aula">Comece pela Aula Inaugural</h2>
+                        <p>Assistiu à Aula Inaugural? Gere o seu certificado de participação.</p>
+                    </div>
+                    <div class="p-aula-acts">
+                        <button type="button" id="btn-gerar-certificado" class="p-go"><span id="btn-gerar-certificado-text">Gerar certificado de participação</span><span class="btn-spinner" aria-hidden="true"></span><i data-lucide="chevron-right" class="p-go-ico" aria-hidden="true"></i></button>
+                    </div>
+                    <div id="dashboard-cert-error" class="hidden p-alert" role="alert"></div>
+                </section>
+
+                <!-- Aplicativos e ajuda do acesso (public/js/apps.js). Os dados de acesso do aluno (RGM, e-mail
+                     acadêmico, primeira senha) aparecem na aba "E-mail e senha" (public/js/dados-acesso.js). -->
+                <div data-apps-slot class="dash-anim"></div>
+
+                <!-- Quatro atalhos -->
+                <nav class="p-quick" aria-label="Atalhos">
+                    <a href="/meu-semestre" data-go="meu-semestre-page" class="p-tile dash-anim">
+                        <span class="p-ico"><i data-lucide="book-open" aria-hidden="true"></i></span>
+                        <span class="p-tile-t"><strong>Meus estudos</strong><span class="p-tile-d">Matérias, provas e prazos do semestre.</span></span>
+                        <i data-lucide="chevron-right" class="p-tile-go" aria-hidden="true"></i>
+                    </a>
+                    <a href="https://novoportal.cruzeirodosul.edu.br/" target="_blank" rel="noopener noreferrer" class="p-tile dash-anim">
+                        <span class="p-ico"><i data-lucide="clipboard-check" aria-hidden="true"></i></span>
+                        <span class="p-tile-t"><strong>Provas e notas</strong><span class="p-tile-d">Na Área do Aluno, menu Vida Acadêmica.</span><span class="p-ext">Abre a Área do Aluno<span class="sr-only"> em nova aba</span></span></span>
+                        <i data-lucide="external-link" class="p-tile-go" aria-hidden="true"></i>
+                    </a>
+                    <a href="https://novoportal.cruzeirodosul.edu.br/" target="_blank" rel="noopener noreferrer" class="p-tile dash-anim">
+                        <span class="p-ico"><i data-lucide="wallet" aria-hidden="true"></i></span>
+                        <span class="p-tile-t"><strong>Mensalidades</strong><span class="p-tile-d">Na Área do Aluno, menu Financeiro.</span><span class="p-ext">Abre a Área do Aluno<span class="sr-only"> em nova aba</span></span></span>
+                        <i data-lucide="external-link" class="p-tile-go" aria-hidden="true"></i>
+                    </a>
+                    <a href="/tutoriais" data-go="tutoriais-page" class="p-tile dash-anim">
+                        <span class="p-ico"><i data-lucide="life-buoy" aria-hidden="true"></i></span>
+                        <span class="p-tile-t"><strong>Central de ajuda</strong><span class="p-tile-d">Vídeos curtos e perguntas frequentes.</span></span>
+                        <i data-lucide="chevron-right" class="p-tile-go" aria-hidden="true"></i>
+                    </a>
+                </nav>
+
+                <div class="p-two">
+                    <section class="p-card dash-anim" aria-labelledby="p-h-datas">
+                        <div class="p-card-head">
+                            <div><h2 id="p-h-datas" class="p-h2">Próximas datas</h2><span class="p-squiggle" aria-hidden="true"></span></div>
+                            <a href="/meu-semestre" data-go="meu-semestre-page" class="p-link">Ver calendário <i data-lucide="chevron-right" aria-hidden="true"></i></a>
+                        </div>
+                        <div id="dashboard-semestre-body"><p class="p-muted">Carregando o semestre...</p></div>
+                    </section>
+                    <section class="p-card dash-anim" aria-labelledby="p-h-avisos">
+                        <div class="p-card-head">
+                            <div><h2 id="p-h-avisos" class="p-h2">Avisos</h2><p class="p-hint" id="dashboard-avisos-count"></p></div>
+                            <a href="/avisos" data-go="avisos-page" class="p-link">Ver todos <i data-lucide="chevron-right" aria-hidden="true"></i></a>
+                        </div>
+                        <div id="dashboard-avisos-list"></div>
+                    </section>
                 </div>
-                <div id="dashboard-cert-error" class="hidden mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3" role="alert"></div>
 
-                <!-- Bento grid -->
-                <div class="bento-grid">
-                    <!-- Card: Meu Semestre -->
-                    <div class="dash-card bento-cell bento-semestre bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-                        <div class="flex items-start justify-between gap-3 mb-4">
-                            <div class="dash-card-icon dash-card-icon--sky w-12 h-12 bg-sky-50 text-sky-700 rounded-xl flex items-center justify-center">
-                                <i data-lucide="calendar-range" class="w-6 h-6"></i>
-                            </div>
-                            <span class="ms-dash-kicker">Destaque</span>
-                        </div>
-                        <h3 class="text-lg font-bold text-gray-800 mb-2">Meu Semestre</h3>
-                        <div id="dashboard-semestre-body" class="ms-dash-body">
-                            <p class="ms-muted">Carregando o semestre...</p>
-                        </div>
+                <!-- Vídeos úteis: curadoria fixa de 3 vídeos da Central (mesmo card e mesmo player) -->
+                <section class="so-trilha dash-anim" aria-labelledby="p-h-videos">
+                    <div class="portal-sec-head">
+                        <div><h2 id="p-h-videos">Resolva em poucos minutos</h2><p>Vídeos curtos para facilitar sua rotina.</p></div>
+                        <a href="/tutoriais" data-go="tutoriais-page" class="portal-link">Ver todos os vídeos <i data-lucide="chevron-right" aria-hidden="true"></i></a>
                     </div>
+                    <div id="inicio-videos" class="portal-video-grid"><p class="p-muted">Carregando os vídeos...</p></div>
+                </section>
 
-
-                    <!-- Card: Trilha EaD para Iniciantes -->
-                    <div class="so-trilha dash-card bento-cell bento-trilha bg-white p-6 rounded-3xl shadow-sm border border-gray-100 group">
-                        <div class="flex items-start justify-between gap-3 mb-4">
-                            <div class="dash-card-icon dash-card-icon--amber w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
-                                <i data-lucide="map" class="w-6 h-6"></i>
-                            </div>
-                            <span class="ms-dash-kicker">Para começar</span>
-                        </div>
-                        <h3 class="text-lg font-bold text-gray-800 mb-2">Trilha EaD para Iniciantes</h3>
-                        <p class="text-gray-500 text-sm mb-4 leading-relaxed">7 níveis com vídeo, resumo e perguntas: do primeiro acesso à formatura.</p>
-                        <div id="dashboard-trilha-body" class="trilha-dash">
-                            <div class="trilha-dash-bar"><i style="width:0%"></i></div>
-                            <p class="trilha-dash-txt">Carregando seu progresso...</p>
-                        </div>
-                        <button type="button" onclick="showScreen('trilha-page')" class="btn-plastic dash-card-btn w-full flex items-center justify-center gap-2 bg-gray-50 text-cruzeiro font-semibold py-2.5 rounded-lg mt-4">
-                            <span data-trilha-cta>Começar a trilha</span>
-                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                        </button>
+                <!-- Ajuda humana: abre o painel único de ajuda; comercial e indicação ficam à parte -->
+                <section class="portal-support dash-anim" aria-labelledby="p-h-ajuda">
+                    <span class="portal-support__ico" aria-hidden="true"><i data-lucide="messages-square"></i></span>
+                    <div class="portal-support__txt">
+                        <h2 id="p-h-ajuda">Ainda precisa de ajuda?</h2>
+                        <p>Conte com a equipe do seu polo.</p>
                     </div>
-
-                    <!-- Card: Gerar Certificado -->
-                    <div class="dash-card bento-cell bento-feature bg-white p-6 rounded-3xl shadow-sm border border-gray-100 group">
-                        <div class="dash-card-icon dash-card-icon--blue w-12 h-12 bg-blue-50 text-cruzeiro rounded-xl flex items-center justify-center mb-4">
-                            <i data-lucide="award" class="w-6 h-6"></i>
-                        </div>
-                        <h3 class="text-lg font-bold text-gray-800 mb-2">Gerar Certificado</h3>
-                        <p class="text-gray-500 text-sm mb-6 leading-relaxed">Gere seu certificado de participação na Aula Inaugural de forma rápida e segura.</p>
-                        <button type="button" id="btn-gerar-certificado" class="btn-plastic dash-card-btn w-full flex items-center justify-center gap-2 bg-gray-50 text-cruzeiro font-semibold py-2.5 rounded-lg disabled:cursor-not-allowed">
-                            <span id="btn-gerar-certificado-text" class="btn-plastic-label">Gerar certificado</span>
-                            <span class="btn-spinner" aria-hidden="true"></span>
-                        </button>
+                    <div class="portal-support__acts">
+                        <button type="button" data-help-open class="portal-btn">Preciso de ajuda <i data-lucide="chevron-right" aria-hidden="true"></i></button>
+                        <a href="/atendimento" data-go="atendimento-page" class="portal-link">Comercial e indicação</a>
                     </div>
-
-                    <!-- Card: Avisos -->
-                    <div class="dash-card bento-cell bento-avisos bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-                        <div class="flex items-start justify-between gap-3 mb-4">
-                            <div class="dash-card-icon dash-card-icon--amber w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
-                                <i data-lucide="megaphone" class="w-6 h-6"></i>
-                            </div>
-                            <button type="button" onclick="showScreen('avisos-page')" class="text-sm font-semibold text-cruzeiro hover:underline">Ver todos</button>
-                        </div>
-                        <h3 class="text-lg font-bold text-gray-800 mb-2">Avisos importantes</h3>
-                        <p class="text-gray-500 text-sm mb-4">Comunicados da instituição, prazos e recados do seu polo.</p>
-                        <div id="dashboard-avisos-list" class="space-y-3"></div>
-                    </div>
-
-                    <!-- Card: Tutoriais -->
-                    <div class="dash-card bento-cell bento-tutoriais bg-white p-6 rounded-3xl shadow-sm border border-gray-100 group">
-                        <div class="dash-card-icon dash-card-icon--violet w-12 h-12 bg-violet-50 text-violet-700 rounded-xl flex items-center justify-center mb-4">
-                            <i data-lucide="play-circle" class="w-6 h-6"></i>
-                        </div>
-                        <h3 class="text-lg font-bold text-gray-800 mb-2">Tutoriais</h3>
-                        <p class="sem-trilha text-gray-500 text-sm mb-6 leading-relaxed">Videoaulas para Área do Aluno, Blackboard, provas, boleto e documentos.</p>
-                        <button onclick="showScreen('tutoriais-page')" class="sem-trilha btn-plastic dash-card-btn w-full flex items-center justify-center gap-2 bg-gray-50 text-cruzeiro font-semibold py-2.5 rounded-lg">
-                            Ver tutoriais
-                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                        </button>
-                        <p class="so-trilha text-gray-500 text-sm mb-6 leading-relaxed">Consulta rápida para uma dúvida pontual. Começando agora? A trilha acima ensina tudo passo a passo.</p>
-                        <button onclick="showScreen('tutoriais-page')" class="so-trilha w-full flex items-center justify-center gap-2 text-cruzeiro text-sm font-semibold py-2 hover:underline">
-                            Consultar tutoriais
-                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                        </button>
-                    </div>
-
-                    <!-- Card: Atendimento -->
-                    <div class="dash-card bento-cell bento-atendimento bg-white p-6 rounded-3xl shadow-sm border border-gray-100 group">
-                        <div class="dash-card-icon dash-card-icon--green w-12 h-12 bg-green-50 text-green-700 rounded-xl flex items-center justify-center mb-4">
-                            <i data-lucide="headset" class="w-6 h-6"></i>
-                        </div>
-                        <h3 class="text-lg font-bold text-gray-800 mb-2">Atendimento</h3>
-                        <p class="text-gray-500 text-sm mb-6 leading-relaxed">Suporte acadêmico, comercial e indicação de novos alunos no WhatsApp.</p>
-                        <button onclick="showScreen('atendimento-page')" class="btn-plastic dash-card-btn w-full flex items-center justify-center gap-2 bg-gray-50 text-cruzeiro font-semibold py-2.5 rounded-lg">
-                            Falar com a equipe
-                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                        </button>
-                    </div>
-                </div>
+                </section>
             </main>
         </section>
 
         <!-- 2a. MEU SEMESTRE -->
         <section id="meu-semestre-page" class="hidden min-h-screen">
             <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                <div class="portal-container h-16 flex items-center justify-between portal-head">
                     <div class="flex items-center gap-2">
-                        <div class="bg-cruzeiro rounded-lg overflow-hidden w-9 h-9"><img src="/assets/logo-login.jpg" alt="Cruzeiro do Sul Educacional" class="w-full h-full object-cover"></div>
-                        <span class="font-bold text-gray-800 hidden sm:block">Cruzeiro do Sul <span class="text-blue-600">Virtual</span></span>
+                        <a href="/inicio" data-go="dashboard-page" class="portal-brand"><img src="/assets/logo-csv.webp" alt="Cruzeiro do Sul Virtual, Educação a distância. Ir para o início" width="666" height="168"></a>
                     </div>
+                    <nav class="portal-nav" aria-label="Menu principal">
+                        <a href="/inicio" data-nav="dashboard-page">Início</a>
+                        <a href="/meu-semestre" data-nav="meu-semestre-page">Meu semestre</a>
+                        <a href="/tutoriais" data-nav="tutoriais-page">Central de ajuda</a>
+                    </nav>
                     <div class="flex items-center gap-3">
+                        <button type="button" class="portal-help-btn" data-help-open><i data-lucide="life-buoy" aria-hidden="true"></i><span>Ajuda</span></button>
                         <div class="notif-wrap relative">
                             <button type="button" class="notif-bell p-2 text-gray-500 hover:text-cruzeiro transition" data-notif-toggle aria-label="Avisos">
                                 <i data-lucide="bell" class="w-5 h-5"></i>
@@ -295,7 +328,7 @@
                         </div>
                         <div class="text-right hidden sm:block">
                             <p class="text-sm font-semibold text-gray-800" data-user-name>Aluno</p>
-                            <p class="text-xs text-gray-500">Graduação</p>
+                            <p class="text-xs text-gray-500" data-acesso-rgm>Graduação</p>
                         </div>
                         <button onclick="logout()" class="p-2 text-gray-400 hover:text-red-500 transition" title="Sair">
                             <i data-lucide="log-out" class="w-5 h-5"></i>
@@ -303,10 +336,7 @@
                     </div>
                 </div>
             </header>
-            <main class="max-w-7xl mx-auto px-4 py-8">
-                <button onclick="showScreen('dashboard-page')" class="flex items-center gap-2 text-gray-500 hover:text-cruzeiro mb-6 transition">
-                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar ao Dashboard
-                </button>
+            <main class="sm-page portal-container py-6 lg:py-8">
                 <div id="meu-semestre-content"></div>
             </main>
         </section>
@@ -314,12 +344,17 @@
         <!-- 2b. AVISOS -->
         <section id="avisos-page" class="hidden min-h-screen">
             <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between portal-head">
                     <div class="flex items-center gap-2">
-                        <div class="bg-cruzeiro rounded-lg overflow-hidden w-9 h-9"><img src="/assets/logo-login.jpg" alt="Cruzeiro do Sul Educacional" class="w-full h-full object-cover"></div>
-                        <span class="font-bold text-gray-800 hidden sm:block">Cruzeiro do Sul <span class="text-blue-600">Virtual</span></span>
+                        <a href="/inicio" data-go="dashboard-page" class="portal-brand"><img src="/assets/logo-csv.webp" alt="Cruzeiro do Sul Virtual, Educação a distância. Ir para o início" width="666" height="168"></a>
                     </div>
+                    <nav class="portal-nav" aria-label="Menu principal">
+                        <a href="/inicio" data-nav="dashboard-page">Início</a>
+                        <a href="/meu-semestre" data-nav="meu-semestre-page">Meu semestre</a>
+                        <a href="/tutoriais" data-nav="tutoriais-page">Central de ajuda</a>
+                    </nav>
                     <div class="flex items-center gap-3">
+                        <button type="button" class="portal-help-btn" data-help-open><i data-lucide="life-buoy" aria-hidden="true"></i><span>Ajuda</span></button>
                         <div class="notif-wrap relative">
                             <button type="button" class="notif-bell p-2 text-gray-500 hover:text-cruzeiro transition" data-notif-toggle aria-label="Avisos">
                                 <i data-lucide="bell" class="w-5 h-5"></i>
@@ -335,7 +370,7 @@
                         </div>
                         <div class="text-right hidden sm:block">
                             <p class="text-sm font-semibold text-gray-800" data-user-name>Aluno</p>
-                            <p class="text-xs text-gray-500">Graduação</p>
+                            <p class="text-xs text-gray-500" data-acesso-rgm>Graduação</p>
                         </div>
                         <button onclick="logout()" class="p-2 text-gray-400 hover:text-red-500 transition" title="Sair">
                             <i data-lucide="log-out" class="w-5 h-5"></i>
@@ -345,10 +380,11 @@
             </header>
             <main class="max-w-3xl mx-auto px-4 py-8">
                 <button onclick="showScreen('dashboard-page')" class="flex items-center gap-2 text-gray-500 hover:text-cruzeiro mb-6 transition">
-                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar ao Dashboard
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar ao início
                 </button>
                 <h2 class="text-2xl font-bold text-gray-800 mb-2">Avisos</h2>
                 <p class="text-gray-500 text-sm mb-6">Comunicados ativos para o seu perfil. Marque como lida para limpar o sino.</p>
+                <div data-apps-slot data-apps-variant="compacta" class="mb-6"></div>
                 <div id="avisos-page-list" class="space-y-4"></div>
             </main>
         </section>
@@ -357,12 +393,17 @@
         <!-- 2d. TRILHA EAD PARA INICIANTES -->
         <section id="trilha-page" class="hidden min-h-screen">
             <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                <div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-10 h-16 flex items-center justify-between portal-head">
                     <div class="flex items-center gap-2">
-                        <div class="bg-cruzeiro rounded-lg overflow-hidden w-9 h-9"><img src="/assets/logo-login.jpg" alt="Cruzeiro do Sul Educacional" class="w-full h-full object-cover"></div>
-                        <span class="font-bold text-gray-800 hidden sm:block">Cruzeiro do Sul <span class="text-blue-600">Virtual</span></span>
+                        <a href="/inicio" data-go="dashboard-page" class="portal-brand"><img src="/assets/logo-csv.webp" alt="Cruzeiro do Sul Virtual, Educação a distância. Ir para o início" width="666" height="168"></a>
                     </div>
+                    <nav class="portal-nav" aria-label="Menu principal">
+                        <a href="/inicio" data-nav="dashboard-page">Início</a>
+                        <a href="/meu-semestre" data-nav="meu-semestre-page">Meu semestre</a>
+                        <a href="/tutoriais" data-nav="tutoriais-page">Central de ajuda</a>
+                    </nav>
                     <div class="flex items-center gap-3">
+                        <button type="button" class="portal-help-btn" data-help-open><i data-lucide="life-buoy" aria-hidden="true"></i><span>Ajuda</span></button>
                         <div class="notif-wrap relative">
                             <button type="button" class="notif-bell p-2 text-gray-500 hover:text-cruzeiro transition" data-notif-toggle aria-label="Avisos">
                                 <i data-lucide="bell" class="w-5 h-5"></i>
@@ -378,7 +419,7 @@
                         </div>
                         <div class="text-right hidden sm:block">
                             <p class="text-sm font-semibold text-gray-800" data-user-name>Aluno</p>
-                            <p class="text-xs text-gray-500">Graduação</p>
+                            <p class="text-xs text-gray-500" data-acesso-rgm>Graduação</p>
                         </div>
                         <button onclick="logout()" class="p-2 text-gray-400 hover:text-red-500 transition" title="Sair">
                             <i data-lucide="log-out" class="w-5 h-5"></i>
@@ -386,7 +427,7 @@
                     </div>
                 </div>
             </header>
-            <main class="max-w-5xl mx-auto px-4 py-6">
+            <main class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-10 py-6">
                 <button onclick="showScreen('dashboard-page')" class="flex items-center gap-2 text-gray-500 hover:text-cruzeiro mb-4 transition">
                     <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar ao início
                 </button>
@@ -399,12 +440,17 @@
         <!-- 2c. TUTORIAIS -->
         <section id="tutoriais-page" class="hidden min-h-screen">
             <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                <div class="portal-container h-16 flex items-center justify-between portal-head">
                     <div class="flex items-center gap-2">
-                        <div class="bg-cruzeiro rounded-lg overflow-hidden w-9 h-9"><img src="/assets/logo-login.jpg" alt="Cruzeiro do Sul Educacional" class="w-full h-full object-cover"></div>
-                        <span class="font-bold text-gray-800 hidden sm:block">Cruzeiro do Sul <span class="text-blue-600">Virtual</span></span>
+                        <a href="/inicio" data-go="dashboard-page" class="portal-brand"><img src="/assets/logo-csv.webp" alt="Cruzeiro do Sul Virtual, Educação a distância. Ir para o início" width="666" height="168"></a>
                     </div>
+                    <nav class="portal-nav" aria-label="Menu principal">
+                        <a href="/inicio" data-nav="dashboard-page">Início</a>
+                        <a href="/meu-semestre" data-nav="meu-semestre-page">Meu semestre</a>
+                        <a href="/tutoriais" data-nav="tutoriais-page">Central de ajuda</a>
+                    </nav>
                     <div class="flex items-center gap-3">
+                        <button type="button" class="portal-help-btn" data-help-open><i data-lucide="life-buoy" aria-hidden="true"></i><span>Ajuda</span></button>
                         <div class="notif-wrap relative">
                             <button type="button" class="notif-bell p-2 text-gray-500 hover:text-cruzeiro transition" data-notif-toggle aria-label="Avisos">
                                 <i data-lucide="bell" class="w-5 h-5"></i>
@@ -420,7 +466,7 @@
                         </div>
                         <div class="text-right hidden sm:block">
                             <p class="text-sm font-semibold text-gray-800" data-user-name>Aluno</p>
-                            <p class="text-xs text-gray-500">Graduação</p>
+                            <p class="text-xs text-gray-500" data-acesso-rgm>Graduação</p>
                         </div>
                         <button onclick="logout()" class="p-2 text-gray-400 hover:text-red-500 transition" title="Sair">
                             <i data-lucide="log-out" class="w-5 h-5"></i>
@@ -428,10 +474,7 @@
                     </div>
                 </div>
             </header>
-            <main class="max-w-6xl mx-auto px-4 py-8">
-                <button onclick="showScreen('dashboard-page')" class="flex items-center gap-2 text-gray-500 hover:text-cruzeiro mb-6 transition">
-                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar ao Dashboard
-                </button>
+            <main class="portal-container py-6 lg:py-8">
                 <div id="central-ajuda" class="so-trilha central"></div>
                 <div class="sem-trilha">
                 <h2 class="text-2xl font-bold text-gray-800 mb-2">Tutoriais</h2>
@@ -440,11 +483,12 @@
                     <div class="tutoriais-trilha-icon"><i data-lucide="map" class="w-6 h-6"></i></div>
                     <div class="flex-1 min-w-0">
                         <p class="tutoriais-trilha-kicker">Começando agora?</p>
-                        <h3>Faça a Trilha EaD para Iniciantes</h3>
-                        <p>7 níveis com vídeo, resumo e perguntas, do primeiro acesso à formatura. É o caminho mais completo para aprender a usar tudo.</p>
+                        <h3>Faça a Aula Inaugural</h3>
+                        <p>7 módulos com vídeo, resumo e perguntas, do primeiro acesso à formatura. Cada módulo vale 10 pontos: concluiu os 7? Certificado de 4 horas.</p>
                     </div>
                     <button type="button" data-open-trilha="" class="btn-plastic tutoriais-trilha-btn">Ir para a trilha <i data-lucide="chevron-right" class="w-4 h-4"></i></button>
                 </div>
+                <div data-apps-slot class="mb-6"></div>
                 <input id="tutoriais-search" type="search" class="w-full mb-4 px-4 py-3 rounded-xl border border-gray-200" placeholder="Buscar tutorial...">
                 <div id="tutoriais-filters" class="flex flex-wrap gap-2 mb-6"></div>
                 <div id="tutoriais-grid" class="tutorial-grid"></div>
@@ -455,12 +499,17 @@
         <!-- 2d. ATENDIMENTO -->
         <section id="atendimento-page" class="hidden min-h-screen">
             <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between portal-head">
                     <div class="flex items-center gap-2">
-                        <div class="bg-cruzeiro rounded-lg overflow-hidden w-9 h-9"><img src="/assets/logo-login.jpg" alt="Cruzeiro do Sul Educacional" class="w-full h-full object-cover"></div>
-                        <span class="font-bold text-gray-800 hidden sm:block">Cruzeiro do Sul <span class="text-blue-600">Virtual</span></span>
+                        <a href="/inicio" data-go="dashboard-page" class="portal-brand"><img src="/assets/logo-csv.webp" alt="Cruzeiro do Sul Virtual, Educação a distância. Ir para o início" width="666" height="168"></a>
                     </div>
+                    <nav class="portal-nav" aria-label="Menu principal">
+                        <a href="/inicio" data-nav="dashboard-page">Início</a>
+                        <a href="/meu-semestre" data-nav="meu-semestre-page">Meu semestre</a>
+                        <a href="/tutoriais" data-nav="tutoriais-page">Central de ajuda</a>
+                    </nav>
                     <div class="flex items-center gap-3">
+                        <button type="button" class="portal-help-btn" data-help-open><i data-lucide="life-buoy" aria-hidden="true"></i><span>Ajuda</span></button>
                         <div class="notif-wrap relative">
                             <button type="button" class="notif-bell p-2 text-gray-500 hover:text-cruzeiro transition" data-notif-toggle aria-label="Avisos">
                                 <i data-lucide="bell" class="w-5 h-5"></i>
@@ -476,7 +525,7 @@
                         </div>
                         <div class="text-right hidden sm:block">
                             <p class="text-sm font-semibold text-gray-800" data-user-name>Aluno</p>
-                            <p class="text-xs text-gray-500">Graduação</p>
+                            <p class="text-xs text-gray-500" data-acesso-rgm>Graduação</p>
                         </div>
                         <button onclick="logout()" class="p-2 text-gray-400 hover:text-red-500 transition" title="Sair">
                             <i data-lucide="log-out" class="w-5 h-5"></i>
@@ -486,15 +535,16 @@
             </header>
             <main class="max-w-3xl mx-auto px-4 py-8">
                 <button onclick="showScreen('dashboard-page')" class="flex items-center gap-2 text-gray-500 hover:text-cruzeiro mb-6 transition">
-                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar ao Dashboard
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar ao início
                 </button>
                 <h2 class="text-2xl font-bold text-gray-800 mb-1">Atendimento</h2>
                 <p id="atendimento-polo" class="text-sm text-gray-500 mb-6"></p>
+                <div data-apps-slot data-apps-variant="compacta" class="mb-6"></div>
 
                 <div class="bg-white rounded-2xl border border-gray-100 p-6 mb-4">
                     <h3 class="text-lg font-bold mb-2">Suporte acadêmico</h3>
                     <p class="text-sm text-gray-500 mb-4">Abre o WhatsApp já com seu nome, RGM e polo.</p>
-                    <a id="btn-whatsapp-academico" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center w-full bg-green-600 text-white font-semibold py-3 rounded-xl">Abrir WhatsApp acadêmico</a>
+                    <a id="btn-whatsapp-academico" href="#" target="_blank" rel="noopener noreferrer" class="atd-btn-star inline-flex items-center justify-center w-full font-semibold py-3 rounded-xl">Abrir WhatsApp acadêmico</a>
                 </div>
 
                 <div class="bg-white rounded-2xl border border-gray-100 p-6 mb-4">
@@ -517,7 +567,7 @@
                             </div>
                             <p class="text-sm text-gray-500 mb-4">Seus dados já entram automaticamente. Preencha só os dados da pessoa indicada.</p>
                             <div id="indicacao-alert" class="hidden mb-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3"></div>
-                            <div id="indicacao-ok" class="hidden mb-3 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-3"></div>
+                            <div id="indicacao-ok" class="hidden mb-3 text-sm text-cruzeiro bg-blue-50 border border-blue-200 rounded-lg px-4 py-3"></div>
                             <form id="indicacao-form" class="space-y-4" novalidate>
                                 <div>
                                     <label class="block text-sm font-medium mb-1" for="f_ind_nome">Nome*</label>
@@ -555,7 +605,7 @@
         <section id="form-page" class="hidden min-h-screen py-10 px-4">
             <div class="max-w-2xl mx-auto">
                 <button onclick="showScreen('dashboard-page')" class="flex items-center gap-2 text-gray-500 hover:text-cruzeiro mb-6 transition">
-                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar ao Dashboard
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar ao início
                 </button>
 
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
@@ -689,18 +739,25 @@
 
     <!-- Módulos da aplicação -->
     <script src="/js/config.js?v=7"></script>
-    <script src="/js/auth.js?v=7"></script>
-    <script src="/js/api.js?v=13"></script>
+    <script src="/js/auth.js?v=8"></script>
+    <script src="/js/api.js?v=17"></script>
     <script src="/js/validation.js?v=7"></script>
     <script src="/js/cursos.js?v=7"></script>
-    <script src="/js/certificate.js?v=7"></script>
-    <script src="/js/avisos.js?v=7"></script>
-    <script src="/js/tutoriais.js?v=10"></script>
-    <script src="/js/trilha.js?v=3"></script>
-    <script src="/js/central.js?v=1"></script>
-    <script src="/js/atendimento.js?v=8"></script>
-    <script src="/js/meu-semestre.js?v=13"></script>
-    <script src="/js/ui.js?v=13"></script>
-    <script src="/js/app.js?v=14"></script>
+    <script src="/js/certificate.js?v=10"></script>
+    <script src="/js/avisos.js?v=10"></script>
+    <script src="/js/tutoriais.js?v=11"></script>
+    <script src="/js/glossario.js?v=1"></script>
+    <script src="/js/trilha.js?v=23"></script>
+    <script src="/js/inicio.js?v=7"></script>
+    <script src="/js/apps.js?v=6"></script>
+    <script src="/js/ajuda.js?v=1"></script>
+    <script src="/js/avaliacao.js?v=2"></script>
+    <script src="/js/central.js?v=20"></script>
+    <script src="/js/dados-acesso.js?v=5"></script>
+    <script src="/js/atendimento.js?v=11"></script>
+    <script src="/js/meu-semestre.js?v=24"></script>
+    <script src="/js/rastreio.js?v=2"></script>
+    <script src="/js/ui.js?v=21"></script>
+    <script src="/js/app.js?v=29"></script>
 </body>
 </html>

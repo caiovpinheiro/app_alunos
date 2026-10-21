@@ -7,3 +7,14 @@ tools/output/
 tools/test-login.json
 *.log
 .DS_Store
+
+# Ruflo / Claude Code local (ferramentas da máquina, não vão para o repositório)
+.env.local
+.env.*.local
+CLAUDE.md
+.mcp.json
+.claude/
+.claude-flow/
+.swarm/
+ruvector.db
+.playwright-mcp/

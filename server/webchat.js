@@ -5,6 +5,7 @@
 // todos. Vazio = ninguém. O script e a chave vêm só do Environment (WEBCHAT_EMBED_URL e
 // WEBCHAT_KEY): nada fica no código nem no HTML. Sem a chave, o chat não carrega.
 
+const crypto = require('node:crypto');
 const { envValue } = require('./env');
 
 
@@ -34,4 +35,27 @@ function configPara(aluno) {
   return { src, key };
 }
 
-module.exports = { liberadoPara, configPara };
+// Identidade do aluno para o chat. user_hash = HMAC-SHA256(WEBCHAT_IDENTITY_SECRET, external_id)
+// em hex: o Bwipo confere com o mesmo segredo e só então liga o visitante ao aluno.
+// Sem o segredo, a identidade vai sem assinatura (o Bwipo deve tratá-la como não verificada).
+function identidadePara(aluno, extra) {
+  if (!aluno || !aluno.rgm) return null;
+  const externalId = String(aluno.rgm).replace(/\D+/g, '');
+  if (!externalId) return null;
+  const secret = envValue('WEBCHAT_IDENTITY_SECRET');
+  const info = extra || {};
+  return {
+    external_id: externalId,
+    name: aluno.nome || null,
+    email: aluno.email || null,
+    attributes: {
+      rgm: externalId,
+      curso: info.curso || null,
+      polo: info.polo || null,
+      origem: 'portal-aluno',
+    },
+    user_hash: secret ? crypto.createHmac('sha256', secret).update(externalId).digest('hex') : null,
+  };
+}
+
+module.exports = { liberadoPara, configPara, identidadePara };

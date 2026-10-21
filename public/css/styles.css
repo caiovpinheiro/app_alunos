@@ -193,6 +193,17 @@ body {
   background-image: linear-gradient(145deg, #0a63c2 0%, var(--csu-blue) 48%, var(--csu-blue-deep) 100%);
 }
 
+/* Atendimento: ação principal no amarelo da identidade nova (igual ao painel). */
+.atd-btn-star {
+  background: #ffc72c;
+  color: #2b1d00 !important;
+  transition: background 0.2s ease;
+}
+
+.atd-btn-star:hover {
+  background: #ffd75e;
+}
+
 .text-cruzeiro {
   color: var(--csu-blue);
 }
@@ -1635,6 +1646,14 @@ textarea:focus {
   padding: 22px;
 }
 
+.ms-finance ul {
+  margin: 10px 0 0;
+  padding-left: 20px;
+  list-style: disc;
+  display: grid;
+  gap: 6px;
+}
+
 .ms-now {
   background:
     radial-gradient(circle at 100% 0, rgba(14, 165, 233, 0.16) 0, transparent 42%),
@@ -2098,6 +2117,10 @@ textarea:focus {
   line-height: 1.5;
 }
 
+.ms-empty .ms-empty-btn {
+  margin-top: 16px;
+}
+
 .ms-empty h2 {
   margin: 10px 0 8px;
   color: var(--csu-blue-deep);
@@ -2262,3 +2285,14 @@ textarea:focus {
 /* Trilha em teste: só aparece para contas liberadas (body.trilha-on, via /api/recursos). */
 body:not(.trilha-on) .so-trilha { display: none !important; }
 body.trilha-on .sem-trilha { display: none !important; }
+
+/* Acesso em preparação: conta sem RGM (body.acesso-preparo, via /api/recursos). */
+.so-preparo { display: none !important; }
+body.acesso-preparo .so-preparo { display: flex !important; }
+.apps-nota-preparo { align-items: flex-start; gap: 8px; margin: 0 0 12px; padding: 10px 14px; border-radius: 12px; border: 1px solid #f3d27a; background: #fff8e6; color: #5c4300; font-size: 0.92rem; line-height: 1.45; }
+.apps-nota-preparo svg { flex: 0 0 auto; width: 18px; height: 18px; margin-top: 1px; }
+/* A Área do Aluno ainda não abre para quem não tem RGM: some com Provas e notas e Mensalidades. */
+body.acesso-preparo .p-quick > a[target="_blank"],
+body.acesso-preparo #dashboard-semestre-body a[target="_blank"] { display: none; }
+@media (min-width: 1100px) { body.acesso-preparo .p-quick { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.ms-empty-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }

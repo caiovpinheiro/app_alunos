@@ -1,0 +1,53 @@
+/* Avaliação "joinha" (public/js/avaliacao.js): vídeo da Central, respostas da FAQ e Aula Inaugural.
+   Usa os tokens do portal.css. Só para contas com a trilha liberada. */
+body:not(.trilha-on) .aval{display:none!important}
+
+.aval{margin-top:14px;padding-top:12px;border-top:1px solid var(--portal-border,#d3dfee);font-family:var(--portal-body,"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif);color:var(--portal-text,#0b1f38)}
+.aval-linha{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
+.aval .aval-q{margin:0;font-size:16px;font-weight:700;line-height:1.3;color:inherit}
+.aval-btns{display:flex;gap:10px}
+.aval .aval-btn{display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;min-height:0;padding:0;border:1.5px solid var(--portal-border,#d3dfee);border-radius:999px;background:#fff;color:var(--portal-blue,#0a4fa6);cursor:pointer;transition:background-color .15s,border-color .15s,color .15s}
+.aval .aval-btn svg{display:block;width:22px;height:22px;pointer-events:none}
+.aval .aval-btn:hover{border-color:var(--portal-blue,#0a4fa6);background:var(--portal-blue-soft,#e3edfc)}
+.aval .aval-btn:focus-visible{outline:3px solid var(--portal-blue,#0a4fa6);outline-offset:3px}
+.aval .aval-btn[aria-pressed="true"]{background:var(--portal-blue,#0a4fa6);border-color:var(--portal-blue,#0a4fa6);color:#fff}
+.aval .aval-btn[data-aval-voto="-1"][aria-pressed="true"]{background:var(--portal-navy,#0a2a5e);border-color:var(--portal-navy,#0a2a5e)}
+.aval .aval-btn[aria-pressed="true"] svg{fill:rgba(255,255,255,.22)}
+.aval .aval-st{margin:0;font-size:15px;font-weight:700;color:var(--portal-blue,#0a4fa6)}
+.aval .aval-st.is-erro{color:#b3261e}
+/* Depois do 👎: caixa "O que não ficou bom?" (o texto vai para a equipe, no admin). */
+.aval .aval-coment{margin-top:12px}
+.aval .aval-coment[hidden], .aval .aval-coment [hidden]{display:none}
+.aval .aval-coment-form{display:grid;gap:8px;max-width:34rem}
+.aval .aval-coment-q{font-size:15px;font-weight:700;line-height:1.35;color:inherit}
+.aval .aval-coment-txt{width:100%;min-height:84px;padding:10px 12px;border:1.5px solid var(--portal-border,#d3dfee);border-radius:12px;background:#fff;color:inherit;font:inherit;font-size:16px;line-height:1.4;resize:vertical}
+.aval .aval-coment-txt:focus-visible{outline:3px solid var(--portal-blue,#0a4fa6);outline-offset:1px;border-color:var(--portal-blue,#0a4fa6)}
+.aval .aval-coment-acoes{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
+.aval .aval-coment-enviar{min-height:44px;padding:0 18px;border:0;border-radius:999px;background:var(--portal-blue,#0a4fa6);color:#fff;font:700 15px/1 var(--portal-body,inherit);cursor:pointer}
+.aval .aval-coment-enviar:hover{background:var(--portal-navy,#0a2a5e)}
+.aval .aval-coment-enviar:disabled{opacity:.6;cursor:wait}
+.aval .aval-coment-enviar:focus-visible{outline:3px solid var(--portal-blue,#0a4fa6);outline-offset:3px}
+.aval .aval-coment-st{font-size:15px;font-weight:700;color:var(--portal-muted,#45566e)}
+.aval .aval-coment-st.is-erro{color:#b3261e}
+.aval .aval-coment-ok{margin:0;font-size:15px;color:var(--portal-muted,#45566e)}
+.aval .aval-coment-ok:focus{outline:none}
+.aval .aval-link{display:inline-flex;align-items:center;min-height:44px;padding:0 2px;border:0;background:none;color:var(--portal-blue,#0a4fa6);font-family:inherit;font-size:15px;font-weight:700;line-height:1.3;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.aval .aval-link:focus-visible{outline:3px solid var(--portal-blue,#0a4fa6);outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion: reduce){.aval .aval-btn{transition:none}}
+
+/* No vídeo da Central: a linha cabe no cartão mesmo em tela baixa (celular deitado). */
+.c-mcard{max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);overflow-y:auto}
+.c-mcard .aval{margin-top:12px}
+/* Na resposta da FAQ, a linha fica um pouco mais discreta. */
+.c-a .aval{margin-top:12px;padding-top:10px}
+.c-a .aval .aval-q{font-size:15px}
+/* Aula Inaugural: segue a letra maior (A+) da trilha. */
+.trilha .aval{font-size:1rem}
+.trilha .aval .aval-q{font-size:1rem}
+.trilha .tcaps .aval{margin-top:12px}
+
+/* Selo "👍 ×N" na capa dos vídeos da Central (ao lado do play; a duração fica à direita). */
+.portal-vthumb .aval-selo{position:absolute;left:58px;bottom:14px;display:inline-flex;align-items:center;gap:5px;padding:5px 9px 5px 7px;border-radius:999px;background:rgba(10,42,94,.88);color:#fff;font:700 13px/1 var(--portal-body,"Atkinson Hyperlegible",system-ui,sans-serif);font-variant-numeric:tabular-nums;box-shadow:0 1px 3px rgba(0,0,0,.25);pointer-events:none}
+.portal-vthumb .aval-selo[hidden]{display:none}
+.portal-vthumb .aval-selo svg{width:15px;height:15px;color:var(--portal-yellow,#ffc72c)}
+.portal-vthumb:not(.has-capa) .aval-selo{left:10px;bottom:10px}

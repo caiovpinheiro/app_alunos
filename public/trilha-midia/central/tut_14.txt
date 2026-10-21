@@ -1,15 +1,11 @@
-Fez um curso ou uma palestra? Transforme o certificado em horas complementares.
+Fez um curso ou uma palestra, transforma o certificado em horas complementares. Na Área do Aluno, toca em Atividades complementares.
 
-Na Área do Aluno, toque em Atividades Complementares.
+Toca em Envio de comprovantes. Em Tipo de comprovante, escolhe o que você fez, por exemplo, uma palestra.
 
-Toque em Envio de comprovantes.
+Preencha a carga horária, o nome do evento e a data do evento, igualzinho ao certificado. Toca em Anexar comprovante e escolhe a foto ou o PDF do certificado.
 
-Em Tipo de Comprovante, escolha o que você fez. Por exemplo, uma palestra.
+Atenção, o limite aqui é de 1 MB. A faculdade confere em até 30 dias.
 
-Preencha a Carga Horária, o Nome do Evento e a Data do Evento, iguais aos do certificado.
+Em Consulta, você vê se ficou aprovado. Sem completar as horas, o diploma não sai.
 
-Toque em Anexar Comprovante e escolha a foto ou o PDF. O limite é 1 MB.
-
-A faculdade confere em até 30 dias. Em Consulta, veja se ficou Aprovado.
-
-Sem as horas, não sai o diploma. Antes do próximo curso, leia o Regulamento para saber o que vale.
+Então, antes do próximo curso, lê o regulamento para saber o que vale hora.

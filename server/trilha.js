@@ -6,14 +6,79 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const versao = require('./versao');
 
 const CONTEUDO = JSON.parse(fs.readFileSync(path.join(__dirname, 'assets', 'trilha.json'), 'utf8'));
 const NIVEIS = CONTEUDO.niveis;
-const PONTOS_VIDEO = CONTEUDO.pontos_video;
-const PONTOS_1A = CONTEUDO.pontos_certa_1a;
-const PONTOS_DEPOIS = CONTEUDO.pontos_certa_depois;
+// Pontuação simples (aprovada em 20/10/2026): cada módulo concluído vale PONTOS_MODULO (10).
+// Vídeo e acerto de primeira não mudam os pontos; errar nunca tira ponto. Os pontos saem de
+// `concluido_em` na leitura, então o progresso salvo na escala antiga (vídeo 50, pergunta 100/40,
+// meta 1.800) vale sem migração. A coluna `pontos` da tabela fica só como cache.
+const PONTOS_MODULO = Number(CONTEUDO.pontos_modulo) || 10;
 const TAREFAS = new Set(CONTEUDO.tarefas.map((t) => t.id));
-const MAX_PONTOS = NIVEIS.reduce((n, l) => n + l.qs.length * PONTOS_1A + PONTOS_VIDEO, 0);
+const MAX_PONTOS = NIVEIS.length * PONTOS_MODULO;
+// Aula Inaugural = programa único: cada nível (módulo) tem como vídeo o(s) capítulo(s) da aula
+// ligados a ele (nivel_trilha em central/aula-inaugural.json). Os vídeos antigos da trilha
+// (partes do passo a passo e vídeos por nível) ficam como "passo a passo" opcional, sem pontos.
+// Certificado de 4 horas: os 7 módulos concluídos + META_CERTIFICADO pontos (regra no servidor).
+// Com 10 por módulo, a meta (70) é o mesmo que concluir os 7; nunca passa do máximo.
+const META_CERTIFICADO = Math.min(Number(CONTEUDO.meta_certificado) || MAX_PONTOS, MAX_PONTOS);
+const HORAS_CERTIFICADO = Number(CONTEUDO.horas_certificado) || 4;
+const AULA = (() => {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(__dirname, 'assets', 'central', 'aula-inaugural.json'), 'utf8'));
+  } catch (err) {
+    console.error('Trilha: aula-inaugural.json indisponível:', err.message);
+    return null;
+  }
+})();
+const ERRO_CAPITULO = 'Sem problema! Leia o resumo, veja os vídeos curtos de como fazer ou toque em Ajuda, no topo da página, para falar com a equipe do seu polo.';
+const CAPITULOS = (AULA && Array.isArray(AULA.capitulos) ? AULA.capitulos : [])
+  .map((c, i) => ({ i, t: c.titulo, v: c.v, duracao: c.duracao || '', nivel: c.nivel_trilha || null }))
+  .filter((c) => c.v);
+// Vídeos antigos fora do ar por informação errada (curadoria de 20/10): o nivel7 diz que o ENADE é
+// obrigatório para todos e fala de TCC. O módulo 7 fica só com o capítulo da aula.
+const APOSENTADOS = new Set(['/trilha-midia/videos/nivel7']);
+NIVEIS.forEach((l, i) => {
+  const caps = CAPITULOS.filter((c) => c.nivel === i + 1);
+  if (!caps.length) return;
+  // O que era o vídeo do nível vira passo a passo opcional.
+  l.passo_a_passo = (l.parts ? l.parts.map((p) => ({ t: p.t, v: p.v })) : (l.video ? [{ t: 'Vídeo detalhado do módulo', v: l.video }] : []))
+    .filter((p) => !APOSENTADOS.has(p.v));
+  l.capitulos = caps.map((c) => ({ t: c.t, duracao: c.duracao }));
+  if (caps.length === 1) { l.video = caps[0].v; l.parts = null; }
+  else { l.video = null; l.parts = caps.map((c) => ({ t: c.t, v: c.v, erro: ERRO_CAPITULO })); }
+});
+// Abertura (antes do 1º nível) e encerramento (depois do último): vídeo sem pontos.
+const PRIMEIRO_COM_NIVEL = CAPITULOS.findIndex((c) => c.nivel);
+const ABERTURA_CAPS = CAPITULOS.filter((c, k) => !c.nivel && (PRIMEIRO_COM_NIVEL === -1 || k < PRIMEIRO_COM_NIVEL)).map((c) => ({ t: c.t, v: c.v, duracao: c.duracao }));
+// Boas-vindas novo (40 s, tutora Roberta, 20/10/2026): substitui os capítulos 0 e 1 na abertura e na aula
+// completa. O capítulo 1 ("Como funciona o EaD") continua na Central, em "Entenda como funciona".
+const BOAS_VINDAS = { t: 'Boas-vindas', v: '/trilha-midia/aula/boasvindas', duracao: '0:40' };
+const TEM_BOAS_VINDAS = fs.existsSync(path.join(__dirname, '..', 'public', 'trilha-midia', 'aula', 'boasvindas.mp4'));
+const ABERTURA = TEM_BOAS_VINDAS ? [BOAS_VINDAS] : ABERTURA_CAPS;
+const ENCERRAMENTO = CAPITULOS.filter((c, k) => !c.nivel && PRIMEIRO_COM_NIVEL !== -1 && k > PRIMEIRO_COM_NIVEL).map((c) => ({ t: c.t, v: c.v, duracao: c.duracao }));
+
+// Pontos de quem concluiu `concluidos` módulos (a única regra de pontos).
+function pontosDe(concluidos) {
+  return (Number(concluidos) || 0) * PONTOS_MODULO;
+}
+
+// Certificado liberado? Usa o progresso de getProgresso() (ou qualquer objeto com `concluidos`).
+function statusCertificado(progresso) {
+  const concluidos = progresso.concluidos || 0;
+  const pontos = pontosDe(concluidos);
+  return {
+    meta: META_CERTIFICADO,
+    horas: HORAS_CERTIFICADO,
+    pontos,
+    concluidos,
+    total: NIVEIS.length,
+    faltam_pontos: Math.max(0, META_CERTIFICADO - pontos),
+    faltam_modulos: Math.max(0, NIVEIS.length - concluidos),
+    liberado: concluidos >= NIVEIS.length && pontos >= META_CERTIFICADO,
+  };
+}
 const WHATSAPP_PADRAO = '(11) 91518-4535';
 
 // A trilha é o guia principal; tutoriais e Meu Semestre apontam para o nível que ensina o assunto.
@@ -44,14 +109,19 @@ function listaLiberada() {
     .filter(Boolean);
 }
 
+// Além desta lista, a conta precisa estar na versão nova das telas (VERSAO_NOVA_PARA, server/versao.js):
+// as telas congeladas da produção anterior não conversam com a trilha deste servidor.
 function liberadaParaTodos() {
-  return listaLiberada().includes('*');
+  return listaLiberada().includes('*') && versao.paraTodos();
 }
 
 function liberadaPara(aluno) {
+  if (!versao.novaPara(aluno)) return false;
   const lista = listaLiberada();
   if (lista.includes('*')) return true;
   if (!aluno) return false;
+  // Acesso em preparação (sem RGM): a Aula Inaugural é justamente o que essa conta tem para fazer.
+  if (aluno.rgm == null || String(aluno.rgm).trim() === '') return true;
   const rgm = String(aluno.rgm || '').replace(/\D+/g, '');
   const email = String(aluno.email || '').trim().toLowerCase();
   return (rgm && lista.includes(rgm)) || (email && lista.includes(email));
@@ -86,13 +156,21 @@ function publicContent(whatsappRaw) {
   const whatsapp = formatPhone(whatsappRaw) || WHATSAPP_PADRAO;
   return {
     versao: CONTEUDO.versao,
-    pontos: { video: PONTOS_VIDEO, certa_1a: PONTOS_1A, certa_depois: PONTOS_DEPOIS, maximo: MAX_PONTOS },
+    pontos: { modulo: PONTOS_MODULO, maximo: MAX_PONTOS, meta: META_CERTIFICADO },
+    certificado: { meta: META_CERTIFICADO, horas: HORAS_CERTIFICADO },
+    abertura: ABERTURA,
+    encerramento: ENCERRAMENTO,
+    aula_completa: (TEM_BOAS_VINDAS ? [BOAS_VINDAS] : []).concat(
+      CAPITULOS.filter((c, k) => !(TEM_BOAS_VINDAS && !c.nivel && (PRIMEIRO_COM_NIVEL === -1 || k < PRIMEIRO_COM_NIVEL)))
+        .map((c) => ({ t: c.t, v: c.v, duracao: c.duracao }))),
     whatsapp,
     niveis: NIVEIS.map((l, i) => ({
       nivel: i + 1,
       t: l.t,
       short: l.short,
       rank: l.rank,
+      // topicos: 3 a 5 linhas curtas mostradas por padrão; learn é o resumo completo (fica fechado).
+      topicos: (l.topicos || []).map((x) => fill(x, whatsapp)),
       learn: l.learn.map((x) => fill(x, whatsapp)),
       tip: fill(l.tip, whatsapp),
       formula: l.formula,
@@ -100,6 +178,10 @@ function publicContent(whatsappRaw) {
       shots: l.shots,
       video: l.video || null,
       parts: l.parts ? l.parts.map((p) => ({ t: p.t, v: p.v, erro: fill(p.erro, whatsapp) })) : null,
+      capitulos: l.capitulos || null,
+      passo_a_passo: l.passo_a_passo || [],
+      // passo_aberto: os vídeos curtos do módulo já aparecem abertos na coluna do resumo.
+      passo_aberto: !!l.passo_aberto,
       qs: l.qs.map((q) => ({ q: q.q, opts: q.opts })),
     })),
     tarefas: CONTEUDO.tarefas,
@@ -148,15 +230,6 @@ function emptyRow(nivel) {
   return { nivel, partes_vistas: [], video_ok: false, pulou_video: false, respostas: {}, travei: {}, pontos: 0, concluido_em: null };
 }
 
-function calcPontos(nivel, row) {
-  let pontos = row.video_ok ? PONTOS_VIDEO : 0;
-  NIVEIS[nivel - 1].qs.forEach((_, k) => {
-    const r = row.respostas[k];
-    if (r && r.ok) pontos += r.tries.length <= 1 ? PONTOS_1A : PONTOS_DEPOIS;
-  });
-  return pontos;
-}
-
 function nivelConcluido(nivel, row) {
   return NIVEIS[nivel - 1].qs.every((_, k) => row.respostas[k] && row.respostas[k].ok);
 }
@@ -177,7 +250,7 @@ function publicRow(nivel, row) {
     video_ok: !!row.video_ok,
     pulou_video: !!row.pulou_video,
     respostas,
-    pontos: row.pontos || 0,
+    pontos: row.concluido_em ? PONTOS_MODULO : 0,
     concluido: !!row.concluido_em,
   };
 }
@@ -221,8 +294,8 @@ async function mutate(pool, alunoId, nivel, fn) {
     );
     const row = r.rows[0];
     const extra = fn(row) || {};
-    row.pontos = calcPontos(nivel, row);
     if (!row.concluido_em && nivelConcluido(nivel, row)) row.concluido_em = new Date();
+    row.pontos = row.concluido_em ? PONTOS_MODULO : 0;
     await client.query(
       `UPDATE csu_trilha_progresso SET
          partes_vistas = $3, video_ok = $4, pulou_video = $5, respostas = $6, travei = $7,
@@ -277,17 +350,21 @@ async function responder(pool, alunoId, nivel, pergunta, opcao) {
     row.respostas = row.respostas || {};
     const rec = row.respostas[k] || { tries: [], ok: false };
     const jaEstavaCerta = rec.ok;
+    const jaConcluido = !!row.concluido_em || nivelConcluido(nivel, row);
     if (!rec.ok && !rec.tries.includes(j)) {
       rec.tries.push(j);
       if (j === q.certa) rec.ok = true;
     }
     row.respostas[k] = rec;
     const certo = !jaEstavaCerta && rec.ok;
+    // Os pontos vêm ao concluir o módulo (última pergunta certa), não a cada acerto.
+    const concluiuAgora = certo && !jaConcluido && nivelConcluido(nivel, row);
     return {
       resultado: {
         certo,
         ok: rec.ok,
-        ganhou: certo ? (rec.tries.length <= 1 ? PONTOS_1A : PONTOS_DEPOIS) : 0,
+        concluiu: concluiuAgora,
+        ganhou: concluiuAgora ? PONTOS_MODULO : 0,
         certa: rec.ok ? q.certa : undefined,
         exp: rec.ok ? q.exp : undefined,
       },
@@ -312,72 +389,12 @@ async function reiniciar(pool, alunoId) {
   await pool.query('DELETE FROM csu_trilha_progresso WHERE aluno_id = $1', [alunoId]);
 }
 
-// ---------- Admin ----------
-
-async function resumoAdmin(pool) {
-  const alunos = await pool.query(`
-    SELECT COUNT(DISTINCT aluno_id)::int AS iniciaram,
-           COUNT(DISTINCT aluno_id) FILTER (WHERE nivel = ${NIVEIS.length} AND concluido_em IS NOT NULL)::int AS concluiram
-    FROM csu_trilha_progresso`);
-  const porNivel = await pool.query(`
-    SELECT nivel,
-           COUNT(*)::int AS abriram,
-           COUNT(*) FILTER (WHERE video_ok)::int AS viram_video,
-           COUNT(*) FILTER (WHERE concluido_em IS NOT NULL)::int AS concluiram
-    FROM csu_trilha_progresso GROUP BY nivel ORDER BY nivel`);
-  const rows = await pool.query('SELECT nivel, respostas, travei FROM csu_trilha_progresso');
-  const erros = {};
-  const travei = {};
-  rows.rows.forEach((r) => {
-    Object.keys(r.respostas || {}).forEach((k) => {
-      const e = (r.respostas[k].tries || []).length - (r.respostas[k].ok ? 1 : 0);
-      if (e > 0) { const key = `${r.nivel}-${k}`; erros[key] = (erros[key] || 0) + e; }
-    });
-    Object.keys(r.travei || {}).forEach((p) => {
-      const key = `${r.nivel}-${p}`; travei[key] = (travei[key] || 0) + Number(r.travei[p] || 0);
-    });
-  });
-  const nivelInfo = porNivel.rows.reduce((m, r) => { m[r.nivel] = r; return m; }, {});
-  return {
-    iniciaram: alunos.rows[0].iniciaram,
-    concluiram: alunos.rows[0].concluiram,
-    niveis: NIVEIS.map((l, i) => ({
-      nivel: i + 1,
-      titulo: l.t,
-      abriram: nivelInfo[i + 1] ? nivelInfo[i + 1].abriram : 0,
-      viram_video: nivelInfo[i + 1] ? nivelInfo[i + 1].viram_video : 0,
-      concluiram: nivelInfo[i + 1] ? nivelInfo[i + 1].concluiram : 0,
-    })),
-    perguntas_dificeis: Object.keys(erros)
-      .map((key) => { const [n, k] = key.split('-').map(Number); return { nivel: n, pergunta: NIVEIS[n - 1].qs[k].q, erros: erros[key] }; })
-      .sort((a, b) => b.erros - a.erros).slice(0, 10),
-    travei: Object.keys(travei)
-      .map((key) => {
-        const [n, p] = key.split('-').map(Number);
-        const l = NIVEIS[n - 1];
-        return { nivel: n, parte: l.parts ? l.parts[p].t : 'Vídeo', vezes: travei[key] };
-      })
-      .sort((a, b) => b.vezes - a.vezes),
-  };
-}
-
-// Uma linha por aluno que começou a trilha (para o CRM chamar quem parou).
-async function exportAlunos(pool) {
-  const r = await pool.query(`
-    SELECT a.nome, a.rgm, a.email,
-           COUNT(*) FILTER (WHERE p.concluido_em IS NOT NULL)::int AS niveis_concluidos,
-           COALESCE(SUM(p.pontos), 0)::int AS pontos,
-           MAX(p.atualizado_em) AS ultimo_acesso
-    FROM csu_trilha_progresso p
-    JOIN csu_alunos a ON a.id = p.aluno_id
-    GROUP BY a.id
-    ORDER BY ultimo_acesso DESC`);
-  return r.rows;
-}
-
 module.exports = {
   NIVEIS,
   MAX_PONTOS,
+  ABERTURA,
+  PONTOS_MODULO,
+  pontosDe,
   guiaTrilha,
   liberadaPara,
   liberadaParaTodos,
@@ -392,7 +409,8 @@ module.exports = {
   responder,
   marcarTarefa,
   reiniciar,
-  resumoAdmin,
-  exportAlunos,
+  statusCertificado,
+  META_CERTIFICADO,
+  HORAS_CERTIFICADO,
   formatPhone,
 };

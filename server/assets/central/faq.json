@@ -9,7 +9,7 @@
     {
      "id": "primeiro-acesso",
      "q": "É a minha primeira vez. Como eu entro?",
-     "a": "Baixe <b>dois aplicativos</b> no celular: o <b>Duda</b> (estrela branca no fundo azul) e o <b>Microsoft Authenticator</b> (cadeado azul). No Duda, digite o CPF, marque a caixinha e toque em <b>Não sei meus dados de acesso</b> (o botão branco). Vai pedir e-mail e senha até 4 vezes: é normal. O passo a passo completo está no Nível 1 da Trilha.",
+     "a": "Baixe <b>dois aplicativos</b> no celular, os dois gratuitos: o <b>Duda</b> (<a href=\"https://play.google.com/store/apps/details?id=br.com.cruzeirodosulvirtual\" target=\"_blank\" rel=\"noopener\">Android</a> · <a href=\"https://apps.apple.com/br/app/duda/id6451416655\" target=\"_blank\" rel=\"noopener\">iPhone</a>) e o <b>Microsoft Authenticator</b> (<a href=\"https://play.google.com/store/apps/details?id=com.azure.authenticator\" target=\"_blank\" rel=\"noopener\">Android</a> · <a href=\"https://apps.apple.com/br/app/microsoft-authenticator/id983156458\" target=\"_blank\" rel=\"noopener\">iPhone</a>). No Duda, digite o CPF, marque a caixinha e toque em <b>Não sei meus dados de acesso</b> (o botão branco). Vai pedir e-mail e senha até 4 vezes: é normal. O passo a passo completo está no módulo 1 da Aula Inaugural.",
      "nivel_trilha": 1,
      "tags": [
       "primeiro acesso",
@@ -23,7 +23,7 @@
     {
      "id": "email-academico",
      "q": "O que é o e-mail acadêmico? Onde descubro o meu?",
-     "a": "É um e-mail que a Cruzeiro do Sul cria só para você. Ele <b>não é</b> o seu Gmail nem o seu Hotmail. Para descobrir, abra o Duda, toque em <b>Não sei meus dados de acesso</b> e digite seu primeiro nome e o CPF. O app mostra o e-mail e a primeira senha: <b>anote os dois num papel</b>.",
+     "a": "É um e-mail que a Cruzeiro do Sul cria só para você. Ele <b>não é</b> o seu Gmail nem o seu Hotmail. Para descobrir, abra o Duda, toque em <b>Não sei meus dados de acesso</b> e digite seu primeiro nome e o CPF. O app mostra o seu e-mail: <b>anote num papel</b>. A primeira senha o Duda não mostra: você monta com a regra (3 letras do nome + @ + 3 números do RGM + 4 do CPF). Neste app, o cartão <b>Seus dados de acesso</b>, no Início, mostra o seu RGM e o seu e-mail.",
      "nivel_trilha": 1,
      "tags": [
       "e-mail acadêmico",
@@ -35,8 +35,8 @@
     },
     {
      "id": "senha-nao-funciona",
-     "q": "A senha que o Duda mostrou não funciona. E agora?",
-     "a": "O Duda mostra a sua <b>primeira senha</b>. Se você já criou uma senha nova antes, use a <b>senha nova</b>. Se mesmo assim não der certo, chame o setor acadêmico pelo WhatsApp <b>{whatsapp}</b>.",
+     "q": "A primeira senha não funciona. E agora?",
+     "a": "Confira se montou certo: as <b>3 primeiras letras do seu nome</b> (a primeira maiúscula, as outras minúsculas, com acento se tiver) + <b>@</b> + os <b>3 primeiros números do RGM</b> + os <b>4 primeiros números do CPF</b>. Exemplo: <b>Ana@5129876</b>. Se você já criou uma senha nova antes, use a <b>senha nova</b>. Se mesmo assim não der certo, chame o setor acadêmico pelo WhatsApp <b>{whatsapp}</b>.",
      "nivel_trilha": 1,
      "tags": [
       "senha",
@@ -47,9 +47,24 @@
      "confirmar": false
     },
     {
+     "id": "primeira-senha",
+     "q": "Qual é a minha primeira senha?",
+     "a": "O Duda <b>não mostra</b> a primeira senha: você monta com esta regra, nesta ordem: as <b>3 primeiras letras do seu nome</b> (a primeira maiúscula, as outras minúsculas, com acento se tiver) + <b>@</b> + os <b>3 primeiros números do RGM</b> + os <b>4 primeiros números do CPF</b>. Exemplo: Ana Souza, RGM 512…, CPF 9876… → <b>Ana@5129876</b>. Neste app, o cartão <b>Seus dados de acesso</b>, no Início, monta a senha com você (o CPF que você digita lá não é enviado nem guardado). Ela vale só para o primeiro acesso: depois de entrar, a Microsoft pede para você criar a sua senha nova.",
+     "nivel_trilha": 1,
+     "tags": [
+      "senha",
+      "primeira senha",
+      "senha provisória",
+      "login",
+      "duda",
+      "primeiro acesso"
+     ],
+     "confirmar": false
+    },
+    {
      "id": "esqueci-senha",
      "q": "Esqueci a minha senha. E agora?",
-     "a": "A sua senha é uma só: vale para o Duda e para as aulas (Blackboard). Na tela da <b>Microsoft</b> (fundo branco), toque em <b>Esqueci minha senha</b> e siga os passos. Não deu certo? Chame o setor acadêmico pelo WhatsApp <b>{whatsapp}</b>.",
+     "a": "Depende de qual senha. <b>Senha do Duda e das aulas</b> (a do e-mail acadêmico): na tela da <b>Microsoft</b> (fundo branco), toque em <b>Esqueci minha senha</b> e siga os passos. <b>Senha deste portal</b>: a inicial é o seu primeiro nome com a inicial maiúscula + 123@ (ex.: Maria123@); se já trocou e não lembra, toque em <b>Esqueci minha senha</b> na tela de entrada, que abre o WhatsApp do acadêmico. Não deu certo? Chame o setor acadêmico pelo WhatsApp <b>{whatsapp}</b>.",
      "nivel_trilha": 1,
      "tags": [
       "senha",
@@ -58,6 +73,19 @@
       "microsoft"
      ],
      "confirmar": true
+    },
+    {
+     "id": "senha-portal",
+     "q": "Qual é a senha deste portal? É a mesma do Duda?",
+     "a": "Não. Este portal tem uma senha própria, criada na sua matrícula: o seu <b>primeiro nome com a inicial maiúscula + 123@</b> (ex.: Maria123@). Entre com o RGM e essa senha. A senha do Duda e das aulas é outra: a do e-mail acadêmico, que você cria no primeiro acesso (módulo 1 da Aula Inaugural).",
+     "nivel_trilha": 1,
+     "tags": [
+      "senha",
+      "portal",
+      "login",
+      "rgm",
+      "123@"
+     ]
     },
     {
      "id": "numero-authenticator",
@@ -95,7 +123,7 @@
     {
      "id": "o-que-e-area-aluno",
      "q": "O que é a Área do Aluno? O que tem lá?",
-     "a": "É o site da sua matrícula na Cruzeiro do Sul. Lá ficam as notas e o calendário (<b>Vida Acadêmica</b>), os pagamentos (<b>Financeiro</b>), os pedidos (<b>CAA On-line</b>) e os seus dados, como telefone e endereço (<b>Minha Conta</b>). No computador, as opções ficam numa coluna do lado esquerdo.",
+     "a": "É o site da sua matrícula na Cruzeiro do Sul: <a href=\"https://novoportal.cruzeirodosul.edu.br/\" target=\"_blank\" rel=\"noopener\">novoportal.cruzeirodosul.edu.br</a> (entre com o e-mail acadêmico e a sua senha). Lá ficam as notas e o calendário (<b>Vida Acadêmica</b>), os pagamentos (<b>Financeiro</b>), os pedidos (<b>CAA On-line</b>) e os seus dados, como telefone e endereço (<b>Minha Conta</b>). No computador, as opções ficam numa coluna do lado esquerdo.",
      "nivel_trilha": 2,
      "tags": [
       "área do aluno",
@@ -108,7 +136,7 @@
     {
      "id": "documentos-aceitos",
      "q": "Como sei se meus documentos foram aceitos?",
-     "a": "Na Área do Aluno, abra <b>Documentos Pendentes</b>. Verde com a palavra <b>Entregue</b> quer dizer tudo certo. A conferência pode levar até <b>90 dias</b>. Atenção: documento faltando pode cancelar o curso, então confira logo.",
+     "a": "Na Área do Aluno, abra <b>Documentos Pendentes</b>. Verde com a palavra <b>Entregue</b> quer dizer tudo certo. O envio é com você, e quanto antes melhor: documento faltando pode cancelar o curso. A conferência é com a Cruzeiro do Sul e pode levar até <b>90 dias</b>; nesse período, <b>Em análise</b> é normal.",
      "nivel_trilha": 2,
      "tags": [
       "documentos",
@@ -135,14 +163,17 @@
     {
      "id": "declaracao",
      "q": "Preciso de uma declaração. Onde eu peço?",
-     "a": "Alguns documentos, como o Histórico, saem na Área do Aluno, em <b>Emissão de Documentos</b>. Para os outros pedidos, use o <b>CAA On-line</b> (o atendimento pela internet). Você recebe um <b>número de protocolo</b> para acompanhar o pedido.",
+     "a": "Declarações (como a de matrícula) e o Histórico saem na hora na Área do Aluno, em <b>Emissão de Documentos</b>. O <b>CAA On-line</b> é para os outros pedidos, que não estão lá: você recebe um <b>número de protocolo</b> para acompanhar.",
      "nivel_trilha": 2,
      "tags": [
-      "declaração",
-      "documentos",
       "caa",
-      "protocolo",
-      "pedido"
+      "declaração",
+      "declaração de matrícula",
+      "documentos",
+      "emissão de documentos",
+      "histórico",
+      "pedido",
+      "protocolo"
      ],
      "confirmar": true
     }
@@ -156,7 +187,7 @@
     {
      "id": "onde-aulas",
      "q": "Onde vejo minhas aulas?",
-     "a": "As aulas ficam no <b>AVA</b> (o site das aulas), que também se chama <b>Blackboard</b>: é a mesma coisa. No app Duda, toque em <b>Acessar Blackboard</b>. Na Área do Aluno, toque em <b>Acesso ao Ambiente Virtual</b> e depois em <b>Disciplinas</b>.",
+     "a": "As aulas ficam no <b>AVA</b> (o site das aulas), que também se chama <b>Blackboard</b>: é a mesma coisa. No app Duda, toque em <b>Acessar Blackboard</b>. Na Área do Aluno, toque em <b>Acesso ao Ambiente Virtual</b> e depois em <b>Disciplinas</b>. Pelo navegador: <a href=\"https://ava.cruzeirodosul.edu.br/\" target=\"_blank\" rel=\"noopener\">ava.cruzeirodosul.edu.br</a>.",
      "nivel_trilha": 3,
      "tags": [
       "aulas",
@@ -233,7 +264,7 @@
     {
      "id": "quando-prova",
      "q": "Quando e onde é a prova?",
-     "a": "A prova (A1) é feita <b>pela internet</b>, no começo do mês seguinte ao da matéria, na Área do Aluno em <b>Vida Acadêmica → Plataforma de Prova</b>. As datas estão no <b>Calendário Acadêmico</b> e no <b>Meu Semestre</b>, aqui no portal. Atenção: a prova das matérias de junho é no <b>fim de maio</b>.",
+     "a": "A prova (A1) é feita <b>pela internet</b>, no começo do mês seguinte ao da matéria, na Área do Aluno em <b>Vida Acadêmica → Plataforma de Prova</b>. As datas estão no <b>Calendário Acadêmico</b> e no <b>Meu Semestre</b>, aqui no portal. Atenção: as matérias de <b>junho</b> (que abrem em fevereiro) têm prova no <b>fim de maio</b>, e as de <b>dezembro</b> (que abrem em agosto), no <b>fim de novembro</b>.",
      "nivel_trilha": 4,
      "tags": [
       "prova",
@@ -274,7 +305,7 @@
     {
      "id": "onde-notas",
      "q": "Onde vejo minhas notas?",
-     "a": "A nota dos exercícios aparece no <b>AVA</b>, dentro da matéria. A nota final fica na Área do Aluno, em <b>Vida Acadêmica → Minhas Notas</b>: escolha o semestre para ver. O sistema arredonda a média.",
+     "a": "A nota dos exercícios aparece no <b>AVA</b>, dentro da matéria. A nota final fica na Área do Aluno, em <b>Vida Acadêmica → Minhas Notas - Detalhado</b>: escolha o semestre para ver. O sistema arredonda a média.",
      "nivel_trilha": 4,
      "tags": [
       "notas",
@@ -283,6 +314,23 @@
       "resultado"
      ],
      "confirmar": false
+    },
+    {
+     "id": "dp-adaptacao",
+     "q": "O que é DP e adaptação? Preciso fazer alguma coisa?",
+     "a": "<b>DP</b> (dependência) é a matéria em que você foi <b>reprovado</b>. Você tem a chance de cursar de novo: inclua na <b>rematrícula</b> ou nos meses em que ela for oferecida. <b>Adaptação</b> é a matéria que ficou para você cursar, quase sempre porque você <b>aproveitou disciplinas</b> de outro curso ou faculdade e avançou de semestre. Nenhuma das duas entra sozinha. Na rematrícula: Área do Aluno → <b>Rematrícula</b>, aceite o contrato, abra o bloco <b>DPs/Adaptações</b> (junto da <b>Série Regular</b>), clique nas matérias que quer cursar e toque em <b>Gravar</b>. Depois, pague a rematrícula no boleto ou no cartão de crédito e, em até 3 dias úteis, confira se ela foi realizada. Durante o semestre, quando a matéria for oferecida, o caminho é o mesmo: Rematrícula → <b>DPs/Adaptações</b> → <b>Gravar</b>. Fique de olho na <b>data limite de inclusão</b> que aparece na tela. <b>Quanto custa?</b> A <b>DP</b> é cobrada no mês em que for oferecida; o valor costuma ficar perto de uma mensalidade, mas confira sempre no sistema. A <b>adaptação</b> não tem cobrança a mais se ficar no mesmo mês de uma matéria regular; se ficar sozinha num mês, sem matéria regular, é cobrada como uma mensalidade. Na dúvida, chame o setor acadêmico pelo WhatsApp <b>{whatsapp}</b>. <button type=\"button\" class=\"c-trilha\" data-c-video=\"tut_dp\">Ver o vídeo: incluir DP e adaptação</button>",
+     "nivel_trilha": 5,
+     "tags": [
+      "dp",
+      "dependência",
+      "adaptação",
+      "matéria atrasada",
+      "reprovei",
+      "semestre em andamento",
+      "reprovação",
+      "reprovado",
+      "aproveitamento"
+     ]
     }
    ]
   },
@@ -294,7 +342,7 @@
     {
      "id": "vencimento-desconto",
      "q": "Quando vence a mensalidade? Como ganho desconto?",
-     "a": "A mensalidade vence <b>todo dia 25</b>. Pagando até o <b>dia 10</b>, você ganha <b>25% de desconto</b>; do dia 11 ao dia 25, ganha <b>15%</b>. Se o dia 10 cair em sábado, domingo ou feriado, os 25% valem até o próximo dia útil.",
+     "a": "A mensalidade vence <b>todo dia 25</b>. Na <b>1ª mensalidade</b> (a do mês da sua turma), todos os descontos valem até o dia 25. Da 2ª em diante: pagando até o <b>dia 10</b>, você ganha <b>25% de desconto</b> de pontualidade; do dia 11 ao dia 25, <b>15%</b>; depois do dia 25, fica sem esse desconto (a bolsa continua). Se o dia 10 ou o dia 25 cair em sábado, domingo ou feriado, vale o <b>próximo dia útil</b>: o sistema mostra a data certa (em dezembro, por exemplo, o 25 costuma ir para o 28).",
      "nivel_trilha": 5,
      "tags": [
       "mensalidade",
@@ -309,7 +357,7 @@
     {
      "id": "primeira-mensalidade",
      "q": "E a primeira mensalidade? Tem desconto?",
-     "a": "Sim. Na <b>primeira mensalidade</b>, o desconto total vale até o <b>dia 25</b>, o próprio vencimento. A partir da segunda, vale a regra normal: 25% até o dia 10 e 15% do dia 11 ao 25.",
+     "a": "Sim. A 1ª mensalidade é a do mês da sua turma de entrada (matriculou em outubro para a turma de novembro: vence em 25/11; turma de março: 25/03). Nela, <b>todos os descontos valem até o dia 25</b>, o próprio vencimento. Da segunda em diante, vale a regra normal: 25% até o dia 10, 15% do dia 11 ao 25 e, depois do 25, sem o desconto de pontualidade. Se o dia 25 cair em sábado, domingo ou feriado, vale o próximo dia útil.",
      "nivel_trilha": 5,
      "tags": [
       "primeira mensalidade",
@@ -322,7 +370,7 @@
     {
      "id": "como-pagar",
      "q": "Como eu pago a mensalidade?",
-     "a": "Na Área do Aluno, toque em <b>Pagar Mensalidade</b> (ou em Financeiro → Acordos e Pagamentos) e marque o mês. Escolha <b>Pagar com pix</b>, <b>Pagar com cartão</b> ou <b>Pagar com boleto</b>. O valor certo é sempre o <b>Total</b> que aparece no sistema.",
+     "a": "Na <a href=\"https://novoportal.cruzeirodosul.edu.br/\" target=\"_blank\" rel=\"noopener\">Área do Aluno</a>, toque em <b>Pagar Mensalidade</b> (fica também em Financeiro → Acordos e Pagamentos) e marque o mês. Escolha <b>Pagar com pix</b>, <b>Pagar com cartão</b> ou <b>Pagar com boleto</b>. O valor certo é sempre o <b>Total</b> que aparece no sistema.",
      "nivel_trilha": 5,
      "tags": [
       "pagar",
@@ -391,7 +439,7 @@
     {
      "id": "rematricula",
      "q": "O que é rematrícula? Preciso fazer alguma coisa?",
-     "a": "Rematrícula é renovar a matrícula para continuar estudando. Ela acontece duas vezes por ano, em <b>janeiro e julho</b>. É só pagar o boleto: em <b>1 ou 2 dias úteis</b> a renovação acontece sozinha.",
+     "a": "Rematrícula é renovar a matrícula para continuar estudando. Ela acontece duas vezes por ano, em <b>janeiro e julho</b>, e <b>não é só pagar</b>: você precisa fazer os passos. Na Área do Aluno: <b>1.</b> toque em <b>Rematrícula</b> e <b>aceite o contrato</b>; <b>2.</b> confira as matérias da <b>Série Regular</b>; <b>3.</b> tem DP ou adaptação? Abra o bloco <b>DPs/Adaptações</b> e clique nas que quer cursar; <b>4.</b> toque em <b>Gravar</b>; <b>5.</b> pague a rematrícula no <b>boleto ou no cartão de crédito</b>; <b>6.</b> espere <b>até 3 dias úteis</b> para o pagamento compensar; <b>7.</b> volte em Rematrícula e <b>confira se ela foi realizada</b> (aparece <b>Você está rematriculado</b>). Passou desse prazo e não apareceu? Chame o seu polo pelo WhatsApp <b>{whatsapp}</b>. <button type=\"button\" class=\"c-trilha\" data-c-video=\"aula-cap-8\">Ver o vídeo da rematrícula passo a passo</button>",
      "nivel_trilha": 5,
      "tags": [
       "rematrícula",
@@ -411,7 +459,7 @@
     {
      "id": "horas-o-que-sao",
      "q": "O que são horas complementares? São obrigatórias?",
-     "a": "São horas de cursos, palestras, eventos e oficinas que você faz além das aulas. Elas são <b>obrigatórias</b>: sem completar, você não recebe o diploma. A quantidade depende do seu curso, e a matéria <b>Temas Transversais</b> já conta <b>40 horas</b> se você tirar 6 ou mais.",
+     "a": "São horas de cursos, palestras, eventos e oficinas que você faz além das aulas. Elas são <b>obrigatórias</b>: sem completar, você não recebe o diploma. A quantidade depende do seu curso. Atenção: quando a matéria <b>Temas Transversais</b> é obrigatória no seu curso, as horas dela <b>não contam</b> como horas complementares.",
      "nivel_trilha": 6,
      "tags": [
       "horas complementares",
@@ -437,16 +485,28 @@
     {
      "id": "formar-requisitos",
      "q": "O que eu preciso para me formar?",
-     "a": "Passar em <b>todas as matérias</b>, completar as <b>horas complementares</b> e Temas Transversais, ter os <b>documentos entregues</b> e o <b>ENADE</b> em dia (uma prova obrigatória do governo, no fim do curso). Alguns cursos também pedem <b>Estágio</b> e <b>TCC</b> (trabalho final): veja na Área do Aluno, em <b>Emissão de Documentos → Histórico</b>.",
+     "a": "Passar em <b>todas as matérias</b>, completar as <b>horas complementares</b> e Temas Transversais e ter os <b>documentos entregues</b>. Alguns cursos também têm <b>estágio obrigatório</b>: veja na Área do Aluno, em <b>Emissão de Documentos → Histórico</b>. O <b>ENADE</b> (prova do governo federal) não vale para todos: a cada ano o INEP escolhe quais cursos participam, e só quem é do curso chamado naquele ano precisa fazer.",
      "nivel_trilha": 7,
      "tags": [
       "formatura",
       "requisitos",
       "enade",
-      "estágio",
-      "tcc"
+      "estágio"
      ],
      "confirmar": false
+    },
+    {
+     "id": "estagio-como-fazer",
+     "q": "Meu curso tem estágio obrigatório. Como eu faço?",
+     "a": "São três passos. <b>1.</b> No AVA, na disciplina de estágio, baixe o <b>Manual de Estágio</b>: ali estão a carga horária do seu curso e onde você pode estagiar. <b>2.</b> Baixe a <b>Carta de Apresentação</b> da sua marca, preencha, imprima e leve na escola ou na empresa. <b>3.</b> Com o aceite, preencha o <b>TCE</b> na Área do Aluno, em <b>CAA Online → Solicitação de Termo de Estágio</b>. Atenção: em Disciplina, escolha <b>Estágio Curricular Supervisionado</b>. Se escolher Orientação de Estágio, o TCE é indeferido. <button type=\"button\" class=\"c-trilha\" data-c-video=\"estagio-comecar\">Ver a série em vídeo: estágio obrigatório</button>",
+     "nivel_trilha": 7,
+     "tags": [
+      "estágio",
+      "TCE",
+      "CAA Online",
+      "carta de apresentação"
+     ],
+     "confirmar": true
     },
     {
      "id": "diploma",
@@ -464,12 +524,11 @@
     {
      "id": "certificado-aula-inaugural",
      "q": "Como pego o certificado da aula inaugural?",
-     "a": "No início deste portal, toque em <b>Gerar Certificado</b> e preencha seus dados com atenção: o nome sai no certificado do jeito que você escrever. Se você preencheu a lista de presença com o seu RGM no dia da aula, o certificado também aparece no AVA em até <b>2 dias</b>.",
+     "a": "O certificado de <b>4 horas</b> fica no fim da <b>Aula Inaugural</b>, aqui no portal. Para emitir, conclua os <b>7 módulos</b>: cada um vale <b>10 pontos</b>, e os 7 somam os <b>70 pontos</b> da meta. Preencha seus dados com atenção: o nome sai no certificado do jeito que você escrever.",
      "nivel_trilha": 7,
      "tags": [
       "certificado",
-      "aula inaugural",
-      "lista de presença"
+      "aula inaugural"
      ],
      "confirmar": true
     }
@@ -483,7 +542,7 @@
     {
      "id": "falar-atendimento",
      "q": "Como falo com alguém da Cruzeiro do Sul?",
-     "a": "Neste portal, toque em <b>Atendimento → Suporte acadêmico</b>: o WhatsApp <b>{whatsapp}</b> abre já com o seu nome, RGM e polo. No app Duda, também tem <b>Ajuda → Teleatendimento</b>: uma pessoa atende por chat ou vídeo, de segunda a sexta, das 9h às 21h.",
+     "a": "Neste portal, toque no botão <b>Ajuda</b>, no topo, e depois em <b>Falar com a equipe</b>: abre o WhatsApp do seu polo. No app Duda, também tem <b>Ajuda → Teleatendimento</b>: uma pessoa atende por chat ou vídeo, de segunda a sexta, das 9h às 21h.",
      "nivel_trilha": null,
      "tags": [
       "atendimento",
@@ -497,7 +556,7 @@
     {
      "id": "qual-canal",
      "q": "Com quem eu falo sobre cada assunto?",
-     "a": "Dúvida da matéria: <b>Fale com a Tutoria</b>, no AVA. Pedido por escrito, como uma declaração: <b>CAA On-line</b>, na Área do Aluno, que dá um número de protocolo. Travou no acesso ou no pagamento: WhatsApp <b>{whatsapp}</b>.",
+     "a": "Dúvida da matéria: <b>Fale com a Tutoria</b>, no AVA. Declaração ou Histórico: <b>Emissão de Documentos</b>, na Área do Aluno. Outros pedidos por escrito: <b>CAA On-line</b>, que dá um número de protocolo. Travou no acesso ou no pagamento: WhatsApp <b>{whatsapp}</b>.",
      "nivel_trilha": null,
      "tags": [
       "atendimento",
@@ -511,7 +570,7 @@
     {
      "id": "por-onde-comecar",
      "q": "Sou novo e não entendo muito de internet. Por onde começo?",
-     "a": "Comece pela <b>Trilha EaD para Iniciantes</b>, aqui no portal. São 7 níveis curtos, com vídeo, resumo e perguntas, do primeiro acesso até a formatura. Para uma dúvida rápida, use os <b>Tutoriais</b>.",
+     "a": "Comece pela <b>Aula Inaugural</b>, aqui no portal. São 7 módulos curtos, com vídeo, resumo e perguntas, do primeiro acesso até a formatura. Para uma dúvida rápida, use os vídeos curtos e as perguntas desta <b>Central de ajuda</b>.",
      "nivel_trilha": null,
      "tags": [
       "começar",

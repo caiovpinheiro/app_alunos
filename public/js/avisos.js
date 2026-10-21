@@ -12,10 +12,10 @@ window.Avisos = (function () {
       .replace(/"/g, '&quot;');
   }
 
-  function prioridadeLabel(value) {
-    if (value === 'alta') return 'Alta';
-    if (value === 'media') return 'Média';
-    return 'Baixa';
+  // Para o aluno, só a prioridade alta vira etiqueta ("Importante"); média e baixa são internas.
+  function prioridadeTag(value) {
+    if (value !== 'alta') return '';
+    return '<span class="aviso-prio aviso-prio-alta">Importante</span>';
   }
 
   function formatDate(value) {
@@ -35,7 +35,7 @@ window.Avisos = (function () {
       '<article class="aviso-card' + unread + '" data-aviso-id="' + aviso.id + '">' +
         '<div class="aviso-meta">' +
           '<span class="aviso-cat">' + escapeHtml(aviso.categoria) + '</span>' +
-          '<span class="aviso-prio aviso-prio-' + escapeHtml(aviso.prioridade) + '">' + prioridadeLabel(aviso.prioridade) + '</span>' +
+          prioridadeTag(aviso.prioridade) +
           (aviso.lida ? '' : '<span class="aviso-dot">Não lida</span>') +
         '</div>' +
         '<h3 class="aviso-title">' + escapeHtml(aviso.titulo) + '</h3>' +
@@ -60,15 +60,28 @@ window.Avisos = (function () {
     });
   }
 
+  // Painel: lista curta (título + resumo); tocar abre a página de avisos e marca como lido.
   function renderDashboard() {
     var wrap = document.getElementById('dashboard-avisos-list');
+    var count = document.getElementById('dashboard-avisos-count');
+    var unread = cache.filter(function (item) { return !item.lida; }).length;
+    if (count) count.textContent = cache.length ? (unread ? unread + (unread === 1 ? ' novo' : ' novos') : 'Tudo lido') : '';
     if (!wrap) return;
     var top = cache.slice(0, 3);
     if (!top.length) {
-      wrap.innerHTML = '<p class="aviso-empty">Nenhum aviso no momento.</p>';
+      wrap.innerHTML = '<p class="p-muted">Nenhum aviso no momento.</p>';
       return;
     }
-    wrap.innerHTML = top.map(function (item) { return cardHtml(item, true); }).join('');
+    wrap.innerHTML = '<ul class="p-news">' + top.map(function (item) {
+      return (
+        '<li><button type="button" class="p-news-item' + (item.lida ? '' : ' is-unread') + '" data-aviso-id="' + item.id + '">' +
+          '<span class="p-news-dot" aria-hidden="true"></span>' +
+          '<span><strong>' + escapeHtml(item.titulo) + '</strong>' +
+          (item.descricao ? '<span>' + escapeHtml(item.descricao) + '</span>' : '') +
+          (item.lida ? '' : '<span class="sr-only"> (não lido)</span>') + '</span>' +
+        '</button></li>'
+      );
+    }).join('') + '</ul>';
   }
 
   function renderPage() {
@@ -141,6 +154,8 @@ window.Avisos = (function () {
   }
 
   async function markRead(id) {
+    var aviso = cache.filter(function (a) { return String(a.id) === String(id); })[0];
+    if (window.Rastreio) window.Rastreio.track('aviso_lido', { aviso: aviso ? aviso.titulo : String(id) });
     try {
       await window.Api.markAvisoRead(id);
       await refresh();
@@ -154,7 +169,7 @@ window.Avisos = (function () {
       markRead(mark.getAttribute('data-mark-read'));
       return;
     }
-    var item = event.target.closest('.notif-item[data-aviso-id]');
+    var item = event.target.closest('.notif-item[data-aviso-id], .p-news-item[data-aviso-id]');
     if (item) {
       event.preventDefault();
       closeDropdown();

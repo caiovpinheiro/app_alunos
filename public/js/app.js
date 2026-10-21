@@ -10,18 +10,28 @@
   function loadAssets() {
     if (!assetPromises) {
       assetPromises = Promise.all([
-        fetch('/assets/certificado-template.pdf').then(function (r) {
-          if (!r.ok) throw new Error('template não encontrado');
+        fetch('/assets/certificado-modelo.jpg?v=1').then(function (r) {
+          if (!r.ok) throw new Error('modelo do certificado não encontrado');
           return r.arrayBuffer();
         }),
         fetch('/assets/fonts/Montserrat-Regular.ttf').then(function (r) {
           if (!r.ok) throw new Error('fonte não encontrada');
           return r.arrayBuffer();
         }),
+        fetch('/assets/fonts/Montserrat-Bold.ttf').then(function (r) {
+          if (!r.ok) throw new Error('fonte não encontrada');
+          return r.arrayBuffer();
+        }),
+        // Assinatura: se não carregar, o certificado sai sem ela (não trava a emissão).
+        fetch('/assets/certificado-assinatura.png?v=1').then(function (r) {
+          return r.ok ? r.arrayBuffer() : null;
+        }).catch(function () { return null; }),
       ]).then(function (results) {
         return {
-          templateBytes: new Uint8Array(results[0]),
+          backgroundBytes: new Uint8Array(results[0]),
           fontBytes: new Uint8Array(results[1]),
+          boldBytes: new Uint8Array(results[2]),
+          assinaturaBytes: results[3] ? new Uint8Array(results[3]) : null,
         };
       });
       assetPromises.catch(function () { assetPromises = null; });
@@ -72,7 +82,7 @@
       carregarRecursos();
     } catch (err) {
       UI.showLoginError(err.status === 401
-        ? 'Credenciais inválidas. Verifique seu acesso e tente novamente.'
+        ? 'RGM ou senha incorretos. A senha inicial é o seu primeiro nome com a inicial maiúscula + 123@. Se já trocou a senha e não lembra, use "Esqueci minha senha".'
         : (err.message || 'Não foi possível entrar. Tente novamente em instantes.'));
     } finally {
       UI.setLoginLoading(false);
@@ -100,6 +110,9 @@
       UI.setUserName(window.Auth.getUserName());
       document.getElementById('register-form').reset();
       window.showScreen('dashboard-page', { replace: true });
+      if (res.cadastro_pendente) {
+        UI.showDashboardNotice('Acesso criado! Seu RGM ainda não apareceu no relatório de matriculados: curso, polo e certificado serão liberados quando o cadastro chegar, em até 2 dias úteis.');
+      }
       window.Avisos.refresh();
       if (window.MeuSemestre) window.MeuSemestre.refresh();
       carregarRecursos();
@@ -119,10 +132,18 @@
     return mapped;
   }
 
-  async function generateCertificateNow() {
+  // Emite o certificado direto (sem formulário). opts.btn = botão que mostra "Gerando..." (padrão:
+  // #btn-gerar-certificado do Início sem trilha); opts.erro = caixa onde aparece o erro.
+  async function generateCertificateNow(opts) {
+    opts = opts || {};
     var UI = window.UI;
-    UI.hideDashboardCertError();
-    UI.setDashboardCertLoading(true);
+    var btn = opts.btn || null;
+    var erroEl = opts.erro || null;
+    var txtEl = btn && btn.querySelector('[data-cert-txt]');
+    var txtOriginal = txtEl ? txtEl.textContent : '';
+    if (erroEl) erroEl.classList.add('hidden'); else UI.hideDashboardCertError();
+    if (btn) { btn.disabled = true; btn.classList.add('is-loading'); if (txtEl) txtEl.textContent = 'Gerando certificado...'; }
+    else UI.setDashboardCertLoading(true);
     try {
       var confirmation = await window.Api.emitCertificate({});
       if (!confirmation || !confirmation.success) throw new Error('emissão não confirmada');
@@ -142,6 +163,8 @@
       currentPdf.fileName = 'Certificado_Aula_Inaugural_' + sanitizeFileName(confirmation.nome) + '.pdf';
 
       UI.showPreview(currentPdf.blobUrl, confirmation.certificate_id);
+      window.Rastreio && window.Rastreio.track('certificado_gerado', { protocolo: confirmation.certificate_id, origem: opts.origem || 'painel' });
+      if (window.Trilha && document.body.classList.contains('trilha-on')) window.Trilha.refreshDashboard();
       window.showScreen('success-page');
     } catch (err) {
       if (err.status === 401) {
@@ -149,10 +172,13 @@
         window.showScreen('login-page', { replace: true });
         UI.showLoginError('Sua sessão expirou. Entre novamente.');
       } else {
-        UI.showDashboardCertError(err.message || GENERIC_ERROR);
+        window.Rastreio && window.Rastreio.track('certificado_erro', { mensagem: err.message || GENERIC_ERROR, origem: opts.origem || 'painel' }, { importante: true });
+        if (erroEl) { erroEl.textContent = err.message || GENERIC_ERROR; erroEl.classList.remove('hidden'); }
+        else UI.showDashboardCertError(err.message || GENERIC_ERROR);
       }
     } finally {
-      UI.setDashboardCertLoading(false);
+      if (btn) { btn.disabled = false; btn.classList.remove('is-loading'); if (txtEl) txtEl.textContent = txtOriginal; }
+      else UI.setDashboardCertLoading(false);
     }
   }
 
@@ -254,8 +280,16 @@
       recursosCarregados = true;
       var on = !!(r && r.trilha);
       document.body.classList.toggle('trilha-on', on);
+      // Acesso em preparação (conta sem RGM): telas levam à Aula Inaugural; volta ao normal quando o RGM chega.
+      document.body.classList.toggle('acesso-preparo', !!(r && r.preparo));
       carregarWebchat(r && r.webchat);
+      if (r && (r.webchat || r.rastreio) && window.Rastreio) {
+        window.Rastreio.iniciar({ chat: r.webchat, servidor: !!r.rastreio });
+        rastreiaTela(window.UI.screenFromPath(window.location.pathname));
+      }
       if (on && window.Trilha) window.Trilha.refreshDashboard();
+      if (on && window.Central) window.Central.renderInicio();
+      if (window.Inicio) window.Inicio.render();
       if (!on && window.UI.screenFromPath(window.location.pathname) === 'trilha-page') {
         window.showScreen('dashboard-page', { replace: true });
       }
@@ -277,7 +311,20 @@
     document.body.appendChild(s);
   }
 
+  // Nome curto de cada tela para a linha do tempo do atendente.
+  var NOMES_TELA = {
+    'dashboard-page': 'Início', 'meu-semestre-page': 'Meu Semestre', 'avisos-page': 'Avisos',
+    'tutoriais-page': 'Central de ajuda', 'trilha-page': 'Aula Inaugural', 'atendimento-page': 'Atendimento',
+    'form-page': 'Certificado (formulário)', 'success-page': 'Certificado gerado',
+  };
+  function rastreiaTela(id) {
+    if (!NOMES_TELA[id]) return;
+    window.Rastreio && window.Rastreio.track('tela_aberta', { tela: NOMES_TELA[id], caminho: window.location.pathname });
+  }
+
   async function logout() {
+    if (window.Rastreio) await window.Rastreio.parar();
+    if (window.Ajuda) window.Ajuda.limpar();
     await window.Api.logout();
     window.Auth.clear();
     if (webchatCarregado) {
@@ -285,7 +332,7 @@
       window.location.replace('/login');
       return;
     }
-    document.body.classList.remove('trilha-on');
+    document.body.classList.remove('trilha-on', 'acesso-preparo');
     recursosCarregados = false;
     if (window.Avisos) window.Avisos.closeDropdown();
     releaseCurrentPdf();
@@ -336,6 +383,46 @@
 
     window.UI.initCubeFlip(document.getElementById('btn-login'));
     bindPasswordToggles();
+    // "Esqueci minha senha": abre o WhatsApp acadêmico padrão (antes do login não há polo).
+    var esqueci = document.getElementById('btn-esqueci-senha');
+    if (esqueci) {
+      window.Api.getAtendimentoPadrao().then(function (r) {
+        if (r && r.academico && r.academico.url) esqueci.href = r.academico.url;
+        else esqueci.parentNode.classList.add('hidden');
+      }).catch(function () { esqueci.parentNode.classList.add('hidden'); });
+    }
+    // Cliques que levam para fora do portal (WhatsApp) entram na linha do tempo do atendente.
+    document.addEventListener('click', function (event) {
+      var link = event.target.closest('a[href*="wa.me/"]');
+      if (!link) return;
+      var origem = link.id || (link.closest('#central-ajuda') ? 'central' : link.closest('#trilha-root') ? 'trilha' : 'portal');
+      window.Rastreio && window.Rastreio.track('whatsapp_clicado', { origem: origem });
+    }, true);
+    // Menu do topo e links internos com data-nav / data-go: troca de tela sem recarregar.
+    // Ctrl/Cmd+clique continua abrindo em outra aba (o href é a rota real).
+    document.addEventListener('click', function (event) {
+      var link = event.target.closest('a[data-nav], [data-go]');
+      if (!link || event.metaKey || event.ctrlKey || event.shiftKey || event.button) return;
+      event.preventDefault();
+      window.showScreen(link.getAttribute('data-nav') || link.getAttribute('data-go'));
+    });
+    // "Assistir à aula completa": abre o bloco da aula completa na tela da Aula Inaugural.
+    document.addEventListener('click', function (event) {
+      var btn = event.target.closest('[data-open-aula]');
+      if (!btn) return;
+      event.preventDefault();
+      // A aula completa (capítulos em sequência, sem pontos) fica na tela da Aula Inaugural.
+      if (window.Trilha) window.Trilha.abrirAulaCompleta();
+    });
+    // Botões de certificado da Aula Inaugural (card do Início e encerramento da trilha).
+    document.addEventListener('click', function (event) {
+      var b = event.target.closest('[data-gerar-certificado]');
+      if (!b || b.disabled) return;
+      event.preventDefault();
+      var caixa = b.closest('[data-cert-area]') || b.closest('#home-aula');
+      var erro = caixa && caixa.querySelector('[data-cert-erro], #home-aula-erro');
+      generateCertificateNow({ btn: b, erro: erro, origem: b.closest('#trilha-root') ? 'aula inaugural' : 'card do início' });
+    });
     var certBtn = document.getElementById('btn-gerar-certificado');
     if (certBtn) {
       certBtn.addEventListener('click', function (event) {
@@ -352,6 +439,8 @@
     window.Tutoriais.init();
     if (window.Trilha) window.Trilha.init();
     if (window.Central) window.Central.init();
+    if (window.Apps) window.Apps.init();
+    if (window.Ajuda) window.Ajuda.init();
     window.Atendimento.init();
     if (window.MeuSemestre) window.MeuSemestre.init();
 
@@ -378,6 +467,7 @@
     if (window.Avisos) window.Avisos.closeDropdown();
     if (window.Tutoriais) window.Tutoriais.closeModal();
     window.UI.showScreen(id, options);
+    rastreiaTela(id);
     if ((id === 'dashboard-page' || id === 'avisos-page') && window.Avisos) {
       window.Avisos.refresh();
     }
@@ -389,8 +479,10 @@
     if (id !== 'tutoriais-page' && window.Central) window.Central.close();
     if (id === 'trilha-page' && window.Trilha) window.Trilha.refresh();
     if (id === 'dashboard-page' && window.Trilha && document.body.classList.contains('trilha-on')) window.Trilha.refreshDashboard();
+    if (id === 'dashboard-page' && window.Central && document.body.classList.contains('trilha-on')) window.Central.renderInicio();
     if (id !== 'trilha-page' && window.Trilha) window.Trilha.pause();
-    if (id === 'atendimento-page' && window.Atendimento) window.Atendimento.refresh();
+    if ((id === 'atendimento-page' || id === 'dashboard-page') && window.Atendimento) window.Atendimento.refresh();
+    if (window.DadosAcesso && window.Auth.isAuthenticated()) window.DadosAcesso.render();
   };
 
   window.addEventListener('popstate', function () {

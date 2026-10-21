@@ -47,21 +47,6 @@ window.MeuSemestre = (function () {
     return months[p.month - 1] || '';
   }
 
-  function soonHtml(compact) {
-    return (
-      '<div class="ms-soon">' +
-        '<span class="ms-soon-pill">Em breve</span>' +
-        '<p>Em breve você poderá organizar seu semestre por aqui.</p>' +
-        (compact
-          ? '<button type="button" onclick="showScreen(\'meu-semestre-page\')" class="btn-plastic dash-card-btn w-full flex items-center justify-center gap-2 bg-gray-50 text-cruzeiro font-semibold py-2.5 rounded-lg">' +
-              '<span class="btn-plastic-label">Ver Meu Semestre</span>' +
-              '<i data-lucide="chevron-right" class="w-4 h-4"></i>' +
-            '</button>'
-          : '') +
-      '</div>'
-    );
-  }
-
   function offlineHtml() {
     return (
       '<div class="ms-soon">' +
@@ -71,179 +56,424 @@ window.MeuSemestre = (function () {
     );
   }
 
-  function dashFact(label, value) {
-    if (!value) return '';
+  // ---------- Painel inicial: próximas datas, frase do topo e próximo passo ----------
+
+  function isoDate(y, m, d) {
+    return y + '-' + String(m).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+  }
+
+  function hojeIso() {
+    var p = parseIso(cache && cache.hoje);
+    if (p) return p.iso;
+    var now = new Date();
+    return isoDate(now.getFullYear(), now.getMonth() + 1, now.getDate());
+  }
+
+  function diasAte(iso) {
+    var a = parseIso(hojeIso());
+    var b = parseIso(iso);
+    if (!a || !b) return null;
+    var da = Date.UTC(Number(a.y), a.month - 1, a.day);
+    var db = Date.UTC(Number(b.y), b.month - 1, b.day);
+    return Math.round((db - da) / 86400000);
+  }
+
+  function quandoTxt(iso) {
+    var n = diasAte(iso);
+    if (n == null) return '';
+    if (n <= 0) return 'Hoje';
+    if (n === 1) return 'Amanhã';
+    return 'Em ' + n + ' dias';
+  }
+
+  // Conta sem curso no cadastro (Meu Semestre vazio): diz o prazo e com quem falar.
+  var MSG_SEM_PLANO = 'Ainda não encontramos as matérias do seu curso. Elas costumam aparecer em até 2 dias úteis depois da matrícula. Se demorar mais, fale com o acadêmico.';
+  // Acesso em preparação (conta sem RGM, body.acesso-preparo): a faculdade ainda não criou o acesso.
+  var MSG_PREPARO = 'Seu acesso está sendo preparado. As matérias, o calendário e as notas aparecem aqui assim que chegarem. Enquanto isso, comece pela Aula Inaugural.';
+  function emPreparo() { return document.body.classList.contains('acesso-preparo'); }
+  function comTrilha() { return document.body.classList.contains('trilha-on'); }
+
+  // Regra única da mensalidade (igual no FAQ, na Trilha, no vídeo e no servidor):
+  // vence todo dia 25; na 1ª, todos os descontos valem até o 25; da 2ª em diante,
+  // até o dia 10 = 25%, do 11 ao 25 = 15%, depois do 25 sem desconto de pontualidade.
+  // Dia 10 ou 25 em fim de semana ou feriado: vale o próximo dia útil.
+  // O texto completo fica em financeiroHtml(); as datas efetivas saem de proximaMensalidade().
+
+  // Feriados nacionais (fixos e os que mudam com a Páscoa) em que banco não abre.
+  // É só para mostrar a data provável; o boleto mostra a data certa.
+  function pascoa(y) {
+    var a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4;
+    var f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3);
+    var h = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4;
+    var l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451);
+    var mes = Math.floor((h + l - 7 * m + 114) / 31), dia = ((h + l - 7 * m + 114) % 31) + 1;
+    return Date.UTC(y, mes - 1, dia);
+  }
+
+  function ehFeriado(t) {
+    var dt = new Date(t);
+    var md = String(dt.getUTCMonth() + 1).padStart(2, '0') + '-' + String(dt.getUTCDate()).padStart(2, '0');
+    if (['01-01', '04-21', '05-01', '09-07', '10-12', '11-02', '11-15', '11-20', '12-25'].indexOf(md) !== -1) return true;
+    var p = pascoa(dt.getUTCFullYear());
+    var dias = Math.round((t - p) / 86400000);
+    return dias === -48 || dias === -47 || dias === -2 || dias === 60;
+  }
+
+  // Dia d do mês, ou o próximo dia útil se cair em sábado, domingo ou feriado.
+  function diaUtil(y, m, d) {
+    var t = Date.UTC(y, m - 1, d);
+    while (new Date(t).getUTCDay() === 0 || new Date(t).getUTCDay() === 6 || ehFeriado(t)) t += 86400000;
+    var dt = new Date(t);
+    return isoDate(dt.getUTCFullYear(), dt.getUTCMonth() + 1, dt.getUTCDate());
+  }
+
+  // O próximo vencimento (dia 25 ou o dia útil seguinte) a partir de hoje.
+  function proximaMensalidade() {
+    var hoje = hojeIso();
+    var h = parseIso(hoje);
+    var y = Number(h.y);
+    var m = h.month;
+    if (diaUtil(y, m, 25) < hoje) { m += 1; if (m > 12) { m = 1; y += 1; } }
+    var venc = diaUtil(y, m, 25);
+    var dez = diaUtil(y, m, 10);
+    var dVenc = 'dia ' + Number(venc.slice(8, 10));
+    var dDez = 'dia ' + Number(dez.slice(8, 10));
+    var nomes = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+    var sub = hoje <= dez
+      ? 'Até o ' + dDez + ': 25% de desconto; até o ' + dVenc + ': 15%. Na 1ª mensalidade, todos os descontos valem até o ' + dVenc + '.'
+      : 'Até o ' + dVenc + ': 15% de desconto. Na 1ª mensalidade, todos os descontos valem até o ' + dVenc + '.';
+    if (venc.slice(8, 10) !== '25') {
+      var dow = new Date(Date.UTC(y, m - 1, 25)).getUTCDay();
+      var motivo = dow === 6 ? 'num sábado' : dow === 0 ? 'num domingo' : 'num feriado';
+      sub += ' Este mês o 25 cai ' + motivo + ', então vale o próximo dia útil.';
+    }
+    return {
+      data: venc,
+      titulo: 'Mensalidade de ' + nomes[m - 1],
+      sub: sub,
+      tipo: 'financeiro',
+    };
+  }
+
+  function datasDoPainel() {
+    var hoje = hojeIso();
+    var lista = [];
+    var vistos = {};
+    function add(item) {
+      if (!item || !item.data || item.data < hoje) return;
+      // Um item por dia: no painel, datas diferentes valem mais que três avisos do mesmo dia.
+      var chave = item.data;
+      if (vistos[chave]) return;
+      vistos[chave] = true;
+      lista.push(item);
+    }
+    var resumo = (cache && cache.resumo) || {};
+    var disc = resumo.disciplina_atual;
+    var prova = resumo.proxima_prova;
+    var prazo = resumo.proximo_prazo;
+    add(proximaMensalidade());
+    if (cache && cache.plano) {
+      if (disc && disc.status === 'atual' && disc.data_fim) {
+        add({ data: String(disc.data_fim).slice(0, 10), titulo: 'Fim de ' + disc.titulo, sub: 'Último dia do período de estudo.', tipo: 'disciplina' });
+      }
+      if (prova && prova.prova_inicio) {
+        add({ data: String(prova.prova_inicio).slice(0, 10), titulo: 'Prova de ' + prova.titulo, sub: 'Aberta de ' + formatRange(prova.prova_inicio, prova.prova_fim) + '.', tipo: 'prova' });
+      }
+      if (prazo && prazo.data) {
+        add({ data: String(prazo.data).slice(0, 10), titulo: prazo.titulo, sub: prazo.label || '' });
+      }
+      (cache.calendario || []).forEach(function (ev) {
+        if (ev.tipo === 'financeiro') return;
+        add({ data: String(ev.data_inicio || '').slice(0, 10), titulo: ev.titulo, sub: ev.subtitulo || '', tipo: ev.tipo });
+      });
+    }
+    lista.sort(function (x, y) { return x.data.localeCompare(y.data); });
+    return lista.slice(0, 3);
+  }
+
+  // Botão de cada data no Início: destino real de cada tipo. Pagamentos ficam na Área do Aluno (Financeiro).
+  var AREA_DO_ALUNO = 'https://novoportal.cruzeirodosul.edu.br/';
+  function acaoDaData(item) {
+    var contexto = '<span class="sr-only">: ' + escapeHtml(item.titulo) + '</span>';
+    if (item.tipo === 'financeiro') {
+      return '<a class="p-date-btn" href="' + AREA_DO_ALUNO + '" target="_blank" rel="noopener noreferrer">Ver pagamentos' +
+        '<span class="sr-only"> na Área do Aluno (abre em nova aba)</span><i data-lucide="external-link" aria-hidden="true"></i></a>';
+    }
+    var texto = item.tipo === 'prova' ? 'Consultar prova' : item.tipo === 'disciplina' ? 'Ver disciplina' : 'Ver no calendário';
+    return '<a class="p-date-btn" href="/meu-semestre" data-go="meu-semestre-page">' + texto + contexto + '<i data-lucide="chevron-right" aria-hidden="true"></i></a>';
+  }
+
+  function dataItem(item, i) {
+    var p = parseIso(item.data);
     return (
-      '<div class="ms-dash-fact">' +
-        '<dt>' + escapeHtml(label) + '</dt>' +
-        '<dd>' + escapeHtml(value) + '</dd>' +
-      '</div>'
+      '<li class="p-date-item' + (i === 0 ? ' is-hot' : '') + '">' +
+        '<span class="p-date"><b>' + escapeHtml(p.d) + '</b><small>' + escapeHtml(monthShort(item.data)) + '</small></span>' +
+        '<span class="p-date-t"><strong>' + escapeHtml(item.titulo) + ' <span class="p-pill' + (i === 0 ? ' p-pill--warn' : '') + '">' + escapeHtml(quandoTxt(item.data)) + '</span></strong>' +
+          (item.sub ? '<span>' + escapeHtml(item.sub) + '</span>' : '') + '</span>' +
+        acaoDaData(item) +
+      '</li>'
     );
+  }
+
+  // Frase do semestre para o banner do Início (usada quando a trilha já foi concluída).
+  function fraseDoSemestre() {
+    var resumo = (cache && cache.resumo) || {};
+    var disc = resumo.disciplina_atual;
+    var prova = resumo.proxima_prova;
+    if (!cache || !cache.plano || !disc) return '';
+    var frase = disc.status === 'atual'
+      ? 'Você está em ' + disc.titulo + '.'
+      : 'Sua próxima matéria é ' + disc.titulo + '.';
+    if (prova && prova.prova_inicio) {
+      frase += (prova.titulo === disc.titulo ? ' A prova' : ' A prova de ' + prova.titulo) + ' abre em ' + formatDayMonth(prova.prova_inicio) + '.';
+    }
+    return frase;
   }
 
   function renderDashboard() {
     var wrap = document.getElementById('dashboard-semestre-body');
+    if (window.Inicio) window.Inicio.setSemestre(fraseDoSemestre(), !!cache && !cache.plano);
     if (!wrap) return;
-    if (!cache || !cache.plano) {
-      wrap.innerHTML = soonHtml(true);
-      if (window.lucide) window.lucide.createIcons();
-      return;
-    }
-
-    var resumo = cache.resumo || {};
-    var disc = resumo.disciplina_atual;
-    var prova = resumo.proxima_prova;
-    var prazo = resumo.proximo_prazo;
-    var periodo = disc ? formatRange(disc.data_inicio, disc.data_fim) : '';
-    var provaTxt = prova ? formatRange(prova.prova_inicio, prova.prova_fim) : '';
-    var prazoTxt = prazo ? (prazo.titulo + ' · ' + formatDayMonth(prazo.data)) : '';
-    var payTxt = 'Vence dia 25 · desconto até o dia 10';
-
+    var itens = datasDoPainel();
     wrap.innerHTML =
-      '<dl class="ms-dash-facts">' +
-        dashFact('Disciplina atual', disc && disc.titulo) +
-        dashFact('Período de estudo', periodo) +
-        dashFact('Próxima prova', provaTxt) +
-        dashFact('Próximo prazo importante', prazoTxt) +
-        dashFact('Mensalidades', payTxt) +
-      '</dl>' +
-      '<p class="ms-dash-note">' + escapeHtml(cache.aviso_pagamento || '') + '</p>' +
-      '<button type="button" onclick="showScreen(\'meu-semestre-page\')" class="btn-plastic dash-card-btn w-full flex items-center justify-center gap-2 bg-gray-50 text-cruzeiro font-semibold py-2.5 rounded-lg">' +
-        '<span class="btn-plastic-label">Ver Meu Semestre</span>' +
-        '<i data-lucide="chevron-right" class="w-4 h-4"></i>' +
-      '</button>';
+      (itens.length ? '<ul class="p-dates">' + itens.map(dataItem).join('') + '</ul>' : '<p class="p-muted">Nenhuma data nos próximos dias.</p>') +
+      (cache && cache.plano
+        ? ''
+        : emPreparo()
+          ? '<p class="p-note">' + MSG_PREPARO + (comTrilha() ? ' <button type="button" class="p-link" data-open-trilha="">Começar a Aula Inaugural</button>' : '') + '</p>'
+          : '<p class="p-note">' + MSG_SEM_PLANO + ' <button type="button" class="p-link" onclick="showScreen(\'atendimento-page\')">Falar com o acadêmico</button></p>');
     if (window.lucide) window.lucide.createIcons();
   }
 
+  // ---------- Tela Meu Semestre (/meu-semestre) ----------
+  // Status é só do PERÍODO da disciplina (calculado no servidor): não é aprovação nem prova feita.
   function statusLabel(status) {
     if (status === 'atual') return 'Em andamento';
-    if (status === 'encerrada') return 'Encerrada';
+    if (status === 'encerrada') return 'Período encerrado';
     return 'Próxima';
   }
 
-  function subjectCard(item) {
-    var current = item.status === 'atual' ? ' is-current' : '';
-    var mes = item.mes || monthShort(item.data_inicio);
-    var period = formatRange(item.data_inicio, item.data_fim);
-    var exam = formatRange(item.prova_inicio, item.prova_fim);
-    var classes = 'ms-subject' + current + (mes ? '' : ' ms-subject--no-month') + (exam ? '' : ' ms-subject--no-exam');
+  var AVA_URL = 'https://ava.cruzeirodosul.edu.br/';
+  var PORTAL_URL = 'https://novoportal.cruzeirodosul.edu.br/';
+  var NOVA_ABA = '<span class="sr-only"> (abre em nova aba)</span>';
+
+  // Data em texto + <time datetime>. Intervalo mostra início e fim ("06 a 09/11").
+  function timeRange(start, end, longo) {
+    var a = parseIso(start);
+    if (!a) return '';
+    var b = parseIso(end);
+    var txt = b && b.iso !== a.iso ? formatRange(a.iso, b.iso) : (longo ? formatDate(a.iso) : formatDayMonth(a.iso));
+    return '<time datetime="' + a.iso + '">' + escapeHtml(txt) + '</time>';
+  }
+
+  // Link de orientação: mesmo destino de antes (nível da trilha ou tutoriais), rótulo curto.
+  function orientacaoLink(item, rotulo) {
+    if (!item) return '';
+    var ctx = '<span class="sr-only">: ' + escapeHtml(item.titulo) + '</span>';
+    var dica = item.trilha ? ' title="Módulo ' + Number(item.trilha.nivel) + ' da Aula Inaugural: ' + escapeHtml(item.trilha.titulo) + '"' : '';
+    if (item.trilha && document.body.classList.contains('trilha-on')) {
+      return '<button type="button" class="sm-link" data-open-trilha="' + Number(item.trilha.nivel) + '"' + dica + '>' + rotulo + ctx + '<i data-lucide="chevron-right" aria-hidden="true"></i></button>';
+    }
+    if (!item.tutorial_categoria && !item.trilha) return '';
+    return '<button type="button" class="sm-link" data-open-tutoriais="' + escapeHtml(item.tutorial_categoria || '') + '">' + rotulo + ctx + '<i data-lucide="chevron-right" aria-hidden="true"></i></button>';
+  }
+
+  function disciplinaAtualHtml(lista) {
+    if (!lista.length) {
+      var prox = (cache.disciplinas || []).filter(function (d) { return d.status === 'proxima'; })[0];
+      return (
+        '<article class="sm-card sm-now">' +
+          '<span class="sm-ico" aria-hidden="true"><i data-lucide="book-open"></i></span>' +
+          '<div class="sm-now-body"><p class="sm-eyebrow">Sua disciplina atual</p>' +
+          '<h2>Nenhuma disciplina mensal em andamento agora.</h2>' +
+          (prox ? '<p class="sm-muted">A próxima é ' + escapeHtml(prox.titulo) + (prox.data_inicio ? ', a partir de ' + timeRange(prox.data_inicio, null, true) : '') + '.</p>' : '') +
+          '</div>' +
+        '</article>'
+      );
+    }
+    var corpo = lista.map(function (d) {
+      var chips = [];
+      if (d.data_fim) chips.push('<span class="sm-chip"><i data-lucide="clock-3" aria-hidden="true"></i>Estudos até <strong>' + timeRange(d.data_fim) + '</strong></span>');
+      if (d.prova_inicio) chips.push('<span class="sm-chip"><i data-lucide="calendar-days" aria-hidden="true"></i>Prova: <strong>' + timeRange(d.prova_inicio, d.prova_fim) + '</strong></span>');
+      return '<div class="sm-now-item"><h2>' + escapeHtml(d.titulo) + '</h2>' + (chips.length ? '<div class="sm-chips">' + chips.join('') + '</div>' : '') + '</div>';
+    }).join('');
     return (
-      '<article class="' + classes + '">' +
-        (mes ? '<div class="ms-month">' + escapeHtml(mes) + '</div>' : '') +
-        '<div class="ms-subject-copy">' +
-          (item.status ? '<span class="ms-tag">' + escapeHtml(statusLabel(item.status)) + '</span>' : '') +
-          '<h3>' + escapeHtml(item.titulo) + '</h3>' +
-          (period ? '<span>Período: ' + escapeHtml(period) + '</span>' : '') +
+      '<article class="sm-card sm-now">' +
+        '<span class="sm-ico" aria-hidden="true"><i data-lucide="book-open"></i></span>' +
+        '<div class="sm-now-body">' +
+          '<p class="sm-eyebrow">' + (lista.length > 1 ? 'Suas disciplinas atuais (' + lista.length + ')' : 'Sua disciplina atual') + '</p>' + corpo +
         '</div>' +
-        (exam
-          ? '<div class="ms-exam"><small>Prova</small><strong>' + escapeHtml(exam) + '</strong></div>'
-          : '') +
+        '<div class="sm-now-acts">' +
+          // Não existe link direto para cada disciplina: o botão leva ao AVA (onde ficam todas).
+          '<a class="portal-btn" href="' + AVA_URL + '" target="_blank" rel="noopener noreferrer">Acessar o AVA' + NOVA_ABA + '<i data-lucide="external-link" aria-hidden="true"></i></a>' +
+          orientacaoLink(lista[0], lista[0].tutorial_hint || 'Ver orientações') +
+        '</div>' +
       '</article>'
+    );
+  }
+
+  function mensalidadeCardHtml() {
+    return (
+      '<article class="sm-card sm-pay">' +
+        '<span class="sm-ico sm-ico--star" aria-hidden="true"><i data-lucide="receipt-text"></i></span>' +
+        '<div class="sm-pay-body">' +
+          '<p class="sm-eyebrow">Mensalidades</p>' +
+          '<h2>Vencimento todo dia 25</h2>' +
+          '<p class="sm-muted">Consulte seus boletos, valores e datas no portal.</p>' +
+          '<div class="sm-pay-acts">' +
+            '<a class="portal-btn" href="' + PORTAL_URL + '" target="_blank" rel="noopener noreferrer">Ver pagamentos<span class="sr-only"> na Área do Aluno, menu Financeiro (abre em nova aba)</span><i data-lucide="external-link" aria-hidden="true"></i></a>' +
+            '<a class="sm-link" href="#sm-financeiro" data-sm-financeiro>Entender os descontos<i data-lucide="chevron-down" aria-hidden="true"></i></a>' +
+          '</div>' +
+        '</div>' +
+      '</article>'
+    );
+  }
+
+  function disciplinaCard(d) {
+    var mes = d.mes || monthShort(d.data_inicio);
+    var periodo = d.data_inicio ? timeRange(d.data_inicio, d.data_fim) : '';
+    var prova = d.prova_inicio ? timeRange(d.prova_inicio, d.prova_fim) : '';
+    return (
+      '<li class="sm-disc' + (d.status === 'atual' ? ' is-current' : '') + '"' + (d.status === 'atual' ? ' aria-current="true"' : '') + '>' +
+        (mes ? '<span class="sm-month" aria-hidden="true">' + escapeHtml(mes) + '</span>' : '') +
+        '<div class="sm-disc-body">' +
+          (d.status ? '<span class="sm-tag sm-tag--' + escapeHtml(d.status) + '">' + escapeHtml(statusLabel(d.status)) + '</span>' : '') +
+          '<h3>' + escapeHtml(d.titulo) + '</h3>' +
+          '<dl class="sm-dl">' +
+            (periodo ? '<div><dt>Período</dt><dd>' + periodo + '</dd></div>' : '') +
+            (prova ? '<div><dt>Prova</dt><dd>' + prova + '</dd></div>' : '') +
+          '</dl>' +
+        '</div>' +
+      '</li>'
     );
   }
 
   function atividadeIcon(titulo) {
     var t = String(titulo || '').toLowerCase();
-    if (t.indexOf('carreira') !== -1) return 'graduation-cap';
-    if (t.indexOf('projeto') !== -1) return 'file-text';
-    if (t.indexOf('extens') !== -1) return 'book-open';
+    if (t.indexOf('carreira') !== -1) return 'briefcase';
+    if (t.indexOf('projeto') !== -1) return 'users';
+    if (t.indexOf('extens') !== -1) return 'file-text';
+    if (t.indexOf('ambienta') !== -1) return 'laptop';
     return 'sparkles';
   }
 
-  function atividadeCard(item) {
-    var prazoPref = item.prazo_preferencial
-      ? 'Finalize preferencialmente até ' + formatDate(item.prazo_preferencial)
-      : '';
-    var prazoFinal = item.prazo ? 'Disponível até ' + formatDate(item.prazo) : '';
-    var prazo = prazoPref || prazoFinal;
-    var extra = prazoPref && prazoFinal ? prazoFinal : '';
-    var link = guiaLink(item);
+  // Prazos com o rótulo da fonte: "Prazo preferencial" e "Disponível até" (não vira "prazo final").
+  function atividadeRow(item, integrada) {
+    var prazos = [];
+    if (item.prazo_preferencial) prazos.push('<span>Prazo preferencial: <strong>' + timeRange(item.prazo_preferencial, null, true) + '</strong></span>');
+    if (item.prazo) prazos.push('<span>' + (integrada ? 'Prazo até' : 'Disponível até') + ': <strong>' + timeRange(item.prazo, null, true) + '</strong></span>');
     return (
-      '<article class="ms-obligation">' +
-        '<span class="ms-obligation-icon"><i data-lucide="' + atividadeIcon(item.titulo) + '" class="w-5 h-5"></i></span>' +
-        '<div>' +
+      '<li class="sm-act' + (integrada ? ' sm-act--integrada' : '') + '">' +
+        '<span class="sm-ico" aria-hidden="true"><i data-lucide="' + (integrada ? 'bar-chart-3' : atividadeIcon(item.titulo)) + '"></i></span>' +
+        '<div class="sm-act-body">' +
+          (integrada ? '<span class="sm-tag sm-tag--integrada">Avaliação integrada</span>' : '') +
           '<h3>' + escapeHtml(item.titulo) + '</h3>' +
-          (prazo ? '<p>' + escapeHtml(prazo) + '</p>' : '') +
-          (extra ? '<p class="ms-muted">' + escapeHtml(extra) + '</p>' : '') +
-          link +
+          (prazos.length ? '<p class="sm-prazos">' + prazos.join('<span class="sm-sep" aria-hidden="true">·</span>') + '</p>' : '') +
         '</div>' +
-      '</article>'
+        orientacaoLink(item, 'Ver orientações') +
+      '</li>'
     );
   }
 
-  function eventDot(tipo) {
-    if (tipo === 'financeiro') return 'amber';
-    if (tipo === 'prova') return 'navy';
-    if (tipo === 'encerramento' || tipo === 'divulgacao' || tipo === 'recuperacao') return 'navy';
-    return 'blue';
-  }
+  var ICONE_EVENTO = { prova: 'clipboard-check', prazo: 'flag', financeiro: 'wallet', disciplina: 'book-open', recuperacao: 'rotate-ccw', encerramento: 'calendar-check', divulgacao: 'megaphone' };
+  var ROTULO_EVENTO = { prova: 'Prova', prazo: 'Prazo', financeiro: 'Mensalidade' };
 
-  function calendarItem(item) {
-    var start = parseIso(item.data_inicio);
-    if (!start) return '';
-    var when = item.data_fim && item.data_fim !== item.data_inicio
-      ? formatRange(item.data_inicio, item.data_fim)
-      : formatDate(item.data_inicio);
+  function eventoItem(ev, destaque) {
+    var p = parseIso(ev.data_inicio);
+    if (!p) return '';
+    var rotulo = ROTULO_EVENTO[ev.tipo];
     return (
-      '<div class="ms-event">' +
-        '<div><strong>' + escapeHtml(start.d) + '</strong><span>' + escapeHtml(monthShort(item.data_inicio)) + '</span></div>' +
-        '<p><b>' + escapeHtml(item.titulo) + '</b><small>' + escapeHtml(item.subtitulo || when) + '</small></p>' +
-        '<span class="ms-dot ms-dot-' + eventDot(item.tipo) + '"></span>' +
-      '</div>'
+      '<li class="sm-ev' + (destaque ? ' is-next' : '') + '">' +
+        '<span class="sm-ev-date" aria-hidden="true"><b>' + escapeHtml(p.d) + '</b><small>' + escapeHtml(monthShort(p.iso)) + '</small></span>' +
+        '<div class="sm-ev-body">' +
+          '<p class="sm-ev-t"><i data-lucide="' + (ICONE_EVENTO[ev.tipo] || 'calendar') + '" aria-hidden="true"></i>' +
+            (rotulo ? '<span class="sm-ev-kind">' + rotulo + '</span>' : '') +
+            '<strong>' + escapeHtml(ev.titulo) + '</strong>' +
+            (destaque ? '<span class="sm-ev-next">Próxima</span>' : '') + '</p>' +
+          '<p class="sm-ev-sub">' + timeRange(ev.data_inicio, ev.data_fim, !ev.data_fim || ev.data_fim === ev.data_inicio) +
+            (ev.subtitulo ? ' · ' + escapeHtml(ev.subtitulo) : '') + '</p>' +
+        '</div>' +
+      '</li>'
     );
   }
 
-  // Link de ajuda de um item: o nível da trilha que ensina o assunto; sem nível, os tutoriais.
-  function guiaLink(item) {
-    if (!item) return '';
-    if (item.trilha) {
-      return '<button type="button" class="ms-text-link" data-open-trilha="' + Number(item.trilha.nivel) + '">' +
-          escapeHtml(item.tutorial_hint ? item.tutorial_hint + ' · Nível ' + item.trilha.nivel + ' da trilha' : 'Aprenda no Nível ' + item.trilha.nivel + ' da trilha') +
-          ' <i data-lucide="chevron-right" class="w-4 h-4"></i></button>';
-    }
-    if (!item.tutorial_categoria) return '';
-    return '<button type="button" class="ms-text-link" data-open-tutoriais="' + escapeHtml(item.tutorial_categoria) + '">' +
-        escapeHtml(item.tutorial_hint || 'Ver tutoriais') +
-        ' <i data-lucide="chevron-right" class="w-4 h-4"></i></button>';
+  // Mesma fonte do Início: calendário do servidor + o próximo vencimento (proximaMensalidade).
+  function eventosDoSemestre() {
+    var hoje = hojeIso();
+    var todos = (cache.calendario || []).map(function (ev) {
+      return { titulo: ev.titulo, subtitulo: ev.subtitulo, data_inicio: String(ev.data_inicio || '').slice(0, 10), data_fim: String(ev.data_fim || ev.data_inicio || '').slice(0, 10), tipo: ev.tipo };
+    }).filter(function (ev) { return ev.data_inicio; });
+    var m = proximaMensalidade();
+    todos.push({ titulo: m.titulo, subtitulo: 'Vencimento (ou o próximo dia útil)', data_inicio: m.data, data_fim: m.data, tipo: 'financeiro' });
+    todos.sort(function (a, b) { return a.data_inicio.localeCompare(b.data_inicio); });
+    // Evento em andamento (06 a 09/11 com hoje = 07/11) ainda é "próximo": conta a data final.
+    var futuros = todos.filter(function (ev) { return (ev.data_fim || ev.data_inicio) >= hoje; });
+    var passados = todos.filter(function (ev) { return (ev.data_fim || ev.data_inicio) < hoje; }).reverse();
+    return { futuros: futuros, passados: passados };
   }
 
-  function tutorialLinks(list) {
-    var cats = {};
-    (list || []).forEach(function (item) {
-      if (!item.categoria || cats[item.categoria]) return;
-      cats[item.categoria] = item;
-    });
-    var keys = Object.keys(cats);
-    if (!keys.length) {
-      return '<button type="button" class="ms-secondary-btn" onclick="showScreen(\'tutoriais-page\')">Ver todos os tutoriais</button>';
-    }
-    return keys.map(function (cat) {
-      return (
-        '<button type="button" class="ms-guide-link" data-open-tutoriais="' + escapeHtml(cat) + '">' +
-          '<span>' + escapeHtml(cat) + '</span>' +
-          '<small>' + escapeHtml(cats[cat].hint || 'Abrir tutoriais') + '</small>' +
-        '</button>'
-      );
-    }).join('') +
-      '<button type="button" class="ms-secondary-btn" onclick="showScreen(\'tutoriais-page\')">Ver todos os tutoriais</button>';
+  function calendarioHtml() {
+    var ev = eventosDoSemestre();
+    var VISIVEIS = 4;
+    var primeiros = ev.futuros.slice(0, VISIVEIS);
+    var resto = ev.futuros.slice(VISIVEIS);
+    var temMais = resto.length || ev.passados.length;
+    return (
+      '<section class="sm-card sm-cal" aria-labelledby="sm-h-datas">' +
+        '<div class="sm-head"><h2 id="sm-h-datas">Próximas datas</h2>' +
+          (temMais ? '<button type="button" class="sm-link" data-sm-toggle aria-expanded="false" aria-controls="sm-cal-mais">Ver calendário completo<i data-lucide="chevron-down" aria-hidden="true"></i></button>' : '') +
+        '</div>' +
+        (primeiros.length
+          ? '<ol class="sm-evs">' + primeiros.map(function (e, i) { return eventoItem(e, i === 0); }).join('') + '</ol>'
+          : '<p class="sm-muted">Nenhuma data futura cadastrada.</p>') +
+        (temMais
+          ? '<div id="sm-cal-mais" hidden>' +
+              (resto.length ? '<h3 class="sm-h3">Mais adiante</h3><ol class="sm-evs">' + resto.map(function (e) { return eventoItem(e, false); }).join('') + '</ol>' : '') +
+              (ev.passados.length ? '<h3 class="sm-h3">Datas anteriores</h3><ol class="sm-evs sm-evs--past">' + ev.passados.map(function (e) { return eventoItem(e, false); }).join('') + '</ol>' : '') +
+            '</div>'
+          : '') +
+      '</section>'
+    );
   }
-  function trilhaLinks(list) {
-    var niveis = {};
-    (list || []).forEach(function (item) {
-      if (item.trilha && !niveis[item.trilha.nivel]) niveis[item.trilha.nivel] = item.trilha;
-    });
-    var keys = Object.keys(niveis).sort(function (a, b) { return a - b; });
-    var html = keys.map(function (n) {
-      return (
-        '<button type="button" class="ms-guide-link" data-open-trilha="' + Number(n) + '">' +
-          '<span>Nível ' + Number(n) + ' · ' + escapeHtml(niveis[n].titulo) + '</span>' +
-          '<small class="ms-guide-level">Vídeo, resumo e perguntas</small>' +
-        '</button>'
-      );
-    }).join('');
-    html += '<button type="button" class="ms-secondary-btn" data-open-trilha="">Ver a trilha completa</button>';
-    html += ' <button type="button" class="ms-secondary-btn" data-open-tutoriais="">Consultar tutoriais</button>';
-    return html;
+
+  function apoioHtml() {
+    var comTrilha = document.body.classList.contains('trilha-on');
+    return (
+      '<aside class="sm-help" aria-labelledby="sm-h-help">' +
+        '<p class="sm-eyebrow">Precisa de orientação?</p>' +
+        '<h2 id="sm-h-help">A gente te ajuda!</h2>' +
+        '<p>Aprenda a acessar o AVA, fazer provas e acompanhar suas notas.</p>' +
+        '<div class="sm-help-acts">' +
+          '<a class="portal-btn portal-btn--primary" href="/tutoriais" data-go="tutoriais-page">Consultar tutoriais<i data-lucide="chevron-right" aria-hidden="true"></i></a>' +
+          '<button type="button" class="sm-help-link" data-help-open>Preciso de ajuda</button>' +
+          (comTrilha ? '<button type="button" class="sm-help-link" data-open-trilha="">Ver a Aula Inaugural</button>' : '') +
+        '</div>' +
+        '<span class="sm-help-art" aria-hidden="true"><i data-lucide="message-circle-question"></i></span>' +
+      '</aside>'
+    );
+  }
+
+  // Regra única da mensalidade em lista (a frase curta do Início usa a mesma regra).
+  // Removidos daqui por não terem fonte validada: "pode haver juros pequenos" e "em dezembro o 25 costuma ir para o 28".
+  function financeiroHtml() {
+    return (
+      '<section class="sm-card sm-fin" id="sm-financeiro" aria-labelledby="sm-h-fin">' +
+        '<h2 id="sm-h-fin" class="sm-fin-h"><button type="button" class="sm-fin-btn" data-sm-toggle aria-expanded="false" aria-controls="sm-fin-body">' +
+          '<span class="sm-ico sm-ico--star" aria-hidden="true"><i data-lucide="badge-percent"></i></span>' +
+          '<span><span class="sm-eyebrow">Mensalidades</span>Como funcionam o vencimento e os descontos</span>' +
+          '<i data-lucide="chevron-down" class="sm-fin-chev" aria-hidden="true"></i></button></h2>' +
+        '<div id="sm-fin-body" class="sm-fin-body" hidden>' +
+          '<p>A mensalidade vence <strong>todo dia 25</strong>.</p>' +
+          '<ul>' +
+            '<li><strong>1ª mensalidade</strong> (a do mês da sua turma): todos os descontos valem até o <strong>dia 25</strong>, o próprio vencimento.</li>' +
+            '<li><strong>Da 2ª em diante:</strong> até o <strong>dia 10</strong>, 25% de desconto de pontualidade; do dia 11 ao 25, 15%; depois do dia 25, sem esse desconto. A bolsa e os outros descontos continuam.</li>' +
+            '<li>Se o dia 10 ou o 25 cair em sábado, domingo ou feriado, vale o <strong>próximo dia útil</strong>. O boleto mostra a data certa de cada mês.</li>' +
+          '</ul>' +
+          '<p class="sm-muted">Boletos, valores e pagamentos ficam na Área do Aluno, menu Financeiro. ' +
+            '<a href="' + PORTAL_URL + '" target="_blank" rel="noopener noreferrer">Abrir a Área do Aluno' + NOVA_ABA + '</a></p>' +
+        '</div>' +
+      '</section>'
+    );
   }
 
   function renderPage() {
@@ -256,124 +486,72 @@ window.MeuSemestre = (function () {
     }
 
     if (!cache.plano) {
+      // Sem matérias: com a Aula Inaugural liberada, ela vira a ação principal enquanto os dados não chegam.
+      var preparo = emPreparo();
       root.innerHTML =
         '<div class="ms-empty">' +
-          '<span class="ms-soon-pill">Em breve</span>' +
+          '<span class="ms-soon-pill">' + (preparo ? 'Acesso em preparação' : 'Cadastro em atualização') + '</span>' +
           '<h2>Meu Semestre</h2>' +
-          '<p>Em breve você poderá organizar seu semestre por aqui.</p>' +
+          '<p>' + (preparo ? MSG_PREPARO : MSG_SEM_PLANO) + '</p>' +
+          '<div class="ms-empty-acts">' +
+            (comTrilha() ? '<button type="button" class="portal-btn portal-btn--primary ms-empty-btn" data-open-trilha="">Começar a Aula Inaugural<i data-lucide="chevron-right" aria-hidden="true"></i></button>' : '') +
+            '<button type="button" class="ms-secondary-btn ms-empty-btn" onclick="showScreen(\'atendimento-page\')">Falar com o acadêmico</button>' +
+          '</div>' +
         '</div>';
+      if (window.lucide) window.lucide.createIcons();
       return;
     }
 
-    var resumo = cache.resumo || {};
-    var disc = resumo.disciplina_atual;
-    var nome = (cache.aluno && cache.aluno.nome) || window.Auth.getUserName();
-    var avaliacao = cache.avaliacao_integrada;
     var disciplinas = cache.disciplinas || [];
+    var atuais = disciplinas.filter(function (d) { return d.status === 'atual'; });
+    var resumoAtual = cache.resumo && cache.resumo.disciplina_atual;
+    if (!atuais.length && resumoAtual && resumoAtual.status === 'atual') atuais = [resumoAtual];
     var atividades = cache.atividades || [];
-    var calendario = cache.calendario || [];
-
-    var heroDates = [];
-    if (disc && disc.data_fim) {
-      heroDates.push('<span><i data-lucide="clock-3" class="w-4 h-4"></i> Estude até <strong>' + escapeHtml(formatDate(disc.data_fim)) + '</strong></span>');
-    }
-    if (disc && (disc.prova_inicio || disc.prova_fim)) {
-      heroDates.push('<span><i data-lucide="calendar-days" class="w-4 h-4"></i> Prova: <strong>' + escapeHtml(formatRange(disc.prova_inicio, disc.prova_fim)) + '</strong></span>');
-    }
-    var heroDisc = disc
-      ? (
-        '<article class="ms-now">' +
-          '<div class="ms-card-heading">' +
-            '<span class="ms-icon-box"><i data-lucide="book-open" class="w-5 h-5"></i></span>' +
-            '<div><small>Disciplina atual</small><h2>' + escapeHtml(disc.titulo) + '</h2></div>' +
-          '</div>' +
-          (heroDates.length ? '<div class="ms-date-row">' + heroDates.join('') + '</div>' : '') +
-        '</article>'
-      )
-      : '<article class="ms-now"><p class="ms-muted">Nenhuma disciplina mensal em andamento.</p></article>';
-
-    var heroPay =
-        '<article class="ms-pay">' +
-          '<div class="ms-pay-top">' +
-            '<span class="ms-icon-box ms-icon-amber"><i data-lucide="receipt-text" class="w-5 h-5"></i></span>' +
-          '</div>' +
-          '<small>Mensalidades</small>' +
-          '<h2>Vencimentos fixos</h2>' +
-          '<p>A mensalidade vence <strong>todo dia 25</strong>. Pague até o <strong>dia 10</strong> para ter o desconto. Na <strong>1ª mensalidade</strong>, o desconto vale até o dia 25.</p>' +
-        '</article>';
-
-    var avaliacaoHtml = avaliacao
-      ? (
-        '<article class="ms-integrated">' +
-          '<small>Avaliação integrada</small>' +
-          '<h3>' + escapeHtml(avaliacao.titulo) + '</h3>' +
-          (avaliacao.prazo ? '<p>Prazo até <strong>' + escapeHtml(formatDate(avaliacao.prazo)) + '</strong></p>' : '') +
-          guiaLink(avaliacao) +
-        '</article>'
-      )
-      : '';
-
-    var financeNote =
-      '<article class="ms-finance">' +
-        '<p>A mensalidade vence <strong>todo dia 25</strong>. Pague até o <strong>dia 10</strong> para ter o desconto.</p>' +
-        '<p>Na <strong>1ª mensalidade</strong>, o desconto vale até o <strong>dia 25</strong>.</p>' +
-      '</article>';
+    var avaliacao = cache.avaliacao_integrada;
 
     root.innerHTML =
-      '<header class="ms-page-head">' +
-        '<p class="ms-eyebrow">Meu Semestre</p>' +
-        '<h2>Olá, ' + escapeHtml(nome) + '</h2>' +
-        '<p class="ms-muted">' + escapeHtml(cache.plano.curso) + ' · ' + escapeHtml(cache.plano.periodo) + '</p>' +
-        '<p class="ms-preview-note">' +
-          '<span class="ms-preview-note-text">Esta lista é uma prévia. Nem sempre todas as matérias aparecem aqui. Confira o que está disponível no <a href="https://novoportal.cruzeirodosul.edu.br/" target="_blank" rel="noopener">portal</a> ou no app Duda</span>' +
-          '<span class="ms-store-badges">' +
-            '<a class="ms-store-badge" href="https://apps.apple.com/br/app/duda/id6451416655" target="_blank" rel="noopener">' +
-              '<img src="/assets/stores/app-store.svg" alt="Baixar na App Store" width="120" height="40">' +
-            '</a>' +
-            '<a class="ms-store-badge ms-store-badge--play" href="https://play.google.com/store/apps/details?id=br.com.cruzeirodosulvirtual" target="_blank" rel="noopener">' +
-              '<img src="/assets/stores/google-play.png" alt="Disponível no Google Play" width="135" height="40">' +
-            '</a>' +
-          '</span>' +
-        '</p>' +
-      '</header>' +
-      '<section class="ms-hero" aria-label="Resumo do semestre">' + heroDisc + heroPay + '</section>' +
-      '<section class="ms-section">' +
-        '<div class="ms-section-title"><div><p class="ms-eyebrow">Jornada acadêmica</p><h3>Disciplinas mensais</h3></div></div>' +
-        '<div class="ms-timeline">' +
-          (disciplinas.length ? disciplinas.map(subjectCard).join('') : '<p class="ms-muted">Nenhuma disciplina mensal cadastrada.</p>') +
+      '<section class="portal-hero sm-hero" aria-labelledby="sm-h1">' +
+        '<div class="portal-hero__content">' +
+          '<p class="portal-eyebrow">Meu semestre</p>' +
+          '<h1 id="sm-h1">Meu semestre</h1>' +
+          '<p class="portal-hero__lede">Suas disciplinas, atividades e próximas datas.</p>' +
+          '<p class="sm-hero-meta">' + escapeHtml(cache.plano.curso) + ' · ' + escapeHtml(cache.plano.periodo) + '</p>' +
         '</div>' +
+        '<span class="sm-hero-art" aria-hidden="true"><i data-lucide="book-open"></i><i data-lucide="calendar-days"></i></span>' +
       '</section>' +
-      '<section class="ms-section">' +
-        '<div class="ms-section-title"><div><p class="ms-eyebrow">Não deixe para o final</p><h3>Atividades obrigatórias do semestre</h3></div></div>' +
-        '<div class="ms-obligations">' +
-          (atividades.length ? atividades.map(atividadeCard).join('') : '<p class="ms-muted">Nenhuma atividade obrigatória cadastrada.</p>') +
-        '</div>' +
-      '</section>' +
-      (avaliacaoHtml ? '<section class="ms-section">' + avaliacaoHtml + '</section>' : '') +
-      '<section class="ms-bottom">' +
-        '<article class="ms-calendar">' +
-          '<div class="ms-section-title ms-compact"><div><p class="ms-eyebrow">Próximas datas</p><h3>Calendário</h3></div><i data-lucide="calendar-days" class="w-6 h-6"></i></div>' +
-          (calendario.length ? calendario.map(calendarItem).join('') : '<p class="ms-muted">Sem datas cadastradas.</p>') +
-        '</article>' +
-        (document.body.classList.contains('trilha-on')
-          ? '<article class="ms-guides">' +
-              '<p class="ms-eyebrow">Trilha EaD para Iniciantes</p>' +
-              '<h3>Não sabe como começar?</h3>' +
-              '<p>A trilha ensina passo a passo o que este semestre pede: AVA, provas, notas e pagamentos.</p>' +
-              '<div class="ms-guide-list">' + trilhaLinks(cache.tutoriais) + '</div>' +
-            '</article>'
-          : '<article class="ms-guides">' +
-              '<p class="ms-eyebrow">Guias e tutoriais</p>' +
-              '<h3>Não sabe como começar?</h3>' +
-              '<p>Veja os tutoriais já disponíveis no portal sobre provas, atividades e financeiro.</p>' +
-              '<div class="ms-guide-list">' + tutorialLinks(cache.tutoriais) + '</div>' +
-            '</article>') +
-      '</section>' +
-      '<section class="ms-section">' +
-        '<div class="ms-section-title"><div><p class="ms-eyebrow">Financeiro</p><h3>Mensalidades</h3></div></div>' +
-        financeNote +
-      '</section>';
 
+      '<div data-apps-slot></div>' +
+
+      '<div class="sm-note" role="note">' +
+        '<i data-lucide="info" aria-hidden="true"></i>' +
+        '<p>Esta é uma prévia. Confira todas as informações no portal oficial ou no app Duda.</p>' +
+        '<div class="sm-note-acts">' +
+          '<a class="sm-link" href="' + PORTAL_URL + '" target="_blank" rel="noopener noreferrer">Acessar portal oficial' + NOVA_ABA + '<i data-lucide="external-link" aria-hidden="true"></i></a>' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="sm-main">' + disciplinaAtualHtml(atuais) + mensalidadeCardHtml() + '</div>' +
+
+      '<section aria-labelledby="sm-h-disc">' +
+        '<div class="sm-head"><div><h2 id="sm-h-disc">Disciplinas do semestre</h2><span class="p-squiggle" aria-hidden="true"></span></div></div>' +
+        (disciplinas.length
+          ? '<ol class="sm-discs">' + disciplinas.map(disciplinaCard).join('') + '</ol>'
+          : '<p class="sm-muted">Nenhuma disciplina mensal cadastrada.</p>') +
+      '</section>' +
+
+      '<section aria-labelledby="sm-h-ativ">' +
+        '<div class="sm-head"><div><h2 id="sm-h-ativ">Atividades do semestre</h2><span class="p-squiggle" aria-hidden="true"></span></div></div>' +
+        ((atividades.length || avaliacao)
+          ? '<ul class="sm-acts">' + atividades.map(function (a) { return atividadeRow(a, false); }).join('') +
+              (avaliacao ? atividadeRow(avaliacao, true) : '') + '</ul>'
+          : '<p class="sm-muted">Nenhuma atividade obrigatória cadastrada.</p>') +
+      '</section>' +
+
+      '<div class="sm-bottom">' + calendarioHtml() + apoioHtml() + '</div>' +
+
+      financeiroHtml();
+
+    if (window.Apps) window.Apps.render(root);
     if (window.lucide) window.lucide.createIcons();
   }
 
@@ -420,11 +598,31 @@ window.MeuSemestre = (function () {
     renderPage();
   }
 
+  // Botão com aria-expanded que mostra/esconde a região de aria-controls.
+  function alternar(btn) {
+    var abrir = btn.getAttribute('aria-expanded') !== 'true';
+    btn.setAttribute('aria-expanded', String(abrir));
+    var alvo = document.getElementById(btn.getAttribute('aria-controls'));
+    if (alvo) alvo.hidden = !abrir;
+  }
+
   function init() {
     var page = document.getElementById('meu-semestre-page');
     if (!page) return;
     page.addEventListener('click', function (event) {
       if (page.classList.contains('hidden')) return;
+      var tog = event.target.closest('[data-sm-toggle]');
+      if (tog) { alternar(tog); return; }
+      var fin = event.target.closest('[data-sm-financeiro]');
+      if (fin) {
+        event.preventDefault();
+        var b = document.querySelector('#sm-financeiro [data-sm-toggle]');
+        if (b && b.getAttribute('aria-expanded') !== 'true') alternar(b);
+        var sec = document.getElementById('sm-financeiro');
+        if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (b) b.focus({ preventScroll: true });
+        return;
+      }
       var btn = event.target.closest('[data-open-tutoriais]');
       if (!btn) return;
       event.preventDefault();

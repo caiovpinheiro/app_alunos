@@ -23,12 +23,12 @@
 .trilha, .trilha *{box-sizing:border-box}
 .trilha [hidden]{display:none!important}
 .trilha{margin:0;background:var(--bg);color:var(--fg);font:400 18px/1.6 var(--body);padding:0 16px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
-.trilha .wrap{max-width:62rem;margin:0 auto;padding-block:16px 80px;display:flex;flex-direction:column;gap:24px}
+.trilha .wrap{max-width:none;margin:0 auto;padding-block:16px 80px;display:flex;flex-direction:column;gap:24px}
 .trilha button{font:inherit;color:inherit;-webkit-tap-highlight-color:transparent}
 .trilha :focus-visible{outline:3px solid var(--bright);outline-offset:3px}
 .trilha h1, .trilha h2{text-wrap:balance}
 .trilha .eyebrow{font:700 13px/1.2 var(--body);letter-spacing:.14em;text-transform:uppercase}
-.trilha .sec-h, .trilha .start h2, .trilha .help h2, .trilha .glos h2{font:700 clamp(1.2rem,4.2vw,1.4rem)/1.25 var(--display);margin:0;letter-spacing:-.005em}
+.trilha .sec-h, .trilha .start h2, .trilha .help h2{font:700 clamp(1.2rem,4.2vw,1.4rem)/1.25 var(--display);margin:0;letter-spacing:-.005em}
 .trilha .hint{color:var(--muted);margin:6px 0 0;font-size:1rem}
 .trilha .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:24px 20px;box-shadow:var(--shadow);min-width:0}
 .trilha .chipbtn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 18px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);color:var(--fg);font:700 15px/1.2 var(--body);cursor:pointer;transition:background-color .2s,border-color .2s,color .2s,transform .15s var(--ease)}
@@ -61,15 +61,16 @@
 .trilha .cardhead > div{min-width:0;flex:1 1 14rem}
 .trilha .count{flex:none;font:700 14px/1 var(--body);font-variant-numeric:tabular-nums;color:var(--accent);background:var(--accent-soft);padding:9px 12px;border-radius:999px}
 .trilha .todo{list-style:none;margin:0;padding:0;display:grid;gap:10px}
-.trilha .todo label{display:flex;gap:14px;align-items:flex-start;min-height:56px;padding:14px 16px;border:1.5px solid var(--line);border-radius:var(--r-md);background:var(--surface-2);cursor:pointer;transition:background-color .25s,border-color .25s}
-.trilha .todo label:hover{border-color:var(--accent)}
-.trilha .todo label:has(input:checked){background:var(--accent-soft);border-color:transparent}
-.trilha .todo label > span{min-width:0}
-.trilha .todo input{appearance:none;-webkit-appearance:none;width:28px;height:28px;flex:none;margin:0;border:2px solid var(--lock);border-radius:8px;background:var(--surface);display:grid;place-items:center;cursor:pointer;transition:background-color .2s,border-color .2s}
-.trilha .todo input::after{content:"";width:13px;height:7px;border:solid var(--on-solid);border-width:0 0 3px 3px;transform:translateY(-2px) rotate(-45deg) scale(0);transition:transform .25s var(--ease)}
-.trilha .todo input:checked{background:var(--solid);border-color:var(--solid)}
-.trilha .todo input:checked::after{transform:translateY(-2px) rotate(-45deg) scale(1)}
-.trilha .todo input:checked + span{color:var(--muted);text-decoration:line-through;text-decoration-thickness:1.5px}
+.trilha .todo li{display:flex;gap:14px;align-items:flex-start;min-height:52px;padding:13px 16px;border:1.5px solid var(--line);border-radius:var(--r-md);background:var(--surface-2);transition:background-color .25s,border-color .25s}
+.trilha .todo li.is-done{background:var(--accent-soft);border-color:transparent}
+.trilha .todo .tx{min-width:0}
+.trilha .todo small{display:block;margin-top:4px;font-size:.92em;color:var(--muted)}
+.trilha .todo .sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+/* Indicador redondo (não é caixa de marcar): vazio = a fazer, cheio com ✓ = feito pelo progresso real. */
+.trilha .todo .tk{width:26px;height:26px;flex:none;margin-top:1px;border:2px dashed var(--lock);border-radius:50%;background:var(--surface);display:grid;place-items:center;transition:background-color .2s,border-color .2s}
+.trilha .todo .tk::after{content:"";width:11px;height:6px;border:solid var(--on-solid);border-width:0 0 3px 3px;transform:translateY(-2px) rotate(-45deg) scale(0);transition:transform .25s var(--ease)}
+.trilha .todo li.is-done .tk{background:var(--solid);border:2px solid var(--solid)}
+.trilha .todo li.is-done .tk::after{transform:translateY(-2px) rotate(-45deg) scale(1)}
 .trilha .todo em{display:inline-block;font:700 13px/1 var(--body);font-style:normal;white-space:nowrap;color:var(--accent);background:var(--accent-soft);padding:5px 9px;border-radius:999px;vertical-align:2px;margin-left:2px}
 .trilha .help{background:var(--warn-bg);color:var(--warn-fg);border:1px solid var(--warn-line);border-radius:var(--r-lg);padding:24px 20px;min-width:0}
 .trilha .help .hh{display:flex;align-items:center;gap:12px;margin-bottom:6px}
@@ -77,7 +78,7 @@
 .trilha .help p{margin:0;padding:12px 0 0;max-width:68ch}
 .trilha .help p + p{border-top:1px solid var(--warn-line);margin-top:12px}
 .trilha .hud{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;margin:0 -16px;padding:10px 16px;background:var(--hud-bg);-webkit-backdrop-filter:saturate(1.4) blur(14px);backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid var(--line)}
-.trilha .hud .in{max-width:62rem;margin:0 auto;display:flex;align-items:center;gap:14px;position:relative}
+.trilha .hud .in{max-width:none;margin:0 auto;display:flex;align-items:center;gap:14px;position:relative}
 .trilha .medal{--lv:0;width:48px;height:48px;flex:none;border-radius:50%;display:grid;place-items:center;font:800 1.15rem/1 var(--display);color:var(--on-solid);background:radial-gradient(closest-side,var(--solid) 76%,transparent 79% 100%),conic-gradient(var(--xp) calc(var(--lv)*1%),var(--line) 0);font-variant-numeric:tabular-nums}
 .trilha .hudmain{flex:1;min-width:0;display:grid;gap:5px}
 .trilha .rank{min-width:0}
@@ -138,6 +139,7 @@
 .trilha .lockpanel{margin:0 20px 20px;padding:14px 16px;border-radius:var(--r-md);border:1.5px dashed var(--line);color:var(--muted);display:flex;gap:12px;align-items:center}
 .trilha .lockpanel svg, .trilha .gate svg{flex:none}
 .trilha .lockpanel span, .trilha .gate span{min-width:0}
+.trilha .lvpair{display:contents}
 .trilha .lvbody{border-top:1px solid var(--line);padding:4px 20px 24px;display:grid;gap:6px;animation:t-fadeUp .5s var(--ease)}
 .trilha .step{position:relative;padding-top:20px;min-width:0}
 .trilha .part{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:0 0 14px}
@@ -192,6 +194,8 @@
 .trilha .learn{list-style:none;margin:0;padding:0;display:grid;gap:14px;max-width:68ch}
 .trilha .learn li{position:relative;padding-left:30px}
 .trilha .learn li::before{content:"";position:absolute;left:5px;top:.55em;width:11px;height:11px;border-radius:3px;background:var(--bright);transform:rotate(45deg)}
+.trilha .learn a, .trilha .todo a, .trilha .help a, .trilha .tip a{color:var(--accent);font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.trilha .lede-atalho{font-size:.95rem;margin-top:10px}
 .trilha .learn b{font-weight:700;background:linear-gradient(transparent 60%,var(--hl) 0);padding:0 1px}
 .trilha .formula{margin:18px 0 0;padding:18px 20px;border-radius:var(--r-md);background:var(--accent-soft);border:1.5px solid var(--bright);font:700 clamp(1.05rem,3.8vw,1.3rem)/1.4 var(--display);color:var(--fg);text-align:center;max-width:42rem}
 .trilha .formula small{display:block;margin-top:6px;font:400 1rem/1.4 var(--body);color:var(--muted)}
@@ -240,10 +244,6 @@
 .trilha .final::before{content:"";display:block;margin:0 auto 12px;width:76px;height:76px;border-radius:50%;background:var(--xp) var(--i-cup) center/40px no-repeat;box-shadow:0 0 0 10px rgba(255,199,44,.18)}
 .trilha .final h2{font:800 clamp(1.8rem,7vw,2.5rem)/1.1 var(--display);margin:10px 0}
 .trilha .final p{margin:.4em auto;max-width:48ch;color:var(--hero-muted)}
-.trilha .glos dl{margin:16px 0 0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,16rem),1fr));gap:10px}
-.trilha .glos dl div{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md);padding:12px 16px;min-width:0}
-.trilha .glos dt{font:700 1rem/1.3 var(--display);color:var(--accent)}
-.trilha .glos dd{margin:4px 0 0;color:var(--fg);font-size:1rem}
 .trilha footer{color:var(--muted);font-size:.92rem;text-align:center}
 .trilha dialog.lb{border:0;padding:0;background:transparent;max-width:min(96vw,1800px);max-height:94vh;width:auto}
 .trilha dialog.lb[open]{animation:t-zoomIn .3s var(--ease)}
@@ -262,7 +262,7 @@
 @media (max-width:479px){.trilha .how{gap:6px}
 .trilha .how li{background:var(--paper);border:2px solid var(--ink);padding:4px 9px 4px 4px;gap:6px;font-size:14px;transform:none!important}
 .trilha .how li span{width:22px;height:22px;font-size:12px}}
-.trilha .sec-h, .trilha .start h2, .trilha .glos h2{padding-bottom:14px;background:var(--i-squiggle) left bottom/104px 10px no-repeat}
+.trilha .sec-h, .trilha .start h2{padding-bottom:14px;background:var(--i-squiggle) left bottom/104px 10px no-repeat}
 .trilha .help .hh svg{border:2.5px solid var(--ink);box-shadow:3px 3px 0 var(--ink)}
 .trilha .pts, .trilha .q legend .qx, .trilha .node.current .dot::before{border:2px solid var(--ink)}
 .trilha .node.current .dot::before{top:-15px}
@@ -292,6 +292,27 @@
 .trilha .hero-txt > :nth-child(5){animation-delay:.24s}
 .trilha .hero-art .trail{stroke-dasharray:6 10;animation:t-march 18s linear infinite}}
 @keyframes t-march{to{stroke-dashoffset:-320}}
+/* Tela larga: vídeo e resumo lado a lado; perguntas em duas colunas embaixo. */
+@media (min-width:1200px){
+  .trilha{padding:0}
+  .trilha .wrap{gap:28px}
+  .trilha .hud{margin:0;border-radius:var(--r-lg);border:1px solid var(--line);padding:12px 20px}
+  .trilha .hero{grid-template-columns:minmax(0,1fr) 320px;padding:52px 56px 48px}
+  .trilha .hero-art{max-width:320px}
+  .trilha .lvhead{padding:28px 40px}
+  .trilha .lockpanel{margin:0 40px 28px}
+  .trilha .lvbody{padding:8px 40px 36px}
+  .trilha .lvpair{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);column-gap:44px;align-items:start}
+  .trilha .step{padding-left:0}
+  .trilha .part{margin-left:0}
+  .trilha .step::before{display:none}
+  .trilha .s3{border-top:1px solid var(--line);margin-top:18px;padding-top:28px}
+  .trilha .mission{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+  .trilha .shots{grid-template-columns:repeat(auto-fill,minmax(min(100%,14rem),1fr))}
+  .trilha .parts{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+/* Tela larga e alta: o vídeo acompanha a leitura do resumo. */
+@media (min-width:1200px) and (min-height:860px){.trilha .s1{position:sticky;top:150px}}
 @media (prefers-reduced-motion:reduce){.trilha, .trilha *, .trilha *::before, .trilha *::after{animation:none!important;transition:none!important}}
 
 /* Ajustes para viver dentro do Portal do Aluno */
@@ -303,3 +324,137 @@
 .trilha-loading{padding:48px 16px;text-align:center;color:#64748b;font-size:1.05rem}
 /* Nível aberto por link (tutoriais, Meu Semestre): destaque breve ao chegar */
 .trilha .level.is-target{border-color:var(--xp-2);box-shadow:0 0 0 4px var(--hl),var(--shadow)}
+
+/* Aplicativos (Duda e Authenticator) logo depois da abertura da trilha */
+.trilha .t-apps{margin:18px 0 6px}
+
+/* ===== Aula Inaugural como programa (abertura, certificado, passo a passo) ===== */
+.trilha .lede-link{display:inline;padding:0;border:0;background:none;color:inherit;font:inherit;font-weight:700;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.trilha .certline{margin:8px 0 0;padding:8px 12px;border-radius:10px;background:rgba(10,79,166,.08);color:#00356b;font-weight:700;font-size:.92rem;line-height:1.4}
+.trilha .certline.is-ok{background:#e3f5ea;color:#16794a}
+.trilha .tcaps-sec .tcaps{margin-top:14px}
+.trilha .tcaps .player video{width:100%;display:block;border-radius:14px;background:#000;aspect-ratio:16/9}
+.trilha .tcaps .parts{margin-top:10px}
+.trilha .tcert{display:flex;align-items:flex-start;gap:12px;margin-top:16px;padding:16px 18px;border-radius:16px;border:1px solid #d3dfee;background:#f5f9fe}
+.trilha .tcert p{margin:0;flex:1;min-width:0}
+.trilha .tcert svg{flex:none;color:#45566e;margin-top:2px}
+/* Card de conclusão (certificado liberado): painel azul com a medalha + texto, pílulas e ações.
+   Empilhado no celular; lado a lado quando o card tem 720px ou mais (container query, respeita o "A+ Letra maior"). */
+.trilha .tcert-ok{display:block;padding:0;border:1px solid var(--line);background:var(--surface);box-shadow:var(--shadow);overflow:hidden;container-type:inline-size;border-radius:var(--r-lg)}
+.trilha .tcert-ok svg{margin:0;color:inherit}
+.trilha .tcert-ok .tc-in{display:grid}
+.trilha .tc-art{position:relative;display:flex;align-items:center;gap:16px;padding:20px 22px 30px;color:#fff;
+  background:radial-gradient(120% 90% at 85% 100%,rgba(94,146,250,.55),transparent 60%),linear-gradient(150deg,var(--hero-1) 0%,var(--hero-1) 45%,var(--hero-2) 100%);
+  clip-path:ellipse(150% 100% at 50% 0)}
+.trilha .tc-medal-wrap{flex:none;width:88px;filter:drop-shadow(0 6px 14px rgba(0,12,32,.45))}
+.trilha .tc-medal{display:block;width:100%;height:auto}
+.trilha .tc-hrs{margin:0;font:700 1.05rem/1.2 var(--display);color:#fff}
+.trilha .tc-hrs b{display:block;margin-top:2px;font:800 2.4rem/1 var(--display);color:var(--xp);letter-spacing:-.01em}
+.trilha .tc-body{padding:18px 18px 22px;min-width:0}
+.trilha .tc-top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}
+.trilha .tc-k{font:700 13px/1.3 var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--fg)}
+.trilha .tc-badge{display:inline-flex;align-items:center;gap:8px;padding:5px 14px 5px 6px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font:700 15px/1.2 var(--body)}
+.trilha .tc-ck{flex:none;display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff}
+.trilha .tc-ck svg{width:15px;height:15px}
+.trilha .tc-h{margin:14px 0 6px;font:800 clamp(1.45rem,5.6vw,2.15rem)/1.15 var(--display);letter-spacing:-.015em;color:var(--fg);text-wrap:balance}
+.trilha .tc-sub{margin:0;color:var(--muted);font-size:1.05rem;line-height:1.5}
+.trilha .tc-row{display:flex;flex-direction:column;gap:16px;margin-top:20px}
+.trilha .tc-pills{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:10px}
+.trilha .tc-pills li{flex:1 1 auto;display:flex;align-items:center;gap:12px;min-height:56px;padding:10px 18px 10px 12px;border-radius:14px;background:var(--surface-2);border:1px solid #e3ecf7;font:700 1.05rem/1.2 var(--display);color:var(--fg)}
+.trilha .tc-pills .tc-ck{width:34px;height:34px}
+.trilha .tc-pills .tc-ck svg{width:18px;height:18px}
+.trilha .tc-acts{display:flex;flex-direction:column;align-items:stretch;gap:6px}
+.trilha .tc-btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:56px;padding:8px 16px;text-align:center;border:0;border-radius:12px;background:var(--accent);color:#fff;font:700 1rem/1.2 var(--display);cursor:pointer;box-shadow:0 8px 18px -8px rgba(10,79,166,.6);transition:background-color .2s,transform .15s var(--ease)}
+.trilha .tc-btn svg{flex:none;width:24px;height:24px}
+.trilha .tc-btn:hover{background:var(--solid)}
+.trilha .tc-btn:active{transform:scale(.97)}
+.trilha .tc-btn:disabled{opacity:.75;cursor:progress}
+.trilha .tc-link{align-self:center;display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 8px;border:0;background:none;color:var(--accent);font:700 1rem/1.2 var(--display);cursor:pointer;text-decoration:none}
+.trilha .tc-link:hover{text-decoration:underline;text-underline-offset:3px}
+.trilha .trailhead{scroll-margin-top:150px}
+.trilha #tModulosH:focus{outline:none}
+.trilha #tModulosH:focus-visible{outline:3px solid var(--bright);outline-offset:3px}
+@container (min-width:720px){
+  .trilha .tcert-ok .tc-in{grid-template-columns:minmax(220px,27%) minmax(0,1fr)}
+  .trilha .tc-art{flex-direction:column;justify-content:center;text-align:center;gap:14px;padding:28px 34px 28px 24px;clip-path:ellipse(100% 125% at 0 50%)}
+  .trilha .tc-medal-wrap{width:min(150px,80%)}
+  .trilha .tc-hrs{font-size:1.2rem}
+  .trilha .tc-hrs b{font-size:3rem}
+  .trilha .tc-body{padding:30px 34px 26px 30px}
+  .trilha .tc-row{flex-direction:row;flex-wrap:wrap;align-items:flex-start}
+  .trilha .tc-pills{flex:1 1 300px}
+  .trilha .tc-acts{flex:0 1 auto;min-width:260px}
+  .trilha .tc-btn{gap:12px;padding:8px 26px;font-size:1.1rem}
+}
+.trilha .tfinal .hint{margin-top:12px}
+.trilha .passo .player video{width:100%;display:block;border-radius:12px;background:#000;aspect-ratio:16/9}
+.trilha .passo .parts{margin-bottom:10px}
+/* Coluna do resumo enxuta: tópicos curtos, regra em destaque e o resto em caixas fechadas. */
+.trilha .learn.topicos{gap:10px}
+.trilha .extras{margin-top:20px;display:grid;gap:10px}
+.trilha .extras details.more{margin-top:0}
+.trilha details.more summary small{display:block;margin-top:2px;font:400 .88rem/1.3 var(--body);color:var(--muted)}
+.trilha details.passo summary::before{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='3'/%3E%3Cpath d='M10 9.5v5l4.5-2.5z' fill='black'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='3'/%3E%3Cpath d='M10 9.5v5l4.5-2.5z' fill='black'/%3E%3C/svg%3E")}
+.trilha details.resumo-full summary::before{-webkit-mask-image:var(--i-text);mask-image:var(--i-text)}
+.trilha details.transcript-box summary::before{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z'/%3E%3Cpath d='M8.5 10.5h7M8.5 14h4'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z'/%3E%3Cpath d='M8.5 10.5h7M8.5 14h4'/%3E%3C/svg%3E")}.trilha .stuck1-msg{margin:8px 0 0}
+@media (min-width:760px){.trilha .hudmain{grid-template-areas:"r bar" "r line" "cert cert"}.trilha .certline{grid-area:cert}}
+/* Aula completa (todos os capítulos em sequência, sem pontos) */
+.trilha .taula > summary{display:flex;align-items:center;gap:14px;cursor:pointer;list-style:none}
+.trilha .taula > summary::-webkit-details-marker{display:none}
+.trilha .taula > summary .tt{display:flex;flex-direction:column;min-width:0}
+.trilha .taula > summary b{font:600 1.15rem/1.3 var(--display,inherit)}
+.trilha .taula > summary small{color:var(--muted);font-size:.92rem}
+.trilha .taula > summary::after{content:"Abrir";margin-left:auto;font-weight:700;color:#0a4fa6;text-decoration:underline;text-underline-offset:3px}
+.trilha .taula[open] > summary::after{content:"Fechar"}
+.trilha .taula .parts{max-height:none}
+/* Players sem pontos (abertura, aula completa, encerramento): vídeo menor, com a lista de capítulos ao lado no desktop */
+.trilha .tcaps .player{max-width:640px}
+@media (min-width:900px){
+  .trilha .tcaps{display:grid;grid-template-columns:minmax(0,560px) minmax(0,1fr);gap:18px;align-items:start}
+  .trilha .tcaps .player{max-width:none}
+  .trilha .tcaps .parts{display:flex;flex-direction:column;margin-top:0;max-height:316px;overflow:auto;padding-right:4px}
+  .trilha .tcaps .pbtn{min-height:48px}
+}
+.trilha .tcaps-info b{display:block;font:600 1.15rem/1.3 var(--display,inherit)}
+.trilha .tcaps-info p{margin:8px 0 0}
+/* Cards sem pontos (Aula completa, Boas-vindas, Encerramento): o conteúdo respeita o padding do card,
+   igual ao .lvhead/.lvbody dos módulos (20px no celular, 32px a partir de 720px, 40px a partir de 1200px). */
+.trilha .tcaps-sec{--cpad:20px;padding-bottom:var(--cpad)}
+.trilha .tcaps-sec > :not(.lvhead):not(summary){margin-inline:var(--cpad)}
+.trilha .tcaps-sec > .tcaps{margin-top:0}
+.trilha .taula{padding-bottom:0}
+.trilha .taula[open]{padding-bottom:var(--cpad)}
+.trilha .taula > summary{padding:16px var(--cpad);min-height:72px}
+.trilha .taula > summary:focus-visible{outline-offset:-4px;border-radius:var(--r-lg)}
+.trilha .taula > summary::after{flex:none;padding-left:8px}
+.trilha .taula .lvbadge{width:48px;height:48px;font-size:1.15rem}
+.trilha .taula[open] > .tcaps{margin-top:4px}
+/* Vídeo inteiro dentro da moldura arredondada, sem faixa de outra cor sobrando. */
+.trilha .tcaps .player{max-width:none;background:#061427}
+.trilha .tcaps .player video{height:100%;border-radius:0;background:#061427}
+@media (min-width:720px){.trilha .tcaps-sec{--cpad:32px}}
+@media (min-width:1200px){.trilha .tcaps-sec{--cpad:40px}}
+/* Tela larga: vídeo com ~60% e o texto (ou a lista de capítulos) ao lado, na altura do vídeo. */
+@media (min-width:900px){
+  .trilha .tcaps{grid-template-columns:minmax(0,3fr) minmax(0,2fr);column-gap:28px}
+  .trilha .tcaps .parts{height:0;min-height:100%;max-height:none}
+  .trilha .tcaps[data-caps="tAb"]{grid-template-rows:1fr auto auto 1fr;row-gap:0}
+  .trilha .tcaps[data-caps="tAb"] .player{grid-row:1 / -1}
+  .trilha .tcaps[data-caps="tAb"] .tcaps-info{grid-column:2;grid-row:2}
+  .trilha .tcaps[data-caps="tAb"] > :not(.player):not(.tcaps-info){grid-column:2;grid-row:3}
+  .trilha .tcaps[data-caps="tAb"] .tcaps-info b{font-size:1.35rem}
+}
+@media (max-width:899.98px){.trilha .tcaps-info{margin-top:14px}}
+/* Topo (hero) em tela larga: usa a largura toda. Balão principal à esquerda e o atalho à direita, lado a lado;
+   embaixo, os passos (Assista/Leia/Responda) e as facilidades de leitura na mesma linha. Container query (e não
+   media query) porque mede a largura sem o zoom do "A+ Letra maior": com letra maior, só fica lado a lado quando cabe. */
+.trilha .hero{container-type:inline-size}
+@container (min-width:880px){
+  .trilha .hero-txt{grid-column:1 / -1;display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);column-gap:32px;align-items:start}
+  .trilha .hero-txt > .eyebrow{grid-column:1 / -1;grid-row:1}
+  .trilha .hero-txt > h1{grid-column:1 / -1;grid-row:2}
+  .trilha .hero .lede{grid-column:1;grid-row:3;max-width:none;margin:0;align-self:stretch}
+  .trilha .hero .lede-atalho{grid-column:2;grid-row:3}
+  .trilha .hero .how{grid-column:1;grid-row:4;margin-top:24px}
+  .trilha .hero .a11y{grid-column:2;grid-row:4;margin-top:24px}
+}

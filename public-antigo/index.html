@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <!-- Telas congeladas da produção de 20/10/2026 (origin/main ebc4a25, antes da publicação). Quem não está em VERSAO_NOVA_PARA vê esta versão. -->
+    <meta name="app-versao" content="antiga">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Área do Aluno | Cruzeiro do Sul Educacional</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/antigo/css/styles.css?v=28">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/antigo/css/trilha.css?v=2">
+    <link rel="stylesheet" href="/antigo/css/central.css?v=1">
+</head>
+<body>
+
+    <!-- APP CONTAINER -->
+    <div id="app">
+
+        <!-- 1. TELA DE LOGIN -->
+        <section id="login-page" class="auth-screen min-h-screen flex items-center justify-center p-4">
+            <div class="auth-orb auth-orb-a" aria-hidden="true"></div>
+            <div class="auth-orb auth-orb-b" aria-hidden="true"></div>
+            <div class="auth-orb auth-orb-c" aria-hidden="true"></div>
+            <div class="auth-card max-w-md w-full bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+                <div class="text-center mb-8 auth-hero">
+                    <div class="flex justify-center mb-4">
+                        <div class="auth-logo bg-cruzeiro rounded-xl overflow-hidden w-16 h-16">
+                            <img src="/assets/logo-login.jpg" alt="Cruzeiro do Sul Educacional" class="w-full h-full object-cover">
+                        </div>
+                    </div>
+                    <h1 class="text-2xl font-bold text-gray-800">Área do Aluno</h1>
+                    <p class="text-gray-500 text-sm">Cruzeiro do Sul Educacional</p>
+                </div>
+
+                <div id="login-error" class="hidden mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3" role="alert"></div>
+
+                <form id="login-form" class="space-y-5">
+                    <div>
+                        <label for="f_login_identifier" class="block text-sm font-medium text-gray-700 mb-1">RGM ou E-mail</label>
+                        <input type="text" id="f_login_identifier" required autocomplete="username" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition" placeholder="Digite seu acesso">
+                    </div>
+                    <div>
+                        <label for="f_login_password" class="block text-sm font-medium text-gray-700 mb-1">Senha</label>
+                        <div class="relative">
+                            <input type="password" id="f_login_password" required autocomplete="current-password" class="w-full px-4 py-3 pr-12 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition" placeholder="••••••••">
+                            <button type="button" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-gray-700" data-password-toggle="f_login_password" aria-label="Mostrar senha" aria-pressed="false">
+                                <i data-lucide="eye" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="submit" id="btn-login" class="cube-flip-btn" aria-label="Entrar">
+                        <span class="cube-flip-scene" aria-hidden="true">
+                            <span class="cube-flip-cube">
+                                <span class="cube-flip-face cube-flip-front" data-cube-front>Entrar</span>
+                                <span class="cube-flip-face cube-flip-second" data-cube-second>Acessar</span>
+                            </span>
+                        </span>
+                    </button>
+                </form>
+                <p class="mt-4 text-center text-xs text-gray-500 leading-relaxed">
+                    Senha inicial: primeiro nome com a inicial maiúscula + 123@ (ex.: Raphael123@).
+                </p>
+                <p class="mt-3 text-center text-sm text-gray-500">
+                    <button type="button" onclick="showScreen('first-access-page')" class="text-cruzeiro font-medium hover:underline">Primeiro acesso</button>
+                </p>
+            </div>
+        </section>
+
+        <!-- 1b. PRIMEIRO ACESSO -->
+        <section id="first-access-page" class="auth-screen hidden min-h-screen flex items-center justify-center p-4">
+            <div class="auth-orb auth-orb-a" aria-hidden="true"></div>
+            <div class="auth-orb auth-orb-b" aria-hidden="true"></div>
+            <div class="auth-orb auth-orb-c" aria-hidden="true"></div>
+            <div class="auth-card max-w-md w-full bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+                <div class="text-center mb-8 auth-hero">
+                    <div class="flex justify-center mb-4">
+                        <div class="auth-logo bg-cruzeiro text-white p-3 rounded-xl">
+                            <i data-lucide="user-plus" class="w-10 h-10"></i>
+                        </div>
+                    </div>
+                    <h1 class="text-2xl font-bold text-gray-800">Primeiro acesso</h1>
+                    <p class="text-gray-500 text-sm mt-1">Crie sua conta para gerar o certificado.</p>
+                </div>
+
+                <div id="register-error" class="hidden mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3" role="alert"></div>
+
+                <form id="register-form" class="space-y-4" novalidate>
+                    <div>
+                        <label for="f_reg_nome" class="block text-sm font-medium text-gray-700 mb-1">Nome completo*</label>
+                        <input type="text" id="f_reg_nome" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Seu nome completo">
+                        <p class="text-xs text-red-500 mt-1 hidden" id="err_reg_nome"></p>
+                    </div>
+                    <div>
+                        <label for="f_reg_email" class="block text-sm font-medium text-gray-700 mb-1">E-mail*</label>
+                        <input type="email" id="f_reg_email" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="exemplo@email.com">
+                        <p class="text-xs text-red-500 mt-1 hidden" id="err_reg_email"></p>
+                    </div>
+                    <div>
+                        <label for="f_reg_rgm" class="block text-sm font-medium text-gray-700 mb-1">RGM*</label>
+                        <input type="text" id="f_reg_rgm" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="000000">
+                        <p class="text-xs text-red-500 mt-1 hidden" id="err_reg_rgm"></p>
+                    </div>
+                    <div>
+                        <label for="f_reg_password" class="block text-sm font-medium text-gray-700 mb-1">Senha*</label>
+                        <div class="relative">
+                            <input type="password" id="f_reg_password" required minlength="6" class="w-full px-4 py-3 pr-12 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Mínimo 6 caracteres">
+                            <button type="button" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-gray-700" data-password-toggle="f_reg_password" aria-label="Mostrar senha" aria-pressed="false">
+                                <i data-lucide="eye" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                        <p class="text-xs text-red-500 mt-1 hidden" id="err_reg_password"></p>
+                    </div>
+                    <div>
+                        <label for="f_reg_confirm" class="block text-sm font-medium text-gray-700 mb-1">Confirmar senha*</label>
+                        <div class="relative">
+                            <input type="password" id="f_reg_confirm" required minlength="6" class="w-full px-4 py-3 pr-12 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Repita a senha">
+                            <button type="button" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-gray-700" data-password-toggle="f_reg_confirm" aria-label="Mostrar senha" aria-pressed="false">
+                                <i data-lucide="eye" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                        <p class="text-xs text-red-500 mt-1 hidden" id="err_reg_confirmPassword"></p>
+                    </div>
+                    <button type="submit" id="btn-register" class="btn-plastic w-full bg-cruzeiro hover:bg-blue-800 text-white font-semibold py-3 rounded-lg transition duration-300 shadow-lg disabled:cursor-not-allowed">
+                        <span class="btn-plastic-label">Criar acesso</span>
+                        <span class="btn-spinner" aria-hidden="true"></span>
+                    </button>
+                </form>
+                <p class="mt-6 text-center text-sm text-gray-500">
+                    Já tem cadastro?
+                    <button type="button" onclick="showScreen('login-page')" class="text-cruzeiro font-medium hover:underline">Entrar</button>
+                </p>
+            </div>
+        </section>
+
+        <!-- 2. DASHBOARD -->
+        <section id="dashboard-page" class="hidden min-h-screen">
+            <!-- Header -->
+            <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="bg-cruzeiro rounded-lg overflow-hidden w-9 h-9"><img src="/assets/logo-login.jpg" alt="Cruzeiro do Sul Educacional" class="w-full h-full object-cover"></div>
+                        <span class="font-bold text-gray-800 hidden sm:block">Cruzeiro do Sul <span class="text-blue-600">Virtual</span></span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="notif-wrap relative">
+                            <button type="button" class="notif-bell p-2 text-gray-500 hover:text-cruzeiro transition" data-notif-toggle aria-label="Avisos">
+                                <i data-lucide="bell" class="w-5 h-5"></i>
+                                <span class="notif-badge hidden" data-notif-badge>0</span>
+                            </button>
+                            <div class="notif-dropdown hidden">
+                                <div class="notif-dropdown-head">
+                                    <strong>Avisos</strong>
+                                    <button type="button" onclick="showScreen('avisos-page')">Ver todos</button>
+                                </div>
+                                <div class="notif-dropdown-list"></div>
+                            </div>
+                        </div>
+                        <div class="text-right hidden sm:block">
+                            <p class="text-sm font-semibold text-gray-800" data-user-name>Aluno</p>
+                            <p class="text-xs text-gray-500">Graduação</p>
+                        </div>
+                        <button onclick="logout()" class="p-2 text-gray-400 hover:text-red-500 transition" title="Sair">
+                            <i data-lucide="log-out" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <main class="max-w-7xl mx-auto px-4 py-8">
+                <div class="bento-welcome mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">Bem-vindo(a)!</h2>
+                    <p class="text-sm text-gray-500 mt-1">Acesse certificado, avisos, tutoriais e atendimento em um só lugar.</p>
+                </div>
+                <div id="dashboard-cert-error" class="hidden mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3" role="alert"></div>
+
+                <!-- Bento grid -->
+                <div class="bento-grid">
+                    <!-- Card: Meu Semestre -->
+                    <div class="dash-card bento-cell bento-semestre bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+                        <div class="flex items-start justify-between gap-3 mb-4">
+                            <div class="dash-card-icon dash-card-icon--sky w-12 h-12 bg-sky-50 text-sky-700 rounded-xl flex items-center justify-center">
+                                <i data-lucide="calendar-range" class="w-6 h-6"></i>
+                            </div>
+                            <span class="ms-dash-kicker">Destaque</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-800 mb-2">Meu Semestre</h3>
+                        <div id="dashboard-semestre-body" class="ms-dash-body">
+                            <p class="ms-muted">Carregando o semestre...</p>
+                        </div>
+                    </div>
+
+
+                    <!-- Card: Trilha EaD para Iniciantes -->
+                    <div class="so-trilha dash-card bento-cell bento-trilha bg-white p-6 rounded-3xl shadow-sm border border-gray-100 group">
+                        <div class="flex items-start justify-between gap-3 mb-4">
+                            <div class="dash-card-icon dash-card-icon--amber w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
+                                <i data-lucide="map" class="w-6 h-6"></i>
+                            </div>
+                            <span class="ms-dash-kicker">Para começar</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-800 mb-2">Trilha EaD para Iniciantes</h3>
+                        <p class="text-gray-500 text-sm mb-4 leading-relaxed">7 níveis com vídeo, resumo e perguntas: do primeiro acesso à formatura.</p>
+                        <div id="dashboard-trilha-body" class="trilha-dash">
+                            <div class="trilha-dash-bar"><i style="width:0%"></i></div>
+                            <p class="trilha-dash-txt">Carregando seu progresso...</p>
+                        </div>
+                        <button type="button" onclick="showScreen('trilha-page')" class="btn-plastic dash-card-btn w-full flex items-center justify-center gap-2 bg-gray-50 text-cruzeiro font-semibold py-2.5 rounded-lg mt-4">
+                            <span data-trilha-cta>Começar a trilha</span>
+                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+
+                    <!-- Card: Gerar Certificado -->
+                    <div class="dash-card bento-cell bento-feature bg-white p-6 rounded-3xl shadow-sm border border-gray-100 group">
+                        <div class="dash-card-icon dash-card-icon--blue w-12 h-12 bg-blue-50 text-cruzeiro rounded-xl flex items-center justify-center mb-4">
+                            <i data-lucide="award" class="w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-800 mb-2">Gerar Certificado</h3>
+                        <p class="text-gray-500 text-sm mb-6 leading-relaxed">Gere seu certificado de participação na Aula Inaugural de forma rápida e segura.</p>
+                        <button type="button" id="btn-gerar-certificado" class="btn-plastic dash-card-btn w-full flex items-center justify-center gap-2 bg-gray-50 text-cruzeiro font-semibold py-2.5 rounded-lg disabled:cursor-not-allowed">
+                            <span id="btn-gerar-certificado-text" class="btn-plastic-label">Gerar certificado</span>
+                            <span class="btn-spinner" aria-hidden="true"></span>
+                        </button>
+                    </div>
+
+                    <!-- Card: Avisos -->
+                    <div class="dash-card bento-cell bento-avisos bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+                        <div class="flex items-start justify-between gap-3 mb-4">
+                            <div class="dash-card-icon dash-card-icon--amber w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
+                                <i data-lucide="megaphone" class="w-6 h-6"></i>
+                            </div>
+                            <button type="button" onclick="showScreen('avisos-page')" class="text-sm font-semibold text-cruzeiro hover:underline">Ver todos</button>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-800 mb-2">Avisos importantes</h3>
+                        <p class="text-gray-500 text-sm mb-4">Comunicados da instituição, prazos e recados do seu polo.</p>
+                        <div id="dashboard-avisos-list" class="space-y-3"></div>
+                    </div>
+
+                    <!-- Card: Tutoriais -->
+                    <div class="dash-card bento-cell bento-tutoriais bg-white p-6 rounded-3xl shadow-sm border border-gray-100 group">
+                        <div class="dash-card-icon dash-card-icon--violet w-12 h-12 bg-violet-50 text-violet-700 rounded-xl flex items-center justify-center mb-4">
+                            <i data-lucide="play-circle" class="w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-800 mb-2">Tutoriais</h3>
+                        <p class="sem-trilha text-gray-500 text-sm mb-6 leading-relaxed">Videoaulas para Área do Aluno, Blackboard, provas, boleto e documentos.</p>
+                        <button onclick="showScreen('tutoriais-page')" class="sem-trilha btn-plastic dash-card-btn w-full flex items-center justify-center gap-2 bg-gray-50 text-cruzeiro font-semibold py-2.5 rounded-lg">
+                            Ver tutoriais
+                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                        </button>
+                        <p class="so-trilha text-gray-500 text-sm mb-6 leading-relaxed">Consulta rápida para uma dúvida pontual. Começando agora? A trilha acima ensina tudo passo a passo.</p>
+                        <button onclick="showScreen('tutoriais-page')" class="so-trilha w-full flex items-center justify-center gap-2 text-cruzeiro text-sm font-semibold py-2 hover:underline">
+                            Consultar tutoriais
+                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+
+                    <!-- Card: Atendimento -->
+                    <div class="dash-card bento-cell bento-atendimento bg-white p-6 rounded-3xl shadow-sm border border-gray-100 group">
+                        <div class="dash-card-icon dash-card-icon--green w-12 h-12 bg-green-50 text-green-700 rounded-xl flex items-center justify-center mb-4">
+                            <i data-lucide="headset" class="w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-800 mb-2">Atendimento</h3>
+                        <p class="text-gray-500 text-sm mb-6 leading-relaxed">Suporte acadêmico, comercial e indicação de novos alunos no WhatsApp.</p>
+                        <button onclick="showScreen('atendimento-page')" class="btn-plastic dash-card-btn w-full flex items-center justify-center gap-2 bg-gray-50 text-cruzeiro font-semibold py-2.5 rounded-lg">
+                            Falar com a equipe
+                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            </main>
+        </section>
+
+        <!-- 2a. MEU SEMESTRE -->
+        <section id="meu-semestre-page" class="hidden min-h-screen">
+            <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="bg-cruzeiro rounded-lg overflow-hidden w-9 h-9"><img src="/assets/logo-login.jpg" alt="Cruzeiro do Sul Educacional" class="w-full h-full object-cover"></div>
+                        <span class="font-bold text-gray-800 hidden sm:block">Cruzeiro do Sul <span class="text-blue-600">Virtual</span></span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="notif-wrap relative">
+                            <button type="button" class="notif-bell p-2 text-gray-500 hover:text-cruzeiro transition" data-notif-toggle aria-label="Avisos">
+                                <i data-lucide="bell" class="w-5 h-5"></i>
+                                <span class="notif-badge hidden" data-notif-badge>0</span>
+                            </button>
+                            <div class="notif-dropdown hidden">
+                                <div class="notif-dropdown-head">
+                                    <strong>Avisos</strong>
+                                    <button type="button" onclick="showScreen('avisos-page')">Ver todos</button>
+                                </div>
+                                <div class="notif-dropdown-list"></div>
+                            </div>
+                        </div>
+                        <div class="text-right hidden sm:block">
+                            <p class="text-sm font-semibold text-gray-800" data-user-name>Aluno</p>
+                            <p class="text-xs text-gray-500">Graduação</p>
+                        </div>
+                        <button onclick="logout()" class="p-2 text-gray-400 hover:text-red-500 transition" title="Sair">
+                            <i data-lucide="log-out" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+            <main class="max-w-7xl mx-auto px-4 py-8">
+                <button onclick="showScreen('dashboard-page')" class="flex items-center gap-2 text-gray-500 hover:text-cruzeiro mb-6 transition">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar ao Dashboard
+                </button>
+                <div id="meu-semestre-content"></div>
+            </main>
+        </section>
+
+        <!-- 2b. AVISOS -->
+        <section id="avisos-page" class="hidden min-h-screen">
+            <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="bg-cruzeiro rounded-lg overflow-hidden w-9 h-9"><img src="/assets/logo-login.jpg" alt="Cruzeiro do Sul Educacional" class="w-full h-full object-cover"></div>
+                        <span class="font-bold text-gray-800 hidden sm:block">Cruzeiro do Sul <span class="text-blue-600">Virtual</span></span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="notif-wrap relative">
+                            <button type="button" class="notif-bell p-2 text-gray-500 hover:text-cruzeiro transition" data-notif-toggle aria-label="Avisos">
+                                <i data-lucide="bell" class="w-5 h-5"></i>
+                                <span class="notif-badge hidden" data-notif-badge>0</span>
+                            </button>
+                            <div class="notif-dropdown hidden">
+                                <div class="notif-dropdown-head">
+                                    <strong>Avisos</strong>
+                                    <button type="button" onclick="showScreen('avisos-page')">Ver todos</button>
+                                </div>
+                                <div class="notif-dropdown-list"></div>
+                            </div>
+                        </div>
+                        <div class="text-right hidden sm:block">
+                            <p class="text-sm font-semibold text-gray-800" data-user-name>Aluno</p>
+                            <p class="text-xs text-gray-500">Graduação</p>
+                        </div>
+                        <button onclick="logout()" class="p-2 text-gray-400 hover:text-red-500 transition" title="Sair">
+                            <i data-lucide="log-out" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+            <main class="max-w-3xl mx-auto px-4 py-8">
+                <button onclick="showScreen('dashboard-page')" class="flex items-center gap-2 text-gray-500 hover:text-cruzeiro mb-6 transition">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar ao Dashboard
+                </button>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Avisos</h2>
+                <p class="text-gray-500 text-sm mb-6">Comunicados ativos para o seu perfil. Marque como lida para limpar o sino.</p>
+                <div id="avisos-page-list" class="space-y-4"></div>
+            </main>
+        </section>
+
+
+        <!-- 2d. TRILHA EAD PARA INICIANTES -->
+        <section id="trilha-page" class="hidden min-h-screen">
+            <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="bg-cruzeiro rounded-lg overflow-hidden w-9 h-9"><img src="/assets/logo-login.jpg" alt="Cruzeiro do Sul Educacional" class="w-full h-full object-cover"></div>
+                        <span class="font-bold text-gray-800 hidden sm:block">Cruzeiro do Sul <span class="text-blue-600">Virtual</span></span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="notif-wrap relative">
+                            <button type="button" class="notif-bell p-2 text-gray-500 hover:text-cruzeiro transition" data-notif-toggle aria-label="Avisos">
+                                <i data-lucide="bell" class="w-5 h-5"></i>
+                                <span class="notif-badge hidden" data-notif-badge>0</span>
+                            </button>
+                            <div class="notif-dropdown hidden">
+                                <div class="notif-dropdown-head">
+                                    <strong>Avisos</strong>
+                                    <button type="button" onclick="showScreen('avisos-page')">Ver todos</button>
+                                </div>
+                                <div class="notif-dropdown-list"></div>
+                            </div>
+                        </div>
+                        <div class="text-right hidden sm:block">
+                            <p class="text-sm font-semibold text-gray-800" data-user-name>Aluno</p>
+                            <p class="text-xs text-gray-500">Graduação</p>
+                        </div>
+                        <button onclick="logout()" class="p-2 text-gray-400 hover:text-red-500 transition" title="Sair">
+                            <i data-lucide="log-out" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+            <main class="max-w-5xl mx-auto px-4 py-6">
+                <button onclick="showScreen('dashboard-page')" class="flex items-center gap-2 text-gray-500 hover:text-cruzeiro mb-4 transition">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar ao início
+                </button>
+                <div id="trilha-root" class="trilha">
+                    <p class="trilha-loading">Carregando sua trilha...</p>
+                </div>
+            </main>
+        </section>
+
+        <!-- 2c. TUTORIAIS -->
+        <section id="tutoriais-page" class="hidden min-h-screen">
+            <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="bg-cruzeiro rounded-lg overflow-hidden w-9 h-9"><img src="/assets/logo-login.jpg" alt="Cruzeiro do Sul Educacional" class="w-full h-full object-cover"></div>
+                        <span class="font-bold text-gray-800 hidden sm:block">Cruzeiro do Sul <span class="text-blue-600">Virtual</span></span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="notif-wrap relative">
+                            <button type="button" class="notif-bell p-2 text-gray-500 hover:text-cruzeiro transition" data-notif-toggle aria-label="Avisos">
+                                <i data-lucide="bell" class="w-5 h-5"></i>
+                                <span class="notif-badge hidden" data-notif-badge>0</span>
+                            </button>
+                            <div class="notif-dropdown hidden">
+                                <div class="notif-dropdown-head">
+                                    <strong>Avisos</strong>
+                                    <button type="button" onclick="showScreen('avisos-page')">Ver todos</button>
+                                </div>
+                                <div class="notif-dropdown-list"></div>
+                            </div>
+                        </div>
+                        <div class="text-right hidden sm:block">
+                            <p class="text-sm font-semibold text-gray-800" data-user-name>Aluno</p>
+                            <p class="text-xs text-gray-500">Graduação</p>
+                        </div>
+                        <button onclick="logout()" class="p-2 text-gray-400 hover:text-red-500 transition" title="Sair">
+                            <i data-lucide="log-out" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+            <main class="max-w-6xl mx-auto px-4 py-8">
+                <button onclick="showScreen('dashboard-page')" class="flex items-center gap-2 text-gray-500 hover:text-cruzeiro mb-6 transition">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar ao Dashboard
+                </button>
+                <div id="central-ajuda" class="so-trilha central"></div>
+                <div class="sem-trilha">
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Tutoriais</h2>
+                <p class="text-gray-500 text-sm mb-6">Assista só quando quiser: o vídeo carrega ao clicar no card.</p>
+                <div class="hidden tutoriais-trilha-banner">
+                    <div class="tutoriais-trilha-icon"><i data-lucide="map" class="w-6 h-6"></i></div>
+                    <div class="flex-1 min-w-0">
+                        <p class="tutoriais-trilha-kicker">Começando agora?</p>
+                        <h3>Faça a Trilha EaD para Iniciantes</h3>
+                        <p>7 níveis com vídeo, resumo e perguntas, do primeiro acesso à formatura. É o caminho mais completo para aprender a usar tudo.</p>
+                    </div>
+                    <button type="button" data-open-trilha="" class="btn-plastic tutoriais-trilha-btn">Ir para a trilha <i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+                </div>
+                <input id="tutoriais-search" type="search" class="w-full mb-4 px-4 py-3 rounded-xl border border-gray-200" placeholder="Buscar tutorial...">
+                <div id="tutoriais-filters" class="flex flex-wrap gap-2 mb-6"></div>
+                <div id="tutoriais-grid" class="tutorial-grid"></div>
+                </div>
+            </main>
+        </section>
+
+        <!-- 2d. ATENDIMENTO -->
+        <section id="atendimento-page" class="hidden min-h-screen">
+            <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="bg-cruzeiro rounded-lg overflow-hidden w-9 h-9"><img src="/assets/logo-login.jpg" alt="Cruzeiro do Sul Educacional" class="w-full h-full object-cover"></div>
+                        <span class="font-bold text-gray-800 hidden sm:block">Cruzeiro do Sul <span class="text-blue-600">Virtual</span></span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="notif-wrap relative">
+                            <button type="button" class="notif-bell p-2 text-gray-500 hover:text-cruzeiro transition" data-notif-toggle aria-label="Avisos">
+                                <i data-lucide="bell" class="w-5 h-5"></i>
+                                <span class="notif-badge hidden" data-notif-badge>0</span>
+                            </button>
+                            <div class="notif-dropdown hidden">
+                                <div class="notif-dropdown-head">
+                                    <strong>Avisos</strong>
+                                    <button type="button" onclick="showScreen('avisos-page')">Ver todos</button>
+                                </div>
+                                <div class="notif-dropdown-list"></div>
+                            </div>
+                        </div>
+                        <div class="text-right hidden sm:block">
+                            <p class="text-sm font-semibold text-gray-800" data-user-name>Aluno</p>
+                            <p class="text-xs text-gray-500">Graduação</p>
+                        </div>
+                        <button onclick="logout()" class="p-2 text-gray-400 hover:text-red-500 transition" title="Sair">
+                            <i data-lucide="log-out" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+            <main class="max-w-3xl mx-auto px-4 py-8">
+                <button onclick="showScreen('dashboard-page')" class="flex items-center gap-2 text-gray-500 hover:text-cruzeiro mb-6 transition">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar ao Dashboard
+                </button>
+                <h2 class="text-2xl font-bold text-gray-800 mb-1">Atendimento</h2>
+                <p id="atendimento-polo" class="text-sm text-gray-500 mb-6"></p>
+
+                <div class="bg-white rounded-2xl border border-gray-100 p-6 mb-4">
+                    <h3 class="text-lg font-bold mb-2">Suporte acadêmico</h3>
+                    <p class="text-sm text-gray-500 mb-4">Abre o WhatsApp já com seu nome, RGM e polo.</p>
+                    <a id="btn-whatsapp-academico" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center w-full bg-green-600 text-white font-semibold py-3 rounded-xl">Abrir WhatsApp acadêmico</a>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-gray-100 p-6 mb-4">
+                    <h3 class="text-lg font-bold mb-2">Comercial</h3>
+                    <p class="text-sm text-gray-500 mb-4">Fale com o comercial do seu polo ou indique alguém.</p>
+                    <div class="grid sm:grid-cols-2 gap-3">
+                        <a id="btn-whatsapp-comercial" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center bg-cruzeiro text-white font-semibold py-3 rounded-xl">Falar com comercial</a>
+                        <button type="button" id="btn-toggle-indicacao" class="btn-plastic dash-card-btn bg-gray-50 text-cruzeiro font-semibold py-3 rounded-xl" aria-expanded="false" aria-controls="indicacao-panel">Indicar alguém</button>
+                    </div>
+                </div>
+
+                <div id="indicacao-panel" class="indicacao-panel" hidden>
+                    <div class="indicacao-panel-inner">
+                        <div id="indicacao-card" class="bg-white rounded-2xl border border-gray-100 p-6">
+                            <div class="flex items-start justify-between gap-3 mb-1">
+                                <h3 class="text-lg font-bold">Indicar alguém</h3>
+                                <button type="button" id="btn-close-indicacao" class="text-gray-400 hover:text-gray-700 p-1 rounded-lg" aria-label="Fechar formulário de indicação">
+                                    <i data-lucide="x" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                            <p class="text-sm text-gray-500 mb-4">Seus dados já entram automaticamente. Preencha só os dados da pessoa indicada.</p>
+                            <div id="indicacao-alert" class="hidden mb-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3"></div>
+                            <div id="indicacao-ok" class="hidden mb-3 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-3"></div>
+                            <form id="indicacao-form" class="space-y-4" novalidate>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" for="f_ind_nome">Nome*</label>
+                                    <input id="f_ind_nome" required class="w-full px-4 py-2.5 rounded-lg border">
+                                    <p class="text-xs text-red-500 mt-1 hidden" id="err_ind_nome"></p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" for="f_ind_whatsapp">WhatsApp*</label>
+                                    <input id="f_ind_whatsapp" required class="w-full px-4 py-2.5 rounded-lg border" placeholder="11999999999">
+                                    <p class="text-xs text-red-500 mt-1 hidden" id="err_ind_whatsapp"></p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" for="f_ind_email">E-mail (opcional)</label>
+                                    <input id="f_ind_email" type="email" class="w-full px-4 py-2.5 rounded-lg border">
+                                    <p class="text-xs text-red-500 mt-1 hidden" id="err_ind_email"></p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" for="f_ind_curso">Curso de interesse (opcional)</label>
+                                    <input id="f_ind_curso" class="w-full px-4 py-2.5 rounded-lg border">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" for="f_ind_obs">Observação (opcional)</label>
+                                    <textarea id="f_ind_obs" rows="3" class="w-full px-4 py-2.5 rounded-lg border"></textarea>
+                                    <p class="text-xs text-red-500 mt-1 hidden" id="err_ind_obs"></p>
+                                </div>
+                                <button id="btn-indicacao" type="submit" class="w-full bg-cruzeiro text-white font-semibold py-3 rounded-xl">Enviar indicação</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </section>
+
+        <!-- 3. FORMULÁRIO -->
+        <section id="form-page" class="hidden min-h-screen py-10 px-4">
+            <div class="max-w-2xl mx-auto">
+                <button onclick="showScreen('dashboard-page')" class="flex items-center gap-2 text-gray-500 hover:text-cruzeiro mb-6 transition">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar ao Dashboard
+                </button>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+                    <div class="p-8 border-b border-gray-50">
+                        <h1 class="text-2xl font-bold text-gray-800">Gerar Certificado da Aula Inaugural</h1>
+                        <p class="text-gray-500 mt-2">Preencha corretamente as informações abaixo. Os dados informados serão utilizados para gerar seu certificado.</p>
+                    </div>
+
+                    <form id="cert-form" class="p-8 space-y-6" novalidate>
+                        <div id="form-alert" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3" role="alert"></div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="md:col-span-2">
+                                <label for="f_email" class="block text-sm font-semibold text-gray-700 mb-1">E-mail*</label>
+                                <input type="email" id="f_email" required class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="exemplo@email.com">
+                                <p class="text-xs text-red-500 mt-1 hidden" id="err_email">Insira um e-mail válido.</p>
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <label for="f_nome" class="block text-sm font-semibold text-gray-700 mb-1">Nome Completo*</label>
+                                <p class="text-xs text-gray-400 mb-2">Este nome será exibido no certificado.</p>
+                                <input type="text" id="f_nome" required class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Seu nome completo">
+                                <p class="text-xs text-red-500 mt-1 hidden" id="err_nome">O nome é obrigatório.</p>
+                            </div>
+
+                            <div>
+                                <label for="f_rgm" class="block text-sm font-semibold text-gray-700 mb-1">RGM*</label>
+                                <input type="text" id="f_rgm" required class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="000.000-0">
+                                <p class="text-xs text-red-500 mt-1 hidden" id="err_rgm">O RGM é obrigatório.</p>
+                            </div>
+
+                            <div>
+                                <label for="f_data" class="block text-sm font-semibold text-gray-700 mb-1">Data da Aula Inaugural*</label>
+                                <input type="date" id="f_data" required class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none">
+                                <p class="text-xs text-red-500 mt-1 hidden" id="err_data_aula_inaugural">Informe uma data válida.</p>
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <label for="f_curso" class="block text-sm font-semibold text-gray-700 mb-1">Qual curso você está matriculado?*</label>
+                                <p class="text-xs text-gray-400 mb-2">Digite para buscar e selecione o curso da lista.</p>
+                                <div class="relative">
+                                    <input type="text" id="f_curso" required autocomplete="off" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ex: Administração" aria-autocomplete="list" aria-controls="curso-suggestions">
+                                    <ul id="curso-suggestions" class="curso-suggestions" role="listbox" hidden></ul>
+                                </div>
+                                <p class="text-xs text-red-500 mt-1 hidden" id="err_curso">Selecione um curso da lista.</p>
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <label for="f_unidade" class="block text-sm font-semibold text-gray-700 mb-1">Qual unidade você está matriculado?*</label>
+                                <select id="f_unidade" required class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                                    <option value="">Selecione uma unidade</option>
+                                    <option value="Barra Funda">Barra Funda</option>
+                                    <option value="Taboão da Serra - Jd. Mituzi">Taboão da Serra - Jd. Mituzi</option>
+                                    <option value="Taboão da Serra - Centro">Taboão da Serra - Centro</option>
+                                    <option value="Campinas - Jd. Cristina">Campinas - Jd. Cristina</option>
+                                    <option value="Itapira">Itapira</option>
+                                    <option value="Capivari">Capivari</option>
+                                    <option value="Sapopemba (Vila Ema)">Sapopemba (Vila Ema)</option>
+                                    <option value="Freguesia do Ó">Freguesia do Ó</option>
+                                    <option value="Morumbi">Morumbi</option>
+                                    <option value="Vila Prudente">Vila Prudente</option>
+                                    <option value="Ibirapuera">Ibirapuera</option>
+                                    <option value="Santana">Santana</option>
+                                </select>
+                                <p class="text-xs text-red-500 mt-1 hidden" id="err_unidade">Selecione uma unidade.</p>
+                            </div>
+                        </div>
+
+                        <div class="pt-6">
+                            <button type="submit" id="btn-submit" class="w-full bg-cruzeiro text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-800 transition duration-300 flex items-center justify-center gap-3 disabled:cursor-not-allowed">
+                                <span id="btn-text">Gerar meu certificado</span>
+                                <div id="btn-loader" class="btn-loader hidden" aria-hidden="true"></div>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. SUCESSO E DOWNLOAD -->
+        <section id="success-page" class="hidden min-h-screen py-10 px-4 bg-gray-50">
+            <div class="max-w-4xl mx-auto text-center">
+                <div class="mb-8">
+                    <div class="inline-flex items-center justify-center w-16 h-16 bg-green-100 text-green-600 rounded-full mb-4">
+                        <i data-lucide="check-circle" class="w-10 h-10"></i>
+                    </div>
+                    <h1 class="text-3xl font-bold text-gray-800">Certificado gerado com sucesso!</h1>
+                    <p class="text-gray-500 mt-2">Você já pode visualizar, imprimir ou baixar seu documento abaixo.</p>
+                    <p class="text-xs text-gray-400 mt-1" id="cert-protocol"></p>
+                </div>
+
+                <!-- Preview do PDF real gerado -->
+                <div class="bg-white p-4 rounded-xl shadow-inner border border-gray-200 mb-8">
+                    <iframe id="preview-frame" title="Pré-visualização do certificado" class="w-full rounded-lg border border-gray-100 bg-gray-100" style="height: 70vh;"></iframe>
+                </div>
+
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                    <button onclick="downloadPDF()" class="flex items-center gap-2 bg-cruzeiro text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-800 transition shadow-md w-full sm:w-auto">
+                        <i data-lucide="download" class="w-5 h-5"></i> Baixar em PDF
+                    </button>
+                    <button onclick="printCert()" class="flex items-center gap-2 bg-white text-gray-700 border border-gray-300 px-8 py-3 rounded-lg font-semibold hover:bg-gray-50 transition w-full sm:w-auto">
+                        <i data-lucide="printer" class="w-5 h-5"></i> Imprimir
+                    </button>
+                    <button onclick="showScreen('dashboard-page')" class="flex items-center gap-2 text-gray-500 hover:text-cruzeiro font-medium px-8 py-3 w-full sm:w-auto transition">
+                        Voltar para área do aluno
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <div id="tutorial-modal" class="hidden video-modal">
+            <div class="video-modal-card">
+                <div class="flex justify-between items-start gap-4 mb-3">
+                    <div>
+                        <h3 id="tutorial-modal-title" class="font-bold text-lg text-gray-800"></h3>
+                        <p id="tutorial-modal-desc" class="text-sm text-gray-500 mt-1"></p>
+                    </div>
+                    <button type="button" data-close-tutorial class="text-gray-500 font-medium">Fechar</button>
+                </div>
+                <div class="video-frame-wrap">
+                    <iframe id="tutorial-frame" title="Tutorial" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>
+            </div>
+        </div>
+
+    </div> <!-- Fim App Container -->
+
+    <!-- Bibliotecas PDF (locais) -->
+    <script src="/vendor/pdf-lib.min.js"></script>
+    <script src="/vendor/fontkit.umd.min.js"></script>
+
+    <!-- Módulos da aplicação -->
+    <script src="/js/config.js?v=7"></script>
+    <script src="/js/auth.js?v=8"></script>
+    <script src="/antigo/js/api.js?v=13"></script>
+    <script src="/js/validation.js?v=7"></script>
+    <script src="/js/cursos.js?v=7"></script>
+    <script src="/antigo/js/certificate.js?v=7"></script>
+    <script src="/antigo/js/avisos.js?v=7"></script>
+    <script src="/antigo/js/tutoriais.js?v=10"></script>
+    <script src="/antigo/js/trilha.js?v=3"></script>
+    <script src="/antigo/js/central.js?v=1"></script>
+    <script src="/antigo/js/atendimento.js?v=8"></script>
+    <script src="/antigo/js/meu-semestre.js?v=13"></script>
+    <script src="/antigo/js/ui.js?v=13"></script>
+    <script src="/antigo/js/app.js?v=14"></script>
+</body>
+</html>
