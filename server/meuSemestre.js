@@ -376,6 +376,29 @@ async function getMateriasByRgm(pool, rgm) {
   return copia.rows[0] || null;
 }
 
+// O calendário do semestre (provas, prazos, recuperação, encerramento) é o mesmo
+// em todos os cursos. Ele está cadastrado só no plano de Administração.
+async function calendarioPadrao(pool) {
+  const periodo = process.env.MATERIAS_PERIODO || '2026/2';
+  const plano = await pool.query(
+    `SELECT id
+     FROM csu_semestre_planos
+     WHERE ativo = TRUE AND curso = 'Administração'
+     ORDER BY (periodo = $1) DESC, id DESC
+     LIMIT 1`,
+    [periodo],
+  );
+  if (!plano.rows[0]) return [];
+  const eventos = await pool.query(
+    `SELECT id, titulo, subtitulo, data_inicio, data_fim, tipo, ordem
+     FROM csu_semestre_eventos
+     WHERE plano_id = $1
+     ORDER BY data_inicio ASC, ordem ASC, id ASC`,
+    [plano.rows[0].id],
+  );
+  return eventos.rows;
+}
+
 async function getAlunoCurso(pool, alunoId) {
   const result = await pool.query(
     `SELECT id, nome, email, rgm, curso
@@ -470,7 +493,7 @@ async function getMeuSemestre(pool, alunoId) {
           titulo: 'Meu Semestre',
         },
         itens,
-        eventos: [],
+        eventos: await calendarioPadrao(pool),
         mensalidadesRows: mensalidadesRes.rows,
         today,
         avisoPagamento,
