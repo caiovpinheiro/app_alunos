@@ -668,7 +668,11 @@
       msg.textContent = 'Sincronizando matérias do Postgres...';
     }
     try {
-      var res = await request('/api/admin/materias-imagens/sync', { method: 'POST' });
+      var res = await request('/api/admin/materias-imagens/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(matriculaFilterBody()),
+      });
       if (msg) msg.textContent = res.message || 'Sincronização concluída.';
       await loadMaterias();
       await loadImagensPreview();
@@ -716,7 +720,11 @@
       msg.textContent = 'Gerando CSV...';
     }
     try {
-      var res = await fetch('/api/admin/materias-imagens/export.csv', {
+      var f = matriculaFilterBody();
+      var qs = [];
+      if (f.de) qs.push('de=' + encodeURIComponent(f.de));
+      if (f.ate) qs.push('ate=' + encodeURIComponent(f.ate));
+      var res = await fetch('/api/admin/materias-imagens/export.csv' + (qs.length ? '?' + qs.join('&') : ''), {
         headers: token() ? { Authorization: 'Bearer ' + token() } : {},
       });
       if (res.status === 401) {

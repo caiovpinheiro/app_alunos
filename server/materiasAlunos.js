@@ -72,24 +72,20 @@ function needsNomeUpdate(nome, rgm) {
   return false;
 }
 
-async function fetchAllFromPostgres() {
+async function fetchAllFromPostgres(rgms) {
   const table = String(process.env.MATERIAS_TABLE || 'materias_alunos').replace(/[^\w]/g, '') || 'materias_alunos';
-  const since = String(process.env.MATERIAS_SINCE || '').trim();
+  const since = String(process.env.MATERIAS_SINCE || '').trim() || null;
+  const lista = rgms ? [...rgms].map((rgm) => String(rgm).replace(/\D/g, '')).filter(Boolean) : null;
   const source = createMateriasPool();
   try {
-    const result = since
-      ? await source.query(
-        `SELECT rgm, aluno, materias, qtd_materias, consultado_em
-         FROM ${table}
-         WHERE consultado_em >= $1::timestamptz
-         ORDER BY rgm ASC`,
-        [since],
-      )
-      : await source.query(
-        `SELECT rgm, aluno, materias, qtd_materias, consultado_em
-         FROM ${table}
-         ORDER BY rgm ASC`,
-      );
+    const result = await source.query(
+      `SELECT rgm, aluno, materias, qtd_materias, consultado_em
+       FROM ${table}
+       WHERE ($1::timestamptz IS NULL OR consultado_em >= $1::timestamptz)
+         AND ($2::text[] IS NULL OR regexp_replace(rgm, '\\D', '', 'g') = ANY($2::text[]))
+       ORDER BY rgm ASC`,
+      [since, lista],
+    );
     return result.rows;
   } finally {
     await source.end();
@@ -126,8 +122,8 @@ async function ensureAlunoForMaterias(pool, { rgm, nome }) {
   return { id: inserted.rows[0].id, created: true, nomeUpdated: false };
 }
 
-async function syncFromPostgres(pool) {
-  const rows = await fetchAllFromPostgres();
+async function syncFromPostgres(pool, { rgms } = {}) {
+  const rows = await fetchAllFromPostgres(rgms);
   let synced = 0;
   let linked = 0;
   let created = 0;

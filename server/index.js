@@ -950,15 +950,27 @@ app.post('/api/admin/materias-imagens/sync', requireAdmin, async (req, res) => {
   if (!pool) return unavailable(res);
   try {
     await db.ensureSchema(pool);
-    const result = await materiasAlunos.syncFromPostgres(pool);
+    const filter = await resolveMatriculaFilter(req.body);
+    if (filter && filter.rgms.size === 0) {
+      return res.json({
+        success: true,
+        message: `Nenhum aluno Graduação · Nova matrícula entre ${filter.de} e ${filter.ate}.`,
+        synced: 0,
+        total: 0,
+      });
+    }
+    const result = await materiasAlunos.syncFromPostgres(pool, { rgms: filter ? filter.rgms : null });
+    const periodo = filter ? ` (${filter.rgms.size} matriculados de ${filter.de} a ${filter.ate})` : '';
     return res.json({
       success: true,
-      message: `Sincronizados ${result.synced} alunos de materias_alunos (Postgres).`,
+      message: `Sincronizados ${result.synced} alunos de materias_alunos (Postgres)${periodo}.`,
+      matched: filter ? filter.rgms.size : null,
       ...result,
     });
   } catch (err) {
     console.error('Falha ao sincronizar matérias:', err.message);
-    return res.status(500).json({ success: false, message: err.message || 'Não foi possível sincronizar as matérias.' });
+    const status = err.status || 500;
+    return res.status(status).json({ success: false, message: err.message || 'Não foi possível sincronizar as matérias.' });
   }
 });
 
@@ -1027,11 +1039,16 @@ app.get('/api/admin/materias-imagens/status', requireAdmin, async (req, res) => 
 app.get('/api/admin/materias-imagens/export.csv', requireAdmin, async (req, res) => {
   if (!pool) return unavailable(res);
   try {
+    const filter = await resolveMatriculaFilter(req.query);
+    const filtroRgms = filter ? [...filter.rgms] : null;
     let phones = new Map();
     const source = getMatriculadosPool();
     if (source) {
       const rgms = (await pool.query(
-        `SELECT rgm FROM csu_materias_imagens WHERE status = 'concluida' AND share_token IS NOT NULL`,
+        `SELECT rgm FROM csu_materias_imagens
+         WHERE status = 'concluida' AND share_token IS NOT NULL
+           AND ($1::text[] IS NULL OR regexp_replace(rgm, '\\D', '', 'g') = ANY($1::text[]))`,
+        [filtroRgms],
       )).rows.map((row) => row.rgm);
       try {
         phones = await matriculados.phonesByRgms(source, rgms);
@@ -1039,10 +1056,14 @@ app.get('/api/admin/materias-imagens/export.csv', requireAdmin, async (req, res)
         console.error('Telefones de matriculados indisponíveis no export:', err.message);
       }
     }
-    return planoMateriasImagem.sendExportCsv(pool, req, res, phones);
+    return planoMateriasImagem.sendExportCsv(pool, req, res, phones, filtroRgms);
   } catch (err) {
     console.error('Falha ao exportar CSV de matérias:', err.message);
-    return res.status(500).json({ success: false, message: 'Não foi possível exportar o CSV.' });
+    const status = err.status || 500;
+    return res.status(status).json({
+      success: false,
+      message: status === 422 ? err.message : 'Não foi possível exportar o CSV.',
+    });
   }
 });
 

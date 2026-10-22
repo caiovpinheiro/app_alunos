@@ -623,7 +623,7 @@ function rowsToCsv(rows) {
   return `\uFEFF${lines.join('\n')}`;
 }
 
-async function buildExportRows(pool, req, phonesByRgm) {
+async function buildExportRows(pool, req, phonesByRgm, rgms) {
   const base = publicBaseUrl(req);
   const result = await pool.query(
     `SELECT
@@ -636,7 +636,9 @@ async function buildExportRows(pool, req, phonesByRgm) {
      JOIN csu_materias_alunos m ON m.rgm = i.rgm
      LEFT JOIN csu_alunos a ON a.id = i.aluno_id
      WHERE i.status = 'concluida' AND i.share_token IS NOT NULL
+       AND ($1::text[] IS NULL OR regexp_replace(i.rgm, '\\D', '', 'g') = ANY($1::text[]))
      ORDER BY COALESCE(a.nome, m.aluno_nome) ASC, m.rgm ASC`,
+    [rgms || null],
   );
   const phones = phonesByRgm || new Map();
   const updates = [];
@@ -664,8 +666,8 @@ async function buildExportRows(pool, req, phonesByRgm) {
   return rows;
 }
 
-async function sendExportCsv(pool, req, res, phonesByRgm) {
-  const rows = await buildExportRows(pool, req, phonesByRgm);
+async function sendExportCsv(pool, req, res, phonesByRgm, rgms) {
+  const rows = await buildExportRows(pool, req, phonesByRgm, rgms);
   const csv = rowsToCsv(rows);
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', 'attachment; filename="planos-materias.csv"');
