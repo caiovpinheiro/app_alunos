@@ -264,7 +264,7 @@
     {
      "id": "quando-prova",
      "q": "Quando e onde é a prova?",
-     "a": "A prova (A1) é feita <b>pela internet</b>, no começo do mês seguinte ao da matéria, na Área do Aluno em <b>Vida Acadêmica → Plataforma de Prova</b>. As datas estão no <b>Calendário Acadêmico</b> e no <b>Meu Semestre</b>, aqui no portal. Atenção: as matérias de <b>junho</b> (que abrem em fevereiro) têm prova no <b>fim de maio</b>, e as de <b>dezembro</b> (que abrem em agosto), no <b>fim de novembro</b>.",
+     "a": "A prova (A1) é feita <b>pela internet</b>, no começo do mês seguinte ao da matéria, na Área do Aluno em <b>Vida Acadêmica → Plataforma de Prova</b>. As datas estão no <b>Calendário Acadêmico</b> e no <b>Meu Semestre</b>, aqui no portal. Atenção: as matérias de <b>junho</b> (que abrem em fevereiro) têm prova no <b>fim de maio</b>, e as de <b>dezembro</b> (que abrem em agosto), no <b>fim de novembro</b>. A previsão é que, a partir de <b>agosto de 2027</b>, as provas passem a ser <b>presenciais</b>: veja a próxima pergunta.",
      "nivel_trilha": 4,
      "tags": [
       "prova",
@@ -272,6 +272,41 @@
       "data",
       "calendário",
       "plataforma de prova"
+     ],
+     "confirmar": false
+    },
+    {
+     "id": "provas-presenciais-2027",
+     "q": "As provas vão ser presenciais?",
+     "a": "Hoje, você faz as provas pela internet, na <b>Plataforma de Prova</b>, dentro de Vida Acadêmica, e as datas ficam no <b>Calendário Acadêmico</b>. O ensino a distância está passando por mudanças: o novo marco regulatório (Decreto nº 12.456/2025) deu às instituições um período de adaptação de até dois anos a partir de maio de 2025. A previsão informada para a nossa operação é que, a partir de <b>agosto de 2027</b>, as provas dos cursos <b>EaD</b> passem a ser <b>presenciais</b>. Nos cursos <b>semipresenciais</b>, as provas e algumas atividades também exigirão a sua presença. Você não estará sozinho: a nossa rede de polos vai orientar você sobre as datas, os locais e cada etapa, e tudo será comunicado com antecedência. <b>Por enquanto, seu compromisso é estudar. O nosso é ajudar você a seguir em frente.</b>",
+     "nivel_trilha": 4,
+     "tags": [
+      "prova",
+      "presencial",
+      "2027",
+      "semipresencial",
+      "marco regulatório",
+      "mec",
+      "decreto"
+     ],
+     "confirmar": false
+    },
+    {
+     "id": "mudar-polo-presencial",
+     "q": "Preciso mudar de polo por causa das provas presenciais?",
+     "a": "Não. A previsão é que as atividades presenciais comecem em <b>agosto de 2027</b>, e os locais de realização das provas ainda serão definidos. Por isso, não há necessidade de mudar de polo agora. Além disso, uma transferência pode alterar os seus <b>descontos</b> e os benefícios de atendimento. Você faz parte da <b>maior rede de polos parceiros da Cruzeiro do Sul</b>: rede de apoio, condições especiais na mensalidade e atendimento humanizado pelo <b>WhatsApp até as 22h</b>. A nossa rede soma quase 4 mil avaliações no Google, com nota média de <b>4,8</b>. O mais importante é seguir em frente com os estudos: a nossa rede estará ao seu lado.",
+     "nivel_trilha": 4,
+     "tags": [
+      "2027",
+      "desconto",
+      "descontos",
+      "maior rede",
+      "mudar de polo",
+      "polo",
+      "presencial",
+      "transferência",
+      "transferência de polo",
+      "whatsapp"
      ],
      "confirmar": false
     },
@@ -305,7 +340,7 @@
     {
      "id": "onde-notas",
      "q": "Onde vejo minhas notas?",
-     "a": "A nota dos exercícios aparece no <b>AVA</b>, dentro da matéria. A nota final fica na Área do Aluno, em <b>Vida Acadêmica → Minhas Notas - Detalhado</b>: escolha o semestre para ver. O sistema arredonda a média.",
+     "a": "A nota dos exercícios aparece no <b>AVA</b>, dentro da matéria. A nota final fica na Área do Aluno, em <b>Vida Acadêmica → Minhas Notas - Detalhado</b>: escolha o semestre para ver. O sistema arredonda a média. A nota <b>não aparece na hora</b>: o lançamento segue o <b>Calendário Acadêmico</b>, e ela é divulgada nas datas do calendário. Se ainda aparecer \"Sem Resultado\", confira a data lá.",
      "nivel_trilha": 4,
      "tags": [
       "notas",
