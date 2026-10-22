@@ -376,9 +376,15 @@ async function getMateriasByRgm(pool, rgm) {
   return copia.rows[0] || null;
 }
 
-// O calendário do semestre (provas, prazos, recuperação, encerramento) é o mesmo
-// em todos os cursos. Ele está cadastrado só no plano de Administração.
-async function calendarioPadrao(pool) {
+function formatBrCurto(iso) {
+  const parsed = parseIso(iso);
+  if (!parsed) return '';
+  return `${String(parsed.day).padStart(2, '0')}/${String(parsed.month).padStart(2, '0')}`;
+}
+
+// As datas do calendário (fim do mês, janela de prova, prazo, recuperação, encerramento)
+// são as do plano de Administração. O nome que aparece é o da matéria do aluno naquele mês.
+async function modeloCalendario(pool) {
   const periodo = process.env.MATERIAS_PERIODO || '2026/2';
   const plano = await pool.query(
     `SELECT id
@@ -388,15 +394,105 @@ async function calendarioPadrao(pool) {
      LIMIT 1`,
     [periodo],
   );
-  if (!plano.rows[0]) return [];
-  const eventos = await pool.query(
-    `SELECT id, titulo, subtitulo, data_inicio, data_fim, tipo, ordem
-     FROM csu_semestre_eventos
-     WHERE plano_id = $1
-     ORDER BY data_inicio ASC, ordem ASC, id ASC`,
-    [plano.rows[0].id],
-  );
-  return eventos.rows;
+  if (!plano.rows[0]) return { slots: [], prazos: [], fixos: [] };
+  const planoId = plano.rows[0].id;
+  const [itens, eventos] = await Promise.all([
+    pool.query(
+      `SELECT tipo, titulo, data_inicio, data_fim, prova_inicio, prova_fim, prazo_preferencial
+       FROM csu_semestre_itens
+       WHERE plano_id = $1`,
+      [planoId],
+    ),
+    pool.query(
+      `SELECT id, titulo, subtitulo, data_inicio, data_fim, tipo, ordem
+       FROM csu_semestre_eventos
+       WHERE plano_id = $1 AND tipo IN ('recuperacao', 'encerramento', 'divulgacao')
+       ORDER BY data_inicio ASC, ordem ASC, id ASC`,
+      [planoId],
+    ),
+  ]);
+  const slots = itens.rows
+    .filter((row) => row.tipo === 'disciplina' && row.data_fim)
+    .map((row) => ({
+      month: String(toIsoDate(row.data_inicio) || '').slice(0, 7),
+      fim: toIsoDate(row.data_fim),
+      provaInicio: toIsoDate(row.prova_inicio),
+      provaFim: toIsoDate(row.prova_fim),
+    }))
+    .filter((slot) => slot.month);
+  const prazos = [];
+  itens.rows.forEach((row) => {
+    if (row.tipo !== 'atividade' || !row.prazo_preferencial) return;
+    const titulo = String(row.titulo || '').toLowerCase();
+    const data = toIsoDate(row.prazo_preferencial);
+    if (!data) return;
+    if (titulo.includes('extens')) prazos.push({ match: 'extens', data });
+    else if (titulo.includes('ambienta')) prazos.push({ match: 'ambienta', data });
+    else if (titulo.includes('carreira')) prazos.push({ match: 'carreira', data });
+  });
+  return { slots, prazos, fixos: eventos.rows };
+}
+
+function prazoDaAtividade(titulo, prazos) {
+  const nome = String(titulo || '').toLowerCase();
+  if (nome.includes('extens')) return prazos.find((prazo) => prazo.match === 'extens') || null;
+  if (nome.includes('ambienta') || nome.includes('carreira')) {
+    return prazos.find((prazo) => prazo.match === 'ambienta')
+      || prazos.find((prazo) => prazo.match === 'carreira')
+      || null;
+  }
+  return null;
+}
+
+function calendarioDoAluno(itens, modelo) {
+  const eventos = [];
+  let ordem = 1;
+  itens.filter((item) => item.tipo === 'disciplina').forEach((item) => {
+    const month = String(item.data_inicio || item.data_fim || '').slice(0, 7);
+    const slot = modelo.slots.find((entry) => entry.month === month);
+    const fim = (slot && slot.fim) || item.data_fim;
+    if (fim) {
+      eventos.push({
+        id: ordem,
+        titulo: 'Fim da disciplina do mês',
+        subtitulo: item.titulo,
+        data_inicio: fim,
+        data_fim: fim,
+        tipo: 'disciplina',
+        ordem: ordem += 1,
+      });
+    }
+    if (slot && slot.provaInicio) {
+      item.prova_inicio = slot.provaInicio;
+      item.prova_fim = slot.provaFim;
+      const ate = formatBrCurto(slot.provaFim);
+      eventos.push({
+        id: ordem,
+        titulo: 'Início do período de prova',
+        subtitulo: ate ? `${item.titulo} · disponível até ${ate}` : item.titulo,
+        data_inicio: slot.provaInicio,
+        data_fim: slot.provaFim || slot.provaInicio,
+        tipo: 'prova',
+        ordem: ordem += 1,
+      });
+    }
+  });
+  itens.filter((item) => item.tipo === 'atividade').forEach((item) => {
+    const prazo = prazoDaAtividade(item.titulo, modelo.prazos);
+    if (!prazo) return;
+    item.prazo_preferencial = prazo.data;
+    eventos.push({
+      id: ordem,
+      titulo: 'Prazo preferencial',
+      subtitulo: item.titulo,
+      data_inicio: prazo.data,
+      data_fim: prazo.data,
+      tipo: 'prazo',
+      ordem: ordem += 1,
+    });
+  });
+  modelo.fixos.forEach((evento) => eventos.push(evento));
+  return eventos;
 }
 
 async function getAlunoCurso(pool, alunoId) {
@@ -493,7 +589,7 @@ async function getMeuSemestre(pool, alunoId) {
           titulo: 'Meu Semestre',
         },
         itens,
-        eventos: await calendarioPadrao(pool),
+        eventos: calendarioDoAluno(itens, await modeloCalendario(pool)),
         mensalidadesRows: mensalidadesRes.rows,
         today,
         avisoPagamento,
