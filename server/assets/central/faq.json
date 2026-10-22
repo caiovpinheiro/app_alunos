@@ -9,7 +9,7 @@
     {
      "id": "primeiro-acesso",
      "q": "É a minha primeira vez. Como eu entro?",
-     "a": "Baixe <b>dois aplicativos</b> no celular, os dois gratuitos: o <b>Duda</b> (<a href=\"https://play.google.com/store/apps/details?id=br.com.cruzeirodosulvirtual\" target=\"_blank\" rel=\"noopener\">Android</a> · <a href=\"https://apps.apple.com/br/app/duda/id6451416655\" target=\"_blank\" rel=\"noopener\">iPhone</a>) e o <b>Microsoft Authenticator</b> (<a href=\"https://play.google.com/store/apps/details?id=com.azure.authenticator\" target=\"_blank\" rel=\"noopener\">Android</a> · <a href=\"https://apps.apple.com/br/app/microsoft-authenticator/id983156458\" target=\"_blank\" rel=\"noopener\">iPhone</a>). No Duda, digite o CPF, marque a caixinha e toque em <b>Não sei meus dados de acesso</b> (o botão branco). Vai pedir e-mail e senha até 4 vezes: é normal. O passo a passo completo está no módulo 1 da Aula Inaugural.",
+     "a": "Baixe <b>dois aplicativos</b> no celular, os dois gratuitos: o <b>Duda</b> (<a href=\"https://play.google.com/store/apps/details?id=br.com.cruzeirodosulvirtual\" target=\"_blank\" rel=\"noopener\">Android</a> · <a href=\"https://apps.apple.com/br/app/duda/id6451416655\" target=\"_blank\" rel=\"noopener\">iPhone</a>) e o <b>Microsoft Authenticator</b> (<a href=\"https://play.google.com/store/apps/details?id=com.azure.authenticator\" target=\"_blank\" rel=\"noopener\">Android</a> · <a href=\"https://apps.apple.com/br/app/microsoft-authenticator/id983156458\" target=\"_blank\" rel=\"noopener\">iPhone</a>). Depois, descubra o seu <b>e-mail acadêmico</b> no site <a href=\"https://emailacademico.cruzeiroead.com.br/descobrir\" target=\"_blank\" rel=\"noopener\">emailacademico.cruzeiroead.com.br/descobrir</a>: digite o CPF e toque em <b>Continuar</b>. Vai pedir e-mail e senha até 4 vezes: é normal. O passo a passo completo está no módulo 1 da Aula Inaugural.",
      "nivel_trilha": 1,
      "tags": [
       "primeiro acesso",
@@ -23,7 +23,7 @@
     {
      "id": "email-academico",
      "q": "O que é o e-mail acadêmico? Onde descubro o meu?",
-     "a": "É um e-mail que a Cruzeiro do Sul cria só para você. Ele <b>não é</b> o seu Gmail nem o seu Hotmail. Para descobrir, abra o Duda, toque em <b>Não sei meus dados de acesso</b> e digite seu primeiro nome e o CPF. O app mostra o seu e-mail: <b>anote num papel</b>. A primeira senha o Duda não mostra: você monta com a regra (3 letras do nome + @ + 3 números do RGM + 4 do CPF). Neste app, o cartão <b>Seus dados de acesso</b>, no Início, mostra o seu RGM e o seu e-mail.",
+     "a": "É um e-mail que a Cruzeiro do Sul cria só para você. Ele <b>não é</b> o seu Gmail nem o seu Hotmail. Para descobrir, abra o site <a href=\"https://emailacademico.cruzeiroead.com.br/descobrir\" target=\"_blank\" rel=\"noopener\">emailacademico.cruzeiroead.com.br/descobrir</a>, digite o seu CPF e toque em <b>Continuar</b>. O site mostra o seu e-mail: <b>anote num papel</b>. A primeira senha o site não mostra: você monta com a regra (3 letras do nome + @ + 3 números do RGM + 4 do CPF). Neste app, o cartão <b>Seus dados de acesso</b>, no Início, mostra o seu RGM e o seu e-mail.",
      "nivel_trilha": 1,
      "tags": [
       "e-mail acadêmico",

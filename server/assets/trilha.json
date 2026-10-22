@@ -10,7 +10,7 @@
    "rank": "Já sei entrar",
    "topicos": [
     "Baixe 2 apps grátis: <b>Duda</b> e <b>Microsoft Authenticator</b>.",
-    "No Duda, toque em <b>Não sei meus dados de acesso</b> e anote o seu <b>e-mail acadêmico</b>.",
+    "Descubra o seu <b>e-mail acadêmico</b> no site <a href=\"https://emailacademico.cruzeiroead.com.br/descobrir\" target=\"_blank\" rel=\"noopener\">emailacademico.cruzeiroead.com.br/descobrir</a>: digite o CPF e toque em <b>Continuar</b>. Anote o e-mail.",
     "Monte a primeira senha: 3 letras do nome + <b>@</b> + 3 números do RGM + 4 do CPF (ex.: <b>Ana@5129876</b>).",
     "Crie a sua senha nova na tela da Microsoft e anote.",
     "Ligue o Authenticator: no login, digite o número e toque em <b>SIM</b>.",
@@ -19,7 +19,7 @@
    "learn": [
     "Você vai precisar de <b>dois aplicativos</b> no celular: o <b>Duda</b> (estrela branca no fundo azul) e o <b>Microsoft Authenticator</b> (cadeado azul). Baixe os dois na Play Store (Android) ou na App Store (iPhone): procure por <b>Duda</b> e por <b>Microsoft Authenticator</b>. Para baixar, toque: Duda (<a href=\"https://play.google.com/store/apps/details?id=br.com.cruzeirodosulvirtual\" target=\"_blank\" rel=\"noopener\">Android</a> · <a href=\"https://apps.apple.com/br/app/duda/id6451416655\" target=\"_blank\" rel=\"noopener\">iPhone</a>) e Authenticator (<a href=\"https://play.google.com/store/apps/details?id=com.azure.authenticator\" target=\"_blank\" rel=\"noopener\">Android</a> · <a href=\"https://apps.apple.com/br/app/microsoft-authenticator/id983156458\" target=\"_blank\" rel=\"noopener\">iPhone</a>). Os dois são gratuitos.",
     "A Cruzeiro do Sul cria um <b>e-mail só seu</b>, chamado e-mail acadêmico. Ele termina em <b>@cs.cruzeirodosul.edu.br</b> (em alguns cursos, @cs.unicid.edu.br, outra marca do grupo). Não é o seu Gmail nem o seu Hotmail.",
-    "<b>Parte 1. Descobrir e-mail e senha.</b> Abra o Duda, digite seu CPF, <b>marque a caixinha</b> e toque em Continuar. Toque em <b>Não sei meus dados de acesso</b> (o botão branco). Digite só o seu <b>primeiro nome</b>, depois o CPF de novo, e toque na <b>seta azul</b>. O Duda mostra o seu <b>e-mail acadêmico</b>: anote num papel. A <b>primeira senha</b> você monta: as <b>3 primeiras letras do seu nome</b> (a primeira maiúscula) + <b>@</b> + os <b>3 primeiros números do RGM</b> + os <b>4 primeiros números do CPF</b>. Exemplo: Ana Souza, RGM 512…, CPF 9876… → <b>Ana@5129876</b>. O seu RGM está no topo deste app, e o cartão <b>Seus dados de acesso</b>, no Início, monta a senha com você. Anote a senha e toque em Fazer login.",
+    "<b>Parte 1. Descobrir e-mail e senha.</b> Abra no navegador do celular o site <a href=\"https://emailacademico.cruzeiroead.com.br/descobrir\" target=\"_blank\" rel=\"noopener\">emailacademico.cruzeiroead.com.br/descobrir</a>, digite o seu <b>CPF</b> e toque em <b>Continuar</b>. O site mostra o seu <b>e-mail acadêmico</b>: anote num papel. A <b>primeira senha</b> você monta: as <b>3 primeiras letras do seu nome</b> (a primeira maiúscula) + <b>@</b> + os <b>3 primeiros números do RGM</b> + os <b>4 primeiros números do CPF</b>. Exemplo: Ana Souza, RGM 512…, CPF 9876… → <b>Ana@5129876</b>. O seu RGM está no topo deste app, e o cartão <b>Seus dados de acesso</b>, no Início, monta a senha com você. Anote a senha e toque em <b>Continuar</b>: vai abrir a tela da Microsoft.",
     "<b>Parte 2. Criar a sua senha.</b> Abre uma tela da Microsoft. Entre com o e-mail e a senha anotados. Em <b>Senha atual</b>, coloque a senha anotada; em <b>Nova senha</b> e <b>Confirmar senha</b>, crie a sua. <b>Anote a senha nova</b>: ela vale para o curso inteiro.",
     "<b>Parte 3. Ligar o Authenticator.</b> Saia do Duda (sem fechar) e abra o Authenticator. Toque em <b>Entrar</b>, depois em <b>Use outra conta</b>, e entre com o e-mail e a senha nova. Toque em <b>Abrir navegador</b>, entre de novo e vá em <b>Avançar</b> e <b>Próximo</b> até aparecer o link azul <b>Emparelhe a sua conta com o aplicativo</b>. Toque nele.",
     "<b>Parte 4. Entrar no Duda.</b> Volte ao Duda, digite o CPF e toque em <b>Fazer login</b> (o botão azul). Vai aparecer um <b>número</b>: saia do Duda sem fechar, abra o Authenticator, digite o número e toque em <b>SIM</b>.",
@@ -36,16 +36,16 @@
      "cap": "<b>Os dois aplicativos.</b> Duda (estrela) e Microsoft Authenticator (cadeado)."
     },
     {
-     "img": "d02",
+     "img": "d02s",
      "w": 486,
      "h": 864,
-     "cap": "<b>Primeira vez:</b> toque em Não sei meus dados de acesso, o botão branco."
+     "cap": "<b>Descubra o e-mail no site.</b> Em emailacademico.cruzeiroead.com.br/descobrir, digite o CPF e toque em Continuar."
     },
     {
-     "img": "d03",
+     "img": "d03s",
      "w": 486,
      "h": 864,
-     "cap": "<b>Seu e-mail acadêmico.</b> Anote num papel. A primeira senha você monta: Ana · @ · 512 · 9876 (3 letras do nome, @, 3 números do RGM, 4 do CPF)."
+     "cap": "<b>Seu e-mail acadêmico.</b> O site mostra o e-mail: anote num papel. A primeira senha você monta: Ana · @ · 512 · 9876 (3 letras do nome, @, 3 números do RGM, 4 do CPF)."
     },
     {
      "img": "d04",
@@ -85,15 +85,15 @@
      "exp": "O Duda é o app da faculdade, e o Authenticator confirma que é você mesmo quem está entrando. Sem ele, não dá para terminar o acesso."
     },
     {
-     "q": "É a sua primeira vez no Duda. Depois do CPF aparecem dois botões. Qual você toca?",
+     "q": "Você ainda não sabe o seu e-mail acadêmico. Onde descobre?",
      "opts": [
-      "Fazer login",
-      "Não sei meus dados de acesso",
-      "Nenhum, fecho o app",
-      "Esqueci minha senha"
+      "No Duda, tocando em Fazer login",
+      "No site do e-mail acadêmico, com o seu CPF",
+      "No seu Gmail ou Hotmail",
+      "Não tem como descobrir sozinho"
      ],
      "certa": 1,
-     "exp": "Na primeira vez você ainda não sabe o e-mail nem a senha. O botão Não sei meus dados de acesso mostra o seu e-mail acadêmico; a primeira senha você monta com a regra (3 letras do nome + @ + 3 números do RGM + 4 do CPF). O Fazer login é para depois."
+     "exp": "O e-mail acadêmico aparece no site emailacademico.cruzeiroead.com.br/descobrir: digite o seu CPF e toque em Continuar. A primeira senha você monta com a regra (3 letras do nome + @ + 3 números do RGM + 4 do CPF)."
     },
     {
      "q": "Apareceu o número 14 no Duda, pedindo para aprovar a entrada. O que você faz?",
@@ -111,7 +111,7 @@
     {
      "t": "Descobrir e-mail e senha",
      "v": "/trilha-midia/videos/nivel1_parte1",
-     "erro": "O botão Continuar está cinza? Marque a caixinha da política de privacidade. Apareceu a tela da Microsoft pedindo e-mail e senha? Você tocou em Fazer login: volte e toque em Não sei meus dados de acesso, o botão branco."
+     "erro": "O site não mostrou o seu e-mail? Confira se digitou o CPF certo, só os números, e tente de novo. Se ainda não aparecer, fale com o setor acadêmico pelo WhatsApp {whatsapp}."
     },
     {
      "t": "Criar a sua senha",
