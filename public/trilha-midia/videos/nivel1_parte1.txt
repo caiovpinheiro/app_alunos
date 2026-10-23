@@ -4,20 +4,10 @@ Antes de começar, separa três coisinhas: o celular com internet, o seu CPF, e 
 
 Primeiro passo: baixa dois aplicativos na loja do seu celular. O Duda, que tem uma estrela, e o Microsoft Authenticator, que tem um cadeado azul.
 
-Agora abre o Duda e digita o seu CPF, só os números.
-
-Agora, um detalhe importante: toca nessa caixinha pra marcar. Sem ela, o botão Continuar não funciona, tá? Marcou? Então toca em Continuar.
-
-Vão aparecer dois botões. Como é a sua primeira vez, toca no branco: Não sei meus dados de acesso.
-
-Escreve só o seu primeiro nome e toca em Continuar.
-
-Ele vai pedir o CPF de novo. Pode ficar tranquilo, é normal! Digita e continua.
-
-Agora toca na seta azul, aqui embaixo.
+Agora vamos descobrir o seu e-mail da Cruzeiro do Sul. Abre o navegador do celular e entra neste site, que está aqui na tela e também embaixo do vídeo. Digita o seu CPF, só os números, e toca em Continuar.
 
 Olha só: esse é o seu e-mail da Cruzeiro do Sul! Ele não é o seu e-mail pessoal, tá? É um e-mail só pro curso.
 
 Já a primeira senha, você monta assim: as três primeiras letras do seu nome, com a primeira maiúscula, arroba, os três primeiros números do seu RGM e os quatro primeiros do seu CPF. Pausa o vídeo e anota os dois no papel, com calma.
 
-Anotou? Então toca em Fazer login. Na próxima parte, você vai criar a sua própria senha.
+Anotou? Então toca em Continuar. Na próxima parte, você vai criar a sua própria senha.
