@@ -1704,6 +1704,7 @@ async function start() {
   }
 
   startAcessosSyncScheduler();
+  startMateriasAutoScheduler();
   planoImagem.startAutoSync(pool);
 }
 
@@ -1738,6 +1739,36 @@ function startAcessosSyncScheduler() {
   setTimeout(() => runAcessosSync('boot'), 15000);
   setInterval(() => runAcessosSync('intervalo'), delayMs);
   console.log(`Sync automático de acessos a cada ${Math.max(5, minutes)} min (novos do relatório de matriculados).`);
+}
+
+let materiasAutoRunning = false;
+
+async function runMateriasAuto(reason) {
+  if (!pool || materiasAutoRunning) return;
+  materiasAutoRunning = true;
+  try {
+    const result = await materiasAlunos.sincronizarPendentes(pool);
+    if (!result.rgms.length) {
+      console.log('Matérias: nenhum RGM novo (' + reason + ').');
+      return;
+    }
+    console.log(`Matérias: ${result.synced} sincronizados de ${result.rgms.length} RGMs novos (${reason}).`);
+    const filter = { rgms: new Set(result.rgms) };
+    await planoMateriasImagem.startBatch(pool, filter);
+    await planoImagem.startBatch(pool, filter);
+  } catch (err) {
+    console.error('Sync automático de matérias falhou:', err.message);
+  } finally {
+    materiasAutoRunning = false;
+  }
+}
+
+function startMateriasAutoScheduler() {
+  const minutes = Number(process.env.MATERIAS_AUTO_SYNC_MIN || 10);
+  const delayMs = Math.max(5, minutes) * 60 * 1000;
+  setTimeout(() => runMateriasAuto('boot'), 25000);
+  setInterval(() => runMateriasAuto('intervalo'), delayMs);
+  console.log(`Sync automático de matérias a cada ${Math.max(5, minutes)} min (RGMs novos em materias_alunos).`);
 }
 
 start().catch((err) => {

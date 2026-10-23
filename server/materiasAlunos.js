@@ -168,10 +168,39 @@ async function syncFromPostgres(pool, { rgms } = {}) {
   return { synced, linked, created, namesUpdated, total: rows.length };
 }
 
+async function listarPendentes(pool) {
+  const fonte = await fetchAllFromPostgres(null);
+  const copia = await pool.query(
+    `SELECT regexp_replace(rgm, '\\D', '', 'g') AS rgm, synced_at
+     FROM csu_materias_alunos`,
+  );
+  const porRgm = new Map(copia.rows.map((row) => [row.rgm, row]));
+  const pendentes = [];
+  for (const row of fonte) {
+    const rgm = String(row.rgm || '').replace(/\D/g, '');
+    if (!rgm) continue;
+    const atual = porRgm.get(rgm);
+    const consultado = row.consultado_em ? new Date(row.consultado_em).getTime() : 0;
+    const synced = atual && atual.synced_at ? new Date(atual.synced_at).getTime() : 0;
+    if (!atual || consultado > synced) pendentes.push(rgm);
+  }
+  return pendentes;
+}
+
+async function sincronizarPendentes(pool, { limit } = {}) {
+  let rgms = await listarPendentes(pool);
+  if (limit) rgms = rgms.slice(0, limit);
+  if (!rgms.length) return { synced: 0, total: 0, rgms: [] };
+  const result = await syncFromPostgres(pool, { rgms: new Set(rgms) });
+  return { ...result, rgms };
+}
+
 module.exports = {
   parseNome,
   fetchAllFromPostgres,
   syncFromPostgres,
   syncFromSupabase: syncFromPostgres,
   ensureAlunoForMaterias,
+  listarPendentes,
+  sincronizarPendentes,
 };
