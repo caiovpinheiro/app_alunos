@@ -404,6 +404,7 @@ window.Trilha = (function () {
       sec.querySelector('.stuck1-msg').hidden = false; st1.hidden = true;
       post('travei', { nivel: i + 1, parte: 0 }).catch(function () {});
       window.Rastreio && window.Rastreio.track('trilha_travei', { nivel: i + 1, nivel_titulo: l.t, parte: 1, parte_titulo: l.t }, { importante: true });
+      if (window.Dificuldade) window.Dificuldade.oferecer({ origem: 'travei', nivel: i + 1, parte: null, ancora: sec.querySelector('.stuck1-msg'), sinais: { viu_dica: true } });
     });
     var ms = sec.querySelector('.mission');
     l.qs.forEach(function (q, k) { ms.appendChild(question(i, k, q)); });
@@ -458,6 +459,7 @@ window.Trilha = (function () {
         pn.querySelector('.perr').hidden = false; pn.querySelector('.pstuck').hidden = true;
         post('travei', { nivel: i + 1, parte: cur }).catch(function () {});
         window.Rastreio && window.Rastreio.track('trilha_travei', { nivel: i + 1, nivel_titulo: l.t, parte: cur + 1, parte_titulo: l.parts[cur].t }, { importante: true });
+        if (window.Dificuldade) window.Dificuldade.oferecer({ origem: 'travei', nivel: i + 1, parte: cur, ancora: pn.querySelector('.perr'), sinais: { viu_dica: true } });
       });
       v.addEventListener('timeupdate', function () {
         if (!v.duration) return;
@@ -553,6 +555,10 @@ window.Trilha = (function () {
         }
         btns.forEach(function (b) { if (!b.classList.contains('wrong')) b.disabled = false; });
         paint(); refreshUI();
+        // 2 erros na mesma pergunta (4 opções: não é chute): oferece falar com a equipe.
+        if (!r.ok && r.tries.length >= 2 && window.Dificuldade) {
+          window.Dificuldade.oferecer({ origem: 'quiz_erros', nivel: i + 1, pergunta: k, ancora: fb, automatica: true, titulo: 'Essa pergunta está difícil?' });
+        }
       }).catch(function () {
         pending = false;
         btns.forEach(function (b) { if (!b.classList.contains('wrong')) b.disabled = false; });

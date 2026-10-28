@@ -1,0 +1,85 @@
+{
+  "versao": "2026-10-28",
+  "_leia": "Temas da Central de ajuda. Cada vídeo (id de videos.json ou aula-cap-N dos capítulos com na_central) e cada pergunta (id de faq.json) fica em um tema só, na ordem da jornada do aluno. Vídeo ou pergunta nova que não estiver aqui aparece no último tema. 'icone' é um nome do Lucide.",
+  "temas": [
+    {
+      "id": "acesso",
+      "curto": "Primeiro acesso",
+      "nome": "Primeiro acesso",
+      "icone": "log-in",
+      "linha": "Descubra o seu e-mail acadêmico, crie a senha e entre no app Duda. Você faz isso uma vez só.",
+      "videos": ["acesso-email-senha", "acesso-criar-senha", "acesso-authenticator", "acesso-entrar-duda"],
+      "faq": ["primeiro-acesso", "numero-authenticator", "esqueci-senha", "email-academico", "primeira-senha", "senha-nao-funciona", "senha-portal", "onde-rgm"]
+    },
+    {
+      "id": "aulas",
+      "curto": "Aulas",
+      "nome": "Aulas e Área do Aluno",
+      "icone": "book-open",
+      "linha": "Como é o mês de estudo, onde fica cada coisa e como falar com o tutor.",
+      "videos": ["aula-cap-1", "aula-cap-3", "aula-cap-4", "tut_05", "aula-cap-5"],
+      "faq": ["onde-aulas", "como-e-materia", "nenhuma-materia", "falar-tutor", "o-que-e-area-aluno", "documentos-aceitos", "enviar-documento", "declaracao"]
+    },
+    {
+      "id": "provas",
+      "curto": "Provas e notas",
+      "nome": "Provas e notas",
+      "icone": "clipboard-check",
+      "linha": "Como a nota é calculada, quando é a prova e onde ver o resultado.",
+      "videos": ["aula-cap-6", "tut_10"],
+      "faq": ["como-funciona-nota", "quando-prova", "errei-exercicio", "perdi-prova", "onde-notas", "provas-presenciais-2027", "mudar-polo-presencial"]
+    },
+    {
+      "id": "pagamentos",
+      "curto": "Pagamentos",
+      "nome": "Mensalidade e pagamentos",
+      "icone": "wallet",
+      "linha": "Quanto você paga, até quando vale o desconto e as formas de pagar.",
+      "videos": ["pagar-quanto", "pagar-pix", "pagar-cartao", "pagar-boleto", "tut_11"],
+      "faq": ["vencimento-desconto", "boleto-valor-cheio", "paguei-em-aberto", "primeira-mensalidade", "como-pagar", "valor-banco-diferente", "paguei-atrasado"]
+    },
+    {
+      "id": "rematricula",
+      "curto": "Rematrícula e DP",
+      "nome": "Rematrícula, DP e adaptação",
+      "icone": "refresh-cw",
+      "linha": "Renovar a matrícula a cada semestre e incluir as matérias que ficaram para trás.",
+      "videos": ["aula-cap-8", "tut_dp"],
+      "faq": ["rematricula", "dp-adaptacao"]
+    },
+    {
+      "id": "horas",
+      "curto": "Horas e extensão",
+      "nome": "Horas complementares e extensão",
+      "icone": "clock",
+      "linha": "As atividades além das aulas que você precisa entregar para se formar.",
+      "videos": ["tut_extensao", "tut_14"],
+      "faq": ["horas-o-que-sao", "horas-enviar"]
+    },
+    {
+      "id": "formatura",
+      "curto": "Estágio e formatura",
+      "nome": "Estágio e formatura",
+      "icone": "graduation-cap",
+      "linha": "O que falta para colar grau e o passo a passo do estágio obrigatório.",
+      "videos": ["aula-cap-10", "estagio-comecar", "estagio-tce", "estagio-entregar"],
+      "faq": ["formar-requisitos", "estagio-como-fazer", "diploma"]
+    },
+    {
+      "id": "ajuda",
+      "curto": "Ajuda",
+      "nome": "Ajuda e atendimento",
+      "icone": "message-circle",
+      "linha": "Com quem falar em cada caso e o certificado da Aula Inaugural.",
+      "videos": ["aula-cap-11"],
+      "faq": ["qual-canal", "falar-atendimento", "por-onde-comecar", "certificado-aula-inaugural"]
+    }
+  ],
+  "comece": [
+    { "video": "aula-cap-1", "titulo": "Como funciona o EaD" },
+    { "tema": "acesso", "titulo": "Entrar pela primeira vez" },
+    { "video": "aula-cap-4", "titulo": "Seu mês de estudo" },
+    { "video": "aula-cap-6", "titulo": "Provas e notas" },
+    { "video": "pagar-quanto", "titulo": "Quanto eu pago?" }
+  ]
+}

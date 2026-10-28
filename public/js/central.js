@@ -1,18 +1,25 @@
-/* Central de ajuda (tela /tutoriais para contas com a trilha liberada):
-   busca única, assuntos, vídeos curtos (tarefa + "Entenda como funciona", que são capítulos
-   da Aula Inaugural) e perguntas frequentes. A aula completa fica na tela da Aula Inaugural. */
+/* Central de ajuda (tela /tutoriais para contas com a trilha liberada), organizada por tema.
+   Topo: busca. Depois "Comece por aqui" (quem ainda não começou a Aula Inaugural) ou o cartão do
+   progresso, a faixa de temas fixa e uma seção por tema: vídeos na ordem da jornada e as dúvidas
+   daquele assunto. Com busca, os resultados aparecem separados por tema.
+   Temas e ordem vêm de /api/central (server/assets/central/temas.json). */
 window.Central = (function () {
   'use strict';
 
-  var C = null;          // conteúdo vindo de /api/central
-  var busca = '';       // termo normalizado (sem acento, minúsculo)
-  var buscaTexto = '';  // o que o aluno digitou, para voltar ao campo
-  var assunto = 0;       // 0 = todos; 1..7 = nível da trilha
+  var C = null;            // conteúdo vindo de /api/central
+  var busca = '';          // termo normalizado (sem acento, minúsculo)
+  var buscaTexto = '';     // o que o aluno digitou, para voltar ao campo
   var carregando = false;
-  var faqGrupo = '';     // grupo do FAQ aberto (id); vazio = o primeiro com perguntas
   var buscaTimer = null;
-  var resumoTrilha = null; // progresso real da trilha (faixa "Está começando agora?")
+  var resumoTrilha = null; // progresso real da trilha (Comece por aqui x cartão do progresso)
   var gatilhoVideo = null; // botão que abriu o vídeo: o foco volta para ele ao fechar
+  var maisVideos = {};     // tema -> mostrando todos os vídeos
+  var maisFaq = {};        // tema -> mostrando todas as perguntas
+  var observador = null;   // marca o tema à vista na faixa fixa
+  var VISIVEIS = 4;        // vídeos por tema antes de "Ver todos" (3 no celular, via CSS)
+  var DUVIDAS = 3;         // perguntas por tema antes de "Ver as N perguntas"
+  // Início: 3 vídeos escolhidos à mão (curadoria fixa, não é personalização).
+  var DESTAQUES_INICIO = ['acesso-email-senha', 'acesso-entrar-duda', 'pagar-pix'];
 
   function track(nome, dados, opts) { if (window.Rastreio) window.Rastreio.track(nome, dados, opts); }
 
@@ -22,20 +29,11 @@ window.Central = (function () {
     var res = document.getElementById('c-res');
     var total = res ? res.querySelectorAll('.portal-vcard, .c-q').length : 0;
     if (total) track('central_busca', { termo: termo, resultados: total });
-    else track('central_busca_sem_resultado', { termo: termo }, { importante: true });
+    else {
+      track('central_busca_sem_resultado', { termo: termo }, { importante: true });
+      if (window.Dificuldade) window.Dificuldade.buscaVazia(termo);
+    }
   }
-
-  var ICONES_FAQ = {
-    acesso: 'log-in', 'area-aluno': 'folder-open', aulas: 'monitor-play', provas: 'clipboard-check',
-    pagamentos: 'wallet', 'horas-formatura': 'graduation-cap', ajuda: 'message-circle'
-  };
-
-  // Assuntos = níveis da trilha. Cinco à vista; o resto em "Mais assuntos" (nenhum some).
-  var ASSUNTOS = [[0, 'Todos'], [1, 'Primeiro acesso'], [3, 'Aulas'], [4, 'Provas e notas'], [5, 'Pagamentos']];
-  var MAIS_ASSUNTOS = [[2, 'Área do Aluno'], [6, 'Horas complementares'], [7, 'Formatura']];
-  var maisAberto = false;
-  // Início: 3 vídeos escolhidos à mão (curadoria fixa, não é personalização).
-  var DESTAQUES_INICIO = ['acesso-email-senha', 'acesso-entrar-duda', 'pagar-pix'];
 
   function esc(t) {
     return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -43,27 +41,37 @@ window.Central = (function () {
   function semAcento(t) {
     return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/<[^>]+>/g, ' ');
   }
-  function mmss(s) {
-    s = Math.max(0, Math.floor(s || 0));
-    var h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60;
-    return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(x).padStart(2, '0');
-  }
-  function bate(texto, nivel) {
-    if (assunto && nivel !== assunto) return false;
+  function seg(d) { var p = String(d || '').split(':').map(Number); return p.length === 2 ? p[0] * 60 + (p[1] || 0) : 0; }
+  function minutos(s) { return Math.max(1, Math.round(s / 60)) + ' min'; }
+  function plural(n, um, varios) { return n + ' ' + (n === 1 ? um : varios); }
+  function bate(texto) {
     if (!busca) return true;
     var hay = semAcento(texto);
     return busca.split(/\s+/).every(function (w) { return hay.indexOf(w) !== -1; });
   }
-  function nivelDe(item) { return item.trilha ? item.trilha.nivel : 0; }
   function linkTrilha(item) {
     return item.trilha
       ? '<button type="button" class="c-trilha" data-open-trilha="' + item.trilha.nivel + '">Fazer o módulo ' + item.trilha.nivel + ' da Aula Inaugural</button>'
       : '';
   }
-
   // Joinha pra cima / pra baixo (public/js/avaliacao.js). Sem o helper, não mostra nada.
-  function avaliacao(tipo, id) {
-    return id && window.Avaliacao ? window.Avaliacao.html(tipo, id) : '';
+  function avaliacao(tipo, id) { return id && window.Avaliacao ? window.Avaliacao.html(tipo, id) : ''; }
+
+  // ---------- Dados por tema ----------
+  function temas() { return (C && C.temas) || []; }
+  function temaPorId(id) { return temas().filter(function (t) { return t.id === id; })[0] || null; }
+  function porOrdem(a, b) { return (a.ordem || 999) - (b.ordem || 999); }
+  function videosDoTema(id) { return ((C && C.videos) || []).filter(function (v) { return v.tema === id; }).sort(porOrdem); }
+  function perguntas() { return ((C && C.faq) || []).reduce(function (a, g) { return a.concat(g.perguntas || []); }, []); }
+  function perguntasDoTema(id) { return perguntas().filter(function (p) { return p.tema === id; }).sort(porOrdem); }
+  function bateVideo(v) { return bate(v.titulo + ' ' + v.resumo + ' ' + v.categoria + ' ' + (v.termos || '')); }
+  function batePergunta(p) { return bate(p.q + ' ' + p.a + ' ' + (p.tags || []).join(' ')); }
+
+  // Rótulo do card: "Parte 2 de 4" na série, "Entenda como funciona" no capítulo, "Passo a passo" na tarefa.
+  function rotulo(v) {
+    var naSerie = v.serie ? ((C && C.videos) || []).filter(function (x) { return x.serie === v.serie; }).length : 0;
+    if (naSerie > 1 && v.parte) return 'Parte ' + v.parte + ' de ' + naSerie;
+    return v.tipo === 'entenda' ? 'Entenda como funciona' : 'Passo a passo';
   }
 
   function hero() {
@@ -72,34 +80,51 @@ window.Central = (function () {
         '<div class="portal-hero__content">' +
           '<p class="portal-eyebrow">Central de ajuda</p>' +
           '<h1 id="c-h1">Como podemos ajudar?</h1>' +
-          '<p class="portal-hero__lede">Encontre a resposta e siga em frente.</p>' +
+          '<p class="portal-hero__lede">Escolha um tema ou escreva o que você precisa.</p>' +
           '<form class="c-search" role="search" id="c-busca-form">' +
             '<label for="c-busca" class="sr-only">Buscar na Central de ajuda</label>' +
             '<i data-lucide="search" aria-hidden="true"></i>' +
-            '<input id="c-busca" type="search" autocomplete="off" placeholder="Busque por senha, boleto, prova..." value="' + esc(buscaTexto) + '">' +
-            '<button type="submit" class="portal-btn portal-btn--primary">Buscar</button>' +
+            '<input id="c-busca" type="search" autocomplete="off" placeholder="Ex.: senha, boleto, prova" value="' + esc(buscaTexto) + '">' +
+            '<button type="submit" class="portal-btn c-search-go">Buscar</button>' +
           '</form>' +
+          '<p class="c-hint">Mais buscados: ' + ['senha', 'boleto', 'nota', 'DP'].map(function (q) {
+            return '<button type="button" data-c-q="' + esc(q) + '">' + esc(q) + '</button>';
+          }).join(', ') + '</p>' +
         '</div>' +
         '<div class="portal-hero__art" aria-hidden="true"><img src="/assets/portal/hero-estudante-640.webp" srcset="/assets/portal/hero-estudante-640.webp 640w, /assets/portal/hero-estudante.webp 1310w" sizes="(min-width: 1024px) 360px, 260px" width="640" height="587" alt="" decoding="async"></div>' +
       '</section>'
     );
   }
 
-  function chip(a) {
-    return '<button type="button" class="c-chip" data-assunto="' + a[0] + '" aria-pressed="' + (assunto === a[0]) + '">' + esc(a[1]) + '</button>';
+  // Quem ainda não começou a Aula Inaugural vê o caminho de 5 passos; quem já começou, o próprio progresso.
+  function novato() {
+    var r = resumoTrilha;
+    return !r || (!r.comecou && !(r.concluidos > 0) && !(r.certificado && (r.certificado.emitido || r.certificado.liberado)));
   }
-  function chips() {
-    var extra = MAIS_ASSUNTOS.filter(function (a) { return a[0] === assunto; })[0];
+
+  function comecePorAqui() {
+    var passos = ((C && C.comece) || []).map(function (p) {
+      var video = p.video ? ((C.videos || []).filter(function (v) { return v.id === p.video; })[0]) : null;
+      var lista = p.tema ? videosDoTema(p.tema) : [];
+      if (!video && lista.length) video = lista[0];
+      if (!video) return null;
+      var meta = lista.length > 1 ? plural(lista.length, 'vídeo curto', 'vídeos curtos') + ' · ' + minutos(lista.reduce(function (s, v) { return s + seg(v.duracao); }, 0)) : (video.duracao || '');
+      return { titulo: p.titulo, video: video, meta: meta, s: lista.length > 1 ? lista.reduce(function (s, v) { return s + seg(v.duracao); }, 0) : seg(video.duracao) };
+    }).filter(Boolean);
+    if (!passos.length) return trilhaCard();
+    var total = passos.reduce(function (s, p) { return s + p.s; }, 0);
     return (
-      '<div class="c-chips" role="group" aria-label="Filtrar por assunto">' +
-        ASSUNTOS.map(chip).join('') +
-        '<div class="c-more">' +
-          '<button type="button" class="c-chip c-chip--more' + (extra ? ' is-on' : '') + '" aria-expanded="' + maisAberto + '" aria-controls="c-more-list">' +
-            'Mais assuntos' + (extra ? '<span>: ' + esc(extra[1]) + '</span>' : '') + '<i data-lucide="chevron-down" aria-hidden="true"></i>' +
-          '</button>' +
-          '<div class="c-more-list" id="c-more-list"' + (maisAberto ? '' : ' hidden') + '>' + MAIS_ASSUNTOS.map(chip).join('') + '</div>' +
+      '<section class="c-path" aria-labelledby="c-h-path">' +
+        '<div class="c-path-head"><div><h2 id="c-h-path">Está começando agora? Comece por aqui</h2>' +
+          '<p>' + plural(passos.length, 'passo', 'passos') + ', cerca de ' + minutos(total) + '. Assista na ordem e você já sabe o básico do curso.</p></div>' +
+          '<button type="button" class="portal-btn portal-btn--primary" data-c-video="' + esc(passos[0].video.id) + '">Começar pelo passo 1 <i data-lucide="chevron-right" aria-hidden="true"></i></button>' +
         '</div>' +
-      '</div>'
+        '<ol class="c-steps">' + passos.map(function (p, i) {
+          return '<li><button type="button" data-c-video="' + esc(p.video.id) + '"><span class="c-step-n" aria-hidden="true">' + (i + 1) + '</span>' +
+            '<span class="c-step-t"><span class="sr-only">Passo ' + (i + 1) + ': </span>' + esc(p.titulo) + '</span><span class="c-step-m">' + esc(p.meta) + '</span></button></li>';
+        }).join('') + '</ol>' +
+        '<p class="c-path-alt">Prefere tudo de uma vez? <button type="button" class="c-link" data-open-trilha="">Fazer a Aula Inaugural completa</button>, com certificado de 4 horas.</p>' +
+      '</section>'
     );
   }
 
@@ -123,14 +148,9 @@ window.Central = (function () {
   }
 
   // Card de vídeo (o mesmo no Início e na Central). A capa é só para mouse; o botão "Assistir ao vídeo" é o do teclado.
-  // comJoinhas: só na Central, a capa mostra o selo "👍 ×N" e o botão diz o total para o leitor de tela.
   function cardHtml(v, comJoinhas) {
     comJoinhas = comJoinhas === true && !!window.Avaliacao;
     var nJoinhas = comJoinhas ? window.Avaliacao.joinhas('video', v.id) : 0;
-    var cat = v.categoria + (/\/videos\/nivel/.test(v.v || '') && v.trilha ? ' · passo a passo do módulo ' + v.trilha.nivel : '');
-    // Série (ex.: Estágio): "Estágio · 1 de 3".
-    var naSerie = v.serie ? ((C && C.videos) || []).filter(function (x) { return x.serie === v.serie; }).length : 0;
-    if (naSerie > 1 && v.parte) cat += ' · ' + v.parte + ' de ' + naSerie;
     return (
       '<article class="portal-vcard' + (v.tipo === 'entenda' ? ' portal-vcard--entenda' : '') + '">' +
         '<button type="button" class="portal-vthumb' + (v.capa ? ' has-capa' : '') + '" data-c-video="' + esc(v.id) + '" tabindex="-1" aria-hidden="true">' +
@@ -139,7 +159,7 @@ window.Central = (function () {
           (comJoinhas ? window.Avaliacao.selo('video', v.id) : '') +
         '</button>' +
         '<div class="portal-vbody">' +
-          (cat ? '<span class="portal-vcat">' + esc(cat) + '</span>' : '') +
+          '<span class="portal-vcat">' + esc(rotulo(v)) + '</span>' +
           '<h3>' + esc(v.titulo) + '</h3>' +
           (v.resumo ? '<p>' + esc(v.resumo) + '</p>' : '') +
           '<div class="portal-vacts">' +
@@ -151,137 +171,85 @@ window.Central = (function () {
     );
   }
 
-  function listaVideos() {
-    // Busca também na narração do vídeo (termos), além de título, resumo e categoria.
-    return (C.videos || []).filter(function (v) { return bate(v.titulo + ' ' + v.resumo + ' ' + v.categoria + ' ' + (v.termos || ''), nivelDe(v)); })
-      .map(function (v, i) { return { v: v, i: i }; })
-      .map(function (x, _, todos) {
-        // Vídeos da mesma série (campo `serie`) ficam juntos, na ordem de `parte`:
-        // o bloco usa a chave do melhor vídeo dele (mais 👍, menor nível, primeiro no JSON).
-        var grupo = x.v.serie ? todos.filter(function (y) { return y.v.serie === x.v.serie; }) : [x];
-        x.k = grupo.reduce(function (k, y) {
-          return {
-            j: Math.max(k.j, joinhasDe(y.v)),
-            n: Math.min(k.n, nivelDe(y.v) || 99),
-            e: Math.min(k.e, y.v.tipo === 'entenda' ? 1 : 0),
-            i: Math.min(k.i, y.i)
-          };
-        }, { j: -1, n: 99, e: 1, i: Infinity });
-        return x;
-      })
-      .sort(function (a, b) {
-        // Mais curtidos primeiro (👍 dos alunos); no empate, a ordem da jornada.
-        return b.k.j - a.k.j || a.k.n - b.k.n || a.k.e - b.k.e || a.k.i - b.k.i ||
-          (a.v.parte || 0) - (b.v.parte || 0) || a.i - b.i;
-      })
-      .map(function (x) { return x.v; });
-  }
-  function joinhasDe(v) { return window.Avaliacao ? window.Avaliacao.joinhas('video', v.id) : 0; }
-  function gruposFaq() {
-    return (C.faq || []).map(function (g) {
-      return { g: g, ps: g.perguntas.filter(function (p) { return bate(p.q + ' ' + p.a + ' ' + (p.tags || []).join(' '), nivelDe(p)); }) };
-    }).filter(function (x) { return x.ps.length; });
-  }
-
-  function videos() {
-    // Ordem da jornada (nível da trilha): quem está começando vê "Primeiros passos" primeiro.
-    var todos = (C.videos || []).length;
-    var lista = listaVideos();
-    var corpo;
-    if (!todos) corpo = '<p class="c-empty">Os vídeos novos estão sendo gravados. Enquanto isso, a trilha e as perguntas abaixo explicam tudo.</p>';
-    else if (!lista.length) corpo = '<p class="c-empty">Nenhum vídeo sobre isso. Veja as perguntas abaixo.</p>';
-    else corpo = '<div class="portal-video-grid">' + lista.map(function (v) { return cardHtml(v, true); }).join('') + '</div>';
-    // Assunto "Primeiro acesso": RGM e e-mail acadêmico do próprio aluno, quando o app tem (dados-acesso.js).
-    if (assunto === 1) corpo = '<div data-dados-acesso-slot="faixa" data-dados-acesso-onde="central" hidden></div>' + corpo;
-    var conta = !todos ? '' : (lista.length === todos ? todos + ' vídeos' : lista.length + ' de ' + todos + ' vídeos');
+  function pergunta(t, p) {
+    var id = esc(t.id + '-' + p.id);
     return (
-      '<section class="c-block" aria-labelledby="c-h-videos">' +
-        '<div class="portal-sec-head"><div><h2 id="c-h-videos">Vídeos rápidos</h2><p>Uma tarefa por vídeo. Sem complicação.</p></div>' +
-        (conta ? '<span class="c-count">' + conta + '</span>' : '') + '</div>' + corpo +
-      '</section>'
+      '<div class="c-q">' +
+        '<h4><button type="button" class="c-qbtn" id="c-qb-' + id + '" aria-expanded="false" aria-controls="c-qa-' + id + '">' + esc(p.q) + '</button></h4>' +
+        '<div class="c-a" id="c-qa-' + id + '" role="region" aria-labelledby="c-qb-' + id + '" hidden><p>' + p.a + '</p>' + linkTrilha(p) + avaliacao('faq', p.id) + '</div>' +
+      '</div>'
     );
   }
 
-  // FAQ: assuntos à esquerda (no celular, faixa rolável) e as perguntas do assunto à direita.
-  // Com busca, mostra o que bateu em todos os assuntos. Tudo começa fechado; uma resposta aberta por vez.
-  function faq() {
-    var grupos = gruposFaq();
-    var titulo = '<h2 id="c-h-faq" class="c-h">Perguntas frequentes <span>escolha um assunto e toque na pergunta</span></h2>';
-    if (!grupos.length) {
-      return '<section id="c-faq" class="c-sec" aria-labelledby="c-h-faq">' + titulo +
-        '<p class="c-empty">Não achamos essa dúvida nas perguntas. Fale com a equipe logo abaixo.</p></section>';
-    }
-    var atual = grupos.filter(function (x) { return x.g.id === faqGrupo; })[0] || grupos[0];
-    var mostrar = busca ? grupos : [atual];
-    var total = grupos.reduce(function (n, x) { return n + x.ps.length; }, 0);
-
-    var nav = busca
-      ? '<p class="c-fsum">' + total + (total === 1 ? ' resposta' : ' respostas') + ' para a sua busca</p>'
-      : '<div class="c-ftabs" role="group" aria-label="Assuntos das perguntas">' + grupos.map(function (x) {
-          return (
-            '<button type="button" class="c-ftab" data-c-faq="' + esc(x.g.id) + '" aria-pressed="' + (x === atual) + '" aria-controls="c-fpanel">' +
-              '<i data-lucide="' + (ICONES_FAQ[x.g.id] || 'circle-help') + '" aria-hidden="true"></i>' +
-              '<span class="c-ftab-t">' + esc(x.g.titulo) + '</span>' +
-              '<span class="c-fcount"><span aria-hidden="true">' + x.ps.length + '</span><span class="sr-only">, ' + x.ps.length + (x.ps.length === 1 ? ' pergunta' : ' perguntas') + '</span></span>' +
-            '</button>'
-          );
-        }).join('') + '</div>';
-
-    var painel = mostrar.map(function (x) {
-      return (
-        '<div class="c-fgroup">' +
-          '<h3>' + esc(x.g.titulo) + (busca ? '' : ' <span>' + x.ps.length + (x.ps.length === 1 ? ' pergunta' : ' perguntas') + '</span>') + '</h3>' +
-          x.ps.map(function (p, i) {
-            var id = esc(x.g.id + '-' + (p.id || i));
-            return (
-              '<div class="c-q">' +
-                '<h4><button type="button" class="c-qbtn" id="c-qb-' + id + '" aria-expanded="false" aria-controls="c-qa-' + id + '">' + esc(p.q) + '</button></h4>' +
-                '<div class="c-a" id="c-qa-' + id + '" role="region" aria-labelledby="c-qb-' + id + '" hidden><p>' + p.a + '</p>' + linkTrilha(p) + avaliacao('faq', p.id) + '</div>' +
-              '</div>'
-            );
-          }).join('') +
-        '</div>'
-      );
-    }).join('');
-
+  // ---------- Índice e faixa de temas ----------
+  function meta(t) {
+    return plural(videosDoTema(t.id).length, 'vídeo', 'vídeos') + ' · ' + plural(perguntasDoTema(t.id).length, 'pergunta', 'perguntas');
+  }
+  function indice() {
     return (
-      '<section id="c-faq" class="c-sec" aria-labelledby="c-h-faq">' + titulo +
-        '<div class="c-faq' + (busca ? ' is-busca' : '') + '">' + nav +
-          '<div class="c-fpanel" id="c-fpanel">' + painel + '</div>' +
+      '<section class="c-indice" aria-labelledby="c-h-indice">' +
+        '<h2 id="c-h-indice" class="c-h2">Escolha um tema</h2>' +
+        '<div class="c-tiles">' + temas().map(function (t) {
+          return '<a class="c-tile" href="#' + esc(t.id) + '" data-c-tema="' + esc(t.id) + '">' +
+            '<span class="c-tico" aria-hidden="true"><i data-lucide="' + esc(t.icone || 'circle-help') + '"></i></span>' +
+            '<span class="c-tile-t"><strong>' + esc(t.nome) + '</strong><span>' + esc(meta(t)) + '</span></span></a>';
+        }).join('') + '</div>' +
+      '</section>'
+    );
+  }
+  function faixa() {
+    return (
+      '<nav class="c-tbar" id="c-tbar" aria-label="Temas da Central">' +
+        '<div class="c-tbar-in">' + temas().map(function (t) {
+          return '<a href="#' + esc(t.id) + '" data-c-tema="' + esc(t.id) + '">' + esc(t.curto || t.nome) + '</a>';
+        }).join('') + '</div>' +
+      '</nav>'
+    );
+  }
+
+  // ---------- Seção de cada tema ----------
+  // Sem busca: até 4 vídeos (3 no celular) e 3 dúvidas, com "ver todos". Com busca: só o que bateu, tudo aberto.
+  function secao(t, vs, ps) {
+    var todosV = busca || maisVideos[t.id];
+    var todasP = busca || maisFaq[t.id];
+    var dur = minutos(vs.reduce(function (s, v) { return s + seg(v.duracao); }, 0));
+    var cab = busca
+      ? plural(vs.length, 'vídeo', 'vídeos') + ' e ' + plural(ps.length, 'pergunta', 'perguntas')
+      : plural(vs.length, 'vídeo', 'vídeos') + (vs.length ? ' · ' + dur : '');
+    var maisV = !busca && vs.length > 3
+      ? '<button type="button" class="c-more-btn' + (vs.length <= VISIVEIS ? ' so-celular' : '') + '" data-c-mais-videos="' + esc(t.id) + '" aria-expanded="' + !!todosV + '">' +
+          (todosV ? 'Mostrar menos' : 'Ver todos os ' + vs.length + ' vídeos') + '</button>'
+      : '';
+    var visiveis = todasP ? ps : ps.slice(0, DUVIDAS);
+    var maisP = !busca && ps.length > DUVIDAS
+      ? '<button type="button" class="c-link" data-c-mais-faq="' + esc(t.id) + '" aria-expanded="' + !!todasP + '">' +
+          (todasP ? 'Mostrar menos' : 'Ver as ' + ps.length + ' perguntas') + '</button>'
+      : '';
+    return (
+      '<section class="c-tema" id="c-tema-' + esc(t.id) + '" data-tema="' + esc(t.id) + '" aria-labelledby="c-th-' + esc(t.id) + '">' +
+        '<div class="c-thead">' +
+          '<span class="c-tico" aria-hidden="true"><i data-lucide="' + esc(t.icone || 'circle-help') + '"></i></span>' +
+          '<div class="c-thead-t"><h2 id="c-th-' + esc(t.id) + '">' + esc(t.nome) + '</h2>' + (busca ? '' : '<p>' + esc(t.linha) + '</p>') + '</div>' +
+          '<span class="c-tmeta">' + esc(cab) + '</span>' +
         '</div>' +
+        (t.id === 'acesso' ? '<div data-dados-acesso-slot="faixa" data-dados-acesso-onde="central" hidden></div>' : '') +
+        (vs.length ? '<div class="portal-video-grid c-tgrid' + (todosV ? ' is-all' : '') + '">' + vs.map(function (v) { return cardHtml(v, true); }).join('') + '</div>' + maisV : '') +
+        (ps.length
+          ? '<div class="c-tfaq"><div class="c-tfaq-h"><h3>' + (busca ? 'Perguntas' : 'Dúvidas sobre ' + esc(t.nome.toLowerCase())) + '</h3>' + maisP + '</div>' +
+              visiveis.map(function (p) { return pergunta(t, p); }).join('') + '</div>'
+          : '') +
       '</section>'
     );
   }
 
-  function alternarPergunta(btn) {
-    var abrir = btn.getAttribute('aria-expanded') !== 'true';
-    var painel = document.getElementById('c-fpanel');
-    if (painel) painel.querySelectorAll('.c-qbtn[aria-expanded="true"]').forEach(function (b) {
-      b.setAttribute('aria-expanded', 'false');
-      var r = document.getElementById(b.getAttribute('aria-controls')); if (r) r.hidden = true;
-      b.closest('.c-q').classList.remove('is-open');
-    });
-    if (!abrir) return;
-    btn.setAttribute('aria-expanded', 'true');
-    var resp = document.getElementById(btn.getAttribute('aria-controls')); if (resp) resp.hidden = false;
-    btn.closest('.c-q').classList.add('is-open');
-    track('faq_aberta', { pergunta: btn.textContent, busca: busca || null });
+  function blocos() {
+    return temas().map(function (t) {
+      return { t: t, vs: videosDoTema(t.id).filter(bateVideo), ps: perguntasDoTema(t.id).filter(batePergunta) };
+    }).filter(function (b) { return !busca || b.vs.length || b.ps.length; });
   }
 
-  // No celular os assuntos rolam na horizontal: deixa o assunto aberto à vista, sem mexer na página.
-  function mostrarAbaAtiva() {
-    var faixa = document.querySelector('#central-ajuda .c-ftabs');
-    var aba = faixa && faixa.querySelector('[aria-pressed="true"]');
-    if (!aba || faixa.scrollWidth <= faixa.clientWidth) return;
-    faixa.scrollLeft = aba.offsetLeft - faixa.offsetLeft - 18;
-  }
-
-  function renderFaq() {
-    var sec = document.getElementById('c-faq');
-    if (!sec || !C) return;
-    sec.outerHTML = faq();
-    if (window.lucide) window.lucide.createIcons();
-    mostrarAbaAtiva();
+  function contagem() {
+    return blocos().reduce(function (n, b) { n.videos += b.vs.length; n.faq += b.ps.length; return n; }, { videos: 0, faq: 0 });
   }
 
   function suporte() {
@@ -310,53 +278,99 @@ window.Central = (function () {
     );
   }
 
-  function contagem() {
-    return { videos: listaVideos().length, faq: gruposFaq().reduce(function (n, x) { return n + x.ps.length; }, 0) };
-  }
-
   function resultados() {
-    var n = contagem();
-    if ((busca || assunto) && !n.videos && !n.faq) return vazio();
-    return videos() + faq();
+    if (!temas().length) return '<p class="c-empty">Os vídeos estão sendo organizados. Fale com a equipe se precisar de ajuda agora.</p>';
+    var bs = blocos();
+    if (busca && !bs.length) return vazio();
+    var corpo = bs.map(function (b) { return secao(b.t, b.vs, b.ps); }).join('');
+    if (busca) {
+      var n = contagem();
+      return '<p class="c-fsum">' + plural(n.videos, 'vídeo', 'vídeos') + ' e ' + plural(n.faq, 'pergunta', 'perguntas') + ' para "' + esc(buscaTexto.trim()) + '" ' +
+        '<button type="button" class="c-link" data-c-limpar>Limpar busca</button></p>' + corpo;
+    }
+    return indice() + corpo;
   }
 
-  // Anuncia o resultado para leitor de tela (busca e filtro).
+  // Anuncia o resultado para leitor de tela.
   function anunciar() {
     var st = document.getElementById('c-status');
     if (!st) return;
-    if (!busca && !assunto) { st.textContent = ''; return; }
+    if (!busca) { st.textContent = ''; return; }
     var n = contagem();
     st.textContent = (!n.videos && !n.faq)
       ? 'Não encontramos esse assunto.'
-      : n.videos + (n.videos === 1 ? ' vídeo' : ' vídeos') + ' e ' + n.faq + (n.faq === 1 ? ' pergunta encontrada.' : ' perguntas encontradas.');
+      : plural(n.videos, 'vídeo', 'vídeos') + ' e ' + n.faq + (n.faq === 1 ? ' pergunta encontrada.' : ' perguntas encontradas.');
+  }
+
+  // Faixa de temas: destaca o tema que está na tela.
+  // Altura real do topo da tela (no celular ele tem duas linhas): a faixa de temas cola logo abaixo dele.
+  function medirTopo() {
+    var h = document.querySelector('#tutoriais-page > header');
+    if (h) document.documentElement.style.setProperty('--c-topo', Math.round(h.getBoundingClientRect().height) + 'px');
+  }
+
+  function observarTemas() {
+    if (observador) { observador.disconnect(); observador = null; }
+    var bar = document.getElementById('c-tbar');
+    if (!bar) return;
+    medirTopo();
+    bar.hidden = !!busca;
+    if (busca || !('IntersectionObserver' in window)) return;
+    var visiveis = {};
+    observador = new IntersectionObserver(function (entradas) {
+      entradas.forEach(function (e) { visiveis[e.target.getAttribute('data-tema')] = e.isIntersecting; });
+      // O primeiro tema (na ordem da página) que está na faixa de leitura é o atual.
+      var atual = temas().map(function (t) { return t.id; }).filter(function (id) { return visiveis[id]; })[0];
+      if (!atual) return;
+      var trilho = bar.querySelector('.c-tbar-in');
+      bar.querySelectorAll('[data-c-tema]').forEach(function (a) {
+        var on = a.getAttribute('data-c-tema') === atual;
+        if (on) { a.setAttribute('aria-current', 'true'); if (trilho && trilho.scrollWidth > trilho.clientWidth) trilho.scrollLeft = a.offsetLeft - trilho.offsetLeft - 16; }
+        else a.removeAttribute('aria-current');
+      });
+    }, { rootMargin: '-160px 0px -55% 0px' });
+    document.querySelectorAll('#central-ajuda .c-tema').forEach(function (s) { observador.observe(s); });
+  }
+
+  function irParaTema(id, suave) {
+    var sec = document.getElementById('c-tema-' + id);
+    if (!sec) return false;
+    sec.scrollIntoView({ behavior: suave ? 'smooth' : 'auto', block: 'start' });
+    var h = sec.querySelector('h2');
+    if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); }
+    if (history.replaceState) history.replaceState(null, '', '#' + id);
+    return true;
+  }
+
+  function depoisDeDesenhar(alvo) {
+    if (window.lucide) window.lucide.createIcons();
+    if (window.DadosAcesso) window.DadosAcesso.render(alvo);
+    observarTemas();
   }
 
   function render(foco) {
     var box = document.getElementById('central-ajuda');
     if (!box || !C) return;
-    box.innerHTML = hero() + '<div id="c-chips-wrap">' + chips() + '</div>' + trilhaCard() +
+    box.innerHTML = hero() + (novato() ? comecePorAqui() : trilhaCard()) + faixa() +
       '<div data-apps-slot></div>' +
       '<p id="c-status" class="sr-only" role="status" aria-live="polite"></p>' +
       '<div id="c-res">' + resultados() + '</div>' + suporte();
     if (window.Apps) window.Apps.render(box);
-    if (window.lucide) window.lucide.createIcons();
-    if (window.DadosAcesso) window.DadosAcesso.render(box);
-    mostrarAbaAtiva();
+    depoisDeDesenhar(box);
     if (foco) {
       var inp = document.getElementById('c-busca');
       if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
     }
+    // Link direto para um tema: /tutoriais#pagamentos
+    var hash = (location.hash || '').replace(/^#/, '');
+    if (hash && temaPorId(hash)) setTimeout(function () { irParaTema(hash, false); }, 50);
   }
-  // Ao digitar ou trocar de assunto, só chips e resultados mudam (o foco fica onde estava).
+  // Ao digitar ou abrir "ver todos", só os resultados mudam (o foco fica onde estava).
   function renderResultados() {
     var res = document.getElementById('c-res');
     if (!res || !C) return;
-    var wrap = document.getElementById('c-chips-wrap');
-    if (wrap) wrap.innerHTML = chips();
     res.innerHTML = resultados();
-    if (window.lucide) window.lucide.createIcons();
-    if (window.DadosAcesso) window.DadosAcesso.render(res);
-    mostrarAbaAtiva();
+    depoisDeDesenhar(res);
     anunciar();
   }
 
@@ -377,10 +391,27 @@ window.Central = (function () {
     if (window.lucide) window.lucide.createIcons();
   }
 
+  // ---------- Player ----------
+  // "A seguir neste tema": os próximos vídeos do mesmo tema, na ordem (volta ao começo no fim).
+  function aSeguir(v) {
+    var lista = videosDoTema(v.tema);
+    var i = lista.indexOf(v);
+    if (i < 0 || lista.length < 2) return '';
+    var prox = lista.slice(i + 1).concat(lista.slice(0, i)).slice(0, 3);
+    var t = temaPorId(v.tema);
+    return (
+      '<div class="c-next"><h3>A seguir' + (t ? ' em ' + esc(t.nome) : '') + '</h3><ol>' + prox.map(function (x) {
+        return '<li><button type="button" data-c-video="' + esc(x.id) + '">' +
+          '<img src="' + esc(x.capa || x.v + '.jpg') + '" alt="" width="160" height="90" loading="lazy">' +
+          '<span><strong>' + esc(x.titulo) + '</strong><small>' + esc(rotulo(x)) + (x.duracao ? ' · ' + esc(x.duracao) : '') + '</small></span></button></li>';
+      }).join('') + '</ol></div>'
+    );
+  }
+
   function abrirVideo(id, gatilho) {
     var v = (C && C.videos || []).find(function (x) { return x.id === id; });
     if (!v) return;
-    track('central_video', { video: v.titulo, categoria: v.categoria });
+    track('central_video', { video: v.titulo, categoria: v.categoria, tema: v.tema || null });
     gatilhoVideo = gatilho || null;
     var m = document.getElementById('c-modal');
     if (!m) {
@@ -397,6 +428,7 @@ window.Central = (function () {
         (v.id === 'acesso-email-senha' ? '<div class="c-mdados" data-dados-acesso-slot="faixa" data-dados-acesso-onde="central" hidden></div>' : '') +
         avaliacao('video', v.id) +
         linkTrilha(v) +
+        aSeguir(v) +
       '</div>';
     m.hidden = false;
     if (window.DadosAcesso) window.DadosAcesso.render(m);
@@ -422,6 +454,22 @@ window.Central = (function () {
     if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
     else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
     else if (!m.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+  }
+
+  // FAQ: uma resposta aberta por vez.
+  function alternarPergunta(btn) {
+    var abrir = btn.getAttribute('aria-expanded') !== 'true';
+    var res = document.getElementById('c-res');
+    if (res) res.querySelectorAll('.c-qbtn[aria-expanded="true"]').forEach(function (b) {
+      b.setAttribute('aria-expanded', 'false');
+      var r = document.getElementById(b.getAttribute('aria-controls')); if (r) r.hidden = true;
+      b.closest('.c-q').classList.remove('is-open');
+    });
+    if (!abrir) return;
+    btn.setAttribute('aria-expanded', 'true');
+    var resp = document.getElementById(btn.getAttribute('aria-controls')); if (resp) resp.hidden = false;
+    btn.closest('.c-q').classList.add('is-open');
+    track('faq_aberta', { pergunta: btn.textContent, busca: busca || null });
   }
 
   var carregamento = null;
@@ -462,16 +510,18 @@ window.Central = (function () {
     renderResultados();
   }
 
-  function fecharMais(focarBotao) {
-    if (!maisAberto) return;
-    maisAberto = false;
-    var lista = document.getElementById('c-more-list');
-    var btn = document.querySelector('#central-ajuda .c-chip--more');
-    if (lista) lista.hidden = true;
-    if (btn) { btn.setAttribute('aria-expanded', 'false'); if (focarBotao) btn.focus(); }
+  function buscarPor(valor) {
+    var inp = document.getElementById('c-busca');
+    if (inp) inp.value = valor;
+    aplicarBusca(valor);
+    clearTimeout(buscaTimer);
+    rastreiaBusca(valor.trim());
+    var res = document.getElementById('c-res');
+    if (res && busca) res.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function init() {
+    window.addEventListener('resize', medirTopo);
     document.addEventListener('input', function (e) {
       if (e.target && e.target.id === 'c-busca') {
         aplicarBusca(e.target.value);
@@ -486,55 +536,48 @@ window.Central = (function () {
       if (!e.target || e.target.id !== 'c-busca-form') return;
       e.preventDefault();
       var inp = document.getElementById('c-busca');
-      aplicarBusca(inp ? inp.value : '');
-      clearTimeout(buscaTimer);
-      rastreiaBusca(inp ? inp.value.trim() : '');
-      var res = document.getElementById('c-chips-wrap');
-      if (res && busca) res.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      buscarPor(inp ? inp.value : '');
     });
     document.addEventListener('click', function (e) {
       var t = e.target;
-      var mais = t.closest('#central-ajuda .c-chip--more');
-      if (mais) {
-        maisAberto = !maisAberto;
-        mais.setAttribute('aria-expanded', String(maisAberto));
-        var lista = document.getElementById('c-more-list'); if (lista) lista.hidden = !maisAberto;
-        if (maisAberto) { var pri = lista && lista.querySelector('button'); if (pri) pri.focus(); }
+      var q0 = t.closest('#central-ajuda [data-c-q]');
+      if (q0) { buscarPor(q0.getAttribute('data-c-q')); return; }
+      var tema = t.closest('#central-ajuda [data-c-tema]');
+      if (tema) {
+        e.preventDefault();
+        irParaTema(tema.getAttribute('data-c-tema'), true);
         return;
       }
-      if (maisAberto && !t.closest('#central-ajuda .c-more')) fecharMais(false);
-      var chipBtn = t.closest('#central-ajuda [data-assunto]');
-      if (chipBtn) {
-        var novo = Number(chipBtn.getAttribute('data-assunto')) || 0;
-        var doMais = !!chipBtn.closest('.c-more-list');
-        assunto = novo;
-        maisAberto = false;
+      var mv = t.closest('#central-ajuda [data-c-mais-videos]');
+      if (mv) {
+        var idv = mv.getAttribute('data-c-mais-videos');
+        maisVideos[idv] = !maisVideos[idv];
         renderResultados();
-        var alvo = doMais
-          ? document.querySelector('#central-ajuda .c-chip--more')
-          : document.querySelector('#central-ajuda .c-chips > [data-assunto="' + novo + '"]');
-        if (alvo) alvo.focus({ preventScroll: true });
+        var bv = document.querySelector('#central-ajuda [data-c-mais-videos="' + idv + '"]');
+        if (bv) bv.focus({ preventScroll: true });
+        return;
+      }
+      var mf = t.closest('#central-ajuda [data-c-mais-faq]');
+      if (mf) {
+        var idf = mf.getAttribute('data-c-mais-faq');
+        maisFaq[idf] = !maisFaq[idf];
+        renderResultados();
+        var bf = document.querySelector('#central-ajuda [data-c-mais-faq="' + idf + '"]');
+        if (bf) bf.focus({ preventScroll: true });
         return;
       }
       if (t.closest('#central-ajuda [data-c-limpar]')) {
-        assunto = 0; maisAberto = false;
         var inp = document.getElementById('c-busca'); if (inp) inp.value = '';
         aplicarBusca('');
         if (inp) inp.focus();
-        return;
-      }
-      var tab = t.closest('#central-ajuda [data-c-faq]');
-      if (tab) {
-        faqGrupo = tab.getAttribute('data-c-faq') || '';
-        renderFaq();
-        var novaAba = document.querySelector('#central-ajuda [data-c-faq="' + faqGrupo + '"]');
-        if (novaAba) novaAba.focus({ preventScroll: true });
         return;
       }
       var q = t.closest('#central-ajuda .c-qbtn');
       if (q) { alternarPergunta(q); return; }
       var vid = t.closest('[data-c-video]');
       if (vid) {
+        // Dentro do vídeo aberto ("A seguir"), o foco continua voltando para quem abriu o primeiro.
+        if (vid.closest('#c-modal')) { abrirVideo(vid.getAttribute('data-c-video'), gatilhoVideo); return; }
         // Clique na capa: o foco volta depois para o "Assistir ao vídeo" do mesmo card.
         var card = vid.closest('.portal-vcard');
         var gatilho = (card && card.querySelector('.portal-vwatch')) || vid;
@@ -547,8 +590,7 @@ window.Central = (function () {
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') {
         var m = document.getElementById('c-modal');
-        if (m && !m.hidden) { fecharVideo(); return; }
-        if (maisAberto) fecharMais(true);
+        if (m && !m.hidden) fecharVideo();
         return;
       }
       prenderFoco(e);

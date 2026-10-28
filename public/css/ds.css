@@ -329,3 +329,12 @@ body{font-family:var(--ds-font)!important;color:var(--ds-ink);background:var(--d
 #app .apps-pan-ico{width:56px!important;height:56px!important;background:var(--ds-blue-soft)}
 #app .apps-pan-ico svg{width:26px!important;height:26px!important}
 #app .apps-pan{align-items:flex-start}
+
+/* Celular: logo e ações numa linha só (o menu fica na linha de baixo). */
+@media (max-width:480px){
+  #app .portal-head{column-gap:10px}
+  #app .portal-head > div:last-child{gap:6px}
+  #app .portal-help-btn{padding:0 10px}
+  #app .portal-help-btn span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+  #app .portal-brand img{height:32px}
+}

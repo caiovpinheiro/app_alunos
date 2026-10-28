@@ -1,0 +1,20 @@
+/* Oferta de ajuda na hora da dificuldade (public/js/dificuldade.js). Fica no fluxo, logo abaixo de
+   onde o aluno travou (não é modal, não cobre o vídeo). Borda amarela à esquerda = "a equipe está aqui". */
+.dif{margin:12px 0 0;padding:14px 16px;border:1px solid var(--ds-line,#d9e1ec);border-left:4px solid var(--ds-star,#ffc72c);border-radius:var(--ds-r-md,12px);
+  background:#fff;color:var(--ds-ink,#12213b);font-family:var(--ds-font,inherit);max-width:640px}
+.dif-t{margin:0;font:800 16px/1.35 var(--ds-font,inherit);color:var(--ds-navy,#0b2b5f)}
+.dif-s{margin:4px 0 0;color:var(--ds-muted,#4d5b73);font-size:15px;line-height:1.5}
+.dif-acts{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin-top:12px}
+.dif .dif-sim{display:inline-flex;align-items:center;min-height:44px;padding:0 18px;border:0;border-radius:var(--ds-r-md,12px);background:var(--ds-navy,#0b2b5f);color:#fff;font:700 15px/1 var(--ds-font,inherit);cursor:pointer}
+.dif .dif-sim:hover{background:var(--ds-navy-2,#123a7a)}
+.dif .dif-sim:disabled{opacity:.7;cursor:wait}
+.dif .dif-nao{border:0;background:none;padding:6px 0;color:var(--ds-blue,#1452b8);font:700 15px/1.2 var(--ds-font,inherit);text-decoration:underline;text-underline-offset:4px;cursor:pointer}
+.dif-link{color:var(--ds-blue,#1452b8);font-weight:700;text-decoration:underline;text-underline-offset:4px}
+.dif :focus-visible{outline:none;box-shadow:0 0 0 3px #fff,0 0 0 5px var(--ds-blue,#1452b8)}
+@media (max-width:480px){.dif-acts .dif-sim{flex:1 1 100%;justify-content:center}}
+/* Dentro da Aula Inaugural (.trilha tem fonte e tamanhos próprios). */
+.trilha .dif{font-size:16px}
+
+/* A trilha pinta os botões com a cor do texto (.trilha button): aqui a cor é sempre a da oferta. */
+.trilha .dif .dif-sim{color:#fff}
+.trilha .dif .dif-nao{color:var(--ds-blue,#1452b8)}

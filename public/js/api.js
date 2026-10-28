@@ -90,6 +90,19 @@ window.Api = (function () {
     return request('/api/central', { headers: authHeaders() });
   }
 
+  // Pedido de ajuda (Travei / dificuldade): o servidor grava o contexto e devolve protocolo e WhatsApp.
+  async function criarPedidoAjuda(corpo) {
+    return request('/api/ajuda/pedidos', {
+      method: 'POST',
+      headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+      body: JSON.stringify(corpo || {}),
+    });
+  }
+
+  async function getPedidoAjudaAberto() {
+    return request('/api/ajuda/pedidos/aberto', { headers: authHeaders() });
+  }
+
   async function getMeuSemestre() {
     return request('/api/meu-semestre', { headers: authHeaders() });
   }
@@ -195,6 +208,8 @@ window.Api = (function () {
     listTutoriais: listTutoriais,
     getCentral: getCentral,
     getMeuSemestre: getMeuSemestre,
+    criarPedidoAjuda: criarPedidoAjuda,
+    getPedidoAjudaAberto: getPedidoAjudaAberto,
     downloadPlanoPng: downloadPlanoPng,
     getPlanoImageUrl: getPlanoImageUrl,
     getAtendimento: getAtendimento,

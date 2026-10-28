@@ -175,6 +175,11 @@
         window.Rastreio && window.Rastreio.track('certificado_erro', { mensagem: err.message || GENERIC_ERROR, origem: opts.origem || 'painel' }, { importante: true });
         if (erroEl) { erroEl.textContent = err.message || GENERIC_ERROR; erroEl.classList.remove('hidden'); }
         else UI.showDashboardCertError(err.message || GENERIC_ERROR);
+        // Erro técnico (não a regra "faltam módulos", que vem como 422): oferece falar com a equipe.
+        var ancoraErro = erroEl || document.getElementById('dashboard-cert-error') || document.getElementById('home-aula-erro');
+        if (err.status !== 422 && window.Dificuldade && ancoraErro) {
+          window.Dificuldade.oferecer({ origem: 'certificado_erro', ancora: ancoraErro, automatica: true, titulo: 'Quer ajuda com o certificado?' });
+        }
       }
     } finally {
       if (btn) { btn.disabled = false; btn.classList.remove('is-loading'); if (txtEl) txtEl.textContent = txtOriginal; }
@@ -283,6 +288,7 @@
       // Acesso em preparação (conta sem RGM): telas levam à Aula Inaugural; volta ao normal quando o RGM chega.
       document.body.classList.toggle('acesso-preparo', !!(r && r.preparo));
       carregarWebchat(r && r.webchat);
+      if (window.Dificuldade) window.Dificuldade.configurar(!!(r && r.ajuda));
       if (r && (r.webchat || r.rastreio) && window.Rastreio) {
         window.Rastreio.iniciar({ chat: r.webchat, servidor: !!r.rastreio });
         rastreiaTela(window.UI.screenFromPath(window.location.pathname));
@@ -441,6 +447,7 @@
     if (window.Central) window.Central.init();
     if (window.Apps) window.Apps.init();
     if (window.Ajuda) window.Ajuda.init();
+    if (window.Dificuldade) window.Dificuldade.init();
     window.Atendimento.init();
     if (window.MeuSemestre) window.MeuSemestre.init();
 

@@ -123,6 +123,7 @@
     if (mudou) window.scrollTo(0, 0);
     if (name === 'painel' && window.AdminPainel) window.AdminPainel.load();
     if (name === 'acompanhamento' && window.AdminAcomp) window.AdminAcomp.load();
+    if (name === 'acompanhamento' && window.AdminPedidos) { window.AdminPedidos.load(); window.AdminPedidos.abrirDoEndereco(); }
     if (name === 'avisos') loadAvisos();
     if (name === 'tutoriais') loadTuts();
     if (name === 'contatos') loadContatos();

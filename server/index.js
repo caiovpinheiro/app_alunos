@@ -24,6 +24,7 @@ const trilhaRelatorios = require('./trilha-relatorios');
 const central = require('./central');
 const acompanhamento = require('./acompanhamento');
 const painel = require('./painel');
+const ajudaPedidos = require('./ajuda-pedidos');
 const avaliacoes = require('./avaliacoes');
 const preparo = require('./preparo');
 const dadosAcesso = require('./dadosAcesso');
@@ -645,8 +646,90 @@ app.get('/api/recursos', authMiddleware, async (req, res) => {
     trilha: trilha.liberadaPara(req.aluno),
     webchat: chat,
     rastreio: acompanhamento.liberadoPara(req.aluno),
+    ajuda: ajudaPedidos.liberadoPara(req.aluno),
     preparo: !req.aluno.rgm,
   });
+});
+
+// ---------- Pedido de ajuda (Travei / dificuldade), AJUDA_ATIVA_PARA ----------
+let ajudaSchemaReady = null;
+function ensureAjuda() {
+  if (!ajudaSchemaReady) {
+    ajudaSchemaReady = ensureAcompanhamento().then(() => ajudaPedidos.ensureSchema(pool)).catch((err) => {
+      ajudaSchemaReady = null;
+      throw err;
+    });
+  }
+  return ajudaSchemaReady;
+}
+
+// WhatsApp acadêmico do polo com a mensagem do pedido (troca o texto padrão pelo do protocolo).
+async function whatsappDoPedido(alunoId, mensagem) {
+  try {
+    const at = await atendimento.getAtendimento(pool, alunoId);
+    const m = at && at.academico && /wa\.me\/(\d+)/.exec(at.academico.url || '');
+    return m ? `https://wa.me/${m[1]}?text=${encodeURIComponent(mensagem)}` : null;
+  } catch (err) {
+    return null;
+  }
+}
+
+app.post('/api/ajuda/pedidos', authMiddleware, async (req, res) => {
+  if (!pool) return unavailable(res);
+  if (!ajudaPedidos.liberadoPara(req.aluno)) return res.status(403).json({ success: false, message: 'Pedido de ajuda não está liberado para esta conta.' });
+  try {
+    await ensureAjuda();
+    const { pedido, existente } = await ajudaPedidos.criar(pool, req.aluno, req.body);
+    const mensagem = ajudaPedidos.mensagemAluno(pedido);
+    if (!existente) ajudaPedidos.enviarCRM(pool, pedido).catch((err) => console.error('CRM do pedido de ajuda:', err.message));
+    return res.json({ success: true, protocolo: pedido.protocolo, existente, mensagem, whatsapp_url: await whatsappDoPedido(req.aluno.id, mensagem) });
+  } catch (err) {
+    if (err.status === 400) return res.status(400).json({ success: false, message: 'Pedido de ajuda inválido.' });
+    console.error('Falha ao criar pedido de ajuda:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível registrar o pedido agora.' });
+  }
+});
+
+app.get('/api/ajuda/pedidos/aberto', authMiddleware, async (req, res) => {
+  if (!pool) return unavailable(res);
+  if (!ajudaPedidos.liberadoPara(req.aluno)) return res.json({ success: true, pedido: null });
+  try {
+    await ensureAjuda();
+    return res.json({ success: true, pedido: await ajudaPedidos.aberto(pool, req.aluno.id) });
+  } catch (err) {
+    console.error('Falha ao ler pedido de ajuda aberto:', err.message);
+    return res.status(500).json({ success: false });
+  }
+});
+
+app.get('/api/admin/pedidos', requireAdmin, async (req, res) => {
+  if (!pool) return unavailable(res);
+  try {
+    await ensureAjuda();
+    const pedidos = await ajudaPedidos.listarAdmin(pool, { situacao: req.query.situacao });
+    const tels = await telefonesDe(pedidos.map((x) => x.rgm));
+    pedidos.forEach((x) => { const n = waNumero(tels.get(x.rgm)); x.whatsapp_url = n ? `https://wa.me/${n}` : null; });
+    return res.json({ success: true, pedidos });
+  } catch (err) {
+    console.error('Falha ao listar pedidos de ajuda:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível carregar os pedidos.' });
+  }
+});
+
+app.post('/api/admin/pedidos/:id/situacao', requireAdmin, async (req, res) => {
+  if (!pool) return unavailable(res);
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ success: false });
+  try {
+    await ensureAjuda();
+    const row = await ajudaPedidos.mudarSituacao(pool, id, String(req.body && req.body.situacao || ''), req.admin && req.admin.id);
+    if (!row) return res.status(404).json({ success: false });
+    return res.json({ success: true, situacao: row.situacao });
+  } catch (err) {
+    if (err.status === 400) return res.status(400).json({ success: false, message: 'Situação inválida.' });
+    console.error('Falha ao mudar a situação do pedido:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível salvar.' });
+  }
 });
 
 // Versão das telas da conta logada (VERSAO_NOVA_PARA). Grava o cookie que escolhe o index.html;
@@ -1399,7 +1482,9 @@ app.get('/api/admin/painel', requireAdmin, async (req, res) => {
       trilhaAdmin.ondeTrava(pool),
       trilhaAdmin.resumoAdmin(pool, certificados),
     ]);
-    const visao = await painel.visaoGeral(pool, { dias, lista, certificados, funil, uso, ondeTrava, resumoAula, cfg });
+    await ensureAjuda().catch(() => {});
+    const pedidosAbertos = await ajudaPedidos.contarAbertos(pool);
+    const visao = await painel.visaoGeral(pool, { dias, lista, certificados, funil, uso, ondeTrava, resumoAula, cfg, pedidosAbertos });
     return res.json({ success: true, ...visao });
   } catch (err) {
     console.error('Falha na visão geral:', err.message);
@@ -1751,6 +1836,8 @@ async function start() {
     console.error('Servidor no ar sem banco: confira DATABASE_* no Environment do EasyPanel.');
     return;
   }
+  // Pedidos de ajuda que não chegaram ao CRM (fora do ar): nova tentativa a cada 10 min.
+  setInterval(() => { ensureAjuda().then(() => ajudaPedidos.reenviarPendentes(pool)).catch(() => {}); }, 10 * 60 * 1000);
 
   try {
     await db.ensureSchema(pool);

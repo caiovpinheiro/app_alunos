@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="/css/styles.css?v=31">
   <link rel="stylesheet" href="/css/ds.css?v=1">
   <link rel="stylesheet" href="/css/ds-admin.css?v=1">
-  <link rel="stylesheet" href="/css/ds-painel.css?v=5">
+  <link rel="stylesheet" href="/css/ds-painel.css?v=6">
 </head>
 <body class="bg-slate-50">
   <section id="admin-login" class="min-h-screen flex items-center justify-center p-4">
@@ -115,6 +115,8 @@
             <button type="button" id="btn-acomp-export" class="bg-cruzeiro text-white text-sm font-semibold px-4 py-2 rounded-lg">Baixar CSV (para o CRM)</button>
           </div>
         </div>
+        <!-- Pedidos de ajuda (admin-pedidos.js): Travei / dificuldade, com protocolo e contexto. -->
+        <section id="acomp-pedidos" class="ped-box" aria-label="Pedidos de ajuda" hidden></section>
         <form id="acomp-filtros" class="flex flex-wrap items-end gap-3 mb-4 text-sm">
           <label class="flex flex-col gap-1"><span class="text-gray-600">Período</span>
             <select name="dias" class="border rounded-lg px-3 py-2 bg-white"><option value="7">Últimos 7 dias</option><option value="30" selected>Últimos 30 dias</option><option value="90">Últimos 90 dias</option></select></label>
@@ -379,9 +381,10 @@
     </div>
   </div>
 
-  <script src="/js/admin.js?v=30"></script>
-  <script src="/js/admin-acompanhamento.js?v=9"></script>
+  <script src="/js/admin.js?v=31"></script>
+  <script src="/js/admin-acompanhamento.js?v=10"></script>
   <script src="/js/admin-painel.js?v=5"></script>
+  <script src="/js/admin-pedidos.js?v=1"></script>
   <script src="/js/admin-aula.js?v=2"></script>
   <script src="/js/admin-avaliacoes.js?v=2"></script>
   <script src="/js/admin-preparo.js?v=1" defer></script>

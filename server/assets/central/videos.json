@@ -35,7 +35,7 @@
    "id": "tut_dp",
    "titulo": "Incluir DP e adaptação",
    "resumo": "Na rematrícula ou durante o semestre, e como fica o pagamento de cada uma.",
-   "categoria": "Área do Aluno",
+   "categoria": "Rematrícula",
    "duracao": "1:03",
    "v": "/trilha-midia/central/tut_dp",
    "nivel_trilha": 5,
@@ -45,7 +45,7 @@
    "id": "tut_extensao",
    "titulo": "Atividade de Extensão: o que é e como entregar",
    "resumo": "É um projeto com a comunidade, ligado a um ODS e ao seu curso. Leia o Tema e Propostas, pegue a Carta de Apresentação assinada, tire fotos e entregue o relatório no prazo.",
-   "categoria": "Aulas",
+   "categoria": "Horas complementares",
    "duracao": "1:26",
    "v": "/trilha-midia/central/tut_extensao",
    "nivel_trilha": 3,
@@ -70,7 +70,9 @@
    "duracao": "1:20",
    "v": "/trilha-midia/videos/nivel1_parte1",
    "nivel_trilha": 1,
-   "capa": "/trilha-midia/capas/acesso-email-senha.webp"
+   "capa": "/trilha-midia/capas/acesso-email-senha.webp",
+   "serie": "acesso",
+   "parte": 1
   },
   {
    "id": "acesso-criar-senha",
@@ -80,7 +82,9 @@
    "duracao": "0:40",
    "v": "/trilha-midia/videos/nivel1_parte2",
    "nivel_trilha": 1,
-   "capa": "/trilha-midia/capas/acesso-criar-senha.webp"
+   "capa": "/trilha-midia/capas/acesso-criar-senha.webp",
+   "serie": "acesso",
+   "parte": 2
   },
   {
    "id": "acesso-authenticator",
@@ -90,7 +94,9 @@
    "duracao": "1:01",
    "v": "/trilha-midia/videos/nivel1_parte3",
    "nivel_trilha": 1,
-   "capa": "/trilha-midia/capas/acesso-authenticator.webp"
+   "capa": "/trilha-midia/capas/acesso-authenticator.webp",
+   "serie": "acesso",
+   "parte": 3
   },
   {
    "id": "acesso-entrar-duda",
@@ -100,7 +106,9 @@
    "duracao": "1:03",
    "v": "/trilha-midia/videos/nivel1_parte4",
    "nivel_trilha": 1,
-   "capa": "/trilha-midia/capas/acesso-entrar-duda.webp"
+   "capa": "/trilha-midia/capas/acesso-entrar-duda.webp",
+   "serie": "acesso",
+   "parte": 4
   },
   {
    "id": "pagar-quanto",

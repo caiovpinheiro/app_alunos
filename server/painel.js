@@ -134,7 +134,7 @@ async function buscasSemResultado(pool, dias) {
 }
 
 // Junta tudo. `lista` = acompanhamento.montar(...) de todos os alunos ativos (com sinais).
-async function visaoGeral(pool, { dias, lista, certificados, funil, uso, ondeTrava, resumoAula, cfg }) {
+async function visaoGeral(pool, { dias, lista, certificados, funil, uso, ondeTrava, resumoAula, cfg, pedidosAbertos }) {
   const F = normalizaFaixas(cfg && cfg.faixas);
   const dSumiu = F.dias_sumiu;
   const sits = situacoes(dSumiu);
@@ -180,6 +180,9 @@ async function visaoGeral(pool, { dias, lista, certificados, funil, uso, ondeTra
   // O que fazer agora: uma frase, o porquê e o botão. Ordem: o que trava a jornada primeiro.
   const acoes = [];
   const add = (gravidade, titulo, porque, botao) => acoes.push({ gravidade, titulo, porque, botao });
+  if (pedidosAbertos) add('ruim', `Responder ${pedidosAbertos} pedido(s) de ajuda aberto(s)`,
+    'O aluno pediu ajuda (Travei ou dificuldade) e está esperando. Cada pedido tem protocolo e o contexto do problema.',
+    { texto: 'Ver pedidos de ajuda', aba: 'acompanhamento' });
   if (contagem.nunca_entrou) add('ruim', `Mandar o acesso para ${contagem.nunca_entrou} aluno(s) que nunca entraram`,
     'Sem o primeiro login o aluno não vê a Aula, as datas nem o passo a passo do AVA. A mensagem já vai com e-mail e senha inicial.',
     { texto: 'Ver quem nunca entrou', ...link('nunca_entrou') });

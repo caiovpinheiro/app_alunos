@@ -337,6 +337,7 @@ async function listar(pool, opts) {
          COUNT(*) FILTER (WHERE concluido_em IS NOT NULL)::int AS niveis_concluidos,
          MIN(nivel) FILTER (WHERE concluido_em IS NULL) AS nivel_aberto,
          MAX(atualizado_em) AS trilha_ultima,
+         (ARRAY_AGG(nivel ORDER BY atualizado_em DESC) FILTER (WHERE travei <> '{}'::jsonb AND concluido_em IS NULL))[1] AS nivel_travei,
          COALESCE(SUM((SELECT COALESCE(SUM(value::int),0) FROM jsonb_each_text(travei))),0)::int AS travei_total
        FROM csu_trilha_progresso GROUP BY aluno_id),
      fu AS (
@@ -351,7 +352,7 @@ async function listar(pool, opts) {
        COALESCE(ev.videos_inicio,0) AS videos_inicio, COALESCE(ev.videos_fim,0) AS videos_fim,
        COALESCE(ev.buscas_vazias,0) AS buscas_vazias, COALESCE(ev.cert_erros,0) AS cert_erros, COALESCE(ev.cert_ok,0) AS cert_ok,
        COALESCE(ev.whatsapp,0) AS whatsapp, ev.ultima_busca_vazia,
-       COALESCE(tr.niveis_concluidos,0) AS niveis_concluidos, tr.nivel_aberto, tr.trilha_ultima, COALESCE(tr.travei_total,0) AS travei_total,
+       COALESCE(tr.niveis_concluidos,0) AS niveis_concluidos, tr.nivel_aberto, tr.nivel_travei, tr.trilha_ultima, COALESCE(tr.travei_total,0) AS travei_total,
        fu.followup_em, fu.followup_motivo
      FROM csu_alunos a
      LEFT JOIN ac ON ac.aluno_id = a.id
@@ -376,7 +377,8 @@ function montar(rows, niveis, cfg) {
       nivel_titulo: r.nivel_aberto && niveis[r.nivel_aberto - 1] ? niveis[r.nivel_aberto - 1].t : null,
       dias_sem_acesso: diasDesde(r.ultimo_acesso),
     };
-    x.sinais = sinaisDo(x, conf).map((id) => ({ id, rotulo: SINAIS[id].rotulo, mensagem: mensagem(conf.sinais[id].mensagem, x) }));
+    const travou = x.nivel_travei ? { ...x, nivel_aberto: x.nivel_travei, nivel_titulo: niveis[x.nivel_travei - 1] ? niveis[x.nivel_travei - 1].t : x.nivel_titulo } : x;
+    x.sinais = sinaisDo(x, conf).map((id) => ({ id, rotulo: SINAIS[id].rotulo, mensagem: mensagem(conf.sinais[id].mensagem, id === 'travou_trilha' ? travou : x) }));
     // Contatado há pouco: fica "em espera" (sem sinal) até passar o prazo configurado.
     const espera = conf.ocultar_contatados_dias;
     const desdeContato = diasDesde(r.followup_em);

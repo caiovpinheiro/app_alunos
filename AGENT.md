@@ -7,6 +7,28 @@
 - Push em `main` dispara `.github/workflows/deploy.yml`: publica `ghcr.io/caiovpinheiro/app_alunos:latest` e chama o webhook do EasyPanel (`secrets.EASYPANEL_DEPLOY_APP`).
 - Não invente outro fluxo de deploy (n8n, branch de homologação, etc.) sem pedido explícito.
 
+### 2026-10-28 - Pedido de ajuda no "Travei" e na dificuldade (AJUDA_ATIVA_PARA)
+
+**Decisão**
+- `public/js/dificuldade.js` oferece no próprio lugar "Quer falar com a equipe agora?" (nunca abre o chat sozinho). Gatilhos: "Travei" (módulo ou parte), 2 erros na mesma pergunta, 3 pausas no mesmo vídeo antes de 90%, 2 buscas diferentes sem resultado na Central em 10 min, erro técnico no certificado (o 422 "faltam módulos" não conta), 4 min parado no módulo. Nada com vídeo tocando; no máximo 2 ofertas automáticas por sessão; "Agora não" cala a oferta por 24 h (localStorage); com pedido aberto no mesmo módulo, mostra o protocolo.
+- Ao aceitar: `POST /api/ajuda/pedidos` grava `csu_pedidos_ajuda` (protocolo `AJ-XXXX`, origem, módulo/parte/pergunta e o contexto montado no servidor a partir do banco: onde, opções erradas marcadas, vídeo, progresso, aparelho e os últimos 10 eventos se houver rastreio). Um pedido aberto por módulo (ou por origem) em 24 h. O aluno segue pelo WhatsApp do polo com a mensagem e o protocolo; quando o widget do Bwipo tiver `open({ message })` com `capabilities.prefill`, abre o chat. "Falar com a equipe" do painel de Ajuda também cria o pedido.
+- Admin: pedidos no topo de Quem contatar (o que a equipe precisa saber, Em atendimento, Resolvido, que também grava em `csu_followups`), ação "Responder N pedidos" na Visão geral e link direto `/admin#acompanhamento/aluno/{id}` que abre o percurso.
+- CRM: com `PEDIDO_AJUDA_WEBHOOK_URL` (e `PEDIDO_AJUDA_WEBHOOK_SECRET`), cada pedido vai assinado (`X-Signature = sha256 HMAC de "timestamp.corpo"`, `Idempotency-Key` = protocolo); falhas são reenviadas a cada 10 min, até 5 vezes em 48 h. Contrato em `docs/integracao/bwipo-eventos.md`.
+- Corrigido: a mensagem de "Travou na Aula Inaugural" usava o primeiro módulo em aberto; agora usa o módulo onde o aluno tocou em "Travei" (`nivel_travei`).
+
+**Impacto**
+- Desligado até `AJUDA_ATIVA_PARA` existir no Environment (RGM/e-mail; `*` = todos). Sem `RASTREIO_LIBERADO_PARA`, o pedido vai sem a linha do tempo. Nada digitado em formulários entra no pacote; termos de busca com 6+ dígitos são mascarados.
+
+### 2026-10-28 - Central de ajuda por tema e visual novo das telas do aluno
+
+**Decisão**
+- Central (`/tutoriais`) organizada em 8 temas (`server/assets/central/temas.json`: ordem da jornada, cada vídeo e cada pergunta em um tema só, `curto` para a faixa fixa). `/api/central` só ganhou campos (`tema`, `ordem`, `temas`, `comece`); a Central congelada continua com a mesma resposta. Tela: "Comece por aqui" (5 passos, só para quem ainda não começou a Aula), faixa de temas fixa, índice, uma seção por tema (4 vídeos, 3 no celular, e 3 dúvidas, com "ver todos"), busca agrupada por tema, "A seguir neste tema" no player e link direto `/tutoriais#pagamentos`.
+- `videos.json`: `tut_dp` passou a "Rematrícula" e `tut_extensao` a "Horas complementares"; os 4 vídeos de primeiro acesso viraram a série `acesso` (Parte 1 a 4).
+- Telas do aluno no design system (`public/css/ds.css`, carregado por último): Atkinson Hyperlegible Next, azul-marinho, amarelo só na ação principal, superfícies planas, troca de tela sem desfoque. Só CSS e marcação: ids, `data-*` e classes do JS iguais. Meu semestre e Aula Inaugural só receberam cores e fonte novas (ajuste fino pendente).
+
+**Impacto**
+- Vale para quem vê a versão nova (`VERSAO_NOVA_PARA` / `VERSAO_NOVA_DESDE`); `public-antigo/` não mudou.
+
 ### 2026-10-28 - Admin: Visão geral (Bom / Regular / Ruim) e visual novo
 
 **Decisão**

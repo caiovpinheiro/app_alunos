@@ -145,6 +145,16 @@ window.Ajuda = (function () {
       }
       var eq = e.target.closest('[data-ajuda-equipe]');
       if (eq) {
+        // Com o pedido de ajuda ligado: grava o pedido com protocolo e a tela atual, e abre o canal com a mensagem.
+        if (window.Dificuldade && window.Dificuldade.ativo()) {
+          e.preventDefault();
+          var janela = window.open('', '_blank');
+          fechar(false);
+          window.Dificuldade.falar({ origem: 'ajuda_painel' }, janela).catch(function () {
+            if (janela) { if (waUrl) janela.location.href = waUrl; else janela.close(); }
+          });
+          return;
+        }
         if (window.Rastreio) window.Rastreio.track('whatsapp_clicado', { origem: 'painel de ajuda' });
         fechar(false); // link externo abre em nova aba; interno troca de tela (o data-go cuida)
       }

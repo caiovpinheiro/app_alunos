@@ -18,8 +18,9 @@ window.AdminAcomp = (function () {
     central_busca: 'Buscou na Central', central_busca_sem_resultado: 'Busca sem resultado', central_video: 'Abriu vídeo da Central',
     faq_aberta: 'Abriu pergunta', aula_capitulo: 'Abriu capítulo da Aula Inaugural',
     certificado_gerado: 'Gerou certificado', certificado_erro: 'Erro no certificado', aviso_lido: 'Leu aviso', whatsapp_clicado: 'Clicou no WhatsApp',
+    ajuda_oferecida: 'Recebeu a oferta de ajuda', ajuda_aceita: 'Aceitou falar com a equipe', ajuda_recusada: 'Recusou a oferta de ajuda', pedido_ajuda: 'Pedido de ajuda',
   };
-  var IMPORTANTES = { trilha_travei: 1, central_busca_sem_resultado: 1, certificado_erro: 1, trilha_video_pulado: 1 };
+  var IMPORTANTES = { trilha_travei: 1, central_busca_sem_resultado: 1, certificado_erro: 1, trilha_video_pulado: 1, pedido_ajuda: 1 };
 
   function quando(d) {
     if (!d) return '—';
@@ -433,5 +434,5 @@ window.AdminAcomp = (function () {
     if (painel && !painel.classList.contains('hidden') && C() && C().token() && !dados) load();
   });
 
-  return { load: load, loadConfig: loadConfig, filtrar: filtrar, carregarFunil: carregarFunil };
+  return { load: load, loadConfig: loadConfig, filtrar: filtrar, carregarFunil: carregarFunil, percurso: percurso };
 })();

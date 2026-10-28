@@ -35,6 +35,21 @@ function narracao(v) {
 }
 const AULA = lerJson('aula-inaugural.json', null);
 const VIDEOS = lerJson('videos.json', { videos: [] });
+// Temas da Central (temas.json): ordem da jornada; cada vídeo e cada pergunta em um tema só.
+const TEMAS = lerJson('temas.json', { temas: [], comece: [] });
+
+// Onde está cada id: { tema, ordem }. O que não estiver em temas.json vai para o último tema.
+function posicoes(chave) {
+  const out = {};
+  (TEMAS.temas || []).forEach((t) => (t[chave] || []).forEach((id, i) => { out[id] = { tema: t.id, ordem: i + 1 }; }));
+  return out;
+}
+const TEMA_VIDEO = posicoes('videos');
+const TEMA_FAQ = posicoes('faq');
+const ULTIMO_TEMA = (TEMAS.temas || []).length ? TEMAS.temas[TEMAS.temas.length - 1].id : null;
+function temaDe(mapa, id) {
+  return mapa[id] || (ULTIMO_TEMA ? { tema: ULTIMO_TEMA, ordem: 999 } : { tema: null, ordem: null });
+}
 
 function fill(text, whatsapp) {
   return typeof text === 'string' ? text.split('{whatsapp}').join(whatsapp) : text;
@@ -42,7 +57,7 @@ function fill(text, whatsapp) {
 
 function publicContent(whatsapp, nivelTitulo) {
   const nivel = (n) => (n && nivelTitulo(n) ? { nivel: n, titulo: nivelTitulo(n) } : null);
-  return {
+  const out = {
     videos: (VIDEOS.videos || [])
       .filter((v) => v.ativo !== false)
       .map((v) => ({
@@ -106,6 +121,13 @@ function publicContent(whatsapp, nivelTitulo) {
       })),
     })),
   };
+  // Temas: só campos a mais. O formato antigo (videos, aula, faq por grupo) continua igual,
+  // então a Central congelada (public-antigo) segue funcionando com a mesma resposta.
+  out.videos.forEach((v) => Object.assign(v, temaDe(TEMA_VIDEO, v.id)));
+  out.faq.forEach((g) => g.perguntas.forEach((p) => Object.assign(p, temaDe(TEMA_FAQ, p.id))));
+  out.temas = (TEMAS.temas || []).map((t) => ({ id: t.id, nome: t.nome, curto: t.curto || t.nome, icone: t.icone || null, linha: t.linha || '' }));
+  out.comece = (TEMAS.comece || []).map((c) => ({ video: c.video || null, tema: c.tema || null, titulo: c.titulo }));
+  return out;
 }
 
 module.exports = { publicContent };
