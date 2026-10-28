@@ -50,7 +50,7 @@
     return body;
   }
 
-  window.AdminCore = { request: function (u, o) { return request(u, o); }, token: function () { return token(); }, escapeHtml: function (t) { return escapeHtml(t); }, showLogin: function () { showLogin(); } };
+  window.AdminCore = { request: function (u, o) { return request(u, o); }, token: function () { return token(); }, escapeHtml: function (t) { return escapeHtml(t); }, showLogin: function () { showLogin(); }, irPara: function (a, s) { irPara(a, s); } };
 
   function showLogin() {
     abaAtual = null; // ao entrar de novo, a aba recarrega
@@ -65,13 +65,13 @@
 
   // Navegação: cada aba tem endereço próprio (#trilha, #trilha/onde-trava, #config...),
   // então dá para mandar o link de uma tela e usar Voltar/Avançar do navegador.
-  var ABAS = ['acompanhamento', 'trilha', 'avaliacoes', 'alunos', 'indicacoes', 'avisos', 'tutoriais', 'contatos', 'planos', 'config'];
+  var ABAS = ['painel', 'acompanhamento', 'trilha', 'avaliacoes', 'alunos', 'indicacoes', 'avisos', 'tutoriais', 'contatos', 'planos', 'config'];
   var SUBABAS = { trilha: ['resumo', 'onde-trava', 'por-aluno', 'uso'] };
   var abaAtual = null;
 
   function lerRota() {
     var p = location.hash.replace(/^#/, '').split('/');
-    var aba = ABAS.indexOf(p[0]) >= 0 ? p[0] : 'acompanhamento';
+    var aba = ABAS.indexOf(p[0]) >= 0 ? p[0] : 'painel';
     var subs = SUBABAS[aba] || [];
     return { aba: aba, sub: subs.indexOf(p[1]) >= 0 ? p[1] : (subs[0] || '') };
   }
@@ -121,6 +121,7 @@
     });
     document.title = (rotulo ? rotulo + ' | ' : '') + 'Admin | Área do Aluno';
     if (mudou) window.scrollTo(0, 0);
+    if (name === 'painel' && window.AdminPainel) window.AdminPainel.load();
     if (name === 'acompanhamento' && window.AdminAcomp) window.AdminAcomp.load();
     if (name === 'avisos') loadAvisos();
     if (name === 'tutoriais') loadTuts();
@@ -130,6 +131,7 @@
     if (name === 'trilha') loadTrilha();
     if (name === 'avaliacoes' && window.AdminAvaliacoes) window.AdminAvaliacoes.load();
     if (name === 'config' && window.AdminAcomp) window.AdminAcomp.loadConfig();
+    if (name === 'config' && window.AdminPainel) window.AdminPainel.loadFaixas();
   }
 
   // Aba "Aula Inaugural" (ids e rota continuam "trilha"): números de GET /api/admin/trilha.

@@ -1,0 +1,331 @@
+/* ==========================================================================
+   Design system do portal (aluno + admin). Carregado POR ÚLTIMO.
+   Uma fonte (Atkinson Hyperlegible Next, feita para leitura fácil), azul-marinho
+   da marca, amarelo "estrela" só na ação principal, superfícies planas com linha
+   fina (sem sombras soltas), raio por hierarquia: 20 banner, 16 cartão, 12 controle.
+   Os seletores usam #app / #admin-app para vencer as utilidades do Tailwind (CDN).
+   Só visual: nenhum id, data-* ou classe usada pelo JS foi renomeado.
+   ========================================================================== */
+
+:root{
+  --ds-navy:#0b2b5f; --ds-navy-2:#123a7a; --ds-blue:#1452b8; --ds-blue-2:#0f4398; --ds-blue-soft:#e8effa; --ds-blue-line:#bfd1ee;
+  --ds-star:#ffc72c; --ds-star-2:#ffb800; --ds-on-star:#1f1600;
+  --ds-ink:#12213b; --ds-muted:#4d5b73; --ds-faint:#6b778c; --ds-line:#d9e1ec; --ds-line-2:#c4d0e0;
+  --ds-bg:#f2f5f9; --ds-surface:#fff; --ds-surface-2:#f7f9fc;
+  --ds-ok:#1d7a4b; --ds-ok-soft:#e4f4eb; --ds-bad:#b42318; --ds-bad-soft:#fdecea; --ds-bad-line:#f4c1bb;
+  --ds-warn-bg:#fff6db; --ds-warn-line:#f1d27a; --ds-warn-fg:#5a4100;
+  --ds-font:"Atkinson Hyperlegible Next","Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+  --ds-r-xl:20px; --ds-r-lg:16px; --ds-r-md:12px; --ds-r-sm:8px;
+  --ds-overlay:0 24px 60px -20px rgba(11,43,95,.45),0 2px 8px rgba(11,43,95,.08);
+  --ds-focus:0 0 0 3px #fff,0 0 0 5px var(--ds-blue);
+
+  /* Tokens antigos apontam para os novos: cada tela muda junto. */
+  --portal-navy:var(--ds-navy); --portal-navy-2:var(--ds-navy-2); --portal-blue:var(--ds-blue); --portal-blue-2:var(--ds-blue-2);
+  --portal-bright:#5b8def; --portal-blue-soft:var(--ds-blue-soft); --portal-yellow:var(--ds-star); --portal-yellow-2:var(--ds-star-2);
+  --portal-on-yellow:var(--ds-on-star); --portal-bg:var(--ds-bg); --portal-surface:var(--ds-surface); --portal-surface-2:var(--ds-surface-2);
+  --portal-text:var(--ds-ink); --portal-muted:var(--ds-muted); --portal-border:var(--ds-line); --portal-radius:var(--ds-r-lg);
+  --portal-display:var(--ds-font); --portal-body:var(--ds-font); --portal-shadow:none;
+  --csu-blue:var(--ds-blue); --csu-blue-deep:var(--ds-navy); --csu-blue-soft:var(--ds-blue-soft); --csu-ink:var(--ds-ink);
+  --csu-muted:var(--ds-muted); --csu-line:var(--ds-line); --csu-surface:#fff; --csu-radius:var(--ds-r-lg);
+  --csu-shadow:none; --csu-shadow-hover:none;
+}
+
+/* Telas com tokens próprios: mesma fonte, mesmas cores, sem sombra. */
+.painel{--p-display:var(--ds-font)!important;--p-body:var(--ds-font)!important;--p-shadow:none!important;--p-line:var(--ds-line)!important;--p-star-2:#e09a00}
+.central{--c-display:var(--ds-font);--c-body:var(--ds-font);--c-shadow:none;--c-navy:var(--ds-navy);--c-blue:var(--ds-blue);--c-blue-soft:var(--ds-blue-soft);--c-line:var(--ds-line);--c-fg:var(--ds-ink);--c-muted:var(--ds-muted);--c-bg-2:var(--ds-surface-2)}
+.trilha{--display:var(--ds-font);--body:var(--ds-font);--shadow:none;--shadow-lg:none;--bg:var(--ds-bg);--line:var(--ds-line);--fg:var(--ds-ink);--muted:var(--ds-muted);
+  --accent:var(--ds-blue);--accent-soft:var(--ds-blue-soft);--solid:var(--ds-navy);--hero-1:var(--ds-navy);--hero-2:var(--ds-navy-2);--hud-bg:rgba(242,245,249,.94);--r-lg:var(--ds-r-lg);--r-md:var(--ds-r-md)}
+
+/* --------------------------------------------------------------------------
+   Base
+   -------------------------------------------------------------------------- */
+html{scroll-behavior:auto}
+body{font-family:var(--ds-font)!important;color:var(--ds-ink);background:var(--ds-bg)!important;background-image:none!important;
+  font-size:17px;line-height:1.55;text-rendering:optimizeLegibility;font-variant-numeric:lining-nums}
+#app, #app button, #app input, #app select, #app textarea{font-family:var(--ds-font)}
+#app h1,#app h2,#app h3,#app h4{font-family:var(--ds-font);letter-spacing:-.012em;text-wrap:balance}
+#app :focus-visible{outline:none;box-shadow:var(--ds-focus);border-radius:var(--ds-r-sm)}
+#app ::selection{background:#ffe08a;color:var(--ds-ink)}
+
+/* Troca de tela: só um fade curto (antes: deslize + desfoque que deixava a tela "lavada"). */
+#app > section.is-entering,#app > section.is-entering.from-auth{animation:ds-in 160ms ease-out both}
+#dashboard-page.is-entering .dash-anim,#dashboard-page.is-entering.from-auth .dash-anim{animation:none!important}
+@keyframes ds-in{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){#app > section.is-entering{animation:none}}
+
+/* --------------------------------------------------------------------------
+   Cabeçalho (igual em todas as telas do aluno)
+   -------------------------------------------------------------------------- */
+#app section > header{background:#fff!important;border-bottom:1px solid var(--ds-line)!important;box-shadow:none;z-index:30}
+#app .portal-head{min-height:68px;column-gap:20px}
+#app .portal-brand img{height:36px}
+@media (min-width:640px){#app .portal-brand img{height:40px}}
+#app .portal-nav{gap:2px;font-family:var(--ds-font)}
+#app .portal-nav a{min-height:44px;padding:0 14px;border-radius:var(--ds-r-sm);color:var(--ds-muted);font-weight:700;font-size:16px;background:none}
+#app .portal-nav a:hover{color:var(--ds-navy);background:var(--ds-surface-2)}
+#app .portal-nav a[aria-current="page"]{color:var(--ds-navy);background:none}
+#app .portal-nav a[aria-current="page"]::after{left:14px;right:14px;bottom:0;height:3px;border-radius:3px 3px 0 0;background:var(--ds-star)}
+@media (min-width:1024px){#app .portal-nav a{min-height:68px;border-radius:0}#app .portal-nav a:hover{background:none}}
+
+#app .portal-help-btn{min-height:40px;padding:0 14px;border-radius:var(--ds-r-md);border:1px solid var(--ds-line);background:#fff;color:var(--ds-navy);font:700 15px/1 var(--ds-font)}
+#app .portal-help-btn:hover{border-color:var(--ds-navy);color:var(--ds-navy);background:var(--ds-surface-2)}
+#app .notif-bell{width:40px;height:40px;display:grid;place-items:center;padding:0;border-radius:var(--ds-r-md);color:var(--ds-muted)}
+#app .notif-bell:hover{background:var(--ds-surface-2);color:var(--ds-navy)}
+#app .notif-badge{background:var(--ds-bad);color:#fff;border:2px solid #fff;font:700 11px/1 var(--ds-font);min-width:20px;height:20px;top:2px;right:0}
+#app .notif-dropdown{border:1px solid var(--ds-line);border-radius:var(--ds-r-lg);box-shadow:var(--ds-overlay);background:#fff;backdrop-filter:none;-webkit-backdrop-filter:none;overflow:hidden}
+#app .notif-dropdown-head{padding:14px 16px;border-bottom:1px solid var(--ds-line);background:#fff}
+#app .notif-dropdown-head strong{font-size:16px;color:var(--ds-navy)}
+#app .notif-dropdown-head button{color:var(--ds-blue);font-weight:700;text-decoration:underline;text-underline-offset:3px}
+#app .notif-item{border-radius:0;border-bottom:1px solid var(--ds-line);padding:12px 16px}
+#app .notif-item:hover{background:var(--ds-surface-2)}
+#app .notif-item.is-unread{background:#fffbea}
+#app [data-user-name]{color:var(--ds-ink)!important;font-weight:700}
+#app [data-acesso-rgm]{color:var(--ds-faint)!important;font-variant-numeric:tabular-nums}
+#app header button[onclick="logout()"]{width:40px;height:40px;display:grid;place-items:center;padding:0;border-radius:var(--ds-r-md);color:var(--ds-faint)}
+#app header button[onclick="logout()"]:hover{background:var(--ds-bad-soft);color:var(--ds-bad)}
+
+/* Containers: telas que usavam larguras soltas do Tailwind ficam no mesmo eixo. */
+#app section > header > div{max-width:1360px!important;margin-inline:auto;padding-inline:20px}
+@media (min-width:640px){#app section > header > div{padding-inline:32px}}
+@media (min-width:1024px){#app section > header > div{padding-inline:40px}}
+
+/* "Voltar ao início" */
+#app main > button[onclick*="dashboard-page"],#form-page button[onclick*="dashboard-page"]{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 4px;margin-bottom:12px;color:var(--ds-blue)!important;font-weight:700;font-size:16px}
+#app main > button[onclick*="dashboard-page"]:hover{text-decoration:underline;text-underline-offset:3px}
+
+/* --------------------------------------------------------------------------
+   Botões e links (mesma família em todas as telas)
+   -------------------------------------------------------------------------- */
+#app .portal-btn,#app .c-btn,#app .apps-ver{min-height:48px;padding:0 22px;border-radius:var(--ds-r-md);background:var(--ds-navy);color:#fff!important;font:700 16px/1.15 var(--ds-font);box-shadow:none;letter-spacing:0}
+#app .portal-btn:hover,#app .c-btn:hover,#app .apps-ver:hover{background:var(--ds-navy-2)}
+#app .portal-btn:active{transform:translateY(1px)}
+#app .portal-btn--primary,#app .ai-acts .portal-btn--primary,#app .atd-btn-star{background:var(--ds-star)!important;border-color:var(--ds-star)!important;color:var(--ds-on-star)!important;box-shadow:inset 0 -2px 0 rgba(0,0,0,.12)!important}
+#app .portal-btn--primary:hover,#app .ai-acts .portal-btn--primary:hover,#app .atd-btn-star:hover{background:var(--ds-star-2)!important;border-color:var(--ds-star-2)!important}
+#app .ai-acts .portal-btn--primary svg{color:var(--ds-on-star)}
+#app .portal-btn--ghost{background:#fff;color:var(--ds-navy)!important;border:1.5px solid var(--ds-line-2)}
+#app .portal-btn--ghost:hover{background:var(--ds-surface-2);border-color:var(--ds-navy)}
+#app .portal-link,#app .p-link,#app .p-go,#app .portal-vwatch,#app .dac-link,#app .apps-completa{color:var(--ds-blue)!important;font-family:var(--ds-font);font-weight:700;text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:4px}
+#app .portal-link:hover,#app .p-link:hover,#app .p-go:hover,#app .portal-vwatch:hover{color:var(--ds-navy)!important}
+#app .text-cruzeiro{color:var(--ds-blue)!important}
+#app .bg-cruzeiro,#admin-app .bg-cruzeiro,#admin-login .bg-cruzeiro{background:var(--ds-navy)!important;background-image:none!important}
+#app button.bg-cruzeiro:hover,#app a.bg-cruzeiro:hover{background:var(--ds-navy-2)!important}
+
+/* Campos */
+#app input:not([type=checkbox]):not([type=radio]):not([type=range]),#app select,#app textarea{border:1.5px solid var(--ds-line-2)!important;border-radius:var(--ds-r-md)!important;background:#fff;color:var(--ds-ink);font-size:17px;box-shadow:none!important}
+#app input:not([type=checkbox]):not([type=radio]):hover,#app select:hover,#app textarea:hover{border-color:#9fb1ca!important}
+#app input:not([type=checkbox]):not([type=radio]):focus,#app select:focus,#app textarea:focus{border-color:var(--ds-blue)!important;box-shadow:0 0 0 3px rgba(20,82,184,.18)!important;outline:none}
+#app input::placeholder,#app textarea::placeholder{color:#8a95a8}
+#app label{color:var(--ds-ink)!important;font-weight:700!important;font-size:15px!important}
+#app .text-red-500{color:var(--ds-bad)!important}
+
+/* Avisos de erro/ok em formulários */
+#app [role="alert"].bg-red-50,#login-error,#register-error,#form-alert,#indicacao-alert{background:var(--ds-bad-soft)!important;border:1px solid var(--ds-bad-line)!important;color:#8a1c12!important;border-radius:var(--ds-r-md)!important}
+#indicacao-ok{background:var(--ds-ok-soft)!important;border-color:#a9d8bf!important;color:#155c39!important;border-radius:var(--ds-r-md)!important}
+
+/* Spinners */
+#app .btn-spinner,#app .btn-loader{border-color:rgba(255,255,255,.35);border-top-color:#fff}
+
+/* --------------------------------------------------------------------------
+   Entrar / Criar acesso
+   Metade azul-marinho com a marca, metade com o formulário (no celular: só o cartão).
+   -------------------------------------------------------------------------- */
+#app .auth-screen{background:var(--ds-navy)!important;background-image:
+  radial-gradient(circle at 18% 22%,rgba(255,199,44,.16) 0 2px,transparent 3px),
+  radial-gradient(circle at 72% 64%,rgba(255,255,255,.10) 0 1.5px,transparent 2.5px),
+  radial-gradient(circle at 40% 85%,rgba(255,255,255,.08) 0 1.5px,transparent 2.5px)!important;
+  background-size:180px 180px,240px 240px,300px 300px!important;animation:none!important;padding:32px 16px!important}
+#app .auth-orb{display:none}
+#app .auth-card{max-width:460px!important;border:0!important;border-radius:var(--ds-r-xl)!important;box-shadow:0 30px 80px -30px rgba(0,0,0,.55)!important;padding:36px 32px!important;
+  animation:none!important;background:#fff!important;backdrop-filter:none!important}
+@media (max-width:480px){#app .auth-card{padding:28px 20px!important}}
+#app .auth-hero{margin-bottom:24px!important}
+#app .auth-hero h1{font-size:28px!important;font-weight:800!important;color:var(--ds-navy)!important;margin-top:4px}
+#app .auth-hero p{color:var(--ds-muted)!important;font-size:15px!important}
+#app .auth-brand{width:min(230px,78%);animation:none!important}
+#app .auth-logo{background:var(--ds-blue-soft)!important;color:var(--ds-navy)!important;border-radius:var(--ds-r-lg)!important;animation:none!important;box-shadow:none!important}
+#app .auth-card > p.bg-blue-50{background:var(--ds-warn-bg)!important;border:1px solid var(--ds-warn-line)!important;color:var(--ds-warn-fg)!important;border-radius:var(--ds-r-md)!important;font-size:15px!important}
+#app .auth-card > p.bg-blue-50 strong{color:var(--ds-ink)!important}
+#app .auth-card input{padding-block:13px!important}
+
+/* Botão Entrar: plano, sem o cubo que gira (o JS segue mexendo nos mesmos spans). */
+#app #btn-login,#app #btn-register{position:relative;display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:54px;padding:0 22px;border:0;border-radius:var(--ds-r-md);
+  background:var(--ds-star)!important;background-image:none!important;color:var(--ds-on-star)!important;font:800 17px/1 var(--ds-font);cursor:pointer;box-shadow:inset 0 -3px 0 rgba(0,0,0,.14)!important;transform:none!important;transition:background .15s}
+#app #btn-login:hover:not(:disabled),#app #btn-register:hover:not(:disabled){background:var(--ds-star-2)!important}
+#app #btn-login:disabled,#app #btn-register:disabled{opacity:.75;cursor:wait}
+#app #btn-login .cube-flip-scene,#app #btn-login .cube-flip-cube{all:unset;display:contents}
+#app #btn-login .cube-flip-face{all:unset}
+#app #btn-login .cube-flip-second{display:none}
+#app #btn-register::before,#app #btn-register::after,#app #btn-login::before,#app #btn-login::after{display:none!important}
+#app #btn-register .btn-spinner{border-color:rgba(31,22,0,.25);border-top-color:var(--ds-on-star)}
+#app #btn-esqueci-senha,#app .auth-card .text-cruzeiro{color:var(--ds-blue)!important;font-weight:700!important;text-decoration:underline;text-underline-offset:4px}
+#app .auth-card [data-password-toggle]{color:var(--ds-faint)!important;border-radius:var(--ds-r-md)}
+#app .auth-card [data-password-toggle]:hover{color:var(--ds-navy)!important}
+
+/* --------------------------------------------------------------------------
+   Início
+   -------------------------------------------------------------------------- */
+#app .painel{gap:28px;font-size:17px}
+#app .p-alert{border-radius:var(--ds-r-md);background:var(--ds-bad-soft);border-color:var(--ds-bad-line);color:#8a1c12}
+#app .p-alert--info{background:var(--ds-blue-soft);border-color:var(--ds-blue-line);color:var(--ds-navy)}
+
+/* Banner: o único lugar com cor cheia na tela. */
+#app .portal-hero{border-radius:var(--ds-r-xl);background:var(--ds-navy);box-shadow:none;padding:32px 24px}
+#app .portal-hero::after{content:"";position:absolute;z-index:0;right:-60px;top:-60px;width:260px;height:260px;pointer-events:none;opacity:.07;
+  background:center/contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1l2.6 8.4H23l-6.8 5 2.6 8.4L12 17.8l-6.8 5 2.6-8.4L1 9.4h8.4z' fill='%23ffffff'/%3E%3C/svg%3E")}
+@media (min-width:640px){#app .portal-hero{padding:40px 40px}}
+@media (min-width:1024px){#app .portal-hero{padding:48px 56px;min-height:300px;display:flex;align-items:center}}
+#app .portal-eyebrow{font:700 15px/1.3 var(--ds-font);letter-spacing:0;text-transform:none;color:var(--ds-star);margin-bottom:10px}
+#app .portal-hero h1{font:800 clamp(2rem,4.4vw,3rem)/1.08 var(--ds-font);letter-spacing:-.025em}
+#app .portal-hero__lede{color:#d5e0f2;font-size:1.1rem;line-height:1.5;max-width:46ch}
+#app .portal-hero__acts{margin-top:26px}
+#app .portal-hero .portal-btn--primary{min-height:54px;padding:0 26px;font-size:17px}
+#app .portal-hero__link{font-weight:700;text-decoration-thickness:1.5px}
+#app .portal-hero__art::before{background:#1a4a92;box-shadow:none}
+#app .portal-progress .p-bar{background:rgba(255,255,255,.14);height:8px}
+#app .portal-progress .p-bar i{background:var(--ds-star)}
+
+/* Aula Inaugural: cartão branco com selo azul-marinho; barra em amarelo sólido. */
+#app .ai-card{border:1px solid var(--ds-line);border-radius:var(--ds-r-lg);box-shadow:none;background:#fff}
+#app .ai-selo{background:var(--ds-navy);background-image:none}
+#app .ai-selo-t{border-left-color:rgba(255,255,255,.3);font:700 1.1rem/1.4 var(--ds-font)}
+#app .ai-selo-t b{color:var(--ds-star)}
+#app .ai-k{font:700 14px/1.3 var(--ds-font);letter-spacing:0;text-transform:none;color:var(--ds-muted)}
+#app .ai-card h2{font:800 clamp(1.35rem,2.6vw,1.75rem)/1.18 var(--ds-font);color:var(--ds-navy);margin-top:4px}
+#app .ai-bar{height:10px;background:#edf0f5}
+#app .ai-bar i{background:var(--ds-star)!important}
+#app .ai-stats b{font:800 1.1rem/1.2 var(--ds-font);color:var(--ds-navy);font-variant-numeric:tabular-nums}
+#app .ai-acts .portal-btn{min-height:52px;border-radius:var(--ds-r-md);font-size:16px}
+#app .ai-card.is-ok .ai-k{color:var(--ds-ok)}
+#app .p-aula-strip{border-radius:var(--ds-r-lg);background:var(--ds-warn-bg);border-color:var(--ds-warn-line);box-shadow:none}
+#app .p-aula-strip h2{font:800 1.25rem/1.25 var(--ds-font)}
+
+/* Atalhos: uma régua de 4 entradas, sem cartões flutuando. */
+#app .p-quick{gap:0;border:1px solid var(--ds-line);border-radius:var(--ds-r-lg);background:#fff;overflow:hidden}
+#app .p-tile{border:0;border-radius:0;box-shadow:none;background:none;padding:18px 20px;transition:background .15s;transform:none!important}
+#app .p-tile:hover{background:var(--ds-surface-2)}
+#app .p-tile + .p-tile{border-top:1px solid var(--ds-line)}
+@media (min-width:640px){#app .p-tile + .p-tile{border-top:0}#app .p-tile:nth-child(n+3){border-top:1px solid var(--ds-line)}#app .p-tile:nth-child(even){border-left:1px solid var(--ds-line)}}
+@media (min-width:1100px){#app .p-tile:nth-child(n+3){border-top:0}#app .p-tile + .p-tile{border-left:1px solid var(--ds-line)}}
+#app .p-tile-t strong{font:700 1.06rem/1.3 var(--ds-font);color:var(--ds-navy)}
+#app .p-tile-d{font-size:.94rem;color:var(--ds-muted)}
+#app .p-ext{font:400 13px/1.3 var(--ds-font);color:var(--ds-faint);letter-spacing:0}
+#app .p-ico{width:44px;height:44px;border-radius:var(--ds-r-md);background:var(--ds-blue-soft);color:var(--ds-navy)}
+#app .p-ico--star{background:var(--ds-star);color:var(--ds-on-star)}
+
+/* Cartões e listas */
+#app .p-card,#app .dac-card,#app .apps-card,#app .apps-ajuda,#app .portal-support{border:1px solid var(--ds-line);border-radius:var(--ds-r-lg);box-shadow:none;background:#fff}
+#app .p-card{padding:24px}
+#app .p-h2,#app .portal-sec-head h2,#app .apps-title,#app .dac-card h2,#app .portal-support h2{font:800 clamp(1.25rem,2.3vw,1.45rem)/1.25 var(--ds-font);color:var(--ds-navy);letter-spacing:-.015em}
+#app .p-squiggle{display:none}
+#app .p-hint,#app .portal-sec-head p,#app .apps-sub,#app .dac-sub{color:var(--ds-muted)}
+#app .p-dates{gap:0}
+#app .p-date-item{border:0;border-top:1px solid var(--ds-line);border-radius:0;padding:14px 0;background:none}
+#app .p-dates li:first-child .p-date-item,#app .p-dates > .p-date-item:first-child{border-top:0;padding-top:4px}
+#app .p-date{width:58px;border-radius:var(--ds-r-md);background:var(--ds-surface-2);border:1px solid var(--ds-line)}
+#app .p-date b{font:800 1.35rem/1 var(--ds-font);color:var(--ds-navy);font-variant-numeric:tabular-nums}
+#app .p-date small{font:700 12px/1 var(--ds-font);letter-spacing:.04em;color:var(--ds-muted)}
+#app .p-date-item.is-hot{background:var(--ds-warn-bg);border:1px solid var(--ds-warn-line);border-radius:var(--ds-r-md);padding:14px}
+#app .p-date-item.is-hot .p-date{background:var(--ds-star);border-color:var(--ds-star)}
+#app .p-date-t > strong{font:700 1rem/1.35 var(--ds-font)}
+#app .p-date-btn{border-radius:var(--ds-r-md);background:#fff;border:1.5px solid var(--ds-line-2);color:var(--ds-navy)!important}
+#app .p-date-btn:hover{border-color:var(--ds-navy);background:#fff}
+#app .p-pill{border-radius:6px;font:700 12px/1.2 var(--ds-font);background:var(--ds-blue-soft);color:var(--ds-navy)}
+#app .p-pill--warn{background:var(--ds-star);color:var(--ds-on-star)}
+#app .p-news-item strong{font:700 1rem/1.35 var(--ds-font)}
+#app .p-news-item.is-unread .p-news-dot{background:var(--ds-star-2)}
+
+/* Vídeos */
+#app .portal-vcard{border:1px solid var(--ds-line);border-radius:var(--ds-r-lg);box-shadow:none}
+#app .portal-vcard:hover{border-color:var(--ds-line-2)}
+#app .portal-vcat{font:700 13px/1.3 var(--ds-font);letter-spacing:0;text-transform:none;color:var(--ds-muted)}
+#app .portal-vbody{padding:16px 18px 18px}
+#app .portal-vbody h3{font:800 1.1rem/1.3 var(--ds-font);color:var(--ds-navy);margin-top:4px}
+#app .portal-vthumb .c-play{background-color:var(--ds-star);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M8 5v14l11-7z' fill='%231f1600'/%3E%3C/svg%3E");box-shadow:0 0 0 3px rgba(255,255,255,.7)}
+#app .portal-vthumb:hover .c-play{background-color:#fff}
+#app .portal-vthumb .c-dur{border-radius:6px;background:rgba(11,43,95,.88);font-variant-numeric:tabular-nums}
+
+/* Ajuda humana */
+#app .portal-support{background:var(--ds-surface-2)}
+#app .portal-support__ico{background:var(--ds-navy);color:#fff;width:52px;height:52px;border-radius:var(--ds-r-md)}
+
+/* Aplicativos e dados de acesso */
+#app .apps-tab{border-radius:var(--ds-r-md);font:700 .98rem/1.2 var(--ds-font);background:#fff;border:1.5px solid var(--ds-line)}
+#app .apps-tab:hover{border-color:var(--ds-navy)}
+#app .apps-tab[aria-selected="true"]{background:var(--ds-navy);border-color:var(--ds-navy)}
+#app .apps-pan{border-radius:var(--ds-r-md);border-color:var(--ds-line);background:var(--ds-surface-2)}
+#app .apps-pan-ico{background:var(--ds-warn-bg);color:var(--ds-navy);border-radius:var(--ds-r-md)}
+#app .dac-ico{background:var(--ds-blue-soft);color:var(--ds-navy);border-radius:var(--ds-r-md)}
+#app .dac-list > div{border-radius:var(--ds-r-sm);background:var(--ds-surface-2)}
+#app .dac-val{font-variant-numeric:tabular-nums}
+#app .dac-copy{border-radius:var(--ds-r-sm);font-family:var(--ds-font);font-weight:700}
+#app .dac-senha{border-radius:var(--ds-r-md);border-style:solid;border-color:var(--ds-line);background:var(--ds-surface-2)}
+#app .dac-faixa{border-radius:var(--ds-r-md);border-color:var(--ds-blue-line)}
+
+/* Painel lateral de ajuda */
+.ajuda{font-family:var(--ds-font)!important}
+.ajuda-painel{box-shadow:var(--ds-overlay)!important}
+.ajuda h2{font:800 1.5rem/1.2 var(--ds-font)!important;color:var(--ds-navy)!important}
+.ajuda-topo-ico{background:var(--ds-navy)!important;border-radius:var(--ds-r-md)!important}
+.ajuda-op{border-radius:var(--ds-r-md)!important;box-shadow:none!important;border:1.5px solid var(--ds-line)!important}
+.ajuda-op:hover{border-color:var(--ds-navy)!important;background:var(--ds-surface-2)!important}
+.ajuda-op-t strong{font:700 1.04rem/1.3 var(--ds-font)!important;color:var(--ds-navy)}
+.ajuda-op-ico{border-radius:var(--ds-r-md)!important}
+.ajuda-nota{border-radius:var(--ds-r-md)!important}
+.ajuda-fundo{background:rgba(11,25,50,.5)!important}
+
+/* --------------------------------------------------------------------------
+   Avisos (tela)
+   -------------------------------------------------------------------------- */
+#app #avisos-page main,#app #atendimento-page main{max-width:760px!important;padding-top:32px!important}
+#app #avisos-page h2.text-2xl,#app #atendimento-page h2.text-2xl,#app #tutoriais-page .sem-trilha > h2{font:800 2rem/1.15 var(--ds-font)!important;color:var(--ds-navy)!important;letter-spacing:-.02em}
+#app #avisos-page main > p,#app #atendimento-page #atendimento-polo{color:var(--ds-muted)!important;font-size:16px!important}
+#app .aviso-card{border:1px solid var(--ds-line);border-radius:var(--ds-r-lg);box-shadow:none;background:#fff;padding:20px 22px;transform:none!important}
+#app .aviso-card:hover{border-color:var(--ds-line-2);box-shadow:none}
+#app .aviso-card.is-unread{border-left:4px solid var(--ds-star);background:#fff}
+#app .aviso-title{font:800 1.15rem/1.3 var(--ds-font);color:var(--ds-navy)}
+#app .aviso-desc{color:var(--ds-ink);line-height:1.6}
+#app .aviso-cat{border-radius:6px;background:var(--ds-blue-soft);color:var(--ds-navy);font-weight:700}
+#app .aviso-prio-alta{border-radius:6px;background:var(--ds-bad-soft);color:var(--ds-bad);font-weight:700}
+#app .aviso-dates{color:var(--ds-faint);font-variant-numeric:tabular-nums}
+#app .aviso-read-btn{border-radius:var(--ds-r-sm);border:1.5px solid var(--ds-line-2);background:#fff;color:var(--ds-navy);font-weight:700}
+#app .aviso-read-btn:hover{border-color:var(--ds-navy);background:var(--ds-surface-2)}
+#app .aviso-empty{border:1.5px dashed var(--ds-line-2);border-radius:var(--ds-r-lg);background:#fff;color:var(--ds-muted)}
+
+/* --------------------------------------------------------------------------
+   Atendimento
+   -------------------------------------------------------------------------- */
+#app #atendimento-page main > .bg-white,#app #indicacao-card{border:1px solid var(--ds-line)!important;border-radius:var(--ds-r-lg)!important;box-shadow:none!important;padding:24px!important}
+#app #atendimento-page main > .bg-white h3,#app #indicacao-card h3{font:800 1.25rem/1.25 var(--ds-font)!important;color:var(--ds-navy)}
+#app #atendimento-page main > .bg-white p{color:var(--ds-muted)!important;font-size:16px!important}
+#app #atendimento-page a.rounded-xl,#app #atendimento-page button.rounded-xl,#app #btn-indicacao{min-height:50px;border-radius:var(--ds-r-md)!important;font-weight:700!important;box-shadow:none!important}
+#app #btn-toggle-indicacao{background:#fff!important;border:1.5px solid var(--ds-line-2)!important;color:var(--ds-navy)!important}
+#app #btn-toggle-indicacao:hover,#app #btn-toggle-indicacao[aria-expanded="true"]{border-color:var(--ds-navy)!important;background:var(--ds-surface-2)!important}
+
+/* --------------------------------------------------------------------------
+   Certificado (formulário e sucesso)
+   -------------------------------------------------------------------------- */
+#app #form-page > div > .bg-white{border:1px solid var(--ds-line)!important;border-radius:var(--ds-r-lg)!important;box-shadow:none!important}
+#app #form-page h1,#app #success-page h1{font:800 clamp(1.6rem,3vw,2rem)/1.2 var(--ds-font)!important;color:var(--ds-navy)!important;letter-spacing:-.02em}
+#app #form-page .border-b{border-color:var(--ds-line)!important}
+#app #btn-submit{min-height:56px;border-radius:var(--ds-r-md)!important;background:var(--ds-star)!important;background-image:none!important;color:var(--ds-on-star)!important;box-shadow:inset 0 -3px 0 rgba(0,0,0,.14)!important;font-size:17px}
+#app #btn-submit:hover{background:var(--ds-star-2)!important}
+#app #btn-submit .btn-loader{border-color:rgba(31,22,0,.25);border-top-color:var(--ds-on-star)}
+#app #success-page{background:var(--ds-bg)!important}
+#app #success-page .bg-green-100{background:var(--ds-ok-soft)!important;color:var(--ds-ok)!important}
+#app #success-page .bg-white{border:1px solid var(--ds-line)!important;border-radius:var(--ds-r-lg)!important;box-shadow:none!important}
+#app #success-page button{border-radius:var(--ds-r-md)!important;min-height:50px;box-shadow:none!important}
+#app .curso-suggestions{border:1px solid var(--ds-line)!important;border-radius:var(--ds-r-md)!important;box-shadow:var(--ds-overlay)!important}
+
+/* Modal de vídeo (tutoriais sem trilha) */
+#app .video-modal{background:rgba(11,25,50,.6);backdrop-filter:none}
+#app .video-modal-card{border-radius:var(--ds-r-lg);box-shadow:var(--ds-overlay);border:0}
+
+/* Ajustes do Início */
+#app .auth-card::before,#app .auth-card::after{display:none!important}
+/* O banner já tem a ação amarela; no cartão da Aula o botão é azul-marinho (uma ação principal por tela). */
+#app .ai-acts .portal-btn--primary{background:var(--ds-navy)!important;border-color:var(--ds-navy)!important;color:#fff!important;box-shadow:none!important}
+#app .ai-acts .portal-btn--primary:hover{background:var(--ds-navy-2)!important;border-color:var(--ds-navy-2)!important}
+#app .ai-acts .portal-btn--primary svg{color:#fff}
+#app .apps-pan-ico{width:56px!important;height:56px!important;background:var(--ds-blue-soft)}
+#app .apps-pan-ico svg{width:26px!important;height:26px!important}
+#app .apps-pan{align-items:flex-start}

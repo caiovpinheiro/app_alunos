@@ -8,6 +8,7 @@
 // Eventos e acessos com mais de RASTREIO_RETENCAO_DIAS (padrão 180) são apagados.
 
 const { envValue } = require('./env');
+const painel = require('./painel');
 
 const NOME_EVENTO = /^[a-z0-9_]{2,40}$/;
 const MAX_EVENTOS = 60; // o corpo passa pelo express.json global (20 kb)
@@ -186,7 +187,7 @@ const PADRAO_GERAL = { ocultar_contatados_dias: 0 };
 function configPadrao() {
   const sinais = {};
   Object.keys(SINAIS).forEach((id) => { sinais[id] = { ...SINAIS[id].padrao }; });
-  return { ...PADRAO_GERAL, sinais };
+  return { ...PADRAO_GERAL, sinais, faixas: painel.faixasPadrao() };
 }
 
 function inteiro(v, min, max, padrao) {
@@ -198,7 +199,7 @@ function inteiro(v, min, max, padrao) {
 function normalizaConfig(raw) {
   const base = configPadrao();
   const c = raw && typeof raw === 'object' ? raw : {};
-  const out = { ocultar_contatados_dias: inteiro(c.ocultar_contatados_dias, 0, 90, base.ocultar_contatados_dias), sinais: {} };
+  const out = { ocultar_contatados_dias: inteiro(c.ocultar_contatados_dias, 0, 90, base.ocultar_contatados_dias), sinais: {}, faixas: painel.normalizaFaixas(c.faixas) };
   Object.keys(SINAIS).forEach((id) => {
     const p = base.sinais[id];
     const x = (c.sinais && c.sinais[id]) || {};
@@ -224,8 +225,12 @@ async function lerConfig(pool) {
   return valor;
 }
 
+// raw = null: regras dos sinais voltam ao padrão (as faixas da Visão geral ficam).
+// Campos que não vieram (ex.: o formulário das faixas não manda os sinais) continuam como estavam.
 async function salvarConfig(pool, raw, adminId) {
-  const valor = raw === null ? configPadrao() : normalizaConfig(raw);
+  cacheConfig = null;
+  const atual = await lerConfig(pool);
+  const valor = raw === null ? { ...configPadrao(), faixas: atual.faixas } : normalizaConfig({ ...atual, ...raw });
   await pool.query(
     `INSERT INTO csu_acomp_config (id, config, admin_id, atualizado_em) VALUES (1, $1::jsonb, $2, now())
      ON CONFLICT (id) DO UPDATE SET config = EXCLUDED.config, admin_id = EXCLUDED.admin_id, atualizado_em = now()`,

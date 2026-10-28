@@ -7,6 +7,23 @@
 - Push em `main` dispara `.github/workflows/deploy.yml`: publica `ghcr.io/caiovpinheiro/app_alunos:latest` e chama o webhook do EasyPanel (`secrets.EASYPANEL_DEPLOY_APP`).
 - Não invente outro fluxo de deploy (n8n, branch de homologação, etc.) sem pedido explícito.
 
+### 2026-10-28 - Admin: Visão geral (Bom / Regular / Ruim) e visual novo
+
+**Decisão**
+- Aba nova **Visão geral** (`#painel`), que passa a ser a primeira do admin. `GET /api/admin/painel?dias=` (`server/painel.js`) só lê o que já existe (acompanhamento, funil, Aula Inaugural, joinhas, buscas sem resultado) e devolve: 10 indicadores com faixa Bom / Regular / Ruim ("Poucos dados" com menos de 5 alunos na conta), a lista "O que fazer agora" em ordem (primeiro o que impede o aluno de seguir, depois o conteúdo a melhorar) e a **situação** de cada aluno. Cada ação abre Quem contatar já filtrado. O funil por dia de matrícula saiu de Quem contatar e foi para cá.
+- **Situação do aluno** (uma só, nesta ordem): certificado emitido, nunca entrou, travou na Aula ("Travei" sem concluir), sumiu (N dias sem acessar, padrão 7), parou a Aula (sinal `parou_trilha`), concluiu sem certificado, entrou sem começar a Aula, fazendo a Aula. `GET /api/admin/acompanhamento` devolve `situacao`, `certificado_emitido` e `joinhas` (👍/👎 dados pelo aluno) em cada linha, aceita `?situacao=` e o catálogo `situacoes`; o CSV ganhou situação, "Travei" e joinhas.
+- **Faixas editáveis** em Configurações › Faixas da Visão geral (`GET/PUT /api/admin/painel/faixas`, `{ reset: true }` volta ao padrão). Ficam em `csu_acomp_config.config.faixas`, na mesma linha das regras dos sinais: salvar ou restaurar as regras não mexe nas faixas, e vice-versa. Limites fora de ordem são trocados; iguais voltam ao padrão.
+- Quem contatar: cartão do aluno com situação e o que fazer, jornada (entrou, Aula x de 7, certificado), "Travei" e módulo, joinhas, acessos, vídeos e último contato; filtro "Mostrar" também por situação.
+- Visual do admin no design system novo (`public/css/ds.css` com os tokens, `ds-admin.css`, `ds-painel.css`): fonte Atkinson Hyperlegible Next, azul-marinho da marca, superfícies planas, menu lateral com marcador amarelo. Só CSS e marcação: ids, `data-*` e classes usadas pelo JS continuam iguais.
+
+**Contexto**
+- Pedido do usuário: um admin que oriente a condução, com o que está bom, regular e ruim, o que melhorar e a situação de cada aluno (Travei, joinhas, acessos, sem acesso).
+- As telas do aluno com o visual novo (`index.html` carregando `ds.css`) ficaram de fora desta publicação; o `ds.css` vai junto porque o admin usa os tokens, mas só o admin o carrega.
+
+**Impacto**
+- Os padrões das faixas (ex.: entraram no portal, Bom a partir de 80% e Regular a partir de 60%) são estimativas, não metas do polo: ajustar em Configurações.
+- A Visão geral roda as mesmas consultas das abas Aula Inaugural e Uso juntas; se ficar lenta com a base real, guardar o resultado em cache por alguns minutos.
+
 ### 2026-10-20 - Ajustes de conteúdo pedidos pela equipe acadêmica
 
 **Decisão**

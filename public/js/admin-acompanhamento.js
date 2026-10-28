@@ -7,6 +7,8 @@ window.AdminAcomp = (function () {
   var esc = function (t) { return C().escapeHtml(t); };
   var dados = null;
   var sinaisCarregados = false;
+  var situacoes = {};
+  var pendente = null; // filtro pedido pela Visão geral antes de as opções existirem
 
   var NOMES_EVENTO = {
     tela_aberta: 'Abriu a tela', clique: 'Clicou', saiu: 'Saiu do portal',
@@ -37,7 +39,10 @@ window.AdminAcomp = (function () {
   function filtros() {
     var f = document.getElementById('acomp-filtros');
     var fd = new FormData(f);
-    return new URLSearchParams({ dias: fd.get('dias') || '30', sinal: fd.get('sinal') || 'com_sinal', q: (fd.get('q') || '').trim() });
+    var mostrar = String(fd.get('sinal') || 'com_sinal');
+    // "sit:<id>" = filtro por situação (Visão geral); o resto é sinal ou grupo de sinais.
+    var sit = mostrar.indexOf('sit:') === 0 ? mostrar.slice(4) : '';
+    return new URLSearchParams({ dias: fd.get('dias') || '30', sinal: sit ? 'todos' : mostrar, situacao: sit, q: (fd.get('q') || '').trim() });
   }
 
   function card(rotulo, valor, dica) {
@@ -45,38 +50,76 @@ window.AdminAcomp = (function () {
       (dica ? '<p class="text-xs text-gray-400 mt-1">' + esc(dica) + '</p>' : '') + '</div>';
   }
 
+  var FAIXA = { bom: 'Bom', regular: 'Regular', ruim: 'Ruim' }; // mesmas palavras da Visão geral
+
+  // Jornada em 3 marcos: entrou no portal → Aula Inaugural (x de 7) → certificado.
+  function jornada(a) {
+    var entrou = Boolean(a.primeiro_acesso || a.trilha_ultima);
+    var feitos = a.niveis_concluidos || 0;
+    var total = a.total_niveis || 7;
+    var p = Math.round(feitos / total * 100);
+    var marco = function (ok, txt) { return '<li class="ac-marco' + (ok ? ' is-ok' : '') + '"><span aria-hidden="true">' + (ok ? '✓' : '') + '</span>' + txt + '</li>'; };
+    return '<ol class="ac-jornada" aria-label="Jornada do aluno">' +
+      marco(entrou, entrou ? 'Entrou' : 'Não entrou') +
+      '<li class="ac-marco ac-marco--aula' + (feitos >= total ? ' is-ok' : '') + '"><span aria-hidden="true">' + (feitos >= total ? '✓' : '') + '</span>' +
+        'Aula ' + feitos + '/' + total + '<i class="ac-mini" aria-hidden="true"><b style="width:' + p + '%"></b></i></li>' +
+      marco(a.certificado_emitido, a.certificado_emitido ? 'Certificado' : 'Sem certificado') +
+    '</ol>';
+  }
+
   function linhaAluno(a) {
     var s = a.sinais[0];
+    var sit = situacoes[a.situacao] || { rotulo: a.situacao, faixa: 'regular', acao: '' };
     var wa = a.whatsapp_numero && s
-      ? '<a class="inline-flex items-center gap-1 bg-green-600 text-white font-semibold px-3 py-2 rounded-lg" target="_blank" rel="noopener noreferrer" data-acomp-wa="' + a.id + '" data-motivo="' + esc(s.id) + '" href="https://wa.me/' + esc(a.whatsapp_numero) + '?text=' + encodeURIComponent(s.mensagem) + '">WhatsApp</a>'
-      : (s ? '<span class="text-xs text-gray-400 self-center">Sem telefone no relatório</span>' : '');
+      ? '<a class="ac-wa" target="_blank" rel="noopener noreferrer" data-acomp-wa="' + a.id + '" data-motivo="' + esc(s.id) + '" href="https://wa.me/' + esc(a.whatsapp_numero) + '?text=' + encodeURIComponent(s.mensagem) + '">Abrir WhatsApp</a>'
+      : (s ? '<span class="ac-semtel">Sem telefone no relatório</span>' : '');
+    var j = a.joinhas || { positivos: 0, negativos: 0 };
+    var dado = function (rotulo, valor, alerta) {
+      return '<div' + (alerta ? ' class="is-alerta"' : '') + '><dt>' + esc(rotulo) + '</dt><dd>' + valor + '</dd></div>';
+    };
     return (
-      '<article class="bg-white border rounded-xl p-4">' +
-        '<div class="flex flex-wrap justify-between gap-3">' +
-          '<div class="min-w-0">' +
-            '<h3 class="font-bold text-gray-800">' + esc(a.nome) + '</h3>' +
-            '<p class="text-xs text-gray-500">' + (a.rgm ? 'RGM ' + esc(a.rgm) : 'Em preparação (sem RGM)') + (a.curso ? ' · ' + esc(a.curso) : '') + (a.unidade ? ' · ' + esc(a.unidade) : '') + '</p>' +
-            (a.sinais.length ? '<div class="flex flex-wrap gap-1 mt-2">' + a.sinais.map(function (x, i) {
-              return '<span class="text-xs font-semibold px-2 py-1 rounded-full ' + (i === 0 ? 'bg-amber-100 text-amber-900' : 'bg-slate-100 text-slate-700') + '">' + esc(x.rotulo) + '</span>';
-            }).join('') + '</div>' : '') +
+      '<article class="ac-card ac-card--' + esc(sit.faixa) + '">' +
+        '<div class="ac-top">' +
+          '<div class="ac-quem">' +
+            '<h3>' + esc(a.nome) + '</h3>' +
+            '<p class="ac-meta">' + (a.rgm ? 'RGM ' + esc(a.rgm) : 'Em preparação (sem RGM)') + (a.curso ? ' · ' + esc(a.curso) : '') + (a.unidade ? ' · ' + esc(a.unidade) : '') + '</p>' +
           '</div>' +
-          '<div class="flex flex-wrap gap-2 items-start text-sm">' + wa +
-            (s ? '<button type="button" class="bg-white border font-semibold px-3 py-2 rounded-lg" data-acomp-copiar="' + a.id + '">Copiar mensagem</button>' : '') +
-            '<button type="button" class="bg-white border font-semibold px-3 py-2 rounded-lg" data-acomp-percurso="' + a.id + '">Ver percurso</button>' +
-          '</div>' +
+          '<div class="ac-sit"><span class="ac-sit-chip ac-sit-chip--' + esc(sit.faixa) + '">' + esc(FAIXA[sit.faixa] || '') + ' · ' + esc(sit.rotulo) + '</span>' +
+            (sit.acao ? '<p>' + esc(sit.acao) + '</p>' : '') + '</div>' +
         '</div>' +
-        '<dl class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mt-3 text-xs">' +
-          '<div><dt class="text-gray-500">Último acesso</dt><dd class="font-semibold">' + esc(haDias(a.dias_sem_acesso)) + '</dd></div>' +
-          '<div><dt class="text-gray-500">Acessos no período</dt><dd class="font-semibold">' + a.acessos + ' <span class="text-gray-400">(' + a.acessos_total + ' no total)</span></dd></div>' +
-          '<div><dt class="text-gray-500">Tempo no período</dt><dd class="font-semibold">' + esc(minutos(a.segundos)) + '</dd></div>' +
-          '<div><dt class="text-gray-500">Aula Inaugural</dt><dd class="font-semibold">' + a.niveis_concluidos + ' de ' + a.total_niveis + ' módulos' + (a.travei_total ? ' · ' + a.travei_total + 'x travei' : '') + '</dd></div>' +
-          '<div><dt class="text-gray-500">Vídeos</dt><dd class="font-semibold">' + a.videos_fim + ' terminados de ' + a.videos_inicio + '</dd></div>' +
-          '<div><dt class="text-gray-500">Último contato</dt><dd class="font-semibold">' + (a.followup_em ? esc(quando(a.followup_em)) : '—') + '</dd></div>' +
+        jornada(a) +
+        '<dl class="ac-dados">' +
+          dado('Último acesso', esc(haDias(a.dias_sem_acesso)), a.dias_sem_acesso == null || a.dias_sem_acesso >= 7) +
+          dado('Acessos', a.acessos + ' no período <small>(' + a.acessos_total + ' no total)</small>') +
+          dado('Tempo no período', esc(minutos(a.segundos))) +
+          dado('"Travei"', a.travei_total ? a.travei_total + 'x' + (a.nivel_aberto ? ' <small>no módulo ' + esc(a.nivel_aberto) + '</small>' : '') : '—', a.travei_total > 0) +
+          dado('Joinhas', (j.positivos || j.negativos) ? '👍 ' + j.positivos + ' · 👎 ' + j.negativos : '—', j.negativos > 0) +
+          dado('Vídeos', a.videos_fim + ' de ' + a.videos_inicio + ' até o fim') +
+          dado('Último contato', a.followup_em ? esc(quando(a.followup_em)) : 'nunca') +
         '</dl>' +
-        (s ? '<p class="mt-3 text-xs text-gray-600 bg-slate-50 border rounded-lg p-2"><b>Mensagem sugerida:</b> ' + esc(s.mensagem) + '</p>' : '') +
-        (a.em_espera ? '<p class="mt-3 text-xs text-gray-600 bg-blue-50 border border-blue-100 rounded-lg p-2">Contatado recentemente. Volta para a lista em ' + a.volta_em_dias + ' dia(s), se ainda tiver: ' + esc(a.sinais_em_espera.map(function (x) { return x.rotulo; }).join(', ')) + '.</p>' : '') +
+        (a.sinais.length ? '<div class="ac-sinais"><span>Por que chamar:</span>' + a.sinais.map(function (x, i) {
+          return '<span class="ac-sinal' + (i === 0 ? ' is-1' : '') + '">' + esc(x.rotulo) + '</span>';
+        }).join('') + '</div>' : '') +
+        (s ? '<details class="ac-msg"><summary>Mensagem sugerida</summary><p>' + esc(s.mensagem) + '</p></details>' : '') +
+        (a.em_espera ? '<p class="ac-espera">Contatado recentemente. Volta para a lista em ' + a.volta_em_dias + ' dia(s), se ainda tiver: ' + esc(a.sinais_em_espera.map(function (x) { return x.rotulo; }).join(', ')) + '.</p>' : '') +
+        '<div class="ac-acts">' + wa +
+          (s ? '<button type="button" class="bg-white border font-semibold px-3 py-2 rounded-lg" data-acomp-copiar="' + a.id + '">Copiar mensagem</button>' : '') +
+          '<button type="button" class="bg-white border font-semibold px-3 py-2 rounded-lg" data-acomp-percurso="' + a.id + '">Ver percurso</button>' +
+        '</div>' +
       '</article>'
     );
+  }
+
+  // Filtro pedido de fora (Visão geral): situação ou sinal. Se as opções ainda não existem, aplica no load.
+  function aplicarFiltro(f) {
+    var sel = document.getElementById('acomp-sinal');
+    var valor = f.situacao ? 'sit:' + f.situacao : (f.sinal || 'com_sinal');
+    if (!Array.prototype.some.call(sel.options, function (o) { return o.value === valor; })) return false;
+    sel.value = valor;
+    return true;
+  }
+  function filtrar(f) {
+    if (!aplicarFiltro(f || {})) pendente = f;
   }
 
   // Funil por dia de matrícula (dia em que a conta foi criada). Dias antes de VERSAO_NOVA_DESDE ficam
@@ -86,10 +129,10 @@ window.AdminAcomp = (function () {
     return '<td class="px-3 py-2 text-right whitespace-nowrap"><b>' + n + '</b> <span class="text-gray-400">' + pct(n, d) + '</span></td>';
   }
   function diaBr(iso) { var p = String(iso).split('-'); return p[2] + '/' + p[1]; }
-  async function carregarFunil() {
+  async function carregarFunil(diasPedidos) {
     var box = document.getElementById('acomp-funil');
     if (!box) return;
-    var dias = Math.min(90, Number(filtros().get('dias')) || 30);
+    var dias = Math.min(90, Number(diasPedidos) || Number(filtros().get('dias')) || 30);
     try {
       var r = await C().request('/api/admin/acompanhamento/funil?dias=' + dias);
       var desde = r.versao_nova_desde ? new Date(r.versao_nova_desde) : null;
@@ -143,18 +186,23 @@ window.AdminAcomp = (function () {
   }
 
   async function load() {
-    carregarFunil();
     var msg = document.getElementById('acomp-msg');
     msg.textContent = 'Carregando...';
     try {
       var r = await C().request('/api/admin/acompanhamento?' + filtros().toString());
       dados = r;
       if (!sinaisCarregados) {
-        var sel = document.getElementById('acomp-sinal');
+        var gs = document.getElementById('acomp-sit-grupo');
+        var gi = document.getElementById('acomp-sinal-grupo');
+        (r.situacoes || []).forEach(function (x) {
+          var o = document.createElement('option'); o.value = 'sit:' + x.id; o.textContent = x.rotulo; gs.appendChild(o);
+        });
         r.sinais.forEach(function (x) {
-          var o = document.createElement('option'); o.value = x.id; o.textContent = 'Só: ' + x.rotulo; sel.appendChild(o);
+          var o = document.createElement('option'); o.value = x.id; o.textContent = x.rotulo; gi.appendChild(o);
         });
         sinaisCarregados = true;
+        situacoes = (r.situacoes || []).reduce(function (m, x) { m[x.id] = x; return m; }, {});
+        if (pendente) { var p = pendente; pendente = null; aplicarFiltro(p); return load(); }
       }
       var t = r.totais;
       var pctVideo = t.videos_iniciados ? Math.round(t.videos_concluidos / t.videos_iniciados * 100) + '%' : '—';
@@ -385,5 +433,5 @@ window.AdminAcomp = (function () {
     if (painel && !painel.classList.contains('hidden') && C() && C().token() && !dados) load();
   });
 
-  return { load: load, loadConfig: loadConfig };
+  return { load: load, loadConfig: loadConfig, filtrar: filtrar, carregarFunil: carregarFunil };
 })();

@@ -5,8 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin | Área do Aluno</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400..800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/styles.css?v=31">
+  <link rel="stylesheet" href="/css/ds.css?v=1">
+  <link rel="stylesheet" href="/css/ds-admin.css?v=1">
+  <link rel="stylesheet" href="/css/ds-painel.css?v=5">
 </head>
 <body class="bg-slate-50">
   <section id="admin-login" class="min-h-screen flex items-center justify-center p-4">
@@ -34,7 +39,7 @@
   <section id="admin-app" class="hidden min-h-screen">
     <header class="bg-white border-b sticky top-0 z-10">
       <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-        <strong class="text-gray-800">Admin · Área do Aluno</strong>
+        <span class="admin-brand"><img src="/assets/logo-csv.webp" alt="Cruzeiro do Sul Virtual" width="666" height="168"><strong>Painel da equipe</strong></span>
         <div class="flex items-center gap-3 text-sm">
           <a href="/" class="text-cruzeiro font-medium hover:underline">Área do aluno</a>
           <span id="admin-name" class="text-gray-600"></span>
@@ -48,7 +53,8 @@
       <nav id="admin-nav" class="admin-nav" aria-label="Seções do painel">
         <div class="admin-nav-group">
           <p class="admin-nav-title">Acompanhar</p>
-          <button type="button" class="admin-tab is-active" data-tab="acompanhamento">Quem contatar</button>
+          <button type="button" class="admin-tab is-active" data-tab="painel">Visão geral</button>
+          <button type="button" class="admin-tab" data-tab="acompanhamento">Quem contatar</button>
           <button type="button" class="admin-tab" data-tab="trilha">Aula Inaugural</button>
           <button type="button" class="admin-tab" data-tab="avaliacoes">Avaliações dos conteúdos</button>
         </div>
@@ -80,7 +86,25 @@
         <div id="admin-alunos-preparo"></div>
       </div>
 
-      <div id="tab-acompanhamento" class="admin-panel">
+      <!-- Visão geral (admin-painel.js): faixas Bom/Regular/Ruim, o que fazer agora e a situação dos alunos. -->
+      <div id="tab-painel" class="admin-panel">
+        <div class="admin-panel-head flex flex-wrap justify-between items-end gap-3">
+          <div>
+            <h2 class="text-xl font-bold">Visão geral</h2>
+            <p class="admin-panel-desc">Como está a turma, o que fazer primeiro e em que situação está cada aluno. Clique em uma ação para abrir a lista já filtrada.</p>
+          </div>
+          <div class="flex flex-wrap items-end gap-2 text-sm">
+            <label class="flex flex-col gap-1"><span class="text-gray-600">Período</span>
+              <select id="painel-dias" class="border rounded-lg px-3 py-2 bg-white"><option value="7">Últimos 7 dias</option><option value="30" selected>Últimos 30 dias</option><option value="90">Últimos 90 dias</option></select></label>
+            <button type="button" id="painel-atualizar" class="bg-white border text-sm font-semibold px-4 py-2 rounded-lg">Atualizar</button>
+          </div>
+        </div>
+        <p id="painel-msg" class="pn-msg" role="status"></p>
+        <div id="painel-conteudo" class="pn"></div>
+        <div id="acomp-funil" class="pn-funil"></div>
+      </div>
+
+      <div id="tab-acompanhamento" class="admin-panel hidden">
         <div class="admin-panel-head flex flex-wrap justify-between items-start gap-3">
           <div>
             <h2 class="text-xl font-bold">Quem contatar</h2>
@@ -95,14 +119,14 @@
           <label class="flex flex-col gap-1"><span class="text-gray-600">Período</span>
             <select name="dias" class="border rounded-lg px-3 py-2 bg-white"><option value="7">Últimos 7 dias</option><option value="30" selected>Últimos 30 dias</option><option value="90">Últimos 90 dias</option></select></label>
           <label class="flex flex-col gap-1"><span class="text-gray-600">Mostrar</span>
-            <select name="sinal" id="acomp-sinal" class="border rounded-lg px-3 py-2 bg-white"><option value="com_sinal">Quem precisa de contato</option><option value="em_espera">Contatados recentemente (em espera)</option><option value="todos">Todos os alunos</option></select></label>
+            <select name="sinal" id="acomp-sinal" class="border rounded-lg px-3 py-2 bg-white"><option value="com_sinal">Quem precisa de contato</option><option value="em_espera">Contatados recentemente (em espera)</option><option value="todos">Todos os alunos</option><optgroup label="Por situação" id="acomp-sit-grupo"></optgroup><optgroup label="Por sinal" id="acomp-sinal-grupo"></optgroup></select></label>
           <label class="flex flex-col gap-1 flex-1 min-w-[200px]"><span class="text-gray-600">Buscar aluno</span>
             <input name="q" type="search" placeholder="Nome, RGM ou e-mail" class="border rounded-lg px-3 py-2"></label>
           <button type="submit" class="bg-white border text-sm font-semibold px-4 py-2 rounded-lg">Atualizar</button>
         </form>
         <p id="acomp-msg" class="text-sm text-gray-500 mb-3" role="status"></p>
-        <div id="acomp-funil" class="mb-6"></div>
-        <div id="acomp-totais" class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6"></div>
+        <!-- Totais e funil ficam na Visão geral; aqui só a lista. -->
+        <div id="acomp-totais" class="hidden"></div>
         <div id="acomp-lista" class="space-y-3"></div>
       </div>
 
@@ -207,8 +231,13 @@
       <div id="tab-config" class="admin-panel hidden">
         <div class="admin-panel-head">
           <h2 class="text-xl font-bold">Configurações</h2>
-          <p class="admin-panel-desc">Ajustes que mudam quem aparece em Quem contatar e qual versão das telas cada aluno vê.</p>
+          <p class="admin-panel-desc">Ajustes que mudam as faixas da Visão geral, quem aparece em Quem contatar e qual versão das telas cada aluno vê.</p>
         </div>
+        <section class="bg-white border rounded-xl p-4 mb-6 text-sm" aria-labelledby="config-faixas-h">
+          <h3 id="config-faixas-h" class="text-lg font-bold">Faixas da Visão geral</h3>
+          <p class="text-gray-500 mb-3">A partir de qual porcentagem cada indicador conta como Bom, Regular ou Ruim. Ajuste às metas do polo.</p>
+          <div id="config-faixas"><p class="text-gray-500">Carregando...</p></div>
+        </section>
         <section class="bg-white border rounded-xl p-4 mb-6 text-sm" aria-labelledby="config-regras-h">
           <h3 id="config-regras-h" class="text-lg font-bold">Regras dos sinais de follow-up</h3>
           <p class="text-gray-500 mb-3">Quando um aluno entra em Quem contatar, com que prioridade, e a mensagem de WhatsApp sugerida.</p>
@@ -350,8 +379,9 @@
     </div>
   </div>
 
-  <script src="/js/admin.js?v=28"></script>
-  <script src="/js/admin-acompanhamento.js?v=7"></script>
+  <script src="/js/admin.js?v=30"></script>
+  <script src="/js/admin-acompanhamento.js?v=9"></script>
+  <script src="/js/admin-painel.js?v=5"></script>
   <script src="/js/admin-aula.js?v=2"></script>
   <script src="/js/admin-avaliacoes.js?v=2"></script>
   <script src="/js/admin-preparo.js?v=1" defer></script>

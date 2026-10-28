@@ -23,6 +23,7 @@ const trilhaAdmin = require('./trilha-admin');
 const trilhaRelatorios = require('./trilha-relatorios');
 const central = require('./central');
 const acompanhamento = require('./acompanhamento');
+const painel = require('./painel');
 const avaliacoes = require('./avaliacoes');
 const preparo = require('./preparo');
 const dadosAcesso = require('./dadosAcesso');
@@ -1339,7 +1340,16 @@ async function listaAcompanhamento(req) {
   const { dias, rows } = await acompanhamento.listar(pool, { dias: req.query.dias, q: req.query.q });
   const cfg = await acompanhamento.lerConfig(pool);
   let lista = acompanhamento.montar(rows, trilha.NIVEIS, cfg);
-  const filtro = String(req.query.sinal || 'com_sinal');
+  // Situação de cada aluno (Visão geral) e joinhas que ele deu; ?situacao= filtra por ela.
+  const [certificados, votos] = await Promise.all([certificadosEmitidos(), painel.votosPorRgm(pool)]);
+  lista.forEach((x) => {
+    x.situacao = painel.situacaoDe(x, certificados, cfg.faixas.dias_sumiu);
+    x.certificado_emitido = Boolean(certificados[x.id]);
+    x.joinhas = votos[x.rgm] || { positivos: 0, negativos: 0 };
+  });
+  const situacao = String(req.query.situacao || '');
+  if (painel.SITUACAO[situacao]) lista = lista.filter((x) => x.situacao === situacao);
+  const filtro = String(req.query.sinal || (situacao ? 'todos' : 'com_sinal'));
   if (filtro === 'com_sinal') lista = lista.filter((x) => x.sinais.length);
   else if (filtro !== 'todos' && filtro !== 'em_espera') lista = lista.filter((x) => x.sinais.some((s) => s.id === filtro));
   else if (filtro === 'em_espera') lista = lista.filter((x) => x.em_espera);
@@ -1365,10 +1375,61 @@ app.get('/api/admin/acompanhamento', requireAdmin, async (req, res) => {
       com_sinal: acompanhamento.montar(rows, trilha.NIVEIS, cfg).filter((x) => x.sinais.length).length,
     };
     const sinais = acompanhamento.catalogo().filter((x) => cfg.sinais[x.id].ativo);
-    return res.json({ success: true, dias, totais, sinais, total_filtrado: lista.length, alunos: pagina });
+    const situacoes = painel.situacoes(cfg.faixas.dias_sumiu).map((x) => ({ id: x.id, rotulo: x.rotulo, faixa: x.faixa, acao: x.acao }));
+    return res.json({ success: true, dias, totais, sinais, situacoes, total_filtrado: lista.length, alunos: pagina });
   } catch (err) {
     console.error('Falha no acompanhamento:', err.message);
     return res.status(500).json({ success: false, message: 'Não foi possível carregar o acompanhamento.' });
+  }
+});
+
+// Visão geral: indicadores com faixa (bom / regular / ruim), o que fazer agora e a situação dos alunos.
+app.get('/api/admin/painel', requireAdmin, async (req, res) => {
+  if (!pool) return unavailable(res);
+  try {
+    await ensureAcompanhamento();
+    const dias = Math.max(1, Math.min(180, Number(req.query.dias) || 30));
+    const { rows } = await acompanhamento.listar(pool, { dias });
+    const cfg = await acompanhamento.lerConfig(pool);
+    const lista = acompanhamento.montar(rows, trilha.NIVEIS, cfg);
+    const certificados = await certificadosEmitidos();
+    const [funil, uso, ondeTrava, resumoAula] = await Promise.all([
+      trilhaRelatorios.funilCoortes(pool, { dias: Math.min(90, dias) }),
+      trilhaRelatorios.dashboardUso(pool),
+      trilhaAdmin.ondeTrava(pool),
+      trilhaAdmin.resumoAdmin(pool, certificados),
+    ]);
+    const visao = await painel.visaoGeral(pool, { dias, lista, certificados, funil, uso, ondeTrava, resumoAula, cfg });
+    return res.json({ success: true, ...visao });
+  } catch (err) {
+    console.error('Falha na visão geral:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível carregar a visão geral.' });
+  }
+});
+
+// Faixas da Visão geral (Bom / Regular / Ruim), editáveis em Configurações. PUT { reset: true } volta ao padrão.
+app.get('/api/admin/painel/faixas', requireAdmin, async (req, res) => {
+  if (!pool) return unavailable(res);
+  try {
+    await ensureAcompanhamento();
+    const cfg = await acompanhamento.lerConfig(pool);
+    return res.json({ success: true, faixas: cfg.faixas, padrao: painel.faixasPadrao(), catalogo: painel.catalogoFaixas() });
+  } catch (err) {
+    console.error('Falha ao ler as faixas:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível carregar as faixas.' });
+  }
+});
+
+app.put('/api/admin/painel/faixas', requireAdmin, async (req, res) => {
+  if (!pool) return unavailable(res);
+  try {
+    await ensureAcompanhamento();
+    const faixas = req.body && req.body.reset ? null : req.body && req.body.faixas;
+    const cfg = await acompanhamento.salvarConfig(pool, { faixas }, req.admin && req.admin.id);
+    return res.json({ success: true, faixas: cfg.faixas });
+  } catch (err) {
+    console.error('Falha ao salvar as faixas:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível salvar as faixas.' });
   }
 });
 
@@ -1402,12 +1463,12 @@ app.get('/api/admin/acompanhamento/export.csv', requireAdmin, async (req, res) =
     const { lista } = await listaAcompanhamento(req);
     const tels = await telefonesDe(lista.map((x) => x.rgm));
     const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const lines = ['nome;rgm;email;telefone;curso;polo;sinal;mensagem_sugerida;acessos_periodo;minutos_periodo;ultimo_acesso;niveis_trilha;ultimo_followup'];
+    const lines = ['nome;rgm;email;telefone;curso;polo;situacao;sinal;mensagem_sugerida;acessos_periodo;minutos_periodo;ultimo_acesso;niveis_trilha;travei;joinhas_positivos;joinhas_negativos;ultimo_followup'];
     lista.forEach((x) => {
       const s = x.sinais[0];
-      lines.push([x.nome, x.rgm, x.email, waNumero(tels.get(x.rgm)) || '', x.curso, x.unidade, s ? s.rotulo : '', s ? s.mensagem : '',
+      lines.push([x.nome, x.rgm, x.email, waNumero(tels.get(x.rgm)) || '', x.curso, x.unidade, (painel.SITUACAO[x.situacao] || {}).rotulo || '', s ? s.rotulo : '', s ? s.mensagem : '',
         x.acessos, Math.round(x.segundos / 60), x.ultimo_acesso ? new Date(x.ultimo_acesso).toISOString() : '',
-        x.niveis_concluidos, x.followup_em ? new Date(x.followup_em).toISOString() : ''].map(esc).join(';'));
+        x.niveis_concluidos, x.travei_total, x.joinhas.positivos, x.joinhas.negativos, x.followup_em ? new Date(x.followup_em).toISOString() : ''].map(esc).join(';'));
     });
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', 'attachment; filename="acompanhamento-alunos.csv"');
