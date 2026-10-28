@@ -6,7 +6,7 @@
   <title>Admin | Área do Aluno</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/styles.css?v=16">
+  <link rel="stylesheet" href="/css/styles.css?v=31">
 </head>
 <body class="bg-slate-50">
   <section id="admin-login" class="min-h-screen flex items-center justify-center p-4">
@@ -42,42 +42,55 @@
         </div>
       </div>
     </header>
-    <div class="max-w-6xl mx-auto px-4 py-6">
-      <nav class="flex flex-wrap gap-2 mb-6">
-        <button type="button" class="admin-tab is-active" data-tab="acompanhamento">Acompanhamento</button>
-        <button type="button" class="admin-tab" data-tab="alunos">Alunos</button>
-        <button type="button" class="admin-tab" data-tab="avisos">Avisos</button>
-        <button type="button" class="admin-tab" data-tab="tutoriais">Tutoriais</button>
-        <button type="button" class="admin-tab" data-tab="contatos">Contatos</button>
-        <button type="button" class="admin-tab" data-tab="indicacoes">Indicações</button>
-        <button type="button" class="admin-tab" data-tab="planos">Imagens dos planos</button>
-        <button type="button" class="admin-tab" data-tab="trilha">Aula Inaugural</button>
+    <div class="admin-shell max-w-7xl mx-auto px-4 py-6">
+      <!-- Menu em grupos: o que acompanhar, quem são os alunos, o que aparece no portal e ferramentas.
+           Cada botão abre um painel (data-tab = id "tab-…"); o endereço guarda a aba em #aba (ou #aba/subaba). -->
+      <nav id="admin-nav" class="admin-nav" aria-label="Seções do painel">
+        <div class="admin-nav-group">
+          <p class="admin-nav-title">Acompanhar</p>
+          <button type="button" class="admin-tab is-active" data-tab="acompanhamento">Quem contatar</button>
+          <button type="button" class="admin-tab" data-tab="trilha">Aula Inaugural</button>
+          <button type="button" class="admin-tab" data-tab="avaliacoes">Avaliações dos conteúdos</button>
+        </div>
+        <div class="admin-nav-group">
+          <p class="admin-nav-title">Alunos</p>
+          <button type="button" class="admin-tab" data-tab="alunos">Acessos dos alunos</button>
+          <button type="button" class="admin-tab" data-tab="indicacoes">Indicações</button>
+        </div>
+        <div class="admin-nav-group">
+          <p class="admin-nav-title">Conteúdo do portal</p>
+          <button type="button" class="admin-tab" data-tab="avisos">Avisos</button>
+          <button type="button" class="admin-tab" data-tab="tutoriais">Tutoriais</button>
+          <button type="button" class="admin-tab" data-tab="contatos">Contatos por polo</button>
+        </div>
+        <div class="admin-nav-group">
+          <p class="admin-nav-title">Ferramentas</p>
+          <button type="button" class="admin-tab" data-tab="planos">Imagens dos planos</button>
+          <button type="button" class="admin-tab" data-tab="config">Configurações</button>
+        </div>
       </nav>
 
-      <!-- Aba Alunos: acessos em preparação (admin-preparo.js); a sessão "dados de acesso" acrescenta a importação aqui. -->
+      <main id="admin-main" class="min-w-0">
+      <!-- Aba Alunos: acessos em preparação (admin-preparo.js); admin-alunos.js acrescenta a importação antes dela. -->
       <div id="tab-alunos" class="admin-panel hidden">
+        <div class="admin-panel-head">
+          <h2 class="text-xl font-bold">Acessos dos alunos</h2>
+          <p class="admin-panel-desc">Suba curso, RGM e e-mail acadêmico dos alunos, e crie o acesso de quem ainda não tem RGM.</p>
+        </div>
         <div id="admin-alunos-preparo"></div>
       </div>
 
       <div id="tab-acompanhamento" class="admin-panel">
-        <div class="flex flex-wrap justify-between items-center gap-3 mb-2">
-          <h2 class="text-xl font-bold">Acompanhamento dos alunos</h2>
+        <div class="admin-panel-head flex flex-wrap justify-between items-start gap-3">
+          <div>
+            <h2 class="text-xl font-bold">Quem contatar</h2>
+            <p class="admin-panel-desc">Primeiro quem mais precisa de contato e por quê, com a mensagem de WhatsApp já sugerida (revise antes de enviar). Em "Ver percurso", veja acessos, vídeos e onde o aluno travou.</p>
+          </div>
           <div class="flex flex-wrap gap-2">
-            <button type="button" id="btn-acomp-regras" class="bg-white border text-sm font-semibold px-4 py-2 rounded-lg">Regras dos sinais</button>
+            <a href="#config" id="btn-acomp-regras" class="bg-white border text-sm font-semibold px-4 py-2 rounded-lg">Regras dos sinais</a>
             <button type="button" id="btn-acomp-export" class="bg-cruzeiro text-white text-sm font-semibold px-4 py-2 rounded-lg">Baixar CSV (para o CRM)</button>
           </div>
         </div>
-        <p class="text-sm text-gray-500 mb-4">Acessos, tempo de uso, vídeos e onde o aluno travou. A lista mostra primeiro quem mais precisa de contato, com a mensagem de WhatsApp já sugerida (revise antes de enviar).</p>
-        <details id="versao-box" class="bg-white border rounded-xl p-4 mb-4 text-sm">
-          <summary class="font-bold text-gray-800 cursor-pointer">Versão das telas: quem vê a nova</summary>
-          <div id="versao-conf" class="mt-3 text-gray-700" aria-live="polite"></div>
-          <form id="versao-busca" class="flex flex-wrap gap-2 mt-3">
-            <label class="sr-only" for="versao-q">Nome, RGM ou e-mail do aluno</label>
-            <input id="versao-q" name="q" type="search" placeholder="Nome, RGM ou e-mail do aluno" class="border rounded-lg px-3 py-2 min-w-0 flex-1">
-            <button type="submit" class="bg-cruzeiro text-white font-semibold px-4 py-2 rounded-lg">Conferir</button>
-          </form>
-          <div id="versao-res" class="mt-3" aria-live="polite"></div>
-        </details>
         <form id="acomp-filtros" class="flex flex-wrap items-end gap-3 mb-4 text-sm">
           <label class="flex flex-col gap-1"><span class="text-gray-600">Período</span>
             <select name="dias" class="border rounded-lg px-3 py-2 bg-white"><option value="7">Últimos 7 dias</option><option value="30" selected>Últimos 30 dias</option><option value="90">Últimos 90 dias</option></select></label>
@@ -94,29 +107,40 @@
       </div>
 
       <div id="tab-avisos" class="admin-panel hidden">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-bold">Avisos</h2>
+        <div class="admin-panel-head flex flex-wrap justify-between items-start gap-3">
+          <div>
+            <h2 class="text-xl font-bold">Avisos</h2>
+            <p class="admin-panel-desc">Recados que aparecem para os alunos no portal.</p>
+          </div>
           <button type="button" class="bg-cruzeiro text-white text-sm font-semibold px-4 py-2 rounded-lg" data-aviso-new>Novo aviso</button>
         </div>
         <div id="admin-avisos-list" class="space-y-3"></div>
       </div>
 
       <div id="tab-tutoriais" class="admin-panel hidden">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-bold">Tutoriais</h2>
+        <div class="admin-panel-head flex flex-wrap justify-between items-start gap-3">
+          <div>
+            <h2 class="text-xl font-bold">Tutoriais</h2>
+            <p class="admin-panel-desc">Vídeos e passo a passo que os alunos veem no portal.</p>
+          </div>
           <button type="button" class="bg-cruzeiro text-white text-sm font-semibold px-4 py-2 rounded-lg" data-tut-new>Novo tutorial</button>
         </div>
         <div id="admin-tuts-list" class="space-y-3"></div>
       </div>
 
       <div id="tab-contatos" class="admin-panel hidden">
-        <h2 class="text-xl font-bold mb-2">Contatos por polo</h2>
-        <p class="text-sm text-gray-500 mb-4">Deixe em branco para usar o número padrão do servidor.</p>
+        <div class="admin-panel-head">
+          <h2 class="text-xl font-bold">Contatos por polo</h2>
+          <p class="admin-panel-desc">WhatsApp que o aluno de cada polo vê no portal. Deixe em branco para usar o número padrão do servidor.</p>
+        </div>
         <div id="admin-contatos-list" class="space-y-3"></div>
       </div>
 
       <div id="tab-indicacoes" class="admin-panel hidden">
-        <h2 class="text-xl font-bold mb-4">Indicações</h2>
+        <div class="admin-panel-head">
+          <h2 class="text-xl font-bold">Indicações</h2>
+          <p class="admin-panel-desc">Pessoas que os alunos indicaram. Atualize o status conforme o contato avança.</p>
+        </div>
         <div class="flex flex-col sm:flex-row gap-3 mb-4">
           <input id="ind-q" class="flex-1 px-3 py-2 rounded-lg border" placeholder="Buscar nome, WhatsApp, RGM...">
           <select id="ind-status" class="px-3 py-2 rounded-lg border bg-white">
@@ -132,29 +156,75 @@
       </div>
 
       <div id="tab-trilha" class="admin-panel hidden">
-        <div class="flex flex-wrap justify-between items-center gap-3 mb-2">
-          <h2 class="text-xl font-bold">Aula Inaugural</h2>
-          <button type="button" id="btn-trilha-export" class="bg-cruzeiro text-white text-sm font-semibold px-4 py-2 rounded-lg">Baixar CSV dos alunos</button>
+        <div class="admin-panel-head flex flex-wrap justify-between items-start gap-3">
+          <div>
+            <h2 class="text-xl font-bold">Aula Inaugural</h2>
+            <p class="admin-panel-desc">7 módulos obrigatórios em ordem livre. Cada módulo concluído vale 10 pontos, e os 70 pontos liberam o certificado de 4 horas.</p>
+          </div>
+          <button type="button" id="btn-trilha-export" class="bg-cruzeiro text-white text-sm font-semibold px-4 py-2 rounded-lg" title="Nome, RGM, e-mail, módulos concluídos, pontos, certificado e último acesso, para o CRM chamar quem parou">Baixar CSV dos alunos</button>
         </div>
-        <p class="text-sm text-gray-500 mb-4">7 módulos obrigatórios em ordem livre; cada módulo concluído vale 10 pontos e os 7 (70 pontos) liberam o certificado de 4 horas. Quem começou, até onde chegou e onde trava. O CSV traz nome, RGM, e-mail, módulos concluídos, pontos, certificado emitido e último acesso, para o CRM chamar quem parou.</p>
-        <p id="trilha-msg" class="text-sm text-gray-500 mb-4"></p>
-        <div id="admin-trilha-totais" class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6"></div>
-        <div class="grid lg:grid-cols-2 gap-6 mb-6">
-          <div><h3 class="text-lg font-bold mb-2">Funil</h3><ol id="admin-trilha-funil" class="bg-white border rounded-xl p-4 space-y-3 text-sm"></ol></div>
-          <div><h3 class="text-lg font-bold mb-2">Vídeo de abertura (sem pontos)</h3><div id="admin-trilha-abertura" class="bg-white border rounded-xl p-4 text-sm"></div></div>
+        <p id="trilha-msg" class="text-sm text-gray-500 mb-3"></p>
+
+        <!-- Sub-abas: cada uma responde uma pergunta. O endereço guarda a escolha (#trilha/onde-trava). -->
+        <div class="admin-subtabs" role="group" aria-label="Partes da Aula Inaugural">
+          <button type="button" class="admin-subtab is-active" data-subtab="resumo" aria-pressed="true">Resumo<span>Quantos começaram e concluíram</span></button>
+          <button type="button" class="admin-subtab" data-subtab="onde-trava" aria-pressed="false">Onde trava<span>Módulos, perguntas e alunos presos</span></button>
+          <button type="button" class="admin-subtab" data-subtab="por-aluno" aria-pressed="false">Por aluno<span>O que cada um fez em cada módulo</span></button>
+          <button type="button" class="admin-subtab" data-subtab="uso" aria-pressed="false">Uso<span>Tempo, vídeos e joinha</span></button>
         </div>
-        <h3 class="text-lg font-bold mb-2">Por módulo</h3>
-        <div class="overflow-x-auto bg-white border rounded-xl mb-6"><table class="w-full text-sm"><thead class="bg-slate-50 text-left"><tr><th class="px-3 py-2">Módulo</th><th class="px-3 py-2">Abriram</th><th class="px-3 py-2">Viram o vídeo</th><th class="px-3 py-2">Concluíram</th><th class="px-3 py-2" title="Concluíram acertando todas as perguntas de primeira (% de quem concluiu)">Sem errar</th></tr></thead><tbody id="admin-trilha-niveis"></tbody></table></div>
-        <h3 class="text-lg font-bold mb-1">Onde trava</h3>
-        <p id="admin-trilha-onde-nota" class="text-sm text-gray-500 mb-2"></p>
-        <div class="overflow-x-auto bg-white border rounded-xl mb-6"><table class="w-full text-sm whitespace-nowrap"><thead class="bg-slate-50 text-left"><tr><th class="px-3 py-2">Módulo</th><th class="px-3 py-2">Atrito</th><th class="px-3 py-2">Pararam aqui</th><th class="px-3 py-2">Travei</th><th class="px-3 py-2">👎 / 👍</th><th class="px-3 py-2">Erros</th><th class="px-3 py-2">Vídeo abandonado</th><th class="px-3 py-2">Pausas</th><th class="px-3 py-2">WhatsApp</th><th class="px-3 py-2">Tempo no módulo</th></tr></thead><tbody id="admin-trilha-onde"></tbody></table></div>
-        <h3 class="text-lg font-bold mb-1">Alunos presos</h3>
-        <p class="text-sm text-gray-500 mb-2">Quem começou e não concluiu os 7 módulos: onde parou, há quantos dias e o motivo provável. Mais tempo parado primeiro.</p>
-        <div id="admin-trilha-presos" class="grid lg:grid-cols-2 gap-3 mb-6 text-sm"></div>
-        <div class="grid lg:grid-cols-2 gap-6">
-          <div><h3 class="text-lg font-bold mb-2">Perguntas com mais erros</h3><ol id="admin-trilha-perguntas" class="space-y-2 text-sm"></ol></div>
-          <div><h3 class="text-lg font-bold mb-2">Onde tocaram em "Travei"</h3><ol id="admin-trilha-travei" class="space-y-2 text-sm"></ol></div>
+
+        <section data-subpanel="resumo" aria-label="Resumo">
+          <div id="admin-trilha-totais" class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6"></div>
+          <div class="grid lg:grid-cols-2 gap-6 mb-6">
+            <div><h3 class="text-lg font-bold mb-2">Funil</h3><ol id="admin-trilha-funil" class="bg-white border rounded-xl p-4 space-y-3 text-sm"></ol></div>
+            <div><h3 class="text-lg font-bold mb-2">Vídeo de abertura (sem pontos)</h3><div id="admin-trilha-abertura" class="bg-white border rounded-xl p-4 text-sm"></div></div>
+          </div>
+          <h3 class="text-lg font-bold mb-2">Por módulo</h3>
+          <div class="overflow-x-auto bg-white border rounded-xl mb-6"><table class="w-full text-sm"><thead class="bg-slate-50 text-left"><tr><th class="px-3 py-2">Módulo</th><th class="px-3 py-2">Abriram</th><th class="px-3 py-2">Viram o vídeo</th><th class="px-3 py-2">Concluíram</th><th class="px-3 py-2" title="Concluíram acertando todas as perguntas de primeira (% de quem concluiu)">Sem errar</th></tr></thead><tbody id="admin-trilha-niveis"></tbody></table></div>
+        </section>
+
+        <section data-subpanel="onde-trava" aria-label="Onde trava" hidden>
+          <h3 class="text-lg font-bold mb-1">Módulos com mais atrito</h3>
+          <p id="admin-trilha-onde-nota" class="text-sm text-gray-500 mb-2"></p>
+          <div class="overflow-x-auto bg-white border rounded-xl mb-6"><table class="w-full text-sm whitespace-nowrap"><thead class="bg-slate-50 text-left"><tr><th class="px-3 py-2">Módulo</th><th class="px-3 py-2">Atrito</th><th class="px-3 py-2">Pararam aqui</th><th class="px-3 py-2">Travei</th><th class="px-3 py-2">👎 / 👍</th><th class="px-3 py-2">Erros</th><th class="px-3 py-2">Vídeo abandonado</th><th class="px-3 py-2">Pausas</th><th class="px-3 py-2">WhatsApp</th><th class="px-3 py-2">Tempo no módulo</th></tr></thead><tbody id="admin-trilha-onde"></tbody></table></div>
+          <div class="grid lg:grid-cols-2 gap-6 mb-6">
+            <div><h3 class="text-lg font-bold mb-2">Perguntas com mais erros</h3><ol id="admin-trilha-perguntas" class="space-y-2 text-sm"></ol></div>
+            <div><h3 class="text-lg font-bold mb-2">Onde tocaram em "Travei"</h3><ol id="admin-trilha-travei" class="space-y-2 text-sm"></ol></div>
+          </div>
+          <h3 class="text-lg font-bold mb-1">Alunos presos</h3>
+          <p class="text-sm text-gray-500 mb-2">Quem começou e não concluiu os 7 módulos: onde parou, há quantos dias e o motivo provável. Mais tempo parado primeiro.</p>
+          <div id="admin-trilha-presos" class="grid lg:grid-cols-2 gap-3 mb-6 text-sm"></div>
+        </section>
+
+        <!-- Preenchidas por admin-aula.js -->
+        <section data-subpanel="por-aluno" id="trilha-sub-por-aluno" aria-label="Por aluno" hidden></section>
+        <section data-subpanel="uso" id="trilha-sub-uso" aria-label="Uso" hidden></section>
+      </div>
+
+      <!-- Preenchido por admin-avaliacoes.js -->
+      <div id="tab-avaliacoes" class="admin-panel hidden"></div>
+
+      <div id="tab-config" class="admin-panel hidden">
+        <div class="admin-panel-head">
+          <h2 class="text-xl font-bold">Configurações</h2>
+          <p class="admin-panel-desc">Ajustes que mudam quem aparece em Quem contatar e qual versão das telas cada aluno vê.</p>
         </div>
+        <section class="bg-white border rounded-xl p-4 mb-6 text-sm" aria-labelledby="config-regras-h">
+          <h3 id="config-regras-h" class="text-lg font-bold">Regras dos sinais de follow-up</h3>
+          <p class="text-gray-500 mb-3">Quando um aluno entra em Quem contatar, com que prioridade, e a mensagem de WhatsApp sugerida.</p>
+          <div id="config-regras"><p class="text-gray-500">Carregando...</p></div>
+        </section>
+        <section class="bg-white border rounded-xl p-4 text-sm" aria-labelledby="config-versao-h">
+          <h3 id="config-versao-h" class="text-lg font-bold">Versão das telas: quem vê a nova</h3>
+          <p class="text-gray-500">O que o servidor leu do Environment e, para um aluno, qual versão ele vê e por quê.</p>
+          <div id="versao-conf" class="mt-3 text-gray-700" aria-live="polite"></div>
+          <form id="versao-busca" class="flex flex-wrap gap-2 mt-3">
+            <label class="sr-only" for="versao-q">Nome, RGM ou e-mail do aluno</label>
+            <input id="versao-q" name="q" type="search" placeholder="Nome, RGM ou e-mail do aluno" class="border rounded-lg px-3 py-2 min-w-0 flex-1">
+            <button type="submit" class="bg-cruzeiro text-white font-semibold px-4 py-2 rounded-lg">Conferir</button>
+          </form>
+          <div id="versao-res" class="mt-3" aria-live="polite"></div>
+        </section>
       </div>
 
       <div id="tab-planos" class="admin-panel hidden">
@@ -225,6 +295,7 @@
           </article>
         </div>
       </div>
+      </main>
     </div>
   </section>
 
@@ -279,10 +350,10 @@
     </div>
   </div>
 
-  <script src="/js/admin.js?v=27"></script>
-  <script src="/js/admin-acompanhamento.js?v=6"></script>
-  <script src="/js/admin-aula.js?v=1"></script>
-  <script src="/js/admin-avaliacoes.js?v=1"></script>
+  <script src="/js/admin.js?v=28"></script>
+  <script src="/js/admin-acompanhamento.js?v=7"></script>
+  <script src="/js/admin-aula.js?v=2"></script>
+  <script src="/js/admin-avaliacoes.js?v=2"></script>
   <script src="/js/admin-preparo.js?v=1" defer></script>
   <script src="/js/admin-alunos.js?v=2" defer></script>
 </body>

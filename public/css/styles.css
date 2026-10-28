@@ -1399,6 +1399,33 @@ textarea:focus {
   border: 0;
 }
 
+/* Painel admin: menu em grupos (lateral no computador, faixa rolável no celular) */
+.admin-nav {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--csu-line);
+}
+
+.admin-nav-group {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+}
+
+.admin-nav-title {
+  margin: 0 2px 0 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+  white-space: nowrap;
+}
+
 .admin-tab {
   border: 1px solid var(--csu-line);
   background: rgba(255, 255, 255, 0.92);
@@ -1406,12 +1433,13 @@ textarea:focus {
   padding: 8px 14px;
   font-size: 13px;
   font-weight: 600;
+  white-space: nowrap;
+  text-align: left;
 }
 
 .admin-tab:hover {
   border-color: rgba(0, 74, 153, 0.28);
   color: var(--csu-blue);
-  transform: translateY(-1px);
 }
 
 .admin-tab.is-active {
@@ -1419,6 +1447,105 @@ textarea:focus {
   border-color: transparent;
   color: #fff;
   box-shadow: 0 10px 20px rgba(0, 74, 153, 0.2);
+}
+
+@media (min-width: 1024px) {
+  .admin-shell {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 32px;
+    align-items: start;
+  }
+
+  .admin-nav {
+    position: sticky;
+    top: 88px;
+    flex-direction: column;
+    gap: 20px;
+    overflow: visible;
+    padding: 0;
+    margin: 0;
+    border: 0;
+  }
+
+  .admin-nav-group {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+  }
+
+  .admin-nav-title {
+    margin: 0 0 4px 12px;
+  }
+
+  .admin-tab {
+    border-color: transparent;
+    background: transparent;
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-size: 14px;
+    white-space: normal;
+  }
+
+  .admin-tab:hover {
+    background: #fff;
+    border-color: var(--csu-line);
+  }
+}
+
+.admin-panel-head {
+  margin-bottom: 16px;
+}
+
+.admin-panel-desc {
+  margin-top: 4px;
+  max-width: 70ch;
+  font-size: 14px;
+  color: #64748b;
+}
+
+/* Sub-abas (Aula Inaugural): cada uma diz o que responde */
+.admin-subtabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+@media (min-width: 768px) {
+  .admin-subtabs {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.admin-subtab {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--csu-line);
+  border-radius: 12px;
+  background: #fff;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.admin-subtab span {
+  font-size: 12px;
+  font-weight: 400;
+  color: #64748b;
+}
+
+.admin-subtab:hover {
+  border-color: rgba(0, 74, 153, 0.35);
+}
+
+.admin-subtab.is-active {
+  border-color: var(--csu-blue);
+  box-shadow: inset 0 -3px 0 var(--csu-blue);
+  color: var(--csu-blue);
 }
 
 #atendimento-page a[href*="wa.me"],

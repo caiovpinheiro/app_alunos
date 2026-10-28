@@ -1,5 +1,5 @@
 /* Admin › Aula Inaugural: blocos "Uso" (dashboard) e "Por aluno" (matriz aluno × módulo).
-   Carregado por loadTrilha() em admin.js (window.AdminAula.load(resumo)); monta as seções dentro de #tab-trilha.
+   Carregado por loadTrilha() em admin.js (window.AdminAula.load(resumo)); monta as seções nas sub-abas "Uso" e "Por aluno" de #tab-trilha.
    Dados: GET /api/admin/trilha/uso e GET /api/admin/trilha/alunos; CSV em /api/admin/trilha/alunos.csv. */
 window.AdminAula = (function () {
   'use strict';
@@ -26,7 +26,8 @@ window.AdminAula = (function () {
       '<div class="grid lg:grid-cols-2 gap-6 mb-6">' +
       '<div><h4 class="font-bold mb-2">Vídeos mais vistos</h4><div class="overflow-x-auto bg-white border rounded-xl"><table class="w-full text-sm"><thead class="bg-slate-50 text-left"><tr><th class="px-3 py-2">Vídeo</th><th class="px-3 py-2">Alunos</th><th class="px-3 py-2">Terminaram</th><th class="px-3 py-2">👍 / 👎</th></tr></thead><tbody id="admin-aula-videos"></tbody></table></div></div>' +
       '<div><h4 class="font-bold mb-2">Joinha</h4><div id="admin-aula-joinha" class="bg-white border rounded-xl p-4 text-sm"></div></div></div>';
-    msg.parentNode.insertBefore(uso, msg.nextSibling);
+    var subUso = document.getElementById('trilha-sub-uso');
+    if (subUso) subUso.appendChild(uso); else msg.parentNode.insertBefore(uso, msg.nextSibling);
 
     var por = document.createElement('div');
     por.id = 'admin-aula-por';
@@ -37,9 +38,8 @@ window.AdminAula = (function () {
       '<p id="admin-aula-por-msg" class="text-sm text-gray-500 mb-2"></p>' +
       '<div class="overflow-x-auto bg-white border rounded-xl mb-2"><table class="w-full text-sm whitespace-nowrap"><thead id="admin-aula-por-head" class="bg-slate-50 text-left"></thead><tbody id="admin-aula-por-body"></tbody></table></div>' +
       '<p class="text-xs text-gray-500 mb-6">✔ concluído (pontos) · ▶ no vídeo (% visto) · ? respondendo (acertos/perguntas) · ○ abriu · — não abriu · ✋ tocou em Travei · 👎 avaliou mal · ⏱ minutos no módulo (só com rastreio).</p>';
-    var perguntas = document.getElementById('admin-trilha-perguntas');
-    var grade = perguntas ? perguntas.closest('.grid') : null;
-    if (grade) tab.insertBefore(por, grade); else tab.appendChild(por);
+    var subPor = document.getElementById('trilha-sub-por-aluno');
+    (subPor || tab).appendChild(por);
 
     document.getElementById('admin-aula-busca').addEventListener('input', function () { renderPor(); });
     document.getElementById('admin-aula-csv').addEventListener('click', baixarCsv);
