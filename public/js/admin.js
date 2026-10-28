@@ -53,6 +53,7 @@
   window.AdminCore = { request: function (u, o) { return request(u, o); }, token: function () { return token(); }, escapeHtml: function (t) { return escapeHtml(t); }, showLogin: function () { showLogin(); } };
 
   function showLogin() {
+    abaAtual = null; // ao entrar de novo, a aba recarrega
     document.getElementById('admin-login').classList.remove('hidden');
     document.getElementById('admin-app').classList.add('hidden');
   }
@@ -62,13 +63,64 @@
     document.getElementById('admin-app').classList.remove('hidden');
   }
 
+  // Navegação: cada aba tem endereço próprio (#trilha, #trilha/onde-trava, #config...),
+  // então dá para mandar o link de uma tela e usar Voltar/Avançar do navegador.
+  var ABAS = ['acompanhamento', 'trilha', 'avaliacoes', 'alunos', 'indicacoes', 'avisos', 'tutoriais', 'contatos', 'planos', 'config'];
+  var SUBABAS = { trilha: ['resumo', 'onde-trava', 'por-aluno', 'uso'] };
+  var abaAtual = null;
+
+  function lerRota() {
+    var p = location.hash.replace(/^#/, '').split('/');
+    var aba = ABAS.indexOf(p[0]) >= 0 ? p[0] : 'acompanhamento';
+    var subs = SUBABAS[aba] || [];
+    return { aba: aba, sub: subs.indexOf(p[1]) >= 0 ? p[1] : (subs[0] || '') };
+  }
+
+  function irPara(aba, sub) {
+    var subs = SUBABAS[aba];
+    var hash = '#' + aba + (subs && sub && sub !== subs[0] ? '/' + sub : '');
+    if (location.hash !== hash) location.hash = hash; // o hashchange chama aplicarRota
+    else aplicarRota();
+  }
+
+  function aplicarRota() {
+    var r = lerRota();
+    if (r.aba !== abaAtual) switchTab(r.aba);
+    if (SUBABAS[r.aba]) mostrarSubaba(r.sub);
+  }
+
+  function mostrarSubaba(sub) {
+    var painel = document.getElementById('tab-' + abaAtual);
+    if (!painel) return;
+    painel.querySelectorAll('.admin-subtab').forEach(function (el) {
+      var ativo = el.getAttribute('data-subtab') === sub;
+      el.classList.toggle('is-active', ativo);
+      el.setAttribute('aria-pressed', String(ativo));
+    });
+    painel.querySelectorAll('[data-subpanel]').forEach(function (el) {
+      el.hidden = el.getAttribute('data-subpanel') !== sub;
+    });
+  }
+
   function switchTab(name) {
+    var mudou = name !== abaAtual;
+    abaAtual = name;
+    var rotulo = '';
     document.querySelectorAll('.admin-tab').forEach(function (el) {
-      el.classList.toggle('is-active', el.getAttribute('data-tab') === name);
+      var ativo = el.getAttribute('data-tab') === name;
+      el.classList.toggle('is-active', ativo);
+      if (ativo) { el.setAttribute('aria-current', 'page'); rotulo = el.textContent.trim(); } else el.removeAttribute('aria-current');
+      // No celular o menu é uma faixa rolável: traz a aba ativa para a vista.
+      var nav = el.parentNode && el.parentNode.parentNode;
+      if (ativo && nav && nav.scrollWidth > nav.clientWidth) {
+        nav.scrollLeft += el.getBoundingClientRect().left - nav.getBoundingClientRect().left - 16;
+      }
     });
     document.querySelectorAll('.admin-panel').forEach(function (el) {
       el.classList.toggle('hidden', el.id !== 'tab-' + name);
     });
+    document.title = (rotulo ? rotulo + ' | ' : '') + 'Admin | Área do Aluno';
+    if (mudou) window.scrollTo(0, 0);
     if (name === 'acompanhamento' && window.AdminAcomp) window.AdminAcomp.load();
     if (name === 'avisos') loadAvisos();
     if (name === 'tutoriais') loadTuts();
@@ -76,6 +128,8 @@
     if (name === 'indicacoes') loadInds();
     if (name === 'planos') { paintScopeButtons(); loadPlanos(); loadMaterias(); loadImagensPreview(); }
     if (name === 'trilha') loadTrilha();
+    if (name === 'avaliacoes' && window.AdminAvaliacoes) window.AdminAvaliacoes.load();
+    if (name === 'config' && window.AdminAcomp) window.AdminAcomp.loadConfig();
   }
 
   // Aba "Aula Inaugural" (ids e rota continuam "trilha"): números de GET /api/admin/trilha.
@@ -526,7 +580,7 @@
       var me = await request('/api/admin/me');
       document.getElementById('admin-name').textContent = me.user.nome || me.user.email;
       showApp();
-      switchTab('acompanhamento');
+      aplicarRota();
     } catch (err) {
       showLogin();
     }
@@ -550,7 +604,7 @@
       setToken(body.token);
       document.getElementById('admin-name').textContent = body.user.name;
       showApp();
-      switchTab('acompanhamento');
+      aplicarRota();
     } catch (err) {
       errEl.textContent = err.message;
       errEl.classList.remove('hidden');
@@ -563,8 +617,18 @@
     showLogin();
   });
 
+  // Clicar na aba já aberta recarrega os dados dela (como antes).
   document.querySelectorAll('.admin-tab').forEach(function (el) {
-    el.addEventListener('click', function () { switchTab(el.getAttribute('data-tab')); });
+    el.addEventListener('click', function () {
+      var aba = el.getAttribute('data-tab');
+      if (aba === abaAtual) switchTab(aba); else irPara(aba);
+    });
+  });
+  document.querySelectorAll('.admin-subtab').forEach(function (el) {
+    el.addEventListener('click', function () { irPara(abaAtual, el.getAttribute('data-subtab')); });
+  });
+  window.addEventListener('hashchange', function () {
+    if (token() && !document.getElementById('admin-app').classList.contains('hidden')) aplicarRota();
   });
 
   function matriculaFilterBody() {

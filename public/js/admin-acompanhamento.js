@@ -293,18 +293,22 @@ window.AdminAcomp = (function () {
     );
   }
 
-  async function abrirRegras() {
-    var modal = document.getElementById('acomp-modal');
-    var body = document.getElementById('acomp-modal-body');
-    document.getElementById('acomp-modal-title').textContent = 'Regras dos sinais de follow-up';
-    body.innerHTML = '<p class="text-gray-500">Carregando...</p>';
-    modal.classList.remove('hidden');
-    document.getElementById('acomp-modal-close').focus();
+  // Regras ficam na aba Configurações (#config-regras), não mais num modal.
+  async function carregarRegras() {
+    var box = document.getElementById('config-regras');
+    if (!box) return;
+    box.innerHTML = '<p class="text-gray-500">Carregando...</p>';
     try {
-      body.innerHTML = formRegras(await C().request('/api/admin/acompanhamento/regras'));
+      box.innerHTML = formRegras(await C().request('/api/admin/acompanhamento/regras'));
     } catch (err) {
-      body.innerHTML = '<p class="text-red-600">' + esc(err.message || 'Não foi possível carregar.') + '</p>';
+      box.innerHTML = '<p class="text-red-600">' + esc(err.message || 'Não foi possível carregar.') + '</p>';
     }
+  }
+
+  function loadConfig() {
+    carregarRegras();
+    var q = document.getElementById('versao-q');
+    conferirVersao(q ? q.value.trim() : '');
   }
 
   function lerFormRegras(form) {
@@ -328,7 +332,7 @@ window.AdminAcomp = (function () {
       sinaisCarregados = false;
       var sel = document.getElementById('acomp-sinal');
       Array.prototype.slice.call(sel.options).forEach(function (o) { if (['com_sinal', 'em_espera', 'todos'].indexOf(o.value) === -1) o.remove(); });
-      if (corpo.reset) await abrirRegras();
+      if (corpo.reset) await carregarRegras();
       msg = document.getElementById('acomp-regras-msg');
       if (msg) msg.textContent = corpo.reset ? 'Regras voltaram ao padrão.' : 'Regras salvas. A lista já usa as novas regras.';
       load();
@@ -338,27 +342,25 @@ window.AdminAcomp = (function () {
   }
 
   document.addEventListener('DOMContentLoaded', function () {
-    var vbox = document.getElementById('versao-box');
-    if (vbox) {
-      vbox.addEventListener('toggle', function () { if (vbox.open) conferirVersao(document.getElementById('versao-q').value.trim()); });
-      document.getElementById('versao-busca').addEventListener('submit', function (e) { e.preventDefault(); conferirVersao(document.getElementById('versao-q').value.trim()); });
+    var vbusca = document.getElementById('versao-busca');
+    if (vbusca) vbusca.addEventListener('submit', function (e) { e.preventDefault(); conferirVersao(document.getElementById('versao-q').value.trim()); });
+    var regras = document.getElementById('config-regras');
+    if (regras) {
+      regras.addEventListener('submit', function (e) {
+        if (e.target.id !== 'acomp-regras-form') return;
+        e.preventDefault();
+        salvarRegras(lerFormRegras(e.target));
+      });
+      regras.addEventListener('click', function (e) {
+        if (!e.target.closest('[data-regras-padrao]')) return;
+        if (window.confirm('Voltar todas as regras e mensagens ao padrão?')) salvarRegras({ reset: true });
+      });
     }
     var f = document.getElementById('acomp-filtros');
     if (!f) return;
     f.addEventListener('submit', function (e) { e.preventDefault(); load(); });
     f.querySelectorAll('select').forEach(function (s) { s.addEventListener('change', load); });
     document.getElementById('btn-acomp-export').addEventListener('click', exportar);
-    document.getElementById('btn-acomp-regras').addEventListener('click', abrirRegras);
-    var corpoModal = document.getElementById('acomp-modal-body');
-    corpoModal.addEventListener('submit', function (e) {
-      if (e.target.id !== 'acomp-regras-form') return;
-      e.preventDefault();
-      salvarRegras(lerFormRegras(e.target));
-    });
-    corpoModal.addEventListener('click', function (e) {
-      if (!e.target.closest('[data-regras-padrao]')) return;
-      if (window.confirm('Voltar todas as regras e mensagens ao padrão?')) salvarRegras({ reset: true });
-    });
     document.getElementById('acomp-modal-close').addEventListener('click', fecharModal);
     document.getElementById('acomp-modal').addEventListener('click', function (e) { if (e.target.id === 'acomp-modal') fecharModal(); });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') fecharModal(); });
@@ -383,5 +385,5 @@ window.AdminAcomp = (function () {
     if (painel && !painel.classList.contains('hidden') && C() && C().token() && !dados) load();
   });
 
-  return { load: load };
+  return { load: load, loadConfig: loadConfig };
 })();

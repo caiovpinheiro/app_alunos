@@ -20,27 +20,15 @@ window.AdminAvaliacoes = (function () {
   }
 
   function montarPainel() {
-    var nav = document.querySelector('#admin-app nav');
-    var paineis = document.querySelectorAll('#admin-app .admin-panel');
-    var ultimo = paineis[paineis.length - 1];
-    if (!nav || !ultimo || document.getElementById('tab-avaliacoes')) return false;
-
-    var btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'admin-tab';
-    btn.setAttribute('data-tab', 'avaliacoes');
-    btn.textContent = 'Avaliações';
-    nav.appendChild(btn);
-
-    var painel = document.createElement('div');
-    painel.id = 'tab-avaliacoes';
-    painel.className = 'admin-panel hidden';
+    // O botão e o painel ficam no admin.html (grupo "Acompanhar"); o admin.js troca de aba e chama load().
+    var painel = document.getElementById('tab-avaliacoes');
+    if (!painel || document.getElementById('aval-lista')) return false;
     painel.innerHTML =
-      '<div class="flex flex-wrap justify-between items-center gap-3 mb-2">' +
+      '<div class="admin-panel-head flex flex-wrap justify-between items-start gap-3"><div>' +
         '<h2 class="text-xl font-bold">Avaliações dos conteúdos</h2>' +
+        '<p class="admin-panel-desc">Joinha que os alunos deram nos vídeos, perguntas frequentes e capítulos da Aula Inaugural. Os com mais 👎 aparecem primeiro: são os candidatos a refazer. Cada aluno vale um voto por conteúdo. Quem dá 👎 pode escrever o que não ficou bom: abra "comentários" na linha do conteúdo.</p></div>' +
         '<button type="button" id="btn-aval-atualizar" class="bg-white border text-sm font-semibold px-4 py-2 rounded-lg">Atualizar</button>' +
       '</div>' +
-      '<p class="text-sm text-gray-500 mb-4">Joinha que os alunos deram nos vídeos, perguntas frequentes e capítulos da Aula Inaugural. Os com mais 👎 aparecem primeiro: são os candidatos a refazer. Cada aluno vale um voto por conteúdo. Quem dá 👎 pode escrever o que não ficou bom: abra "comentários" na linha do conteúdo.</p>' +
       '<div class="flex flex-wrap items-end gap-3 mb-4 text-sm">' +
         '<label class="flex flex-col gap-1">Tipo' +
           '<select id="aval-tipo" class="border rounded-lg px-3 py-2 bg-white">' +
@@ -60,15 +48,6 @@ window.AdminAvaliacoes = (function () {
         '</tr></thead>' +
         '<tbody id="aval-lista"></tbody>' +
       '</table></div>';
-    ultimo.parentNode.insertBefore(painel, ultimo.nextSibling);
-
-    // O admin.js liga os cliques das abas que já existiam; esta faz a troca por conta própria.
-    // Quando outra aba é clicada, o switchTab do admin.js já esconde este painel e tira o is-active.
-    btn.addEventListener('click', function () {
-      document.querySelectorAll('.admin-tab').forEach(function (el) { el.classList.toggle('is-active', el === btn); });
-      document.querySelectorAll('.admin-panel').forEach(function (el) { el.classList.toggle('hidden', el !== painel); });
-      load();
-    });
     document.getElementById('btn-aval-atualizar').addEventListener('click', load);
     document.getElementById('aval-tipo').addEventListener('change', render);
     document.getElementById('aval-so-negativos').addEventListener('change', render);
@@ -126,6 +105,7 @@ window.AdminAvaliacoes = (function () {
   }
 
   async function load() {
+    montarPainel(); // a aba pode abrir (pelo endereço #avaliacoes) antes do DOMContentLoaded
     var msg = document.getElementById('aval-msg');
     if (!msg) return;
     msg.textContent = 'Carregando...';
