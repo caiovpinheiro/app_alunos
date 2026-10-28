@@ -85,9 +85,12 @@
   .c-fgroup h3{font-size:1.25rem}
 }
 
+/* Resultados (vídeos + perguntas): mesmo espaço entre blocos que o resto da página */
+.central #c-res{display:flex;flex-direction:column;gap:22px;min-width:0}
+
 /* Mais respiro em telas largas */
 @media (min-width:900px){
-  .central{gap:28px}
+  .central, .central #c-res{gap:28px}
   .c-sec{padding:28px 28px}
   .c-start{padding:18px 24px}
 }
