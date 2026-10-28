@@ -312,13 +312,16 @@ window.MeuSemestre = (function () {
     );
   }
 
+  // Card da mensalidade: a data efetiva do próximo vencimento (proximaMensalidade) + recorte da regra única.
   function mensalidadeCardHtml() {
+    var prox = proximaMensalidade();
     return (
       '<article class="sm-card sm-pay">' +
         '<span class="sm-ico sm-ico--star" aria-hidden="true"><i data-lucide="receipt-text"></i></span>' +
         '<div class="sm-pay-body">' +
           '<p class="sm-eyebrow">Mensalidades</p>' +
-          '<h2>Vencimento todo dia 25</h2>' +
+          '<h2>Próximo vencimento: <time datetime="' + prox.data + '">' + formatDayMonth(prox.data) + '</time></h2>' +
+          '<p class="sm-pay-rule">Vence todo <strong>dia 25</strong> (ou no próximo dia útil). Da 2ª mensalidade em diante: até o <strong>dia 10</strong>, <strong>25%</strong> de desconto de pontualidade; do dia 11 ao 25, <strong>15%</strong>. Na 1ª mensalidade, todos os descontos valem até o dia 25.</p>' +
           '<p class="sm-muted">Consulte seus boletos, valores e datas no portal.</p>' +
           '<div class="sm-pay-acts">' +
             '<a class="portal-btn" href="' + PORTAL_URL + '" target="_blank" rel="noopener noreferrer">Ver pagamentos<span class="sr-only"> na Área do Aluno, menu Financeiro (abre em nova aba)</span><i data-lucide="external-link" aria-hidden="true"></i></a>' +

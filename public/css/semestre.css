@@ -65,6 +65,8 @@
 .sm-pay{display:flex;gap:14px;align-items:flex-start;border-top:4px solid var(--portal-yellow)}
 .sm-pay-body{flex:1;min-width:0}
 .sm-pay h2{margin:0;font:700 1.2rem/1.3 var(--portal-display);color:var(--portal-navy)}
+.sm-pay-rule{margin:6px 0 0;line-height:1.5}
+.sm-pay-rule strong{font-weight:700;color:var(--portal-navy)}
 .sm-pay .sm-muted{margin-top:4px}
 .sm-pay-acts{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;margin-top:14px}
 .sm-pay .portal-btn{min-height:46px}
