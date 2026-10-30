@@ -76,6 +76,7 @@ async function loadLatestEmCurso(sourcePool) {
     row_count: snap.row_count,
     alunos: [...byRgm.values()],
     revokeRgms,
+    emCursoRgms: [...emCurso],
   };
 }
 
@@ -170,6 +171,11 @@ async function syncFromMatriculados(destPool, { force = false } = {}) {
 
     const result = await applyAcessos(destPool, payload.alunos);
     const revoked = await db.deactivateAlunosByRgm(destPool, payload.revokeRgms);
+    const revokedProvisorios = await db.deactivateProvisoriosAusentes(
+      destPool,
+      payload.emCursoRgms,
+      payload.snapshot_at,
+    );
     await db.saveSyncState(destPool, {
       snapshot_id: payload.snapshot_id,
       snapshot_at: payload.snapshot_at,
@@ -178,13 +184,14 @@ async function syncFromMatriculados(destPool, { force = false } = {}) {
       created_count: result.created,
       updated_count: result.updated,
       skipped_count: result.skipped,
-      revoked_count: revoked,
+      revoked_count: revoked + revokedProvisorios,
     });
     console.log(
       'Sync de acessos:',
       `novos=${result.created}`,
       `atualizados=${result.updated}`,
       `revogados=${revoked}`,
+      `provisorios=${revokedProvisorios}`,
       `snapshot=${payload.file_name}`,
     );
     return {
@@ -192,6 +199,7 @@ async function syncFromMatriculados(destPool, { force = false } = {}) {
       snapshot_id: payload.snapshot_id,
       file_name: payload.file_name,
       revoked,
+      revokedProvisorios,
       ...result,
     };
   } finally {

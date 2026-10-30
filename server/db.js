@@ -57,6 +57,32 @@ function createPool() {
   return withQueryRetry(pool);
 }
 
+function createProvisoriosPool() {
+  if (!envValue('PROVISORIOS_HOST') || !envValue('PROVISORIOS_DATABASE')) return null;
+  const same = envValue('PROVISORIOS_HOST') === envValue('DATABASE_HOST')
+    && envValue('PROVISORIOS_DATABASE') === envValue('DATABASE_NAME')
+    && envValue('PROVISORIOS_PORT', '5432') === envValue('DATABASE_PORT', '5432');
+  if (same) return null;
+
+  const pool = new Pool({
+    host: envValue('PROVISORIOS_HOST'),
+    port: Number(envValue('PROVISORIOS_PORT', '5432')),
+    database: envValue('PROVISORIOS_DATABASE'),
+    user: envValue('PROVISORIOS_USER', envValue('DATABASE_USER')),
+    password: envValue('PROVISORIOS_PASSWORD', envValue('DATABASE_PASSWORD')),
+    ssl: (process.env.PROVISORIOS_SSL || process.env.DATABASE_SSL) === 'true'
+      ? { rejectUnauthorized: false }
+      : false,
+    max: 4,
+    idleTimeoutMillis: 10000,
+    connectionTimeoutMillis: 15000,
+  });
+  pool.on('error', (err) => {
+    console.error('Erro no pool de provisórios:', err.code || '', err.message);
+  });
+  return withQueryRetry(pool);
+}
+
 async function ensureSchema(pool) {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS csu_alunos (
@@ -343,6 +369,34 @@ async function ensureSchema(pool) {
     }
   }
   await pool.query(`
+    ALTER TABLE csu_alunos
+    ADD COLUMN IF NOT EXISTS cpf TEXT
+  `);
+  await pool.query(`
+    ALTER TABLE csu_alunos
+    ADD COLUMN IF NOT EXISTS origem TEXT
+  `);
+  await pool.query(`
+    ALTER TABLE csu_alunos
+    ADD COLUMN IF NOT EXISTS confirmado_em TIMESTAMPTZ
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS csu_vendas_webhook (
+      id SERIAL PRIMARY KEY,
+      rgm TEXT,
+      email TEXT,
+      nome TEXT,
+      cpf TEXT,
+      payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+      aluno_id INTEGER REFERENCES csu_alunos(id) ON DELETE SET NULL,
+      status TEXT NOT NULL,
+      erro TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_csu_vendas_webhook_rgm ON csu_vendas_webhook (rgm);
+  `);
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS csu_materias_alunos (
       rgm TEXT PRIMARY KEY,
       aluno_label TEXT,
@@ -390,6 +444,103 @@ async function ensureSchema(pool) {
 
 function normalizeIdentifier(value) {
   return String(value ?? '').replace(/\s+/g, ' ').trim();
+}
+
+function normalizeCpf(value) {
+  const digits = String(value ?? '').replace(/\D+/g, '');
+  if (digits.length < 9 || digits.length > 11) return null;
+  return digits.padStart(11, '0');
+}
+
+async function logVendaWebhook(pool, { rgm, email, nome, cpf, payload, alunoId, status, erro }) {
+  await pool.query(
+    `INSERT INTO csu_vendas_webhook (rgm, email, nome, cpf, payload, aluno_id, status, erro)
+     VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8)`,
+    [rgm || null, email || null, nome || null, cpf || null, JSON.stringify(payload || {}), alunoId || null, status, erro || null],
+  );
+}
+
+async function registrarVenda(pool, payload) {
+  const data = payload && typeof payload === 'object' ? payload : {};
+  const nome = normalizeIdentifier(data.nome_completo || data.nome);
+  const email = normalizeIdentifier(data.e_mail || data.email).toLowerCase();
+  const rgm = String(data.rgm ?? '').replace(/\D+/g, '');
+  const cpf = normalizeCpf(data.cpf);
+  const curso = normalizeIdentifier(data.curso) || null;
+  const unidade = normalizeIdentifier(data.polo || data.unidade) || null;
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+
+  if (!nome || !emailOk || !rgm) {
+    const err = new Error('Informe nome_completo, e_mail e rgm.');
+    err.code = 'VALIDATION';
+    await logVendaWebhook(pool, { rgm, email, nome, cpf, payload: data, status: 'invalido', erro: err.message });
+    throw err;
+  }
+
+  const existing = await pool.query(
+    `SELECT id, origem, confirmado_em
+     FROM csu_alunos
+     WHERE rgm = $1
+     LIMIT 1`,
+    [rgm],
+  );
+  const row = existing.rows[0];
+  if (row && (row.origem !== 'webhook' || row.confirmado_em)) {
+    await logVendaWebhook(pool, {
+      rgm, email, nome, cpf, payload: data, alunoId: row.id, status: 'ja_existia',
+    });
+    return { id: row.id, email, rgm, nome, created: false, updated: false };
+  }
+
+  const clash = await pool.query(
+    `SELECT id FROM csu_alunos
+     WHERE lower(email) = lower($1) AND rgm <> $2
+     LIMIT 1`,
+    [email, rgm],
+  );
+  if (clash.rows[0]) {
+    const err = new Error('E-mail já usado por outro RGM.');
+    err.code = 'EMAIL_CONFLICT';
+    await logVendaWebhook(pool, { rgm, email, nome, cpf, payload: data, status: 'erro', erro: err.message });
+    throw err;
+  }
+
+  if (row) {
+    await pool.query(
+      `UPDATE csu_alunos
+       SET email = $1, nome = $2, cpf = $3, ativo = TRUE,
+           curso = COALESCE($4, curso), unidade = COALESCE($5, unidade)
+       WHERE id = $6`,
+      [email, nome, cpf, curso, unidade, row.id],
+    );
+    await logVendaWebhook(pool, {
+      rgm, email, nome, cpf, payload: data, alunoId: row.id, status: 'atualizado',
+    });
+    return { id: row.id, email, rgm, nome, created: false, updated: true };
+  }
+
+  try {
+    const inserted = await pool.query(
+      `INSERT INTO csu_alunos (email, rgm, nome, pw_hash, curso, unidade, cpf, origem)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'webhook')
+       RETURNING id`,
+      [email, rgm, nome, DERIVED_PW_MARKER, curso, unidade, cpf],
+    );
+    const id = inserted.rows[0].id;
+    await logVendaWebhook(pool, {
+      rgm, email, nome, cpf, payload: data, alunoId: id, status: 'criado',
+    });
+    return { id, email, rgm, nome, created: true, updated: false };
+  } catch (err) {
+    if (err.code === '23505') {
+      const conflict = new Error('E-mail ou RGM já cadastrado.');
+      conflict.code = 'EMAIL_CONFLICT';
+      await logVendaWebhook(pool, { rgm, email, nome, cpf, payload: data, status: 'erro', erro: conflict.message });
+      throw conflict;
+    }
+    await logVendaWebhook(pool, { rgm, email, nome, cpf, payload: data, status: 'erro', erro: err.message });
+    throw err;
+  }
 }
 
 async function seedAlunoIfEmpty(pool) {
@@ -462,7 +613,8 @@ async function upsertAcessoDerived(pool, { email, rgm, nome, curso, unidade }) {
     const row = existing.rows[0];
     await pool.query(
       `UPDATE csu_alunos
-       SET email = $1, rgm = $2, nome = $3, ativo = TRUE, curso = $5, unidade = $6
+       SET email = $1, rgm = $2, nome = $3, ativo = TRUE, curso = $5, unidade = $6,
+           confirmado_em = COALESCE(confirmado_em, now())
        WHERE id = $4`,
       [email, rgm, nome, row.id, curso || null, unidade || null],
     );
@@ -470,8 +622,8 @@ async function upsertAcessoDerived(pool, { email, rgm, nome, curso, unidade }) {
   }
 
   const inserted = await pool.query(
-    `INSERT INTO csu_alunos (email, rgm, nome, pw_hash, curso, unidade)
-     VALUES ($1, $2, $3, $4, $5, $6)
+    `INSERT INTO csu_alunos (email, rgm, nome, pw_hash, curso, unidade, origem, confirmado_em)
+     VALUES ($1, $2, $3, $4, $5, $6, 'sync', now())
      RETURNING id, email, rgm, nome, ativo`,
     [email, rgm, nome, DERIVED_PW_MARKER, curso || null, unidade || null],
   );
@@ -503,6 +655,32 @@ async function findAlunoByIdentifier(pool, identifier) {
     [id],
   );
   return result.rows[0] || null;
+}
+
+async function copyAlunoProvisorio(destPool, sourcePool, identifier) {
+  const found = await findAlunoByIdentifier(sourcePool, identifier);
+  if (!found || !found.ativo) return null;
+  const full = await sourcePool.query(
+    `SELECT email, rgm, nome, pw_hash, curso, unidade, cpf, origem, confirmado_em, ativo
+     FROM csu_alunos WHERE id = $1`,
+    [found.id],
+  );
+  const row = full.rows[0];
+  if (!row) return null;
+  try {
+    const inserted = await destPool.query(
+      `INSERT INTO csu_alunos (email, rgm, nome, pw_hash, curso, unidade, cpf, origem, confirmado_em, ativo)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       ON CONFLICT (rgm) DO NOTHING
+       RETURNING id, email, rgm, nome, pw_hash, ativo`,
+      [row.email, row.rgm, row.nome, row.pw_hash, row.curso, row.unidade, row.cpf, row.origem, row.confirmado_em, row.ativo],
+    );
+    if (inserted.rows[0]) return inserted.rows[0];
+  } catch (err) {
+    if (err.code !== '23505') throw err;
+    return null;
+  }
+  return findAlunoByIdentifier(destPool, row.rgm);
 }
 
 const DUMMY_HASH = bcrypt.hashSync('not-a-real-user', 4);
@@ -634,6 +812,28 @@ async function deactivateAlunosByRgm(pool, rgms) {
   return revoked;
 }
 
+async function deactivateProvisoriosAusentes(pool, emCursoRgms, snapshotAt) {
+  const rgms = [...new Set((emCursoRgms || []).filter(Boolean))];
+  if (!snapshotAt || !rgms.length) return 0;
+
+  const updated = await pool.query(
+    `UPDATE csu_alunos
+     SET ativo = FALSE
+     WHERE ativo = TRUE
+       AND origem = 'webhook'
+       AND confirmado_em IS NULL
+       AND created_at < $1
+       AND NOT (rgm = ANY($2::text[]))
+     RETURNING id`,
+    [snapshotAt, rgms],
+  );
+  const ids = updated.rows.map((row) => row.id);
+  if (ids.length) {
+    await pool.query('DELETE FROM csu_sessoes WHERE aluno_id = ANY($1::int[])', [ids]);
+  }
+  return ids.length;
+}
+
 async function getSyncState(pool, id = 'matriculados') {
   const result = await pool.query(
     'SELECT snapshot_id, snapshot_at, file_name, row_count, created_count, updated_count, skipped_count, revoked_count, synced_at FROM csu_sync_state WHERE id = $1',
@@ -675,10 +875,13 @@ module.exports = {
   TOKEN_TTL_MS,
   DERIVED_PW_MARKER,
   createPool,
+  createProvisoriosPool,
+  copyAlunoProvisorio,
   ensureSchema,
   seedAlunoIfEmpty,
   upsertAlunoFromMatricula,
   upsertAcessoDerived,
+  registrarVenda,
   getAlunoForCertificate,
   findAlunoByIdentifier,
   verifyPassword,
@@ -688,6 +891,7 @@ module.exports = {
   createAluno,
   insertCertificate,
   deactivateAlunosByRgm,
+  deactivateProvisoriosAusentes,
   getSyncState,
   saveSyncState,
 };

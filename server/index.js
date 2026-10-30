@@ -39,6 +39,15 @@ const pool = (() => {
   }
 })();
 
+const provisoriosPool = (() => {
+  try {
+    return db.createProvisoriosPool();
+  } catch (err) {
+    console.error(err.message);
+    return null;
+  }
+})();
+
 let matriculadosPool = null;
 function getMatriculadosPool() {
   if (!matriculados.isConfigured()) return null;
@@ -114,6 +123,32 @@ app.post('/api/admin/sync-from-matriculados', async (req, res) => {
   } catch (err) {
     console.error('Falha no sync automático de matriculados:', err.message);
     return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.post('/api/webhooks/venda', express.json({ type: '*/*', limit: '40kb' }), async (req, res) => {
+  const secret = Buffer.from(String(process.env.IMPORT_SECRET || ''));
+  const given = Buffer.from(String(req.get('x-webhook-token') || req.get('x-import-secret') || req.query.token || ''));
+  if (!secret.length || secret.length !== given.length || !crypto.timingSafeEqual(secret, given)) {
+    return res.status(401).json({ success: false, message: 'Token do webhook inválido.' });
+  }
+  if (!pool) {
+    return res.status(503).json({ success: false, message: 'Serviço de dados indisponível.' });
+  }
+
+  try {
+    await db.ensureSchema(pool);
+    const row = await db.registrarVenda(pool, req.body);
+    return res.json({ success: true, created: row.created, updated: row.updated, rgm: row.rgm });
+  } catch (err) {
+    if (err.code === 'VALIDATION') {
+      return res.status(422).json({ success: false, message: err.message });
+    }
+    if (err.code === 'EMAIL_CONFLICT') {
+      return res.status(409).json({ success: false, message: err.message });
+    }
+    console.error('Falha no webhook de venda:', err.code || '', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível cadastrar o aluno.' });
   }
 });
 
@@ -316,7 +351,10 @@ app.post('/api/auth/login', async (req, res) => {
 
   try {
     await db.ensureSchema(pool);
-    const aluno = await db.findAlunoByIdentifier(pool, identifier);
+    let aluno = await db.findAlunoByIdentifier(pool, identifier);
+    if (!aluno && provisoriosPool) {
+      aluno = await db.copyAlunoProvisorio(pool, provisoriosPool, identifier);
+    }
     if (!aluno || !aluno.ativo) {
       return res.status(401).json({ success: false, message: 'Credenciais inválidas.' });
     }
