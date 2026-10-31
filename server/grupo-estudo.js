@@ -43,6 +43,8 @@ const REGRAS = [
   'Palavrões, xingamentos e ofensas não são publicados.',
   'Toda mensagem passa por um moderador antes de aparecer; fotos e áudios passam pela equipe.',
 ];
+const MAX_TROCAS_APELIDO = 5; // por dia
+
 const MIME = {
   imagem: { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' },
   audio: { 'audio/webm': 'webm', 'audio/ogg': 'ogg', 'audio/mp4': 'm4a', 'audio/x-m4a': 'm4a', 'audio/aac': 'aac', 'audio/mpeg': 'mp3' },
@@ -166,6 +168,13 @@ async function ensureSchema(pool) {
     -- Saiu do grupo: o aceite fica guardado (prova do consentimento dado) e ganha a data da revogação.
     ALTER TABLE csu_grupo_aceites ADD COLUMN IF NOT EXISTS revogado_em TIMESTAMPTZ;
 
+    -- Como o aluno aparece para os colegas: apelido escolhido por ele (sem apelido = "Maria S.").
+    CREATE TABLE IF NOT EXISTS csu_grupo_perfis (
+      aluno_id INTEGER PRIMARY KEY REFERENCES csu_alunos(id) ON DELETE CASCADE,
+      apelido TEXT NOT NULL,
+      atualizado_em TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
     CREATE TABLE IF NOT EXISTS csu_grupo_denuncias (
       id SERIAL PRIMARY KEY,
       mensagem_id BIGINT NOT NULL REFERENCES csu_grupo_mensagens(id) ON DELETE CASCADE,
@@ -225,6 +234,11 @@ function nomeExibido(nome) {
   return partes.length > 1 ? `${cap(partes[0])} ${partes[partes.length - 1].charAt(0).toUpperCase()}.` : cap(partes[0]);
 }
 
+// Nome que os colegas veem: o apelido, se o aluno escolheu um; senão "Maria S.".
+function exibido(row) {
+  return (row && row.apelido) || nomeExibido(row && row.nome);
+}
+
 async function evento(pool, alunoId, nome, dados) {
   try {
     await pool.query(
@@ -238,7 +252,7 @@ async function evento(pool, alunoId, nome, dados) {
 
 // Grupo do aluno (cria o grupo e a filiação na primeira vez). null se o aluno ainda não tem curso.
 async function grupoDoAluno(pool, alunoId) {
-  const r = await pool.query('SELECT nome, curso FROM csu_alunos WHERE id = $1', [alunoId]);
+  const r = await pool.query(`SELECT a.nome, a.curso, (SELECT p.apelido FROM csu_grupo_perfis p WHERE p.aluno_id = a.id) AS apelido FROM csu_alunos a WHERE a.id = $1`, [alunoId]);
   const aluno = r.rows[0];
   const chave = chaveCurso(aluno && aluno.curso);
   if (!chave) return null;
@@ -255,7 +269,8 @@ async function grupoDoAluno(pool, alunoId) {
      RETURNING silenciado_ate, lido_ate`,
     [grupo.id, alunoId, crypto.randomBytes(16).toString('hex')],
   );
-  return { id: grupo.id, nome: grupo.nome, silenciado_ate: m.rows[0].silenciado_ate, lido_ate: Number(m.rows[0].lido_ate), eu: nomeExibido(aluno.nome) };
+  return { id: grupo.id, nome: grupo.nome, silenciado_ate: m.rows[0].silenciado_ate, lido_ate: Number(m.rows[0].lido_ate),
+    eu: exibido(aluno), nome_curto: nomeExibido(aluno.nome), apelido: aluno.apelido || null };
 }
 
 function silenciadoAte(g) {
@@ -269,7 +284,7 @@ function paraAluno(row, alunoId) {
   if ((row.status !== 'publicada' && !minha) || row.categoria === 'apagada_pelo_autor') return { id: Number(row.id), oculta: true };
   const out = {
     id: Number(row.id),
-    autor: nomeExibido(row.nome),
+    autor: exibido(row),
     minha,
     texto: row.texto,
     criado_em: row.criado_em,
@@ -297,7 +312,7 @@ function paraAluno(row, alunoId) {
   return out;
 }
 
-const SELECT_MSG = `SELECT m.id, m.aluno_id, m.texto, m.status, m.categoria, m.criado_em, a.nome,
+const SELECT_MSG = `SELECT m.id, m.aluno_id, m.texto, m.status, m.categoria, m.criado_em, a.nome, (SELECT p.apelido FROM csu_grupo_perfis p WHERE p.aluno_id = a.id) AS apelido,
     m.midia_tipo, m.midia_arquivo, m.midia_duracao, m.midia_largura, m.midia_altura, m.midia_expira_em, m.midia_apagada,
     EXISTS (SELECT 1 FROM csu_grupo_denuncias d WHERE d.mensagem_id = m.id AND d.aluno_id = $2) AS denunciada_por_mim
   FROM csu_grupo_mensagens m JOIN csu_alunos a ON a.id = m.aluno_id`;
@@ -345,7 +360,7 @@ function previa(row, alunoId) {
     texto: row.texto ? row.texto.slice(0, 90) : '',
     midia: row.midia_tipo || null,
     minha: row.aluno_id === alunoId,
-    autor: nomeExibido(row.nome),
+    autor: exibido(row),
     status: row.status,
     em: row.criado_em,
   };
@@ -355,7 +370,7 @@ function previa(row, alunoId) {
 async function conversas(pool, g, alunoId) {
   const [ultGrupo, naoLidasGrupo, colegas, minhas, bloqueios] = await Promise.all([
     pool.query(
-      `SELECT m.id, m.texto, m.midia_tipo, m.status, m.criado_em, m.aluno_id, a.nome FROM csu_grupo_mensagens m JOIN csu_alunos a ON a.id = m.aluno_id
+      `SELECT m.id, m.texto, m.midia_tipo, m.status, m.criado_em, m.aluno_id, a.nome, (SELECT p.apelido FROM csu_grupo_perfis p WHERE p.aluno_id = a.id) AS apelido FROM csu_grupo_mensagens m JOIN csu_alunos a ON a.id = m.aluno_id
        WHERE m.grupo_id = $1 AND m.conversa_id IS NULL AND (m.status = 'publicada' OR m.aluno_id = $2) AND m.categoria <> 'apagada_pelo_autor' ORDER BY m.id DESC LIMIT 1`,
       [g.id, alunoId],
     ),
@@ -364,7 +379,7 @@ async function conversas(pool, g, alunoId) {
       [g.id, alunoId, g.lido_ate],
     ),
     pool.query(
-      `SELECT mem.ref, mem.aluno_id, a.nome FROM csu_grupo_membros mem JOIN csu_alunos a ON a.id = mem.aluno_id
+      `SELECT mem.ref, mem.aluno_id, a.nome, (SELECT p.apelido FROM csu_grupo_perfis p WHERE p.aluno_id = a.id) AS apelido FROM csu_grupo_membros mem JOIN csu_alunos a ON a.id = mem.aluno_id
        WHERE mem.grupo_id = $1 AND mem.aluno_id <> $2 AND a.ativo
          AND EXISTS (SELECT 1 FROM csu_grupo_aceites ac WHERE ac.aluno_id = mem.aluno_id AND ac.versao = $3 AND ac.revogado_em IS NULL)`,
       [g.id, alunoId, grupoTermo.VERSAO],
@@ -380,7 +395,7 @@ async function conversas(pool, g, alunoId) {
   ]);
   const ids = minhas.rows.map((c) => c.id);
   const ultimas = ids.length ? (await pool.query(
-    `SELECT DISTINCT ON (m.conversa_id) m.conversa_id, m.id, m.texto, m.midia_tipo, m.status, m.criado_em, m.aluno_id, a.nome
+    `SELECT DISTINCT ON (m.conversa_id) m.conversa_id, m.id, m.texto, m.midia_tipo, m.status, m.criado_em, m.aluno_id, a.nome, (SELECT p.apelido FROM csu_grupo_perfis p WHERE p.aluno_id = a.id) AS apelido
      FROM csu_grupo_mensagens m JOIN csu_alunos a ON a.id = m.aluno_id
      WHERE m.conversa_id = ANY($1) AND (m.status = 'publicada' OR m.aluno_id = $2) AND m.categoria <> 'apagada_pelo_autor' ORDER BY m.conversa_id, m.id DESC`,
     [ids, alunoId],
@@ -393,7 +408,7 @@ async function conversas(pool, g, alunoId) {
     const ult = conv ? ultimaPor.get(String(conv.id)) : null;
     return {
       ref: c.ref,
-      nome: nomeExibido(c.nome),
+      nome: exibido(c),
       bloqueado: bloqueados.has(c.aluno_id),
       ultima: previa(ult, alunoId),
       nao_lidas: conv ? conv.nao_lidas : 0,
@@ -550,7 +565,7 @@ function montar(app, deps) {
         aceite_pendente: !(await aceitou(req.aluno.id)),
         situacao: await situacao(req.aluno.id),
         grupo: { nome: g.nome, membros: n.rows[0].n },
-        eu: { nome: g.eu, silenciado_ate: silenciadoAte(g) },
+        eu: { nome: g.eu, nome_curto: g.nome_curto, apelido: g.apelido, silenciado_ate: silenciadoAte(g) },
         regras: REGRAS,
         aviso: aviso(),
         midia_dias: midiaDias(),
@@ -563,6 +578,57 @@ function montar(app, deps) {
       return res.status(500).json({ success: false, message: 'Não foi possível abrir o grupo agora.' });
     }
   });
+
+  // Apelido: como o aluno aparece para os colegas. Vazio = volta ao nome curto ("Maria S.").
+  app.post('/api/grupos/perfil', async (req, res) => {
+    const bruto = req.body && typeof req.body.apelido === 'string' ? req.body.apelido : '';
+    const apelido = bruto.normalize('NFC').replace(/\s+/g, ' ').trim();
+    try {
+      await ensure();
+      const g = await grupoDoAluno(pool, req.aluno.id);
+      if (!g) return res.status(409).json({ success: false, message: 'Seu curso ainda não chegou ao portal.' });
+      const trocas = await pool.query(
+        "SELECT count(*)::int AS n FROM csu_eventos WHERE aluno_id = $1 AND nome = 'grupo_apelido' AND criado_em > now() - interval '1 day'",
+        [req.aluno.id],
+      );
+      if (trocas.rows[0].n >= MAX_TROCAS_APELIDO) {
+        return res.status(429).json({ success: false, message: 'Você já trocou de nome muitas vezes hoje. Tente amanhã.' });
+      }
+      if (apelido) {
+        const erro = await validarApelido(apelido, g, req.aluno.id);
+        if (erro) return res.status(400).json({ success: false, message: erro });
+        await pool.query(
+          `INSERT INTO csu_grupo_perfis (aluno_id, apelido) VALUES ($1, $2)
+           ON CONFLICT (aluno_id) DO UPDATE SET apelido = EXCLUDED.apelido, atualizado_em = now()`,
+          [req.aluno.id, apelido],
+        );
+      } else {
+        await pool.query('DELETE FROM csu_grupo_perfis WHERE aluno_id = $1', [req.aluno.id]);
+      }
+      // Republica as mensagens do aluno no polling para os colegas verem o nome novo.
+      await pool.query('UPDATE csu_grupo_mensagens SET atualizado_em = now() WHERE aluno_id = $1 AND grupo_id = $2 AND status = \'publicada\'', [req.aluno.id, g.id]);
+      await evento(pool, req.aluno.id, 'grupo_apelido', { com_apelido: Boolean(apelido) });
+      return res.json({ success: true, eu: { nome: apelido || g.nome_curto, nome_curto: g.nome_curto, apelido: apelido || null } });
+    } catch (err) {
+      console.error('Grupo de estudo: falha ao salvar o apelido:', err.message);
+      return res.status(500).json({ success: false, message: 'Não foi possível salvar agora. Tente de novo.' });
+    }
+  });
+
+  // Ninguém pode usar o nome que outro colega do grupo já mostra (evita se passar por alguém).
+  async function validarApelido(apelido, g, alunoId) {
+    const erro = await moderacao.validarApelido(apelido);
+    if (erro) return erro;
+    const outros = await pool.query(
+      `SELECT a.nome, (SELECT p.apelido FROM csu_grupo_perfis p WHERE p.aluno_id = a.id) AS apelido FROM csu_grupo_membros mem JOIN csu_alunos a ON a.id = mem.aluno_id
+       WHERE mem.grupo_id = $1 AND mem.aluno_id <> $2`,
+      [g.id, alunoId],
+    );
+    const chave = (t) => moderacao.normalizar(t).replace(/[^a-z0-9]/g, '');
+    const meu = chave(apelido);
+    if (outros.rows.some((o) => chave(exibido(o)) === meu)) return 'Um colega do grupo já usa esse nome. Escolha outro.';
+    return null;
+  }
 
   // Sair do grupo: revoga o aceite. Com apagar=true, retira também o que o aluno enviou (grupo e privado),
   // menos o que tem denúncia aberta, que a equipe ainda precisa analisar.
@@ -848,7 +914,7 @@ function montar(app, deps) {
   });
 
   const SELECT_ADMIN = `SELECT m.id, m.texto, m.status, m.categoria, m.confianca, m.motivo, m.moderador, m.sinais, m.revisar,
-      m.denuncias, m.criado_em, m.revisado_em, m.aluno_id, a.nome, a.rgm, g.nome AS grupo, m.conversa_id,
+      m.denuncias, m.criado_em, m.revisado_em, m.aluno_id, a.nome, a.rgm, (SELECT p.apelido FROM csu_grupo_perfis p WHERE p.aluno_id = a.id) AS apelido, g.nome AS grupo, m.conversa_id,
       m.midia_tipo, m.midia_duracao, (m.midia_arquivo IS NOT NULL AND NOT m.midia_apagada) AS midia_disponivel, m.midia_expira_em,
       CASE WHEN m.conversa_id IS NULL THEN NULL WHEN c.aluno_a = m.aluno_id THEN ab.nome ELSE aa.nome END AS destinatario,
       mem.silenciado_ate,

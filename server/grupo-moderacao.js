@@ -339,4 +339,27 @@ async function moderarMidia(tipo, legenda, imagem, opts = {}) {
   }
 }
 
-module.exports = { moderar, moderarMidia, regras, normalizar, politica, provedor, classificarStub, CATEGORIAS, EXPLICACAO };
+// ---------- Apelido ----------
+// Mesmas regras das mensagens, mais: só letras, números e . _ - ', e nada que pareça professor, equipe ou
+// as instituições. Devolve a mensagem de erro para o aluno ou null se o apelido serve.
+const APELIDO_MIN = 2;
+const APELIDO_MAX = 20;
+const RE_APELIDO_CHARS = /^[\p{L}\p{M}0-9 ._'-]+$/u;
+const RE_APELIDO_RESERVADO = /\b(prof\w*|tutor\w*|coorden\w*|equipe|suporte|admin\w*|moderad\w*|moderac\w*|cruzeiro|eduit|polo|secretari\w*|oficial|atendiment\w*|reitor\w*|diretor\w*|staff|sistema)\b/;
+
+async function validarApelido(apelido) {
+  const a = String(apelido || '');
+  if ([...a].length < APELIDO_MIN || [...a].length > APELIDO_MAX) return `O apelido precisa ter de ${APELIDO_MIN} a ${APELIDO_MAX} caracteres.`;
+  if (!RE_APELIDO_CHARS.test(a)) return 'Use só letras, números, espaço e . _ - (sem emoji).';
+  if ((a.match(/\p{L}/gu) || []).length < 2) return 'O apelido precisa ter pelo menos 2 letras.';
+  if ((a.match(/[0-9]/g) || []).length > 4) return 'O apelido pode ter no máximo 4 números.';
+  const n = normalizar(a);
+  if (RE_APELIDO_RESERVADO.test(n)) return 'Esse apelido parece nome de professor, equipe ou instituição. Escolha outro.';
+  const r = regras(a);
+  if (r.categoria) return r.categoria === 'dados_pessoais' ? 'O apelido não pode ter contato ou dado pessoal (telefone, e-mail, @, documento).' : 'Esse apelido não segue as regras do grupo. Escolha outro.';
+  const c = await classificarStub(a);
+  if (['odio', 'assedio', 'fraude_academica'].includes(c.categoria)) return 'Esse apelido não segue as regras do grupo. Escolha outro.';
+  return null;
+}
+
+module.exports = { validarApelido, APELIDO_MAX, moderar, moderarMidia, regras, normalizar, politica, provedor, classificarStub, CATEGORIAS, EXPLICACAO };

@@ -98,10 +98,18 @@ disciplinas de `csu_materias_alunos`.
   | Direitos autorais | Lei 9.610/1998 |
   | Intimidade e vida privada | Constituição Federal, art. 5º, X |
 
-- **Versão:** `VERSAO` em `server/grupo-termo.js` (hoje `2026-10-31.2`; o sufixo `.2` marca a segunda versão do dia). Trocou a versão, todo aluno aceita
+- **Versão:** `VERSAO` em `server/grupo-termo.js` (hoje `2026-10-31.3`; o sufixo `.2`, `.3` marca outra versão no mesmo dia). Trocou a versão, todo aluno aceita
   de novo antes de voltar a usar o grupo.
 - **Registro:** tabela `csu_grupo_aceites` (aluno, versão, data e hora, `revogado_em`) e eventos
   `grupo_aceite` e `grupo_saida` em `csu_eventos`.
+- **Nome ou apelido:** o aluno toca no nome em "você aparece como …" (topo da lista) e escolhe entre o
+  nome curto ("Bruna L.") e um apelido. O apelido tem de 2 a 20 caracteres (letras, números, espaço e
+  . _ - '), no máximo 4 números e passa pelas mesmas regras das mensagens (contato, palavrão, ódio,
+  fraude). São recusados nomes que imitem professor, tutor, coordenação, equipe, polo, Cruzeiro do Sul ou
+  Eduit, e o nome que outro colega do grupo já mostra. Até 5 trocas por dia. Fica em `csu_grupo_perfis`;
+  a fila do admin mostra o nome real com o apelido entre parênteses. `POST /api/grupos/perfil
+  { apelido }` (vazio volta ao nome curto). Termo `2026-10-31.3` menciona o apelido nas regras e nos
+  dados.
 - **Sair do grupo:** botão "Sair do grupo" no topo da lista de conversas e no painel Regras. A folha de
   confirmação explica o que acontece e pergunta o que fazer com o que a pessoa enviou: **manter** para quem
   ficou ou **apagar agora** (textos zerados, fotos e áudios apagados do disco, mensagem some para todos

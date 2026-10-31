@@ -58,7 +58,7 @@ window.AdminGrupos = (function () {
       (m.texto ? '<blockquote class="gr-texto">' + esc(m.texto) + '</blockquote>' : '') +
       (m.motivo ? '<p class="gr-motivo">Motivo: ' + esc(m.motivo) + '</p>' : '') +
       (den.length ? '<p class="gr-den">' + den.length + ' denúncia(s): ' + esc(den.join(', ')) + '</p>' : '') +
-      '<p class="gr-autor">' + esc(m.nome) + (m.rgm ? ' · RGM ' + esc(m.rgm) : '') + ' · ' + esc(m.grupo) + '</p>' +
+      '<p class="gr-autor">' + esc(m.nome) + (m.apelido ? ' (apelido "' + esc(m.apelido) + '")' : '') + (m.rgm ? ' · RGM ' + esc(m.rgm) : '') + ' · ' + esc(m.grupo) + '</p>' +
       '<div class="ac-acts">' + acoes + '</div>' +
     '</article>';
   }

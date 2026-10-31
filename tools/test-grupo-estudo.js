@@ -80,6 +80,8 @@ async function main() {
     // Estado limpo para o teste: sem silêncio nem bloqueio de rodadas anteriores.
     await pool.query('UPDATE csu_grupo_membros SET silenciado_ate = NULL WHERE aluno_id = ANY($1)', [[teste.id, fict[0].id, fict[1].id]]).catch(() => {});
     await pool.query('DELETE FROM csu_dm_bloqueios WHERE aluno_id = ANY($1)', [[teste.id, fict[0].id, fict[1].id]]).catch(() => {});
+    // Sem apelido de rodadas anteriores (o teste acha os colegas pelo nome).
+    await pool.query('DELETE FROM csu_grupo_perfis WHERE aluno_id = ANY($1)', [[teste.id, fict[0].id, fict[1].id]]).catch(() => {});
     // O limite de 6 mensagens por minuto vale também para o teste: espera a janela de quem vai enviar.
     const ultima = (await pool.query(
       "SELECT EXTRACT(EPOCH FROM (now() - max(criado_em)))::float AS s FROM csu_grupo_mensagens WHERE aluno_id = ANY($1) AND criado_em > now() - interval '1 minute'",
@@ -266,6 +268,23 @@ async function main() {
     confere((await chamar(tBruna, 'GET', '/api/grupos/meu/conversas')).body.colegas.some((c) => c.ref === refCarlos), 'de volta: aparece de novo na lista dos colegas');
     const feedCarlos = (await chamar(tCarlos, 'GET', '/api/grupos/meu/mensagens')).body.mensagens;
     confere(!feedCarlos.some((m) => m.id === idCarlos && !m.oculta), 'o que ele apagou continua apagado ao voltar');
+
+    // ----- Nome ou apelido -----
+    // Limite de 5 trocas por dia: zera as trocas de rodadas anteriores do teste (banco local).
+    await pool.query("DELETE FROM csu_eventos WHERE aluno_id = $1 AND nome = 'grupo_apelido'", [fict[0].id]);
+    const meuBruna = (await chamar(tBruna, 'GET', '/api/grupos/meu')).body.eu;
+    confere(meuBruna.nome_curto && !meuBruna.apelido, 'sem apelido: aparece com o nome curto', meuBruna.nome);
+    for (const [ruim, porque] of [['Prof. Bruna', 'imita professor'], ['Equipe do Polo', 'imita a equipe'], ['Bruna 11987654321', 'telefone'],
+      ['caralho', 'palavrão'], ['😀 Bia', 'emoji'], ['B', 'curto demais'], ['Carlos N.', 'nome de outro colega']]) {
+      const r = await chamar(tBruna, 'POST', '/api/grupos/perfil', { apelido: ruim });
+      confere(r.status === 400, `apelido recusado: ${porque}`, r.body && r.body.message);
+    }
+    const ap = await chamar(tBruna, 'POST', '/api/grupos/perfil', { apelido: '  Bia   Estudos ' });
+    confere(ap.status === 200 && ap.body.eu.nome === 'Bia Estudos' && ap.body.eu.apelido === 'Bia Estudos', 'apelido válido é salvo (espaços ajustados)');
+    confere((await chamar(tCarlos, 'GET', '/api/grupos/meu/conversas')).body.colegas.some((c) => c.nome === 'Bia Estudos'), 'colegas veem o apelido na lista');
+    confere((await chamar(tBruna, 'GET', '/api/grupos/meu')).body.eu.nome === 'Bia Estudos', '/meu mostra o apelido como nome');
+    const deVolta = await chamar(tBruna, 'POST', '/api/grupos/perfil', { apelido: '' });
+    confere(deVolta.status === 200 && deVolta.body.eu.nome === meuBruna.nome_curto && !deVolta.body.eu.apelido, 'apelido vazio volta ao nome curto');
 
     // ----- Silêncio e csu_eventos -----
     const sil = await chamar(tAdmin, 'POST', `/api/admin/grupos/mensagens/${au.body.mensagem.id}/acao`, { acao: 'silenciar', horas: 24, remover: true });

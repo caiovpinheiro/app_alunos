@@ -355,3 +355,9 @@ body.ge-on { overflow: hidden; }
 .ge-sheet-ok--perigo { background: var(--ds-bad); color: #fff; }
 .ge-sheet-ok--perigo:hover { background: #8f1c13; }
 .ge-sheet-cancelar { width: 100%; min-height: 48px; margin-top: 4px; border: 0; background: none; color: var(--ds-navy); font: 700 16px/1 var(--ds-font); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+
+/* ---------- Nome ou apelido ---------- */
+.ge-eu { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; margin: -6px 0; padding: 0 4px; border: 0; border-radius: var(--ds-r-sm); background: none; color: var(--ds-ink); font: inherit; cursor: pointer; text-decoration: underline dotted var(--ds-line-2); text-underline-offset: 3px; }
+.ge-eu:hover { background: var(--ds-blue-soft); }
+#app .ge-eu svg { width: 14px; height: 14px; color: var(--ds-blue); }
+.ge-apelido { margin-top: 10px; }

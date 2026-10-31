@@ -9,7 +9,7 @@
 // no mesmo dia): todo aluno precisa aceitar de novo antes de voltar a usar o grupo. Correção de digitação não
 // precisa de versão nova.
 
-const VERSAO = '2026-10-31.2';
+const VERSAO = '2026-10-31.3';
 const DATA_VERSAO = VERSAO.slice(0, 10).split('-').reverse().join('/');
 
 // O que o aluno lê antes de aceitar: frases curtas, cada uma com a base legal.
@@ -81,6 +81,7 @@ function secoes(midiaDias) {
       titulo: '3. Regras de convivência',
       itens: RESUMO.slice(0, 5).map((r) => `${r.titulo}: ${r.texto} (Base: ${r.lei}.)`).concat([
         'Propaganda, venda de qualquer coisa, correntes e links externos não são permitidos. Links do próprio portal e do AVA são aceitos.',
+        'Você pode aparecer com um apelido em vez do nome. Ele segue as mesmas regras: nada de ofensa, dado de contato ou nome que imite professor, equipe, instituição ou outro colega. A equipe do polo vê o seu nome real quando analisa uma denúncia.',
         'Valem também o Regimento e as normas acadêmicas da instituição.',
       ]),
     },
@@ -99,7 +100,7 @@ function secoes(midiaDias) {
       titulo: '5. Seus dados (LGPD)',
       itens: [
         'Quem trata os dados: a Cruzeiro do Sul e a Eduit, só para oferecer e moderar o grupo, como descrito aqui.',
-        'Quais dados: seu nome exibido (primeiro nome e inicial do sobrenome), o curso, as mensagens, fotos e áudios que você envia, as denúncias e o registro das decisões de moderação. O seu RGM, e-mail e telefone não aparecem para os colegas.',
+        'Quais dados: seu nome exibido (primeiro nome e inicial do sobrenome, ou o apelido que você escolher), o curso, as mensagens, fotos e áudios que você envia, as denúncias e o registro das decisões de moderação. O seu RGM, e-mail e telefone não aparecem para os colegas.',
         'Para quê: oferecer o grupo, moderar o conteúdo e manter o ambiente seguro. Ao aceitar este termo, você consente em participar (LGPD, art. 7º, I). A moderação também se apoia no legítimo interesse de proteger os participantes e prevenir fraudes (art. 7º, IX).',
         'Quem vê: os colegas do seu curso veem as mensagens publicadas no grupo; numa conversa privada, só você e o colega. A equipe do polo vê apenas mensagens denunciadas, retidas ou bloqueadas pelo moderador. Se a moderação por inteligência artificial estiver ligada, o texto da mensagem (sem seu nome, RGM ou curso) é analisado por um fornecedor de IA contratado para isso.',
         `Por quanto tempo: fotos e áudios são apagados em ${midiaDias} dias. Mensagens e registros de moderação são apagados em até 180 dias. As fotos são gravadas sem os dados escondidos do arquivo (como localização GPS).`,

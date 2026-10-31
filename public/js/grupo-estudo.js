@@ -273,7 +273,9 @@ window.GrupoEstudo = (function () {
     root.innerHTML =
       '<aside class="ge-lado" aria-label="Conversas">' +
         '<div class="ge-lado-topo">' +
-          '<div><h1>Conversas</h1><p>' + esc(d.grupo.nome) + ' · você é <b>' + esc(d.eu.nome) + '</b></p></div>' +
+          '<div><h1>Conversas</h1><p>' + esc(d.grupo.nome) + ' · você aparece como ' +
+            '<button type="button" class="ge-eu" id="ge-eu" data-ge-perfil aria-label="Mudar nome ou apelido (você aparece como ' + esc(d.eu.nome) + ')">' +
+            '<b>' + esc(d.eu.nome) + '</b>' + icone('pencil') + '</button></p></div>' +
           '<button type="button" class="ge-sair-btn" data-ge-sair>' + icone('log-out') + '<span>Sair do grupo</span></button>' +
         '</div>' +
         '<div class="ge-busca">' + icone('search') +
@@ -992,6 +994,66 @@ window.GrupoEstudo = (function () {
     mostrarDialogo(sheet);
   }
 
+  // ---------- Nome ou apelido (como os colegas veem o aluno) ----------
+  function abrirPerfil() {
+    var sheet = $('ge-sheet');
+    var eu = estado.dados && estado.dados.eu;
+    if (!sheet || !eu) return;
+    var comApelido = Boolean(eu.apelido);
+    sheet.setAttribute('aria-labelledby', 'ge-sheet-tit');
+    sheet.innerHTML =
+      '<form method="dialog" class="ge-sheet-in" id="ge-perfil-form" novalidate>' +
+        '<div class="ge-sheet-topo"><h2 id="ge-sheet-tit">Como os colegas veem você</h2>' +
+          '<button type="button" class="ge-sheet-x" data-ge-fechar aria-label="Fechar">' + icone('x') + '</button></div>' +
+        '<fieldset><legend class="ge-sr">Nome exibido</legend>' +
+          '<label class="ge-opcao"><input type="radio" name="tipo" value="nome"' + (comApelido ? '' : ' checked') + '><span>Meu nome: <b>' + esc(eu.nome_curto) + '</b></span></label>' +
+          '<label class="ge-opcao"><input type="radio" name="tipo" value="apelido"' + (comApelido ? ' checked' : '') + '><span>Um apelido</span></label>' +
+        '</fieldset>' +
+        '<div class="ge-apelido" id="ge-apelido-box"' + (comApelido ? '' : ' hidden') + '>' +
+          '<label for="ge-apelido" class="ge-sr">Apelido</label>' +
+          '<input id="ge-apelido" class="ge-legenda" type="text" maxlength="20" autocomplete="nickname" autocapitalize="words" placeholder="Ex.: Bia, Zé, Estudante da noite" value="' + esc(eu.apelido || '') + '">' +
+        '</div>' +
+        '<p class="ge-sheet-nota">De 2 a 20 caracteres. Sem telefone, e-mail, @, palavrão ou nome de professor, equipe ou instituição. A equipe do polo vê o seu nome real se houver denúncia.</p>' +
+        '<p class="ge-erro" role="alert" hidden></p>' +
+        '<button type="submit" class="ge-sheet-ok">Salvar</button>' +
+      '</form>';
+    var form = sheet.querySelector('form');
+    var box = $('ge-apelido-box');
+    var campo = $('ge-apelido');
+    form.addEventListener('change', function (e) {
+      if (e.target.name !== 'tipo') return;
+      box.hidden = e.target.value !== 'apelido';
+      if (!box.hidden) campo.focus();
+    });
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var ok = form.querySelector('.ge-sheet-ok');
+      var err = form.querySelector('.ge-erro');
+      var tipo = form.querySelector('input[name="tipo"]:checked').value;
+      var apelido = tipo === 'apelido' ? campo.value.trim() : '';
+      err.hidden = true;
+      if (tipo === 'apelido' && !apelido) { err.textContent = 'Escreva o apelido ou escolha o seu nome.'; err.hidden = false; campo.focus(); return; }
+      ok.disabled = true;
+      try {
+        var r = await api('/api/grupos/perfil', { method: 'POST', body: { apelido: apelido } });
+        estado.dados.eu.nome = r.eu.nome;
+        estado.dados.eu.apelido = r.eu.apelido;
+        var b = $('ge-eu');
+        if (b) { b.querySelector('b').textContent = r.eu.nome; b.setAttribute('aria-label', 'Mudar nome ou apelido (você aparece como ' + r.eu.nome + ')'); }
+        fecharSheet();
+        if (b) b.focus();
+      } catch (er) {
+        ok.disabled = false;
+        err.textContent = er.message;
+        err.hidden = false;
+        if (tipo === 'apelido') campo.focus();
+      }
+    });
+    icones();
+    mostrarDialogo(sheet);
+    if (comApelido) campo.focus();
+  }
+
   async function bloquear(sim, opts) {
     opts = opts || {};
     var a = estado.atual;
@@ -1077,6 +1139,7 @@ window.GrupoEstudo = (function () {
       if ((b = t.closest('[data-ge-bloquear]'))) { bloquear(b.getAttribute('data-ge-bloquear') === '1'); return; }
       if (t.closest('[data-ge-termo]')) { abrirTermoCompleto(); return; }
       if (t.closest('[data-ge-sair]')) { abrirSair(); return; }
+      if (t.closest('[data-ge-perfil]')) { abrirPerfil(); return; }
       if (t.closest('[data-ge-fechar]')) { fecharSheet(); return; }
       if (t.closest('[data-ge-fechar-visor]')) { fecharDialogo($('ge-visor')); return; }
       var sheet = $('ge-sheet');
