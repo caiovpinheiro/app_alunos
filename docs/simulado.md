@@ -21,7 +21,6 @@ Status: **oculta, em validação local.** Liga só para as contas de `SIMULADO_A
 ```
 public/simulado.html + js/simulado.js + css/simulado.css     tela própria em /simulado
 public/js/app.js        mostrarSimulado(): injeta "Simulado" no menu se /api/recursos devolve simulado: true
-public/js/rastreio.js   rótulo "Dificuldade no simulado" e contexto "Simulado · <tópico>" para o CRM
 server/index.js         monta as rotas, flag em /api/recursos, página /simulado
 server/simulado/
   index.js        flag, portão (404), schema csu_sim_*, rotas do aluno e do admin
@@ -72,15 +71,16 @@ Tudo com `aluno_id` e `ON DELETE CASCADE`. Cada consulta filtra pelo aluno da se
   próxima revisão; acima, só revisar quando vencer.
 - Tópicos de mesmo nome em documentos diferentes são **unidos** (o histórico continua um só).
 
-### Rastreio e CRM
+### Rastreio (sem CRM)
 
-- A tela chama `Rastreio.iniciar` como o app (servidor e chat) e põe o contexto `tela: Simulado`,
-  `modulo: Simulado › <aba>` e depois `Simulado · <tópico>` quando o aluno responde questões ou revisa cartões de um tópico.
-- Eventos: `simulado_documento_enviado`, `simulado_documento_confirmar`, `simulado_documento_bloqueado`, `simulado_resumo`,
-  `simulado_gerado`, `simulado_corrigido` (nota), `simulado_relampago_*`, `flashcard_revisado`, `flashcards_criados`,
-  `simulado_pontos_melhorar`.
-- **`simulado_dificuldade`** (importante: vira nota interna no CRM) para cada tópico com nota abaixo de 6, até 3 por correção.
-  O atendente vê "Dificuldade no simulado (Divisão celular)" e o módulo `Simulado · Divisão celular`.
+- **A área de simulado não fala com o CRM** (decisão do usuário em 31/10): a tela não carrega o chat do Bwipo e não chama
+  `Rastreio.contexto`, `Rastreio.track`, `identify` nem `setContext`. O widget do chat continua nas outras telas, como antes.
+- Os eventos vão só para o nosso servidor, por `Rastreio.registrar` (fila de `/api/eventos` -> `csu_eventos`), e só para contas
+  com o rastreio liberado (`RASTREIO_LIBERADO_PARA`). Aparecem no percurso do aluno no admin (Acompanhamento).
+- Eventos: `tela_aberta`, `simulado_aba`, `simulado_documento_enviado`, `simulado_documento_confirmar`, `simulado_documento_bloqueado`,
+  `simulado_resumo`, `simulado_gerado`, `simulado_corrigido` (nota), `simulado_relampago_*`, `flashcard_revisado`, `flashcards_criados`,
+  `simulado_pontos_melhorar` e `simulado_dificuldade` (tópico com nota abaixo de 6, até 3 por correção).
+- As detecções de prova são gravadas pelo servidor (`simulado_deteccao_prova`, `simulado_deteccao_confirmacao`), com ou sem rastreio liberado.
 - Nada do que o aluno digita nas respostas vai para o rastreio.
 
 ## Detecção de prova do próprio aluno

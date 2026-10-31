@@ -1,7 +1,9 @@
 /* Área de simulado (oculta, SIMULADO_ATIVA_PARA). Página própria em /simulado.
    Sem sessão vai para o login; sem a área liberada (/api/recursos sem simulado: true ou API 404)
-   volta para o início. Avisa o CRM (Rastreio.contexto/track) de que o aluno está no simulado e
-   em qual tópico ele trava. Nada digitado nas respostas vai para o rastreio. */
+   volta para o início. Sem integração com o CRM: a tela não carrega o chat, não chama
+   Rastreio.contexto/track nem o setContext do Bwipo. Os eventos vão só para o nosso servidor
+   (Rastreio.registrar -> csu_eventos, quando o rastreio está liberado para a conta).
+   Nada digitado nas respostas vai para o rastreio. */
 (function () {
   'use strict';
 
@@ -41,22 +43,13 @@
   }
   function sair() { window.location.replace('/inicio'); }
 
-  // ---------------- rastreio (servidor + CRM) ----------------
+  // ---------------- rastreio (só servidor; nada vai para o CRM) ----------------
   function rastreio(cfg) {
-    if (!window.Rastreio || !cfg) return;
-    if (cfg.webchat && cfg.webchat.src && cfg.webchat.key) {
-      var s = document.createElement('script');
-      s.async = true; s.src = cfg.webchat.src; s.setAttribute('data-key', cfg.webchat.key);
-      document.body.appendChild(s);
-    }
-    if (cfg.webchat || cfg.rastreio) {
-      window.Rastreio.iniciar({ chat: cfg.webchat, servidor: !!cfg.rastreio });
-      window.Rastreio.track('tela_aberta', { tela: 'Simulado', caminho: '/simulado' });
-      window.Rastreio.contexto({ tela: 'Simulado', modulo: null, parte: null }, false);
-    }
+    if (!window.Rastreio || !cfg || !cfg.rastreio) return;
+    window.Rastreio.iniciar({ chat: null, servidor: true });
+    track('tela_aberta', { tela: 'Simulado', caminho: '/simulado' });
   }
-  function track(nome, dados, opts) { if (window.Rastreio) window.Rastreio.track(nome, dados || {}, opts); }
-  function contexto(c) { if (window.Rastreio && window.Rastreio.contexto) window.Rastreio.contexto(c, false); }
+  function track(nome, dados) { if (window.Rastreio && window.Rastreio.registrar) window.Rastreio.registrar(nome, dados || {}); }
 
   // ---------------- abas ----------------
   var NOMES_ABA = { docs: 'Documentos', simulado: 'Simulado', melhorar: 'Pontos a melhorar', flash: 'Flashcards', quiz: 'Quiz relâmpago' };
@@ -68,7 +61,7 @@
       if (on && foco) b.focus();
       document.getElementById(b.getAttribute('aria-controls')).hidden = !on;
     });
-    contexto({ modulo: 'Simulado › ' + NOMES_ABA[aba] });
+    track('simulado_aba', { aba: NOMES_ABA[aba] });
     if (aba === 'melhorar') carregarPainel();
     if (aba === 'flash') carregarFlash();
     if (aba === 'quiz' && !estado.quiz) renderQuizInicio();
@@ -224,14 +217,6 @@
       .then(function () { botao.disabled = false; });
   }
 
-  // Um tópico só muda o contexto do CRM quando o aluno começa a responder questões dele.
-  var ultimoTopico = null;
-  function marcaTopico(q) {
-    if (!q || q.topico === ultimoTopico) return;
-    ultimoTopico = q.topico;
-    contexto({ modulo: 'Simulado · ' + q.topico });
-  }
-
   function corrigirSimulado(e) {
     e.preventDefault();
     var form = $('[data-sim-form]');
@@ -260,13 +245,12 @@
 
   function faixa(nota10) { return nota10 < 5 ? 'fraca' : nota10 < 7 ? 'media' : 'boa'; }
 
-  // Tópico abaixo de 6: evento importante para o CRM (vira nota interna) e contexto com o tópico.
+  // Tópico abaixo de 6: evento interno (csu_eventos) para o percurso do aluno no admin.
   function sinalizarDificuldade(porTopico) {
     var fracos = (porTopico || []).filter(function (t) { return t.nota < 6; }).sort(function (a, b) { return a.nota - b.nota; });
     fracos.slice(0, 3).forEach(function (t) {
-      track('simulado_dificuldade', { topico: t.topico, nota: t.nota }, { importante: true });
+      track('simulado_dificuldade', { topico: t.topico, nota: t.nota });
     });
-    if (fracos.length) contexto({ modulo: 'Simulado · ' + fracos[0].topico });
   }
 
   function renderResultado(sim, res) {
@@ -341,7 +325,6 @@
         '<div class="sim-acoes"><button type="button" class="sim-btn" data-gerar-flash>Criar cartões dos tópicos novos</button></div>';
       return;
     }
-    marcaTopico({ topico: c.topico });
     caixa.innerHTML = '<h2>Flashcards</h2><p class="sim-progresso">Cartão ' + (estado.cardAtual + 1) + ' de ' + estado.cards.length + ' para hoje · ' + esc(c.topico) + '</p>' +
       '<div class="sim-flash"><div class="sim-flash-frente">' + esc(c.frente) + '</div>' +
       (mostrarVerso ? '<div class="sim-flash-verso" tabindex="-1" data-verso>' + esc(c.verso) + '</div>' : '') + '</div>' +
@@ -383,7 +366,6 @@
   function renderQuizQuestao() {
     var qz = estado.quiz;
     var q = qz.sim.questoes[qz.i];
-    marcaTopico(q);
     $('[data-quiz]').innerHTML = '<h2>Quiz relâmpago</h2><p class="sim-progresso">Pergunta ' + (qz.i + 1) + ' de ' + qz.sim.questoes.length + '</p>' +
       '<form data-quiz-form novalidate>' + questaoHtml(q, 'r') +
       '<div data-quiz-feedback role="status" aria-live="polite"></div>' +
@@ -442,10 +424,6 @@
     drop.addEventListener('drop', function (e) { enviar(e.dataTransfer.files && e.dataTransfer.files[0]); });
 
     $('[data-sim-form]').addEventListener('submit', corrigirSimulado);
-    $('[data-sim-form]').addEventListener('focusin', function (e) {
-      var fs = e.target.closest('[data-q]');
-      if (fs && estado.simulado) marcaTopico(estado.simulado.questoes[Number(fs.getAttribute('data-q'))]);
-    });
 
     document.addEventListener('submit', function (e) { if (e.target.matches('[data-quiz-form]')) conferirQuiz(e); });
     document.addEventListener('click', function (e) {

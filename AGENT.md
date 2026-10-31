@@ -13,7 +13,8 @@
 - Tela própria em `/simulado` (`public/simulado.html`, `js/simulado.js`, `css/simulado.css`) e módulo `server/simulado/`. O aluno envia PDF/DOCX/TXT, pede resumo, faz simulado (objetivas + discursivas, correção com feedback e nota por tópico), vê pontos a melhorar e revisa com flashcards e quiz relâmpago. Desenho, detecção de prova, limites e sugestões em `docs/simulado.md`.
 - Liga só para `SIMULADO_ATIVA_PARA` (RGM ou e-mail; `*` = todos; vazio = desligado) e, com `SIMULADO_SO_LOCAL` (padrão true), só em localhost. Fora disso, `/simulado`, `/api/simulado/*` e `/api/admin/simulado/*` dão 404 e o menu não ganha o link (`mostrarSimulado` em `app.js`, a partir de `simulado` em `/api/recursos`).
 - Prova do próprio aluno: heurística no texto + LLM; alta bloqueia (texto não é guardado), média pede confirmação e marca para revisão; cada detecção vira `simulado_deteccao_prova` em `csu_eventos`.
-- Adaptativo: domínio por tópico (média móvel), repetição espaçada (SM-2 simplificado) e mais questões dos tópicos fracos ou vencidos. CRM: contexto `Simulado · <tópico>` e evento importante `simulado_dificuldade` (tópico abaixo de 6).
+- Adaptativo: domínio por tópico (média móvel), repetição espaçada (SM-2 simplificado) e mais questões dos tópicos fracos ou vencidos.
+- Sem CRM (pedido do usuário): a tela do simulado não carrega o chat nem chama `Rastreio.contexto`/`track`/`setContext`; os eventos vão só para `csu_eventos` via `Rastreio.registrar`.
 - IA: `server/simulado/llm.js` com stub determinístico (padrão, sem chave) e Claude via `@anthropic-ai/sdk` quando houver `ANTHROPIC_API_KEY`.
 - `enviarIndex` passou a usar `sendFile('index.html', { root })`: mesmo arquivo, mas funciona em worktrees (o `send` recusa caminho absoluto com pasta oculta, como `.claude/`).
 
