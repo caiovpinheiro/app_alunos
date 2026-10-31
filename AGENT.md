@@ -7,7 +7,7 @@
 - Push em `main` dispara `.github/workflows/deploy.yml`: publica `ghcr.io/caiovpinheiro/app_alunos:latest` e chama o webhook do EasyPanel (`secrets.EASYPANEL_DEPLOY_APP`).
 - Não invente outro fluxo de deploy (n8n, branch de homologação, etc.) sem pedido explícito.
 
-### 2026-10-31 - Área de simulado e estudo adaptativo (SIMULADO_ATIVA_PARA, oculta, só local)
+### 2026-10-31 - Área de simulado e estudo adaptativo (SIMULADO_ATIVA_PARA, oculta)
 
 **Decisão**
 - Tela própria em `/simulado` (`public/simulado.html`, `js/simulado.js`, `css/simulado.css`) e módulo `server/simulado/`. O aluno envia PDF/DOCX/TXT, pede resumo, faz simulado (10 questões de múltipla escolha a–e, como as provas do aluno, sem dissertativas; correção com feedback e nota por tópico), vê pontos a melhorar e revisa com flashcards e quiz relâmpago. Desenho, detecção de prova, limites e sugestões em `docs/simulado.md`.
@@ -19,7 +19,7 @@
 - `enviarIndex` passou a usar `sendFile('index.html', { root })`: mesmo arquivo, mas funciona em worktrees (o `send` recusa caminho absoluto com pasta oculta, como `.claude/`).
 
 **Impacto**
-- Tabelas `csu_sim_*` criadas no primeiro uso (até agora só no banco local). Antes de produção: chave do provedor, `pdfjs-dist` em `dependencies`, retenção dos textos e `SIMULADO_SO_LOCAL=false`.
+- Na `main` desligada por padrão. Para o aluno de teste em produção: `SIMULADO_ATIVA_PARA=<aluno>` e `SIMULADO_SO_LOCAL=false` no EasyPanel (modo demonstração, sem IA). Tabelas `csu_sim_*` criadas no primeiro uso de um aluno liberado. `pdfjs-dist` está em `dependencies`. Antes de abrir para mais alunos: chave do provedor e retenção dos textos.
 
 ### 2026-10-31 - Grupo de estudo do curso com moderação por IA (GRUPO_ESTUDO_ATIVA_PARA, oculto)
 
