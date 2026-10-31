@@ -336,7 +336,16 @@ window.UI = (function () {
     document.getElementById('preview-frame').removeAttribute('src');
   }
 
+  // Telas que só existem para algumas contas (áreas atrás de flag): o módulo registra a tela depois de
+  // confirmar na API que ela está liberada. Sem o registro, o endereço cai no Início.
+  function registrarTela(id, path, titulo) {
+    if (SCREENS.indexOf(id) === -1) SCREENS.push(id);
+    PATHS[id] = path;
+    TITLES[id] = titulo;
+  }
+
   return {
+    registrarTela: registrarTela,
     showScreen: showScreen,
     screenFromPath: screenFromPath,
     takeReturnPath: takeReturnPath,

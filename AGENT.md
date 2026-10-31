@@ -7,6 +7,20 @@
 - Push em `main` dispara `.github/workflows/deploy.yml`: publica `ghcr.io/caiovpinheiro/app_alunos:latest` e chama o webhook do EasyPanel (`secrets.EASYPANEL_DEPLOY_APP`).
 - Não invente outro fluxo de deploy (n8n, branch de homologação, etc.) sem pedido explícito.
 
+### 2026-10-31 - Grupo de estudo do curso com moderação por IA (GRUPO_ESTUDO_ATIVA_PARA, oculto)
+
+**Decisão**
+- Um grupo por curso (`csu_alunos.curso` normalizado), tela `/grupo`, menu "Grupo" e fila no admin (Acompanhar › Grupos de estudo). Desenho, categorias, ações e sugestões em `docs/grupo-estudo.md`.
+- Toda mensagem é moderada antes de aparecer (`server/grupo-moderacao.js`): primeiro as regras regex (telefone, e-mail, @, link, venda ou pedido de gabarito, "faço seu TCC", pix), depois o classificador `stub` (padrão) ou `anthropic`. O resultado é publicada, bloqueada (o autor vê a explicação) ou retida (fila). Se o classificador falhar, a mensagem com sinal suspeito fica retida e a sem sinal é publicada, marcada para conferência.
+- Os colegas veem só "Maria S."; a API do grupo não devolve RGM, e-mail nem id. Denúncia pelo aluno: com 3 denúncias, a mensagem sai do ar e vai para a fila. Admin: publicar, remover, manter bloqueada, descartar denúncias e silenciar (24 h ou 7 dias). Tudo vai para `csu_eventos` (`grupo_moderacao`, `grupo_mensagem_moderada`) sem o texto.
+- Polling a cada 5 s com a tela aberta (cursor `?desde=`); SSE só quando o volume pedir.
+- Código isolado em `server/grupo-estudo.js` (`montar(app, deps)`), `public/js/grupo-estudo.js` (registra a tela com `UI.registrarTela` só se a API liberar) e `public/js/admin-grupos.js`. Sem CRM.
+
+**Impacto**
+- Desligado até `GRUPO_ESTUDO_ATIVA_PARA` existir (RGM ou e-mail; `*` = todos). Vazio: `/api/grupos/*` e `/api/admin/grupos/*` respondem 404 e nada aparece.
+- O classificador de IA precisa de `GRUPO_MODERACAO_PROVEDOR=anthropic`, `ANTHROPIC_API_KEY` e `npm i @anthropic-ai/sdk`; sem isso, roda o stub determinístico. Antes de `*`: dono da fila de moderação e política de privacidade (o texto vai para o provedor de IA).
+- Teste local: `node tools/seed-grupo-estudo.js` (2 alunos fictícios; recusa banco que não seja localhost) e `node tools/test-grupo-estudo.js --url http://localhost:PORTA`.
+
 ### 2026-10-28 - Pedido de ajuda no "Travei" e na dificuldade (AJUDA_ATIVA_PARA)
 
 **Decisão**

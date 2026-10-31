@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="/css/ds.css?v=1">
   <link rel="stylesheet" href="/css/ds-admin.css?v=1">
   <link rel="stylesheet" href="/css/ds-painel.css?v=6">
+  <link rel="stylesheet" href="/css/admin-grupos.css?v=1">
 </head>
 <body class="bg-slate-50">
   <section id="admin-login" class="min-h-screen flex items-center justify-center p-4">
@@ -57,6 +58,7 @@
           <button type="button" class="admin-tab" data-tab="acompanhamento">Quem contatar</button>
           <button type="button" class="admin-tab" data-tab="trilha">Aula Inaugural</button>
           <button type="button" class="admin-tab" data-tab="avaliacoes">Avaliações dos conteúdos</button>
+          <button type="button" class="admin-tab" data-tab="grupos" hidden>Grupos de estudo</button>
         </div>
         <div class="admin-nav-group">
           <p class="admin-nav-title">Alunos</p>
@@ -229,6 +231,8 @@
 
       <!-- Preenchido por admin-avaliacoes.js -->
       <div id="tab-avaliacoes" class="admin-panel hidden"></div>
+      <!-- Grupos de estudo: fila de moderação (admin-grupos.js). O botão do menu só aparece com GRUPO_ESTUDO_ATIVA_PARA. -->
+      <div id="tab-grupos" class="admin-panel hidden"></div>
 
       <div id="tab-config" class="admin-panel hidden">
         <div class="admin-panel-head">
@@ -387,6 +391,7 @@
   <script src="/js/admin-pedidos.js?v=1"></script>
   <script src="/js/admin-aula.js?v=2"></script>
   <script src="/js/admin-avaliacoes.js?v=2"></script>
+  <script src="/js/admin-grupos.js?v=1"></script>
   <script src="/js/admin-preparo.js?v=1" defer></script>
   <script src="/js/admin-alunos.js?v=2" defer></script>
 </body>

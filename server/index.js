@@ -1814,6 +1814,9 @@ const STUDENT_PAGES = [
 ];
 app.get(STUDENT_PAGES, enviarIndex);
 
+// Grupo de estudo do curso (GRUPO_ESTUDO_ATIVA_PARA): rotas próprias em server/grupo-estudo.js.
+require('./grupo-estudo').montar(app, { pool, authMiddleware, requireAdmin, ensureAcompanhamento, enviarIndex });
+
 app.use('/api', (req, res) => {
   res.status(404).json({ success: false, message: 'Recurso não encontrado.' });
 });

@@ -65,7 +65,7 @@
 
   // Navegação: cada aba tem endereço próprio (#trilha, #trilha/onde-trava, #config...),
   // então dá para mandar o link de uma tela e usar Voltar/Avançar do navegador.
-  var ABAS = ['painel', 'acompanhamento', 'trilha', 'avaliacoes', 'alunos', 'indicacoes', 'avisos', 'tutoriais', 'contatos', 'planos', 'config'];
+  var ABAS = ['painel', 'acompanhamento', 'trilha', 'avaliacoes', 'grupos', 'alunos', 'indicacoes', 'avisos', 'tutoriais', 'contatos', 'planos', 'config'];
   var SUBABAS = { trilha: ['resumo', 'onde-trava', 'por-aluno', 'uso'] };
   var abaAtual = null;
 
@@ -124,6 +124,7 @@
     if (name === 'painel' && window.AdminPainel) window.AdminPainel.load();
     if (name === 'acompanhamento' && window.AdminAcomp) window.AdminAcomp.load();
     if (name === 'acompanhamento' && window.AdminPedidos) { window.AdminPedidos.load(); window.AdminPedidos.abrirDoEndereco(); }
+    if (name === 'grupos' && window.AdminGrupos) window.AdminGrupos.load();
     if (name === 'avisos') loadAvisos();
     if (name === 'tutoriais') loadTuts();
     if (name === 'contatos') loadContatos();
