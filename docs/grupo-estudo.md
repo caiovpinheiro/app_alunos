@@ -176,8 +176,11 @@ Por que não SSE ou WebSocket agora:
 
 ## 8. Riscos e pendências
 
-- **Chave do LLM:** não há chave de LLM no `.env`. O MVP roda com o `stub`. Falta decidir o provedor e
-  a chave (Anthropic pronto no código, faltando `npm i @anthropic-ai/sdk` e a chave no Environment).
+- **Classificador (decidido em 2026-10-31):** fica o `stub` durante o piloto oculto. O adaptador
+  Anthropic continua pronto no código e liga com `GRUPO_MODERACAO_PROVEDOR=anthropic`,
+  `ANTHROPIC_API_KEY` e `npm i @anthropic-ai/sdk`. Rever antes de abrir para mais alunos: o stub só
+  reconhece listas de palavras, então ironia, ofensa indireta e fraude com outras palavras passam ou
+  ficam retidas.
 - **Falso positivo em "prova"/"trabalho":** "alguém tem dica para a prova?" deve passar. As regras só
   bloqueiam a combinação de verbo de comércio ou oferta com termo de avaliação; o resto vai para o
   classificador.
