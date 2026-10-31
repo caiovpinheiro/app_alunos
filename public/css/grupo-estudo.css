@@ -289,3 +289,15 @@ body.ge-on { overflow: hidden; }
 .ge-entrada-txt { flex: 1; min-width: 0; display: grid; gap: 2px; }
 .ge-entrada-txt b { font-size: 17px; line-height: 1.3; color: var(--ds-navy); font-weight: 800; }
 .ge-entrada-txt span { font-size: 15px; line-height: 1.4; color: var(--ds-muted); }
+
+/* ---------- Campos: o ds.css põe borda, cantos e anel de foco com !important em todo input/textarea do
+   #app; aqui a moldura é a da pílula (.ge-campo / .ge-busca), então o campo de dentro fica sem nada.
+   Seletor por id para vencer a especificidade dos :not() do ds.css. ---------- */
+#app #ge-texto, #app #ge-texto:hover, #app #ge-texto:focus {
+  border: 0 !important; border-radius: 0 !important; box-shadow: none !important; outline: none !important; background: transparent !important; font-size: 17px !important;
+}
+#app #ge-busca { border: 1.5px solid transparent !important; border-radius: 99px !important; background: var(--ds-surface-2) !important; box-shadow: none !important; font-size: 16px !important; }
+#app #ge-busca:hover { border-color: var(--ds-line-2) !important; }
+#app #ge-busca:focus { border-color: var(--ds-blue) !important; background: #fff !important; box-shadow: 0 0 0 3px rgba(20, 82, 184, .15) !important; }
+#app #ge-legenda, #ge-legenda { border: 1.5px solid var(--ds-line-2) !important; border-radius: 24px !important; background: var(--ds-surface-2) !important; box-shadow: none !important; }
+#app #ge-legenda:focus, #ge-legenda:focus { border-color: var(--ds-blue) !important; background: #fff !important; box-shadow: 0 0 0 3px rgba(20, 82, 184, .15) !important; outline: none; }
