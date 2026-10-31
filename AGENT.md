@@ -10,7 +10,7 @@
 ### 2026-10-31 - Área de simulado e estudo adaptativo (SIMULADO_ATIVA_PARA, oculta, só local)
 
 **Decisão**
-- Tela própria em `/simulado` (`public/simulado.html`, `js/simulado.js`, `css/simulado.css`) e módulo `server/simulado/`. O aluno envia PDF/DOCX/TXT, pede resumo, faz simulado (objetivas + discursivas, correção com feedback e nota por tópico), vê pontos a melhorar e revisa com flashcards e quiz relâmpago. Desenho, detecção de prova, limites e sugestões em `docs/simulado.md`.
+- Tela própria em `/simulado` (`public/simulado.html`, `js/simulado.js`, `css/simulado.css`) e módulo `server/simulado/`. O aluno envia PDF/DOCX/TXT, pede resumo, faz simulado (10 questões de múltipla escolha a–e, como as provas do aluno, sem dissertativas; correção com feedback e nota por tópico), vê pontos a melhorar e revisa com flashcards e quiz relâmpago. Desenho, detecção de prova, limites e sugestões em `docs/simulado.md`.
 - Liga só para `SIMULADO_ATIVA_PARA` (RGM ou e-mail; `*` = todos; vazio = desligado) e, com `SIMULADO_SO_LOCAL` (padrão true), só em localhost. Fora disso, `/simulado`, `/api/simulado/*` e `/api/admin/simulado/*` dão 404 e o menu não ganha o link (`mostrarSimulado` em `app.js`, a partir de `simulado` em `/api/recursos`).
 - Prova do próprio aluno: heurística no texto + LLM; alta bloqueia (texto não é guardado), média pede confirmação e marca para revisão; cada detecção vira `simulado_deteccao_prova` em `csu_eventos`.
 - Adaptativo: domínio por tópico (média móvel), repetição espaçada (SM-2 simplificado) e mais questões dos tópicos fracos ou vencidos.

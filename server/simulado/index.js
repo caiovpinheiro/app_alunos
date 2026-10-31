@@ -213,7 +213,7 @@ async function topicosDoAluno(pool, alunoId) {
 
 async function vocabularioDoAluno(pool, alunoId) {
   const r = await pool.query(`SELECT texto FROM csu_sim_documentos WHERE aluno_id = $1 AND status = 'ok' ORDER BY id DESC LIMIT 10`, [alunoId]);
-  return T.termos(r.rows.map((x) => x.texto || '').join('\n')).slice(0, 80).map((t) => t.termo);
+  return T.termos(r.rows.map((x) => T.limpo(x.texto || '')).join('\n')).slice(0, 80).map((t) => t.termo);
 }
 
 async function montarQuestoes(pool, alunoId, { objetivas, discursivas, soVencidos }) {
@@ -247,6 +247,25 @@ async function montarQuestoes(pool, alunoId, { objetivas, discursivas, soVencido
     qs.filter((q) => q && q.enunciado && (q.tipo === 'discursiva' || (Array.isArray(q.alternativas) && q.alternativas.length >= 2 && q.correta >= 0)))
       .slice(0, nObj + nDisc)
       .forEach((q) => questoes.push({ ...q, topico: t.nome, topico_id: t.id }));
+  }
+  // Algum tópico rendeu menos que a cota: completa com os outros, do mais fraco ao mais forte.
+  let falta = objetivas - questoes.filter((q) => q.tipo === 'objetiva').length;
+  for (const t of porPeso) {
+    if (falta <= 0) break;
+    const trechos = Array.isArray(t.trechos) ? t.trechos : [];
+    if (!trechos.length) continue;
+    let extra = [];
+    try {
+      extra = await llm.gerarQuestoes({ topico: t.nome, trechos, vocabulario: vocab, objetivas: falta + 2, discursivas: 0, semente: semente + ':extra' });
+    } catch (err) {
+      console.error('Simulado: falha ao completar questões:', err.message);
+    }
+    for (const q of extra) {
+      if (falta <= 0) break;
+      if (q.tipo !== 'objetiva' || questoes.some((x) => x.enunciado === q.enunciado && x.trecho === q.trecho)) continue;
+      questoes.push({ ...q, topico: t.nome, topico_id: t.id });
+      falta -= 1;
+    }
   }
   // Objetivas primeiro, discursivas no fim.
   questoes.sort((a, b) => (a.tipo === b.tipo ? 0 : a.tipo === 'objetiva' ? -1 : 1));
@@ -472,8 +491,9 @@ function criarRotas({ pool, getSessionAluno, requireAdmin, garantirEventos }) {
   // Novo simulado (ou quiz relâmpago: 5 objetivas dos tópicos vencidos/fracos, correção questão a questão).
   aluno.post('/simulados', rota(async (req, res) => {
     const relampago = req.body && req.body.tipo === 'relampago';
-    const objetivas = relampago ? 5 : Math.max(3, Math.min(20, Number(req.body && req.body.objetivas) || 8));
-    const discursivas = relampago ? 0 : Math.max(0, Math.min(5, Number(req.body && req.body.discursivas != null ? req.body.discursivas : 2)));
+    // As provas do aluno são só de alternativas (a–e): o simulado segue o mesmo formato, sem discursivas.
+    const objetivas = relampago ? 5 : Math.max(3, Math.min(20, Number(req.body && req.body.objetivas) || 10));
+    const discursivas = relampago ? 0 : Math.max(0, Math.min(5, Number(req.body && req.body.discursivas) || 0));
     const { questoes } = await montarQuestoes(pool, req.aluno.id, { objetivas, discursivas, soVencidos: relampago });
     if (!questoes.length) return erro(res, 409, 'Envie pelo menos um documento de estudo antes de pedir um simulado.');
     const r = await pool.query(
@@ -601,4 +621,4 @@ function criarRotas({ pool, getSessionAluno, requireAdmin, garantirEventos }) {
   return { aluno, admin };
 }
 
-module.exports = { criarRotas, liberadoPara, configurada, soLocal, hostLocal, ensureSchema };
+module.exports = { criarRotas, liberadoPara, configurada, soLocal, hostLocal, ensureSchema, processarDocumento };

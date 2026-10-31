@@ -10,6 +10,7 @@ aquela aquilo seu sua seus suas meu minha nosso nossa ele ela eles elas voce voc
 muita muitos muitas tambem ja ainda so apenas pode podem deve devem ha tem ter tinha sendo sido
 outro outra outros outras todo toda todos todas cada qualquer mesmo mesma onde assim entao porque pois
 lhe lhes nos vos me te num numa dum duma pelo pela tal tais seja sejam esta estao estava fazer feito faz
+algum alguma alguns algumas nenhum nenhuma varios varias diversos diversas certos certas grande grandes pequeno pequena
 the of and to in is for on with by an be this that from are`.split(/\s+/).filter(Boolean));
 
 function semAcento(s) {
@@ -36,16 +37,55 @@ function conteudo(s) {
   return palavras(s).filter((w) => w.length >= 4 && !STOP.has(normaliza(w)) && !/^\d+$/.test(w));
 }
 
+// Linhas que não são conteúdo: aviso de cookies e textos de site, crédito de figura, links, numeração de página.
+const RUIDO = /(cookies?|direitos autorais|este material pode ser|impresso por|uso pessoal e privado|[\w.+-]+@[\w-]+\.[\w.]+|e-?mail\s*:|pol[ií]tica de privacidade|passei ?direto|termos de uso|todos os direitos|baixe o app|fa[cç]a (o )?login|cadastre-se|denunciar|https?:\/\/|www\.|^\s*fonte\s*:|^\s*fig(ura)?\.?\s*\d|^\s*p[aá]g(ina)?\.?\s*\d+\s*$|^\s*\d+\s*$)/i;
+
+// Carimbo de data e hora que o navegador põe ao imprimir uma página em PDF ("31/10/2026, 11:44:02").
+const CARIMBO = /\s*\b\d{1,2}\/\d{1,2}\/\d{2,4},?\s+\d{1,2}:\d{2}(:\d{2})?\b\s*/g;
+
+// Linhas limpas: sem ruído e sem cabeçalho/rodapé repetido (linha curta que aparece 3+ vezes no documento).
+function linhasLimpas(texto) {
+  const linhas = String(texto || '').replace(/\r/g, '').split('\n').map((l) => l.replace(CARIMBO, ' ').trim());
+  const conta = new Map();
+  linhas.forEach((l) => { const k = normaliza(l.trim()); if (k && k.length < 80) conta.set(k, (conta.get(k) || 0) + 1); });
+  return linhas.filter((l) => {
+    const t = l.trim();
+    if (!t) return true; // mantém quebra de parágrafo
+    if (RUIDO.test(t)) return false;
+    return !(t.length < 80 && conta.get(normaliza(t)) >= 3);
+  });
+}
+
+// Junta as linhas que o PDF quebrou no meio da frase (linha longa sem ponto final, ou próxima começando
+// em minúscula). Título curto seguido de linha em maiúscula fica separado.
+function juntaLinhas(linhas) {
+  const out = [];
+  for (const bruta of linhas) {
+    const l = bruta.trim();
+    const ant = out.length ? out[out.length - 1] : null;
+    if (!l) { out.push(''); continue; }
+    const marcador = /^[•·▪●◦\-–]\s/;
+    if (ant && !marcador.test(l) && !marcador.test(ant) && !/[.!?:;]$/.test(ant) && (/^[a-zà-ÿ(,]/.test(l) || ant.length > 50)) {
+      out[out.length - 1] = /[a-zà-ÿ]-$/i.test(ant) && /^[a-zà-ÿ]/.test(l) ? ant.slice(0, -1) + l : `${ant} ${l}`;
+    } else out.push(l);
+  }
+  return out;
+}
+
+// Texto só com o conteúdo (base para vocabulário, termos e resumo).
+function limpo(texto) {
+  return juntaLinhas(linhasLimpas(texto)).join('\n');
+}
+
 function frases(texto) {
-  return String(texto || '')
-    .replace(/\r/g, '')
+  return juntaLinhas(linhasLimpas(texto)).join('\n')
     .replace(/([.!?;])\s+/g, '$1\n')
     .split(/\n+/)
     .map((f) => f.replace(/\s+/g, ' ').trim()
       // tira numeração de questão/alternativa e pontuação: "3) (1,0 ponto) ..."
       .replace(/^(\(?\d{1,2}\s*[).\-–]|\(?[a-e]\s*\))\s*/i, '')
       .replace(/^\(\s*\d+([.,]\d+)?\s*(pontos?|pts?)\s*\)\s*/i, ''))
-    .filter((f) => f.length >= 40 && f.length <= 420 && !/\?$/.test(f) && conteudo(f).length >= 4);
+    .filter((f) => f.length >= 40 && f.length <= 420 && !/\?$/.test(f) && /[.!;)"”]$/.test(f) && !/[•·▪●◦]/.test(f) && !RUIDO.test(f) && conteudo(f).length >= 4);
 }
 
 // Frequência de termos (por raiz), guardando a forma mais comum de cada raiz para exibir.
@@ -104,4 +144,4 @@ function capitaliza(s) {
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
-module.exports = { pareceVerbo, semAcento, normaliza, raiz, palavras, conteudo, frases, termos, hash, embaralha, capitaliza, STOP };
+module.exports = { limpo, linhasLimpas, juntaLinhas, pareceVerbo, semAcento, normaliza, raiz, palavras, conteudo, frases, termos, hash, embaralha, capitaliza, STOP };

@@ -3,8 +3,9 @@
 // Provedor de LLM da área de simulado. Interface única, dois provedores:
 //
 //   stub       determinístico, sem rede. Resume por frequência de termos, extrai tópicos por título
-//              ou termo frequente, gera questões de lacuna e discursivas a partir das frases do
-//              próprio documento e corrige discursivas por conceitos-chave. É o padrão sem chave.
+//              ou termo frequente, gera questões de múltipla escolha (a–e: lacuna e "assinale a correta")
+//              a partir das frases do próprio documento. Ainda sabe gerar e corrigir discursivas (por
+//              conceitos-chave), mas o simulado não pede mais: as provas do aluno são só de alternativas.
 //   anthropic  Claude via SDK oficial (@anthropic-ai/sdk), saída em JSON com schema. Liga com
 //              ANTHROPIC_API_KEY no .env e o pacote instalado (npm i @anthropic-ai/sdk).
 //
@@ -27,6 +28,39 @@ function ehTitulo(l) {
   return letras.length >= 4 && letras === letras.toUpperCase() && T.palavras(s).length <= 8; // "CICLO DE KREBS"
 }
 
+// Itens de sumário que não são conteúdo para estudar.
+const SUMARIO_FORA = /^(introdu[cç][aã]o|s[ií]ntese|conclus[aã]o|refer[eê]ncias|material complementar|bibliografia|apresenta[cç][aã]o|orienta[cç][oõ]es)/i;
+
+function topicosPeloSumario(linhas) {
+  const limite = Math.max(40, Math.floor(linhas.length * 0.25));
+  const grupos = [];
+  let atual = null;
+  linhas.slice(0, limite).forEach((l, i) => {
+    const m = l.trim().match(/^[•·▪●◦]\s*(.{3,70})$/);
+    if (m && !/[.;?]$/.test(m[1])) {
+      if (!atual || i - atual.fim > 2) { atual = { itens: [], fim: i }; grupos.push(atual); }
+      atual.itens.push(m[1].trim());
+      atual.fim = i;
+    }
+  });
+  const g = grupos.find((x) => x.itens.length >= 3);
+  if (!g) return [];
+  const chave = (s) => T.normaliza(s).replace(/[^a-z0-9]+/g, ' ').trim();
+  const inicios = [];
+  g.itens.forEach((nome) => {
+    const k = chave(nome);
+    const idx = linhas.findIndex((l, i) => i > g.fim && chave(l) === k);
+    if (idx > 0) inicios.push({ nome, idx });
+  });
+  inicios.sort((a, b) => a.idx - b.idx);
+  return inicios
+    .map((s, i) => ({ nome: limpaTitulo(s.nome), corpo: linhas.slice(s.idx + 1, i + 1 < inicios.length ? inicios[i + 1].idx : undefined) }))
+    .filter((s) => !SUMARIO_FORA.test(s.nome))
+    .map((s) => ({ nome: s.nome, trechos: T.frases(s.corpo.join('\n')).slice(0, 15) }))
+    .filter((s) => s.trechos.length >= 3)
+    .slice(0, 8);
+}
+
 function limpaTitulo(s) {
   const t = s.trim().replace(/^(\d+(\.\d+)*[.)]?|[IVX]+[.)])\s+/, '');
   return T.capitaliza(t === t.toUpperCase() ? t.toLowerCase() : t).slice(0, 60);
@@ -44,7 +78,7 @@ const stub = {
 
   async resumir(texto) {
     const fs = T.frases(texto);
-    const top = T.termos(texto).slice(0, 25);
+    const top = T.termos(T.limpo(texto)).slice(0, 25);
     const peso = new Map(top.map((t, i) => [t.raiz, 25 - i]));
     const pont = fs.map((f, i) => {
       const rs = new Set(T.conteudo(f).map(T.raiz));
@@ -61,7 +95,13 @@ const stub = {
   },
 
   async extrairTopicos(texto) {
-    const linhas = String(texto).split('\n');
+    const linhas = T.linhasLimpas(texto);
+    // 1) Sumário em tópicos no início (formato do Material Teórico: "• Princípios de Sustentabilidade"):
+    //    cada item vira um tópico, do ponto onde o título reaparece no texto até o próximo.
+    const porSumario = topicosPeloSumario(linhas);
+    if (porSumario.length >= 2) {
+      return porSumario.map((t) => ({ ...t, habilidades: [`Reconhecer os conceitos de ${t.nome.toLowerCase()}`, `Explicar ${t.nome.toLowerCase()} com suas palavras`] }));
+    }
     const secoes = [];
     let atual = null;
     for (const l of linhas) {
@@ -79,7 +119,7 @@ const stub = {
       const fs = T.frases(texto);
       const usados = new Set();
       topicos = [];
-      for (const t of T.termos(texto)) {
+      for (const t of T.termos(T.limpo(texto))) {
         if (topicos.length >= 6) break;
         const trechos = fs.filter((f) => !usados.has(f) && T.conteudo(f).some((w) => T.raiz(w) === t.raiz));
         if (trechos.length < 2) continue;
@@ -108,8 +148,8 @@ const stub = {
       const plural = /s$/i.test(alvo);
       const pool = vocab.filter((v) => !rf.has(T.raiz(v)) && T.raiz(v) !== T.raiz(alvo));
       const mesmo = pool.filter((v) => /s$/i.test(v) === plural);
-      const distr = T.embaralha(mesmo.length >= 3 ? mesmo : pool, semente + f).slice(0, 3);
-      if (distr.length < 3) continue;
+      const distr = T.embaralha(mesmo.length >= 4 ? mesmo : pool, semente + f).slice(0, 4);
+      if (distr.length < 4) continue; // 5 alternativas (a–e), como nas provas
       const certo = alvo.toLowerCase();
       if (out.some((q) => q.tipo === 'objetiva' && q.alternativas[q.correta] === certo)) continue; // mesma resposta duas vezes
       const alternativas = T.embaralha([certo, ...distr.map((d) => d.toLowerCase())], semente + alvo);
@@ -122,6 +162,39 @@ const stub = {
         explicacao: `No seu material: “${f}”`,
         trecho: f,
       });
+    }
+    // Metade das objetivas no formato de prova "Assinale a alternativa correta": uma frase do material
+    // e quatro frases do material com um termo-chave trocado (ficam falsas).
+    const nAssinale = Math.floor(objetivas / 2);
+    const usadas = new Set(out.map((q) => q.trecho));
+    const alterar = (f, seed) => {
+      const ws = T.conteudo(f).filter((w) => w.length >= 5 && vocab.some((v) => T.raiz(v) === T.raiz(w)));
+      if (!ws.length) return null;
+      const w = ws.sort((a, b) => b.length - a.length || a.localeCompare(b))[0];
+      const rf = new Set(T.conteudo(f).map(T.raiz));
+      const troca = T.embaralha(vocab.filter((v) => !rf.has(T.raiz(v)) && /s$/i.test(v) === /s$/i.test(w)), seed)[0];
+      return troca ? f.replace(new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`), troca.toLowerCase()) : null;
+    };
+    let feitas = 0;
+    for (const f of fs) {
+      if (feitas >= nAssinale) break;
+      if (usadas.has(f)) continue;
+      const falsas = fs.filter((g) => g !== f).map((g, k) => alterar(g, semente + f + k)).filter(Boolean).slice(0, 4);
+      if (falsas.length < 4) break;
+      const alternativas = T.embaralha([f, ...falsas], semente + 'a' + f);
+      out.push({
+        tipo: 'objetiva',
+        enunciado: `Sobre ${topico.toLowerCase()}, assinale a alternativa correta de acordo com o seu material.`,
+        alternativas,
+        correta: alternativas.indexOf(f),
+        explicacao: `Correta: “${f}”. As outras trocam um termo do texto.`,
+        trecho: f,
+      });
+      usadas.add(f);
+      feitas += 1;
+      // abre espaço: a cota de objetivas é a mesma, então tira uma lacuna se já passou do total
+      const objs = out.filter((q) => q.tipo === 'objetiva');
+      if (objs.length > objetivas) out.splice(out.indexOf(objs.find((q) => q.enunciado.startsWith('Complete'))), 1);
     }
     for (let i = 0; i < discursivas && fs.length; i += 1) {
       const base = fs.slice(i * 2, i * 2 + 2);
@@ -260,8 +333,9 @@ function criarAnthropic(mod) {
 
     async gerarQuestoes({ topico, trechos, objetivas, discursivas }) {
       const r = await json(
-        `Crie ${objetivas} questões objetivas (4 alternativas, uma correta) e ${discursivas} discursivas sobre o tópico `
-        + `"${topico}", usando apenas os trechos abaixo. Nas objetivas: correta é o índice (0 a 3) e explicacao cita o trecho. `
+        `Crie ${objetivas} questões de múltipla escolha no estilo de prova de faculdade (5 alternativas, a–e, uma correta; `
+        + `varie entre "assinale a correta", "assinale a incorreta" e aplicação do conceito) e ${discursivas} discursivas sobre o tópico `
+        + `"${topico}", usando apenas os trechos abaixo. Nas objetivas: correta é o índice (0 a 4) e explicacao cita o trecho. `
         + 'Nas discursivas: esperado é a resposta modelo e palavras_chave são 3 a 6 conceitos que a resposta deve ter. '
         + 'Para objetivas use esperado "" e palavras_chave []; para discursivas use alternativas [] e correta -1.\n\n'
         + trechos.map((t, i) => `[${i + 1}] ${t}`).join('\n'),

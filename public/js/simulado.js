@@ -192,7 +192,7 @@
 
   // ---------------- simulado ----------------
   function questaoHtml(q, nome) {
-    var cab = '<legend><span class="sim-q-topico">' + esc(q.topico) + ' · ' + (q.tipo === 'objetiva' ? 'objetiva' : 'discursiva') + '</span>' + (q.indice + 1) + '. ' + esc(q.enunciado) + '</legend>';
+    var cab = '<legend><span class="sim-q-topico">' + esc(q.topico) + ' · ' + (q.tipo === 'objetiva' ? 'múltipla escolha' : 'discursiva') + '</span>' + (q.indice + 1) + '. ' + esc(q.enunciado) + '</legend>';
     if (q.tipo === 'objetiva') {
       return '<fieldset class="sim-questao" data-q="' + q.indice + '">' + cab + q.alternativas.map(function (a, i) {
         return '<label class="sim-alt"><input type="radio" name="' + nome + q.indice + '" value="' + i + '"><span><strong>' + letra(i) + ')</strong> ' + esc(a) + '</span></label>';
@@ -211,7 +211,7 @@
       track('simulado_gerado', { questoes: r.simulado.questoes.length });
       status.innerHTML = '';
       var form = $('[data-sim-form]');
-      form.innerHTML = '<h2>Simulado</h2><p class="sim-muted">Responda com calma. Questões em branco contam como erro.</p>' +
+      form.innerHTML = '<h2>Simulado</h2><p class="sim-muted">Marque uma alternativa em cada questão. Questões em branco contam como erro.</p>' +
         r.simulado.questoes.map(function (q) { return questaoHtml(q, 's'); }).join('') +
         '<div class="sim-acoes"><button type="submit" class="sim-btn sim-btn-principal">Corrigir simulado</button></div>';
       form.hidden = false;

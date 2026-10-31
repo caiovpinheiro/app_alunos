@@ -9,8 +9,10 @@ Status: **oculta, em validação local.** Liga só para as contas de `SIMULADO_A
 1. **Envia documentos** (PDF, DOCX, TXT; imagem só com um provedor de IA com visão) em *Documentos*.
    O portal extrai o texto, verifica se é uma prova (ver abaixo) e tira os tópicos de estudo.
 2. **Pede um resumo** de cada documento: resumo, pontos principais, termos-chave, tópicos e habilidades.
-3. **Faz um simulado**: 8 objetivas + 2 discursivas montadas a partir dos documentos, com correção,
-   feedback por questão (com o trecho do material de referência) e nota por tópico.
+3. **Faz um simulado**: 10 questões de múltipla escolha (a–e), no formato das provas do aluno (que são só de
+   alternativas), montadas a partir dos documentos, com correção, feedback por questão (com o trecho do material de
+   referência) e nota por tópico. Não há dissertativas no simulado (o código ainda sabe gerar e corrigir, se um dia o
+   curso tiver provas discursivas: `discursivas` no corpo de `POST /api/simulado/simulados`).
 4. **Vê os pontos a melhorar**: domínio estimado por tópico, recomendação, próxima revisão e "o que reler"
    (trechos das questões que errou).
 5. **Revisa com flashcards** (repetição espaçada) e **quiz relâmpago** (5 objetivas dos tópicos fracos
@@ -55,7 +57,7 @@ Flag desligada, fora de localhost ou aluno fora da lista: 404. Com a flag ligada
 | `POST /api/simulado/documentos/:id/confirmar` | `{ material_estudo: true \| false }` para confiança média |
 | `DELETE /api/simulado/documentos/:id` | apaga documento, tópicos e flashcards dele |
 | `POST /api/simulado/documentos/:id/resumo` | resumo (guardado; `{ refazer: true }` refaz) |
-| `POST /api/simulado/simulados` | `{ tipo: 'simulado' \| 'relampago', objetivas?, discursivas? }` |
+| `POST /api/simulado/simulados` | `{ tipo: 'simulado' \| 'relampago', objetivas? (padrão 10), discursivas? (padrão 0) }` |
 | `POST /api/simulado/simulados/:id/conferir` | quiz relâmpago: confere uma questão |
 | `POST /api/simulado/simulados/:id/corrigir` | corrige, grava nota e atualiza o desempenho por tópico |
 | `GET /api/simulado/painel` | pontos a melhorar, todos os tópicos, o que reler |
@@ -68,8 +70,8 @@ Flag desligada, fora de localhost ou aluno fora da lista: 404. Com a flag ligada
 - **Repetição espaçada** (SM-2 simplificado): nota abaixo de 60% volta em 1 dia; acima, 1 → 3 → intervalo × fator.
   Flashcard com "Errei" volta em 10 minutos.
 - **Peso no próximo simulado**: `(1 − domínio) × 2 + 0,2`, mais 1 se a revisão venceu; tópico nunca avaliado = 1,5.
-  As questões são repartidas pelo peso (maiores restos), e as discursivas vão para os tópicos de maior peso.
-  No teste local, depois de tirar 0 em Divisão celular, o simulado seguinte trouxe 6 de 10 questões desse tópico.
+  As questões são repartidas pelo peso (maiores restos); se um tópico não rende questões suficientes, os outros completam,
+  do mais fraco ao mais forte. No teste local, depois de tirar 0 em Divisão celular, o simulado seguinte trouxe 6 de 10 questões desse tópico.
 - **Recomendação**: abaixo de 40%, reler o resumo, revisar flashcards e fazer o quiz; abaixo de 70%, flashcards e quiz até a
   próxima revisão; acima, só revisar quando vencer.
 - Tópicos de mesmo nome em documentos diferentes são **unidos** (o histórico continua um só).
@@ -144,9 +146,14 @@ e pediu confirmação; a lista de exercícios de apoio (nome em branco, alternat
 
 ## Provedor de IA
 
-- **Sem chave (hoje)**: stub determinístico. Resumo extrativo (frases com mais termos frequentes), tópicos pelos títulos do documento
-  (ou pelos termos mais frequentes), objetivas de lacuna com distratores do próprio vocabulário, discursivas corrigidas por conceitos-chave
-  (70% dos conceitos = nota cheia). Funciona para validar o fluxo; a qualidade pedagógica é limitada.
+- **Sem chave (hoje)**: stub determinístico. Antes de tudo limpa o texto: tira cabeçalho e rodapé repetidos, carimbo de data da
+  impressão, marca d'água e avisos de site ("Impresso por…", cookies, direitos autorais), créditos de figura, links e e-mails, e junta as
+  linhas que o PDF quebrou no meio da frase. Resumo extrativo (frases com mais termos frequentes). Tópicos pelo **sumário** em tópicos do
+  Material Teórico ("• Princípios de Sustentabilidade"; Introdução e Síntese ficam de fora), senão pelos títulos numerados ou em maiúsculas,
+  senão pelos termos mais frequentes e questões de múltipla escolha com 5 alternativas em dois formatos: lacuna (o termo certo e 4
+  distratores do próprio vocabulário) e "assinale a alternativa correta" (uma frase do material e 4 frases com um termo trocado).
+  Funciona para validar o fluxo; a qualidade pedagógica é limitada (às vezes um distrator é de outra classe de palavra ou fácil demais).
+  Com o Claude, as questões variam entre "assinale a correta", "assinale a incorreta" e aplicação do conceito.
 - **Anthropic (Claude)**: `npm install @anthropic-ai/sdk` e `ANTHROPIC_API_KEY` no `.env` (opcionalmente `SIMULADO_LLM=anthropic`
   e `SIMULADO_LLM_MODELO`, padrão `claude-opus-5-5`). Saída em JSON com schema, fallback automático em recusa, esforço baixo para
   classificar e corrigir, médio para resumir e gerar questões. Liga também a leitura de imagens.
