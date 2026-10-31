@@ -43,7 +43,10 @@ server/simulado/
 
 Tudo com `aluno_id` e `ON DELETE CASCADE`. Cada consulta filtra pelo aluno da sessão; outro aluno recebe 404.
 
-### API (todas exigem sessão de aluno liberado; senão 404)
+### API (todas exigem sessão de aluno liberado)
+
+Flag desligada, fora de localhost ou aluno fora da lista: 404. Com a flag ligada, sessão vencida ou ausente: 401
+("Sua sessão expirou"), e a tela leva ao login.
 
 | Método e rota | O que faz |
 | --- | --- |

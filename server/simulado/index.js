@@ -337,14 +337,16 @@ function criarRotas({ pool, getSessionAluno, requireAdmin, garantirEventos }) {
   };
   const naoEncontrado = (res) => res.status(404).json({ success: false, message: 'Recurso não encontrado.' });
 
-  // Portão: flag + localhost + sessão válida de aluno liberado. Qualquer falha = 404.
+  // Portão: flag + localhost + aluno liberado; senão 404. Sessão inválida (com a flag ligada) = 401.
   aluno.use(async (req, res, next) => {
     if (!configurada() || (soLocal() && !hostLocal(req)) || !pool) return naoEncontrado(res);
     const header = req.headers.authorization || '';
     const token = header.startsWith('Bearer ') ? header.slice(7) : null;
     try {
       const a = token ? await getSessionAluno(pool, token) : null;
-      if (!a || !liberadoPara(a, req)) return naoEncontrado(res);
+      // Com a flag ligada, sessão vencida ou apagada diz isso (401) em vez de um 404 confuso no meio do uso.
+      if (!a) return erro(res, 401, 'Sua sessão expirou. Entre de novo para continuar.', { sessao_expirada: true });
+      if (!liberadoPara(a, req)) return naoEncontrado(res);
       req.aluno = a;
       await schema();
       return next();

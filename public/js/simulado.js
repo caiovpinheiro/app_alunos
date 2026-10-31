@@ -36,12 +36,18 @@
     return fetch('/api/simulado' + caminho, opts).then(function (res) {
       return res.json().catch(function () { return {}; }).then(function (body) {
         if (res.status === 404 && caminho === '/estado') { sair(); throw new Error('indisponível'); }
+        if (res.status === 401) { sessaoExpirada(); throw new Error(body.message || 'Sua sessão expirou. Entre de novo para continuar.'); }
         if (!res.ok) { var e = new Error(body.message || 'Algo deu errado. Tente de novo.'); e.status = res.status; e.body = body; throw e; }
         return body;
       });
     }, function () { throw new Error('Sem conexão com o servidor. Confira sua internet.'); });
   }
   function sair() { window.location.replace('/inicio'); }
+  // Sessão vencida: mostra a mensagem e leva ao login (de lá o aluno volta pelo menu).
+  function sessaoExpirada() {
+    try { window.Auth.clear(); } catch (e) { /* segue para o login */ }
+    setTimeout(function () { window.location.replace('/login'); }, 2500);
+  }
 
   // ---------------- rastreio (só servidor; nada vai para o CRM) ----------------
   function rastreio(cfg) {
