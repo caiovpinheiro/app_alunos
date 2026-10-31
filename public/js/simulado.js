@@ -499,6 +499,24 @@
     });
   }
 
+  // Grupo de estudo (GRUPO_ESTUDO_ATIVA_PARA): o Início põe "Grupo" no menu pelo grupo-estudo.js, que esta
+  // página não carrega. Mesma regra: o link só aparece se GET /api/grupos/meu responder 200.
+  function linkGrupo() {
+    var nav = document.querySelector('.portal-nav');
+    if (!nav || nav.querySelector('[data-grupo-nav]')) return;
+    fetch('/api/grupos/meu', { headers: { Authorization: 'Bearer ' + (window.Auth.getToken() || '') } })
+      .then(function (res) {
+        if (!res.ok || nav.querySelector('[data-grupo-nav]')) return;
+        var a = document.createElement('a');
+        a.href = '/grupo';
+        a.setAttribute('data-grupo-nav', '');
+        a.textContent = 'Grupo';
+        a.title = 'Grupo de estudo do seu curso';
+        nav.appendChild(a);
+      })
+      .catch(function () { /* sem grupo: o menu fica como está */ });
+  }
+
   // ---------------- início ----------------
   function iniciar() {
     if (!window.Auth || !window.Auth.isAuthenticated()) { window.location.replace('/login'); return; }
@@ -510,6 +528,7 @@
         $('#app').hidden = false;
         ligar();
         rastreio(r);
+        linkGrupo();
       });
     }).catch(function (e) {
       if (e && e.status === 401) window.location.replace('/login'); else if (e && e.message !== 'indisponível') sair();
