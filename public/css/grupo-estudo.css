@@ -301,3 +301,36 @@ body.ge-on { overflow: hidden; }
 #app #ge-busca:focus { border-color: var(--ds-blue) !important; background: #fff !important; box-shadow: 0 0 0 3px rgba(20, 82, 184, .15) !important; }
 #app #ge-legenda, #ge-legenda { border: 1.5px solid var(--ds-line-2) !important; border-radius: 24px !important; background: var(--ds-surface-2) !important; box-shadow: none !important; }
 #app #ge-legenda:focus, #ge-legenda:focus { border-color: var(--ds-blue) !important; background: #fff !important; box-shadow: 0 0 0 3px rgba(20, 82, 184, .15) !important; outline: none; }
+
+/* ---------- Aceite das regras (primeira entrada e a cada versão nova do termo) ---------- */
+.ge-termo { flex: 1; min-width: 0; overflow-y: auto; overscroll-behavior: contain; background: var(--ds-bg); }
+.ge-termo-in { max-width: 640px; margin: 0 auto; padding: 24px 18px calc(28px + env(safe-area-inset-bottom)); }
+.ge-termo-in > .ge-intro-ico { display: grid; }
+#app .ge-termo h1 { margin: 4px 0 8px; font-size: clamp(1.5rem, 5vw, 1.9rem); line-height: 1.2; font-weight: 800; color: var(--ds-navy); letter-spacing: -.015em; }
+.ge-termo-lede { margin: 0 0 18px; font-size: 17px; line-height: 1.5; color: var(--ds-muted); max-width: 52ch; }
+.ge-termo-lista { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.ge-termo-lista li { display: flex; gap: 14px; align-items: flex-start; padding: 14px 16px; border-radius: var(--ds-r-lg); background: #fff; border: 1px solid var(--ds-line); }
+.ge-termo-ico { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--ds-navy); color: var(--ds-star); }
+#app .ge-termo-ico svg { width: 20px; height: 20px; }
+.ge-termo-lista p { margin: 0; font-size: 16px; line-height: 1.5; color: var(--ds-ink); }
+.ge-termo-lista .ge-termo-tit { font-weight: 800; color: var(--ds-navy); margin-bottom: 2px; }
+.ge-termo-lei { display: flex; gap: 6px; align-items: flex-start; margin-top: 6px !important; font-size: 13px !important; line-height: 1.45 !important; color: var(--ds-muted) !important; }
+#app .ge-termo-lei svg { width: 14px; height: 14px; margin-top: 2px; color: var(--ds-faint); }
+.ge-termo-completo { margin-top: 14px; border-radius: var(--ds-r-lg); background: #fff; border: 1px solid var(--ds-line); }
+.ge-termo-completo summary { display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 0 16px; cursor: pointer; font-weight: 800; color: var(--ds-blue); list-style: none; }
+.ge-termo-completo summary::-webkit-details-marker { display: none; }
+.ge-termo-completo[open] summary { border-bottom: 1px solid var(--ds-line); }
+#app .ge-termo-completo summary svg { width: 18px; height: 18px; }
+.ge-termo-completo .ge-termo-texto { padding: 4px 16px 14px; }
+.ge-termo-texto h3 { margin: 14px 0 6px; font-size: 16px; font-weight: 800; color: var(--ds-navy); }
+.ge-termo-texto ul { margin: 0; padding-left: 1.15rem; list-style: disc; }
+.ge-termo-texto li { margin: 6px 0; font-size: 15px; line-height: 1.55; color: var(--ds-ink); max-width: 70ch; }
+.ge-termo-form { margin-top: 18px; display: grid; gap: 4px; }
+.ge-termo-check { background: #fff; min-height: 60px; padding: 12px 14px; align-items: flex-start; line-height: 1.45; }
+.ge-termo-check input { margin-top: 2px; }
+.ge-termo-form .ge-erro { margin: 6px 2px 0; }
+.ge-termo-depois { justify-self: center; display: inline-flex; align-items: center; min-height: 44px; margin-top: 6px; padding: 0 12px; color: var(--ds-muted); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.ge-termo-versao { margin: 14px 0 0; text-align: center; font-size: 13px; color: var(--ds-faint); }
+.ge-link--regras { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 0; padding: 0; }
+#app .ge-link--regras svg { width: 16px; height: 16px; }
+.ge-sheet .ge-termo-texto { margin-top: 6px; }

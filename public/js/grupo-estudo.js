@@ -53,6 +53,7 @@ window.GrupoEstudo = (function () {
     if (!res.ok) {
       var err = new Error((dados && dados.message) || 'Falha na comunicação com o servidor.');
       err.status = res.status;
+      err.codigo = dados && dados.codigo;
       throw err;
     }
     return dados;
@@ -75,6 +76,7 @@ window.GrupoEstudo = (function () {
   function quando(iso) {
     return dia(iso) === 'Hoje' ? 'hoje às ' + hora(iso) : new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' às ' + hora(iso);
   }
+  function pessoas(n) { return n + (n === 1 ? ' pessoa' : ' pessoas'); }
   function mmss(s) { s = Math.max(0, Math.round(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
 
   // Cor do avatar: sempre a mesma para o mesmo nome (4 tons da marca).
@@ -167,6 +169,78 @@ window.GrupoEstudo = (function () {
     if (sec) sec.setAttribute('data-modo', m);
   }
 
+  // ---------- Aceite das regras (termo versionado, server/grupo-termo.js) ----------
+  function secoesHtml(t) {
+    return t.secoes.map(function (sec) {
+      return '<h3>' + esc(sec.titulo) + '</h3><ul>' + sec.itens.map(function (i) { return '<li>' + esc(i) + '</li>'; }).join('') + '</ul>';
+    }).join('');
+  }
+  function dataVersao(v) { return String(v || '').split('-').reverse().join('/'); }
+
+  function renderTermo() {
+    var root = $('ge-root');
+    var d = estado.dados;
+    var t = d.termo;
+    root.innerHTML =
+      '<div class="ge-termo"><div class="ge-termo-in">' +
+        '<span class="ge-intro-ico">' + icone('users') + '</span>' +
+        '<h1>Antes de entrar no grupo de ' + esc(d.grupo.nome) + '</h1>' +
+        '<p class="ge-termo-lede">Aqui você estuda com a sua turma e conversa com colegas do curso. Para participar, leia e aceite as regras: elas protegem você e seguem a lei.</p>' +
+        '<ul class="ge-termo-lista">' + t.resumo.map(function (r) {
+          return '<li><span class="ge-termo-ico">' + icone(r.icone) + '</span><div>' +
+            '<p class="ge-termo-tit">' + esc(r.titulo) + '</p>' +
+            '<p>' + esc(r.texto) + '</p>' +
+            '<p class="ge-termo-lei">' + icone('landmark') + '<span>' + esc(r.lei) + '</span></p></div></li>';
+        }).join('') + '</ul>' +
+        '<details class="ge-termo-completo"><summary>' + icone('file-text') + '<span>Ler o termo completo</span></summary>' +
+          '<div class="ge-termo-texto">' + secoesHtml(t) + '</div></details>' +
+        '<form class="ge-termo-form" id="ge-termo-form" novalidate>' +
+          '<label class="ge-opcao ge-opcao--check ge-termo-check"><input type="checkbox" id="ge-termo-li">' +
+            '<span>Li e aceito as regras do grupo e o uso dos meus dados descrito acima.</span></label>' +
+          '<p class="ge-erro" id="ge-termo-erro" role="alert" hidden></p>' +
+          '<button type="submit" class="ge-sheet-ok" id="ge-termo-ok">Aceitar e entrar no grupo</button>' +
+          '<a href="/inicio" class="ge-termo-depois" data-go="dashboard-page">Agora não</a>' +
+        '</form>' +
+        '<p class="ge-termo-versao">Versão de ' + esc(dataVersao(t.versao)) + '</p>' +
+      '</div></div>';
+    icones();
+    $('ge-root').scrollTop = 0;
+  }
+
+  async function aceitarTermo(ev) {
+    ev.preventDefault();
+    var li = $('ge-termo-li');
+    var err = $('ge-termo-erro');
+    var ok = $('ge-termo-ok');
+    err.hidden = true;
+    if (!li.checked) { err.textContent = 'Marque que leu e aceita as regras para entrar.'; err.hidden = false; li.focus(); return; }
+    ok.disabled = true;
+    try {
+      await api('/api/grupos/termo/aceite', { method: 'POST', body: { versao: estado.dados.termo.versao, li: true } });
+      abrir();
+    } catch (e) {
+      ok.disabled = false;
+      err.textContent = e.message;
+      err.hidden = false;
+      if (e.status === 409) abrir(); // versão nova: mostra o texto atualizado
+    }
+  }
+
+  function abrirTermoCompleto() {
+    var sheet = $('ge-sheet');
+    var t = estado.dados && estado.dados.termo;
+    if (!sheet || !t) return;
+    sheet.setAttribute('aria-labelledby', 'ge-sheet-tit');
+    sheet.innerHTML = '<div class="ge-sheet-in">' +
+      '<div class="ge-sheet-topo"><h2 id="ge-sheet-tit">' + esc(t.titulo) + '</h2>' +
+        '<button type="button" class="ge-sheet-x" data-ge-fechar aria-label="Fechar">' + icone('x') + '</button></div>' +
+      '<div class="ge-termo-texto">' + secoesHtml(t) + '</div>' +
+      '<p class="ge-termo-versao">Versão de ' + esc(dataVersao(t.versao)) + ', aceita por você.</p>' +
+      '<button type="button" class="ge-sheet-ok" data-ge-fechar>Voltar à conversa</button></div>';
+    icones();
+    mostrarDialogo(sheet);
+  }
+
   // ---------- Estrutura: lista + conversa ----------
   function renderEstrutura() {
     var root = $('ge-root');
@@ -207,7 +281,7 @@ window.GrupoEstudo = (function () {
     var ativo = estado.atual && ((c.grupo && estado.atual.tipo === 'grupo') || (!c.grupo && estado.atual.ref === c.ref));
     var u = c.ultima;
     var quem = u ? (u.minha ? 'Você: ' : (c.grupo ? u.autor + ': ' : '')) : '';
-    var prev = u ? quem + previaTexto(u) : (c.grupo ? 'Grupo do curso · ' + c.membros + ' pessoas' : 'Toque para conversar');
+    var prev = u ? quem + previaTexto(u) : (c.grupo ? 'Grupo do curso · ' + pessoas(c.membros) : 'Toque para conversar');
     var midiaIco = u && u.midia ? icone(u.midia === 'imagem' ? 'image' : 'mic') : '';
     return '<button type="button" class="ge-item' + (ativo ? ' is-ativo' : '') + (c.nao_lidas ? ' tem-novas' : '') + '"' +
         (c.grupo ? ' data-ge-abrir="grupo"' : ' data-ge-abrir="' + esc(c.ref) + '" data-ge-nome="' + esc(c.nome) + '"') +
@@ -246,6 +320,7 @@ window.GrupoEstudo = (function () {
       if (JSON.stringify(r) !== antes) renderLista();
     } catch (err) {
       if (err.status === 404 || err.status === 401) desmontar();
+      if (err.codigo === 'aceite_pendente') abrir();
     }
   }
 
@@ -298,7 +373,7 @@ window.GrupoEstudo = (function () {
         (grupo ? '<span class="ge-bar-ico">' + icone('users') + '</span>' : avatar(a.nome, ' ge-av--bar')) +
         '<div class="ge-bar-txt">' +
           '<h2>' + esc(grupo ? 'Grupo de ' + d.grupo.nome : a.nome) + '</h2>' +
-          '<p>' + (grupo ? (estado.lista ? estado.lista.grupo.membros : d.grupo.membros) + ' pessoas · moderado' : 'Conversa privada · moderada') + '</p>' +
+          '<p>' + (grupo ? pessoas(estado.lista ? estado.lista.grupo.membros : d.grupo.membros) + ' · moderado' : 'Conversa privada · moderada') + '</p>' +
         '</div>' +
         '<button type="button" class="ge-bar-btn" id="ge-regras-btn" aria-expanded="false" aria-controls="ge-regras">' + icone('shield-check') + '<span class="ge-bar-btn-txt">Regras</span></button>' +
         (grupo ? '' : '<button type="button" class="ge-bar-btn ge-bar-btn--ico" data-ge-bloquear="' + (a.bloqueado ? '0' : '1') + '" aria-label="' + (a.bloqueado ? 'Desbloquear ' : 'Bloquear ') + esc(a.nome) + '">' + icone('ban') + '</button>') +
@@ -306,6 +381,7 @@ window.GrupoEstudo = (function () {
       '<div class="ge-regras" id="ge-regras" hidden>' +
         '<ul>' + d.regras.map(function (r) { return '<li>' + esc(r) + '</li>'; }).join('') + '</ul>' +
         '<p class="ge-regras-aviso">' + esc(d.aviso) + '</p>' +
+        '<button type="button" class="ge-link ge-link--regras" data-ge-termo>' + icone('file-text') + '<span>Ler o termo completo</span></button>' +
       '</div>' +
       '<div class="ge-feed" id="ge-feed" role="log" aria-live="polite" aria-label="Mensagens"><p class="ge-carregando">Carregando a conversa…</p></div>' +
       rodape;
@@ -493,6 +569,7 @@ window.GrupoEstudo = (function () {
       if (mudou || primeira) carregarLista();
     } catch (err) {
       if (err.status === 401) { desmontar(); return; }
+      if (err.codigo === 'aceite_pendente') { abrir(); return; }
       if (err.status === 404 && estado.atual && estado.atual.tipo === 'grupo') { desmontar(); return; }
       var feed = $('ge-feed');
       if (feed && !Object.keys(estado.msgs).length) feed.innerHTML = '<p class="ge-erro ge-erro--feed">' + esc(err.message) + '</p>';
@@ -523,6 +600,9 @@ window.GrupoEstudo = (function () {
     estado.atual = null;
     estado.msgs = {};
     estado.cursor = null;
+    modo('lista');
+    document.body.classList.remove('ge-conversa');
+    if (estado.dados.grupo && estado.dados.aceite_pendente) { parar(); renderTermo(); return; }
     renderEstrutura();
     if (!estado.dados.grupo) return;
     modo('lista');
@@ -894,7 +974,10 @@ window.GrupoEstudo = (function () {
       verificar();
     };
 
-    document.addEventListener('submit', function (e) { if (e.target && e.target.id === 'ge-form') enviarTexto(e); });
+    document.addEventListener('submit', function (e) {
+      if (e.target && e.target.id === 'ge-form') enviarTexto(e);
+      if (e.target && e.target.id === 'ge-termo-form') aceitarTermo(e);
+    });
     document.addEventListener('input', function (e) {
       if (!e.target) return;
       if (e.target.id === 'ge-texto') ajustarCampo();
@@ -920,6 +1003,7 @@ window.GrupoEstudo = (function () {
       if ((b = t.closest('[data-ge-mais]'))) { abrirDenuncia(b.getAttribute('data-ge-mais')); return; }
       if ((b = t.closest('[data-ge-foto]'))) { abrirVisor(b.getAttribute('data-ge-foto')); return; }
       if ((b = t.closest('[data-ge-bloquear]'))) { bloquear(b.getAttribute('data-ge-bloquear') === '1'); return; }
+      if (t.closest('[data-ge-termo]')) { abrirTermoCompleto(); return; }
       if (t.closest('[data-ge-fechar]')) { fecharSheet(); return; }
       if (t.closest('[data-ge-fechar-visor]')) { fecharDialogo($('ge-visor')); return; }
       var sheet = $('ge-sheet');

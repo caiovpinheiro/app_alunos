@@ -56,6 +56,51 @@ disciplinas de `csu_materias_alunos`.
 - Com o Anthropic ligado, o texto da mensagem vai para a API, **sem nome, RGM nem curso**. Isso precisa
   entrar na política de privacidade antes de abrir para todos.
 
+### 2.1 Aceite das regras (termo versionado)
+
+- **Na primeira entrada**, antes de ver qualquer conversa, o aluno vê "Antes de entrar no grupo": seis
+  regras em linguagem simples, cada uma com a **base legal**, mais o termo completo expansível. Ele marca
+  "Li e aceito as regras do grupo e o uso dos meus dados descrito acima" e toca em "Aceitar e entrar no
+  grupo". "Agora não" volta ao Início.
+- **Texto** em `server/grupo-termo.js`, num arquivo à parte para o jurídico revisar. Seções:
+  1. o que é o grupo;
+  2. regras de convivência;
+  3. como funciona a moderação;
+  4. seus dados (LGPD);
+  5. mudanças no termo.
+- **Bases citadas:**
+
+  | Tema | Lei |
+  |---|---|
+  | Honra (calúnia, difamação, injúria) | Código Penal, arts. 138 a 140 |
+  | Intimidação sistemática, inclusive virtual | Código Penal, art. 146-A (Lei 14.811/2024) |
+  | Ameaça e perseguição | Código Penal, arts. 147 e 147-A |
+  | Divulgação de nudez sem consentimento | Código Penal, art. 218-C |
+  | Fraude em exames previstos em lei (ex.: ENADE) | Código Penal, art. 311-A |
+  | Racismo e injúria racial | Lei 7.716/1989; STF, ADO 26 (homotransfobia) |
+  | Dados pessoais | LGPD (Lei 13.709/2018), arts. 6º, 7º I e IX, 9º, 15 e 18 |
+  | Ordem judicial, guarda de registros e informação ao usuário | Marco Civil da Internet (Lei 12.965/2014), arts. 7º, 10 e 15 |
+  | Direito de imagem | Código Civil, art. 20 |
+  | Direitos autorais | Lei 9.610/1998 |
+  | Intimidade e vida privada | Constituição Federal, art. 5º, X |
+
+- **Versão:** `VERSAO` em `server/grupo-termo.js` (hoje `2026-10-31`). Trocou a versão, todo aluno aceita
+  de novo antes de voltar a usar o grupo.
+- **Registro:** tabela `csu_grupo_aceites` (aluno, versão, data e hora) e evento `grupo_aceite` em
+  `csu_eventos`.
+- **No servidor:** sem aceite da versão atual, todas as rotas de `/api/grupos/*` respondem
+  `403 aceite_pendente`, exceto `/meu` e o próprio aceite. Quem não aceitou **não aparece na lista dos
+  colegas** e não pode receber mensagem privada.
+- **Depois do aceite:** o termo completo fica em Regras › "Ler o termo completo", em toda conversa.
+- **Pendências para o jurídico:**
+  - revisar o texto e as bases legais;
+  - confirmar a base legal da LGPD (consentimento para participar, legítimo interesse para moderar);
+  - confirmar se o portal precisa guardar registros de acesso por 6 meses (Marco Civil, art. 15) e onde
+    eles ficam (proxy/EasyPanel), já que o grupo não grava IP;
+  - definir a regra para alunos menores de 18 anos (LGPD, art. 14);
+  - incluir um botão "Sair do grupo / revogar consentimento". Hoje a revogação é pelo atendimento, e o
+    servidor já respeita a remoção do aceite no pedido seguinte.
+
 ## 3. Moderação antes da publicação
 
 Toda mensagem passa por este caminho **antes** de aparecer para os outros:
@@ -238,4 +283,4 @@ Por que não SSE ou WebSocket agora:
   `/data/grupo-midia` no EasyPanel). A limpeza de 7 dias segura o tamanho; a estimativa é de cerca de
   300 KB por foto e 250 KB por minuto de áudio.
 - **LGPD:** citar o grupo e o envio do texto ao provedor de IA na política de privacidade antes de `*`.
-- **Termo de uso do grupo:** aceite na primeira entrada ("Li as regras"). Sugestão para antes de produção.
+- **Termo de uso:** feito (§2.1), mas ainda é **rascunho**. O jurídico precisa revisar antes de produção.

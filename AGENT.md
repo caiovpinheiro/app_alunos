@@ -19,6 +19,11 @@
   - **Lista e conversa:** à esquerda, o grupo do curso e os colegas, cada um identificado por `ref` aleatória e não pelo id. Conversa privada 1:1 só entre colegas do mesmo curso, moderada como o grupo; 1 denúncia já a retém, e o aluno pode bloquear o colega. No celular, a lista vem primeiro e a conversa ocupa a tela, com voltar; a tela do grupo é `position: fixed`.
   - **Mídia:** emojis, foto (regravada em WebP sem EXIF/GPS) e áudio de até 2 min. Com o stub, toda foto e todo áudio vão para a equipe. Os arquivos ficam em `GRUPO_MIDIA_DIR` e são apagados após `GRUPO_MIDIA_DIAS` (padrão 7), com aviso na tela.
   - **Moderação mais dura:** palavrão e xingamento são bloqueados direto pela regra, sem ir para a fila. Também são bloqueados CPF, RG, RGM, senha, endereço, nascimento, telefone ou e-mail por extenso e perfil de rede social.
+- **Aceite das regras** (2026-10-31):
+  - Na primeira entrada, e a cada `VERSAO` nova de `server/grupo-termo.js`, o aluno vê seis regras com a base legal (CP, Lei 7.716, LGPD, Marco Civil, CC art. 20, Lei 9.610) e o termo completo, e aceita marcando "li e aceito".
+  - Fica gravado em `csu_grupo_aceites` e no evento `grupo_aceite`.
+  - Sem aceite, `/api/grupos/*` responde `403 aceite_pendente`, e o aluno não aparece para os colegas.
+  - O texto é rascunho e precisa de revisão do jurídico.
 - Código isolado em `server/grupo-estudo.js` (`montar(app, deps)`), `public/js/grupo-estudo.js` (registra a tela com `UI.registrarTela` só se a API liberar) e `public/js/admin-grupos.js`. Sem CRM.
 
 **Impacto**

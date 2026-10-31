@@ -18,6 +18,7 @@ const path = require('node:path');
 const sharp = require('sharp');
 const db = require('../server/db');
 const grupo = require('../server/grupo-estudo');
+const { VERSAO } = require('../server/grupo-termo');
 
 const LOCAIS = new Set(['localhost', '127.0.0.1', '::1']);
 const URL_BASE = (() => { const i = process.argv.indexOf('--url'); return i >= 0 ? process.argv[i + 1] : `http://localhost:${process.env.PORT || 3000}`; })();
@@ -89,6 +90,25 @@ async function main() {
       console.log(`Esperando ${espera} s (limite de mensagens por minuto de um teste anterior)…`);
       await new Promise((r) => setTimeout(r, espera * 1000));
     }
+
+    // ----- Aceite das regras -----
+    for (const t of [tBruna, tCarlos]) await chamar(t, 'POST', '/api/grupos/termo/aceite', { versao: VERSAO, li: true });
+    await pool.query('DELETE FROM csu_grupo_aceites WHERE aluno_id = $1', [teste.id]);
+    const semAceite = await chamar(tTeste, 'GET', '/api/grupos/meu');
+    confere(semAceite.status === 200 && semAceite.body.aceite_pendente === true && semAceite.body.termo && semAceite.body.termo.resumo.length >= 5,
+      'sem aceite: /meu avisa aceite_pendente e traz o termo', semAceite.body && semAceite.body.termo && `versão ${semAceite.body.termo.versao}`);
+    confere(semAceite.body.termo.resumo.every((r) => r.lei && r.lei.length > 10), 'cada regra do resumo traz a base legal');
+    const bloqueadoSemAceite = await chamar(tTeste, 'GET', '/api/grupos/meu/conversas');
+    confere(bloqueadoSemAceite.status === 403 && bloqueadoSemAceite.body.codigo === 'aceite_pendente', 'sem aceite: conversas → 403 aceite_pendente');
+    confere((await chamar(tTeste, 'POST', '/api/grupos/meu/mensagens', { texto: 'oi' })).status === 403, 'sem aceite: não envia mensagem');
+    const listaSemTeste = (await chamar(tBruna, 'GET', '/api/grupos/meu/conversas')).body.colegas;
+    confere(!listaSemTeste.some((c) => c.nome === 'Aluno T.'), 'quem não aceitou não aparece na lista dos colegas');
+    confere((await chamar(tTeste, 'POST', '/api/grupos/termo/aceite', { versao: VERSAO })).status === 400, 'aceite sem marcar "li" → 400');
+    confere((await chamar(tTeste, 'POST', '/api/grupos/termo/aceite', { versao: '2000-01-01', li: true })).status === 409, 'aceite de versão antiga → 409');
+    confere((await chamar(tTeste, 'POST', '/api/grupos/termo/aceite', { versao: VERSAO, li: true })).status === 200, 'aceite da versão atual → 200');
+    confere((await chamar(tTeste, 'GET', '/api/grupos/meu')).body.aceite_pendente === false, 'depois do aceite, aceite_pendente = false');
+    const evAceite = await pool.query("SELECT count(*)::int AS n FROM csu_eventos WHERE aluno_id = $1 AND nome = 'grupo_aceite' AND dados->>'versao' = $2", [teste.id, VERSAO]);
+    confere(evAceite.rows[0].n >= 1, 'aceite registrado em csu_eventos com a versão');
 
     // ----- Visibilidade -----
     const meu = await chamar(tTeste, 'GET', '/api/grupos/meu');

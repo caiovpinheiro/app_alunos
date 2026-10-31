@@ -20,6 +20,7 @@ const path = require('node:path');
 const express = require('express');
 const { envValue } = require('./env');
 const moderacao = require('./grupo-moderacao');
+const grupoTermo = require('./grupo-termo');
 
 const MAX_TEXTO = 500;
 const MAX_POR_MINUTO = 6;
@@ -155,6 +156,13 @@ async function ensureSchema(pool) {
     CREATE INDEX IF NOT EXISTS idx_csu_grupo_msg_fila ON csu_grupo_mensagens (status, revisar, criado_em);
     CREATE INDEX IF NOT EXISTS idx_csu_grupo_msg_conversa ON csu_grupo_mensagens (conversa_id, id DESC) WHERE conversa_id IS NOT NULL;
     CREATE INDEX IF NOT EXISTS idx_csu_grupo_msg_midia ON csu_grupo_mensagens (midia_expira_em) WHERE midia_arquivo IS NOT NULL;
+
+    CREATE TABLE IF NOT EXISTS csu_grupo_aceites (
+      aluno_id INTEGER NOT NULL REFERENCES csu_alunos(id) ON DELETE CASCADE,
+      versao TEXT NOT NULL,
+      aceito_em TIMESTAMPTZ NOT NULL DEFAULT now(),
+      PRIMARY KEY (aluno_id, versao)
+    );
 
     CREATE TABLE IF NOT EXISTS csu_grupo_denuncias (
       id SERIAL PRIMARY KEY,
@@ -354,8 +362,9 @@ async function conversas(pool, g, alunoId) {
     ),
     pool.query(
       `SELECT mem.ref, mem.aluno_id, a.nome FROM csu_grupo_membros mem JOIN csu_alunos a ON a.id = mem.aluno_id
-       WHERE mem.grupo_id = $1 AND mem.aluno_id <> $2 AND a.ativo`,
-      [g.id, alunoId],
+       WHERE mem.grupo_id = $1 AND mem.aluno_id <> $2 AND a.ativo
+         AND EXISTS (SELECT 1 FROM csu_grupo_aceites ac WHERE ac.aluno_id = mem.aluno_id AND ac.versao = $3)`,
+      [g.id, alunoId, grupoTermo.VERSAO],
     ),
     pool.query(
       `SELECT c.id, CASE WHEN c.aluno_a = $2 THEN c.aluno_b ELSE c.aluno_a END AS outro, c.ultima_em,
@@ -421,6 +430,13 @@ function montar(app, deps) {
   }
   const naoEncontrado = (res) => res.status(404).json({ success: false, message: 'Recurso não encontrado.' });
 
+  // Aceite das regras (server/grupo-termo.js): sem aceite da versão atual, só /meu e o próprio aceite respondem.
+  // Sem cache em memória: se o aceite for revogado (LGPD, art. 18), vale no pedido seguinte.
+  async function aceitou(alunoId) {
+    const r = await pool.query('SELECT 1 FROM csu_grupo_aceites WHERE aluno_id = $1 AND versao = $2', [alunoId, grupoTermo.VERSAO]);
+    return r.rowCount > 0;
+  }
+
   // Endereço da tela (a SPA decide o que mostrar; a API é que libera ou não).
   app.get('/grupo', enviarIndex);
 
@@ -428,6 +444,34 @@ function montar(app, deps) {
   app.use('/api/grupos', (req, res, next) => (ligado() ? next() : naoEncontrado(res)), authMiddleware, (req, res, next) => {
     if (!pool) return res.status(503).json({ success: false, message: 'Serviço de dados indisponível.' });
     return liberadoPara(req.aluno) ? next() : naoEncontrado(res);
+  }, async (req, res, next) => {
+    if ((req.method === 'GET' && req.path === '/meu') || (req.method === 'POST' && req.path === '/termo/aceite')) return next();
+    try {
+      await ensure();
+      if (await aceitou(req.aluno.id)) return next();
+      return res.status(403).json({ success: false, codigo: 'aceite_pendente', message: 'Aceite as regras do grupo para continuar.' });
+    } catch (err) {
+      console.error('Grupo de estudo: falha ao conferir o aceite:', err.message);
+      return res.status(500).json({ success: false, message: 'Não foi possível abrir o grupo agora.' });
+    }
+  });
+
+  app.post('/api/grupos/termo/aceite', async (req, res) => {
+    const versao = String((req.body && req.body.versao) || '');
+    if (versao !== grupoTermo.VERSAO) return res.status(409).json({ success: false, message: 'As regras foram atualizadas. Leia a versão nova para aceitar.' });
+    if (!(req.body && req.body.li === true)) return res.status(400).json({ success: false, message: 'Marque que leu e aceita as regras.' });
+    try {
+      await ensure();
+      const ins = await pool.query(
+        'INSERT INTO csu_grupo_aceites (aluno_id, versao) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING aceito_em',
+        [req.aluno.id, versao],
+      );
+      if (ins.rowCount) await evento(pool, req.aluno.id, 'grupo_aceite', { versao });
+      return res.json({ success: true, versao });
+    } catch (err) {
+      console.error('Grupo de estudo: falha ao gravar o aceite:', err.message);
+      return res.status(500).json({ success: false, message: 'Não foi possível registrar o aceite agora.' });
+    }
   });
 
   // Resolve o canal: 'meu' = grupo do curso; senão, a ref de um colega do mesmo grupo (conversa privada).
@@ -436,8 +480,10 @@ function montar(app, deps) {
     if (!g) return { erro: 409, message: 'Seu curso ainda não chegou ao portal, então ainda não há grupo para você.' };
     if (!req.params.ref) return { g, canal: { grupoId: g.id, conversaId: null } };
     const col = (await pool.query(
-      'SELECT aluno_id FROM csu_grupo_membros WHERE grupo_id = $1 AND ref = $2 AND aluno_id <> $3',
-      [g.id, String(req.params.ref), req.aluno.id],
+      `SELECT mem.aluno_id FROM csu_grupo_membros mem
+       WHERE mem.grupo_id = $1 AND mem.ref = $2 AND mem.aluno_id <> $3
+         AND EXISTS (SELECT 1 FROM csu_grupo_aceites ac WHERE ac.aluno_id = mem.aluno_id AND ac.versao = $4)`,
+      [g.id, String(req.params.ref), req.aluno.id, grupoTermo.VERSAO],
     )).rows[0];
     if (!col) return { erro: 404, message: 'Colega não encontrado.' };
     const a = Math.min(req.aluno.id, col.aluno_id);
@@ -469,9 +515,15 @@ function montar(app, deps) {
       await ensure();
       const g = await grupoDoAluno(pool, req.aluno.id);
       if (!g) return res.json({ success: true, grupo: null, motivo: 'sem_curso', regras: REGRAS, aviso: aviso() });
-      const n = await pool.query('SELECT count(*)::int AS n FROM csu_grupo_membros WHERE grupo_id = $1', [g.id]);
+      const n = await pool.query(
+        `SELECT count(*)::int AS n FROM csu_grupo_membros mem
+         WHERE mem.grupo_id = $1 AND EXISTS (SELECT 1 FROM csu_grupo_aceites ac WHERE ac.aluno_id = mem.aluno_id AND ac.versao = $2)`,
+        [g.id, grupoTermo.VERSAO],
+      );
       return res.json({
         success: true,
+        termo: grupoTermo.termo(midiaDias()),
+        aceite_pendente: !(await aceitou(req.aluno.id)),
         grupo: { nome: g.nome, membros: n.rows[0].n },
         eu: { nome: g.eu, silenciado_ate: silenciadoAte(g) },
         regras: REGRAS,
