@@ -289,6 +289,7 @@
       document.body.classList.toggle('acesso-preparo', !!(r && r.preparo));
       carregarWebchat(r && r.webchat);
       if (window.Dificuldade) window.Dificuldade.configurar(!!(r && r.ajuda));
+      mostrarSimulado(!!(r && r.simulado));
       if (r && (r.webchat || r.rastreio) && window.Rastreio) {
         window.Rastreio.iniciar({ chat: r.webchat, servidor: !!r.rastreio });
         rastreiaTela(window.UI.screenFromPath(window.location.pathname));
@@ -303,6 +304,22 @@
       if (window.Tutoriais) window.Tutoriais.refresh();
       if (on && window.Central && window.UI.screenFromPath(window.location.pathname) === 'tutoriais-page') window.Central.refresh();
     }).catch(function () { /* sem a informação, fica tudo como antes (trilha escondida) */ });
+  }
+
+  // Área de simulado (oculta, SIMULADO_ATIVA_PARA): o link no menu só existe para quem o servidor liberou.
+  function mostrarSimulado(on) {
+    document.querySelectorAll('.portal-nav').forEach(function (nav) {
+      var link = nav.querySelector('[data-simulado-link]');
+      if (on && !link) {
+        link = document.createElement('a');
+        link.href = '/simulado';
+        link.setAttribute('data-simulado-link', '');
+        link.textContent = 'Simulado';
+        nav.appendChild(link);
+      } else if (!on && link) {
+        link.remove();
+      }
+    });
   }
 
   // Chat do CRM: só entra na página para quem o servidor liberou (WEBCHAT_LIBERADO_PARA).
@@ -339,6 +356,7 @@
       return;
     }
     document.body.classList.remove('trilha-on', 'acesso-preparo');
+    mostrarSimulado(false);
     recursosCarregados = false;
     if (window.Avisos) window.Avisos.closeDropdown();
     releaseCurrentPdf();

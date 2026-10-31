@@ -28,6 +28,7 @@ const ajudaPedidos = require('./ajuda-pedidos');
 const avaliacoes = require('./avaliacoes');
 const preparo = require('./preparo');
 const dadosAcesso = require('./dadosAcesso');
+const simulado = require('./simulado');
 const app = express();
 app.set('trust proxy', 1);
 const PORT = Number(process.env.PORT) || 80;
@@ -119,6 +120,8 @@ app.post('/api/admin/sync-from-matriculados', async (req, res) => {
   }
 });
 
+// Área de simulado (oculta): respostas discursivas passam de 20 KB; o upload usa corpo bruto na rota.
+app.use('/api/simulado', express.json({ limit: '300kb' }));
 app.use(express.json({ limit: '20kb' }));
 
 app.get('/health', async (req, res) => {
@@ -647,9 +650,16 @@ app.get('/api/recursos', authMiddleware, async (req, res) => {
     webchat: chat,
     rastreio: acompanhamento.liberadoPara(req.aluno),
     ajuda: ajudaPedidos.liberadoPara(req.aluno),
+    simulado: simulado.liberadoPara(req.aluno, req),
     preparo: !req.aluno.rgm,
   });
 });
+
+// ---------- Área de simulado (oculta), SIMULADO_ATIVA_PARA ----------
+// Sem a flag (ou fora de localhost, com SIMULADO_SO_LOCAL ligado), tudo aqui responde 404.
+const simuladoRotas = simulado.criarRotas({ pool, getSessionAluno: db.getSessionAluno, requireAdmin, garantirEventos: () => ensureAcompanhamento() });
+app.use('/api/simulado', simuladoRotas.aluno);
+app.use('/api/admin/simulado', simuladoRotas.admin);
 
 // ---------- Pedido de ajuda (Travei / dificuldade), AJUDA_ATIVA_PARA ----------
 let ajudaSchemaReady = null;
@@ -1794,9 +1804,17 @@ const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 const ANTIGO_DIR = path.join(__dirname, '..', 'public-antigo');
 function enviarIndex(req, res) {
   res.set({ 'Cache-Control': 'no-cache', Vary: 'Cookie' });
-  res.sendFile(path.join(versao.verNova(req) ? PUBLIC_DIR : ANTIGO_DIR, 'index.html'));
+  // root (e não caminho absoluto): o send recusa caminhos com pasta oculta, como .claude/worktrees/...
+  res.sendFile('index.html', { root: versao.verNova(req) ? PUBLIC_DIR : ANTIGO_DIR });
 }
 app.get(['/', '/index.html'], enviarIndex);
+// Tela do simulado: só existe com a flag ligada (e em localhost, com SIMULADO_SO_LOCAL). Quem não está
+// na lista recebe a página, mas as APIs respondem 404 e a tela volta para o início.
+app.get(['/simulado', '/simulado.html'], (req, res, next) => {
+  if (!simulado.configurada() || (simulado.soLocal() && !simulado.hostLocal(req))) return res.status(404).send('Não encontrado');
+  res.set('Cache-Control', 'no-cache');
+  return res.sendFile('simulado.html', { root: PUBLIC_DIR });
+});
 app.use('/antigo', express.static(ANTIGO_DIR, { index: false }));
 app.use(express.static(PUBLIC_DIR));
 

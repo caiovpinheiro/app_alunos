@@ -1,0 +1,106 @@
+/* Área de simulado (oculta). Usa os tokens de ds.css. Página sem Tailwind: base mínima aqui. */
+html,body{margin:0}
+.sim *,.sim *::before,.sim *::after{box-sizing:border-box}
+.sim img{max-width:100%}
+.sim{min-height:100vh;background:var(--ds-bg);color:var(--ds-ink)}
+.sim[hidden]{display:none}
+.sim-head{display:flex;align-items:center}
+.sim-head .portal-brand img{height:36px;width:auto}
+.sim-main{padding-block:28px 64px;max-width:960px}
+.sim-intro h1{font-size:clamp(28px,4vw,36px);font-weight:800;margin:4px 0 8px;color:var(--ds-navy)}
+.sim-lead{color:var(--ds-muted);font-size:17px;max-width:62ch;margin:0}
+.sim-tag{display:inline-block;margin:0;padding:2px 10px;border-radius:999px;background:var(--ds-warn-bg);border:1px solid var(--ds-warn-line);color:var(--ds-warn-fg);font-size:13px;font-weight:700}
+.sim-aviso{margin:14px 0 0;padding:10px 14px;border-radius:var(--ds-r-md);background:var(--ds-blue-soft);border:1px solid var(--ds-blue-line);font-size:15px}
+
+.sim-tabs{display:flex;gap:4px;margin:24px 0 16px;border-bottom:1px solid var(--ds-line);overflow-x:auto;scrollbar-width:none}
+.sim-tabs::-webkit-scrollbar{display:none}
+.sim-tabs button{flex:none;min-height:48px;padding:0 14px;border:0;background:none;font:inherit;font-weight:700;font-size:16px;color:var(--ds-muted);cursor:pointer;position:relative}
+.sim-tabs button[aria-selected="true"]{color:var(--ds-navy)}
+.sim-tabs button[aria-selected="true"]::after{content:"";position:absolute;left:14px;right:14px;bottom:-1px;height:3px;border-radius:3px 3px 0 0;background:var(--ds-star)}
+.sim-tabs button:focus-visible{outline:none;box-shadow:var(--ds-focus);border-radius:var(--ds-r-sm)}
+
+.sim-painel{display:grid;gap:16px}
+.sim-painel[hidden]{display:none}
+.sim-card{background:var(--ds-surface);border:1px solid var(--ds-line);border-radius:var(--ds-r-lg);padding:20px}
+.sim-card[hidden]{display:none}
+.sim-card:focus{outline:none}
+.sim-card h2{font-size:20px;font-weight:800;margin:0 0 6px;color:var(--ds-navy)}
+.sim-card h3{font-size:17px;font-weight:800;margin:16px 0 6px}
+.sim-muted{color:var(--ds-muted);margin:0 0 12px}
+.sim-pequeno{font-size:14px;margin-top:10px}
+.sim-vazio{color:var(--ds-faint);margin:4px 0 0}
+
+.sim-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:0 18px;border-radius:var(--ds-r-md);border:1px solid var(--ds-line-2);background:#fff;color:var(--ds-navy);font:inherit;font-weight:700;font-size:16px;cursor:pointer}
+.sim-btn:hover{background:var(--ds-surface-2)}
+.sim-btn:disabled{opacity:.55;cursor:progress}
+.sim-btn:focus-visible{outline:none;box-shadow:var(--ds-focus)}
+.sim-btn-principal{background:var(--ds-star);border-color:var(--ds-star);color:var(--ds-on-star)}
+.sim-btn-principal:hover{background:var(--ds-star-2)}
+.sim-btn-link{border:0;background:none;padding:0 6px;min-height:36px;color:var(--ds-blue);text-decoration:underline}
+.sim-acoes{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+
+.sim-drop{display:flex;flex-direction:column;align-items:center;gap:4px;padding:24px;border:2px dashed var(--ds-line-2);border-radius:var(--ds-r-lg);background:var(--ds-surface-2);cursor:pointer;text-align:center}
+.sim-drop.arrastando{border-color:var(--ds-blue);background:var(--ds-blue-soft)}
+.sim-drop input{position:absolute;width:1px;height:1px;opacity:0}
+.sim-drop:focus-within{box-shadow:var(--ds-focus)}
+.sim-drop-titulo{font-weight:800;color:var(--ds-blue)}
+
+.sim-msg{margin-top:14px;padding:12px 14px;border-radius:var(--ds-r-md);border:1px solid var(--ds-line)}
+.sim-msg p{margin:0 0 8px}.sim-msg p:last-child{margin:0}
+.sim-msg-ok{background:var(--ds-ok-soft);border-color:#b7dfc8}
+.sim-msg-erro{background:var(--ds-bad-soft);border-color:var(--ds-bad-line)}
+.sim-msg-aviso{background:var(--ds-warn-bg);border-color:var(--ds-warn-line)}
+.sim-msg ul{margin:6px 0 8px 18px;padding:0}
+
+.sim-docs,.sim-topicos,.sim-reler{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.sim-docs li{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;border:1px solid var(--ds-line);border-radius:var(--ds-r-md)}
+.sim-doc-nome{font-weight:700;word-break:break-word}
+.sim-doc-info{color:var(--ds-faint);font-size:14px}
+.sim-selo{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:700;background:var(--ds-warn-bg);color:var(--ds-warn-fg);border:1px solid var(--ds-warn-line)}
+
+.sim-resumo-pontos{margin:8px 0 0 20px;padding:0}
+.sim-resumo-pontos li{margin-bottom:6px}
+.sim-chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0;padding:0;list-style:none}
+.sim-chips li{padding:3px 10px;border-radius:999px;background:var(--ds-blue-soft);color:var(--ds-navy);font-size:14px}
+
+.sim-questao{border:0;margin:0 0 20px;padding:0 0 18px;border-bottom:1px solid var(--ds-line)}
+.sim-questao:last-of-type{border-bottom:0}
+.sim-questao legend{font-weight:700;margin-bottom:10px;line-height:1.45}
+.sim-q-topico{display:block;font-size:13px;font-weight:700;color:var(--ds-faint);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+.sim-alt{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;margin-bottom:6px;border:1px solid var(--ds-line);border-radius:var(--ds-r-md);cursor:pointer}
+.sim-alt:hover{background:var(--ds-surface-2)}
+.sim-alt input{margin-top:4px;width:18px;height:18px;flex:none;accent-color:var(--ds-blue)}
+.sim-alt.certa{border-color:#8fcca8;background:var(--ds-ok-soft)}
+.sim-alt.errada{border-color:var(--ds-bad-line);background:var(--ds-bad-soft)}
+.sim-questao textarea{width:100%;min-height:120px;padding:10px 12px;border:1px solid var(--ds-line-2);border-radius:var(--ds-r-md);font:inherit;resize:vertical}
+.sim-questao textarea:focus-visible{outline:none;box-shadow:var(--ds-focus)}
+
+.sim-nota{display:flex;align-items:baseline;gap:8px;margin:4px 0 12px}
+.sim-nota strong{font-size:44px;font-weight:800;color:var(--ds-navy);line-height:1}
+.sim-barra{height:10px;border-radius:999px;background:var(--ds-line);overflow:hidden}
+.sim-barra span{display:block;height:100%;border-radius:999px;background:var(--ds-blue)}
+.sim-barra.fraca span{background:var(--ds-bad)}
+.sim-barra.media span{background:var(--ds-star-2)}
+.sim-barra.boa span{background:var(--ds-ok)}
+.sim-por-topico{list-style:none;margin:0 0 8px;padding:0;display:grid;gap:10px}
+.sim-por-topico li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center}
+.sim-por-topico .sim-barra{grid-column:1/-1}
+.sim-correcao{margin:0 0 14px;padding:12px 14px;border-radius:var(--ds-r-md);border:1px solid var(--ds-line)}
+.sim-correcao.certa{border-color:#b7dfc8;background:var(--ds-ok-soft)}
+.sim-correcao.errada{border-color:var(--ds-bad-line);background:var(--ds-bad-soft)}
+.sim-correcao p{margin:4px 0}
+.sim-ref{font-size:14px;color:var(--ds-muted);border-left:3px solid var(--ds-line-2);padding-left:10px;margin-top:6px}
+
+.sim-topicos li{padding:14px;border:1px solid var(--ds-line);border-radius:var(--ds-r-md);display:grid;gap:6px}
+.sim-topico-topo{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.sim-topico-topo strong{font-size:17px}
+.sim-topicos-compacto li{padding:10px 12px}
+.sim-reler li{padding:10px 12px;border-left:3px solid var(--ds-star);background:var(--ds-surface-2);border-radius:0 var(--ds-r-sm) var(--ds-r-sm) 0}
+
+.sim-flash{border:1px solid var(--ds-line-2);border-radius:var(--ds-r-lg);padding:24px;min-height:170px;display:flex;flex-direction:column;justify-content:center;gap:12px;background:var(--ds-surface-2)}
+.sim-flash-frente{font-size:19px;font-weight:700;line-height:1.45}
+.sim-flash-verso{font-size:19px;font-weight:800;color:var(--ds-ok)}
+.sim-progresso{color:var(--ds-faint);font-size:14px;margin:0 0 10px}
+
+@media (prefers-reduced-motion:no-preference){.sim-barra span{transition:width .4s ease}}
+@media (max-width:639px){.sim-card{padding:16px}.sim-main{padding-top:18px}}

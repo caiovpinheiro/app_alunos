@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="app-versao" content="nova">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>Simulado e estudo | Área do Aluno</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:ital,wght@0,400..800;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/portal.css?v=9">
+    <link rel="stylesheet" href="/css/ds.css?v=2">
+    <link rel="stylesheet" href="/css/simulado.css?v=2">
+</head>
+<body>
+<div id="app" class="sim" hidden>
+    <section>
+        <header>
+            <div class="portal-container portal-head sim-head">
+                <a href="/inicio" class="portal-brand"><img src="/assets/logo-csv.webp" alt="Cruzeiro do Sul Virtual. Ir para o início" width="666" height="168"></a>
+                <nav class="portal-nav" aria-label="Menu principal">
+                    <a href="/inicio">Início</a>
+                    <a href="/meu-semestre">Meu semestre</a>
+                    <a href="/tutoriais">Central de ajuda</a>
+                    <a href="/simulado" aria-current="page">Simulado</a>
+                </nav>
+            </div>
+        </header>
+
+        <main class="portal-container sim-main">
+            <div class="sim-intro">
+                <p class="sim-tag">Em teste</p>
+                <h1>Simulado e estudo</h1>
+                <p class="sim-lead">Envie seus materiais de estudo e treine com resumos, simulados e revisões que se ajustam ao que você ainda precisa reforçar.</p>
+                <p class="sim-aviso" data-provedor hidden></p>
+            </div>
+
+            <div class="sim-tabs" role="tablist" aria-label="Seções do simulado">
+                <button type="button" role="tab" id="tab-docs" aria-controls="painel-docs" aria-selected="true" data-aba="docs">Documentos</button>
+                <button type="button" role="tab" id="tab-simulado" aria-controls="painel-simulado" aria-selected="false" tabindex="-1" data-aba="simulado">Simulado</button>
+                <button type="button" role="tab" id="tab-melhorar" aria-controls="painel-melhorar" aria-selected="false" tabindex="-1" data-aba="melhorar">Pontos a melhorar</button>
+                <button type="button" role="tab" id="tab-flash" aria-controls="painel-flash" aria-selected="false" tabindex="-1" data-aba="flash">Flashcards</button>
+                <button type="button" role="tab" id="tab-quiz" aria-controls="painel-quiz" aria-selected="false" tabindex="-1" data-aba="quiz">Quiz relâmpago</button>
+            </div>
+
+            <!-- Documentos -->
+            <div class="sim-painel" role="tabpanel" id="painel-docs" aria-labelledby="tab-docs">
+                <div class="sim-card">
+                    <h2>Enviar material de estudo</h2>
+                    <p class="sim-muted">Apostila, resumo, anotações ou lista de exercícios em PDF, DOCX ou TXT<span data-aceita-imagem hidden>, ou foto do material</span>. Até 10 MB.</p>
+                    <label class="sim-drop" data-drop>
+                        <input type="file" data-arquivo accept=".pdf,.docx,.txt,application/pdf,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+                        <span class="sim-drop-titulo">Escolher arquivo</span>
+                        <span class="sim-muted">ou arraste o arquivo para cá</span>
+                    </label>
+                    <p class="sim-muted sim-pequeno">Só você vê seus documentos. Provas e avaliações já aplicadas não são aceitas.</p>
+                    <div data-upload-status role="status" aria-live="polite"></div>
+                </div>
+
+                <div class="sim-card">
+                    <h2>Seus documentos</h2>
+                    <ul class="sim-docs" data-docs></ul>
+                    <p class="sim-vazio" data-docs-vazio hidden>Nenhum documento ainda. Envie o primeiro acima.</p>
+                </div>
+
+                <div class="sim-card" data-resumo hidden tabindex="-1"></div>
+            </div>
+
+            <!-- Simulado -->
+            <div class="sim-painel" role="tabpanel" id="painel-simulado" aria-labelledby="tab-simulado" hidden>
+                <div class="sim-card" data-sim-inicio>
+                    <h2>Novo simulado</h2>
+                    <p class="sim-muted">8 questões objetivas e 2 discursivas montadas a partir dos seus documentos. Os tópicos em que você foi pior, ou que estão na hora de revisar, aparecem mais.</p>
+                    <button type="button" class="sim-btn sim-btn-principal" data-gerar-simulado>Gerar simulado</button>
+                    <div data-sim-status role="status" aria-live="polite"></div>
+                </div>
+                <form class="sim-card" data-sim-form hidden novalidate></form>
+                <div class="sim-card" data-sim-resultado hidden tabindex="-1"></div>
+            </div>
+
+            <!-- Pontos a melhorar -->
+            <div class="sim-painel" role="tabpanel" id="painel-melhorar" aria-labelledby="tab-melhorar" hidden>
+                <div class="sim-card">
+                    <h2>Pontos a melhorar</h2>
+                    <p class="sim-muted">Domínio estimado por tópico, a partir dos seus simulados e quizzes. O próximo simulado dá mais peso ao que está aqui.</p>
+                    <ul class="sim-topicos" data-melhorar></ul>
+                    <p class="sim-vazio" data-melhorar-vazio hidden>Nada por aqui ainda. Envie um documento e faça um simulado.</p>
+                </div>
+                <div class="sim-card" data-reler-card hidden>
+                    <h2>O que reler</h2>
+                    <ul class="sim-reler" data-reler></ul>
+                </div>
+                <div class="sim-card">
+                    <h2>Todos os tópicos</h2>
+                    <ul class="sim-topicos sim-topicos-compacto" data-todos></ul>
+                </div>
+            </div>
+
+            <!-- Flashcards -->
+            <div class="sim-painel" role="tabpanel" id="painel-flash" aria-labelledby="tab-flash" hidden>
+                <div class="sim-card" data-flash></div>
+            </div>
+
+            <!-- Quiz relâmpago -->
+            <div class="sim-painel" role="tabpanel" id="painel-quiz" aria-labelledby="tab-quiz" hidden>
+                <div class="sim-card" data-quiz></div>
+            </div>
+        </main>
+    </section>
+</div>
+
+<script src="/js/config.js?v=7"></script>
+<script src="/js/auth.js?v=8"></script>
+<script src="/js/api.js?v=18"></script>
+<script src="/js/rastreio.js?v=5"></script>
+<script src="/js/simulado.js?v=1"></script>
+</body>
+</html>
