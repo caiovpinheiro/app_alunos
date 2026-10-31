@@ -15,11 +15,16 @@
 - Os colegas veem só "Maria S."; a API do grupo não devolve RGM, e-mail nem id. Denúncia pelo aluno: com 3 denúncias, a mensagem sai do ar e vai para a fila. Admin: publicar, remover, manter bloqueada, descartar denúncias e silenciar (24 h ou 7 dias). Tudo vai para `csu_eventos` (`grupo_moderacao`, `grupo_mensagem_moderada`) sem o texto.
 - Polling a cada 5 s com a tela aberta (cursor `?desde=`); SSE só quando o volume pedir.
 - Tela pensada primeiro para o celular: faixa azul-marinho do grupo, conversa em balões (agrupados por autor e por dia), campo fixo embaixo com o botão amarelo de enviar, balão "Verificando…" enquanto o moderador decide e denúncia pelo menu ⋯ (folha que sobe de baixo). Como no celular o menu do topo esconde "Grupo", o Início ganha uma entrada logo depois do banner (`#ge-entrada`, só com a área ligada).
+- Estilo WhatsApp Web (2026-10-31, pedido do usuário):
+  - **Lista e conversa:** à esquerda, o grupo do curso e os colegas, cada um identificado por `ref` aleatória e não pelo id. Conversa privada 1:1 só entre colegas do mesmo curso, moderada como o grupo; 1 denúncia já a retém, e o aluno pode bloquear o colega. No celular, a lista vem primeiro e a conversa ocupa a tela, com voltar; a tela do grupo é `position: fixed`.
+  - **Mídia:** emojis, foto (regravada em WebP sem EXIF/GPS) e áudio de até 2 min. Com o stub, toda foto e todo áudio vão para a equipe. Os arquivos ficam em `GRUPO_MIDIA_DIR` e são apagados após `GRUPO_MIDIA_DIAS` (padrão 7), com aviso na tela.
+  - **Moderação mais dura:** palavrão e xingamento são bloqueados direto pela regra, sem ir para a fila. Também são bloqueados CPF, RG, RGM, senha, endereço, nascimento, telefone ou e-mail por extenso e perfil de rede social.
 - Código isolado em `server/grupo-estudo.js` (`montar(app, deps)`), `public/js/grupo-estudo.js` (registra a tela com `UI.registrarTela` só se a API liberar) e `public/js/admin-grupos.js`. Sem CRM.
 
 **Impacto**
 - Desligado até `GRUPO_ESTUDO_ATIVA_PARA` existir (RGM ou e-mail; `*` = todos). Vazio: `/api/grupos/*` e `/api/admin/grupos/*` respondem 404 e nada aparece.
 - O classificador de IA precisa de `GRUPO_MODERACAO_PROVEDOR=anthropic`, `ANTHROPIC_API_KEY` e `npm i @anthropic-ai/sdk`; sem isso, roda o stub determinístico. Antes de `*`: dono da fila de moderação e política de privacidade (o texto vai para o provedor de IA).
+- Produção: `GRUPO_MIDIA_DIR` num volume persistente (ex.: `/data/grupo-midia`).
 - Teste local: `node tools/seed-grupo-estudo.js` (2 alunos fictícios; recusa banco que não seja localhost) e `node tools/test-grupo-estudo.js --url http://localhost:PORTA`.
 
 ### 2026-10-28 - Pedido de ajuda no "Travei" e na dificuldade (AJUDA_ATIVA_PARA)

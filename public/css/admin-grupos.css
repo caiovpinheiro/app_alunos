@@ -4,15 +4,18 @@
 .gr-sec { margin-top: 24px; }
 .gr-sec h3 { font-size: 18px; font-weight: 800; color: var(--ds-navy); display: flex; align-items: center; gap: 8px; }
 .gr-lista { display: grid; gap: 12px; }
-.gr-item { background: #fff; border: 1px solid var(--ds-line); border-left: 4px solid var(--ds-line-2); border-radius: var(--ds-r-md); padding: 12px 14px; }
-.gr-item--retida { border-left-color: var(--ds-warn-line); }
-.gr-item--bloqueada, .gr-item--removida { border-left-color: var(--ds-bad); }
-.gr-item--publicada { border-left-color: var(--ds-blue); }
+.gr-item { background: #fff; border: 1px solid var(--ds-line); border-radius: var(--ds-r-md); padding: 12px 14px; }
+.gr-item--retida .gr-status { background: var(--ds-warn-bg); color: var(--ds-warn-fg); }
+.gr-item--bloqueada .gr-status, .gr-item--removida .gr-status { background: var(--ds-bad-soft); color: var(--ds-bad); }
+.gr-item--publicada .gr-status { background: var(--ds-blue-soft); color: var(--ds-blue-2); }
 .gr-meta { font-size: 13px; color: var(--ds-muted); margin: 0; }
 .gr-meta b { color: var(--ds-ink); }
-.gr-status { text-transform: uppercase; letter-spacing: .04em; font-size: 11px; font-weight: 700; }
+.gr-status { display: inline-block; padding: 2px 8px; border-radius: 99px; background: var(--ds-surface-2); text-transform: uppercase; letter-spacing: .04em; font-size: 11px; font-weight: 700; }
 .gr-texto { margin: 8px 0; padding: 8px 12px; background: var(--ds-surface-2); border-radius: var(--ds-r-sm); white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ds-ink); }
 .gr-motivo, .gr-den, .gr-autor { margin: 2px 0; font-size: 14px; color: var(--ds-muted); }
 .gr-den { color: var(--ds-bad); font-weight: 600; }
 .gr-sil { font-size: 13px; color: var(--ds-warn-fg); background: var(--ds-warn-bg); border-radius: var(--ds-r-sm); padding: 6px 10px; }
 .gr-item .ac-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; align-items: center; }
+.gr-privada { margin: 6px 0 0; font-size: 13px; font-weight: 700; color: var(--ds-blue); }
+.gr-foto { display: block; max-width: min(320px, 100%); max-height: 320px; margin: 8px 0; border-radius: var(--ds-r-sm); background: var(--ds-surface-2); }
+.gr-audio { display: block; width: min(320px, 100%); margin: 8px 0; }

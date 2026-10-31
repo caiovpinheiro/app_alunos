@@ -76,7 +76,7 @@ async function main() {
       [chave, curso.replace(/\s+/g, ' ').trim()],
     )).rows[0];
     for (const id of ids) {
-      await pool.query('INSERT INTO csu_grupo_membros (grupo_id, aluno_id) VALUES ($1, $2) ON CONFLICT DO NOTHING', [g.id, id]);
+      await pool.query("INSERT INTO csu_grupo_membros (grupo_id, aluno_id, ref) VALUES ($1, $2, md5(random()::text || clock_timestamp()::text)) ON CONFLICT DO NOTHING", [g.id, id]);
     }
     const ja = await pool.query("SELECT count(*)::int AS n FROM csu_grupo_mensagens WHERE grupo_id = $1 AND moderador = 'seed'", [g.id]);
     if (!ja.rows[0].n) {

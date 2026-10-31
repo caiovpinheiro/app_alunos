@@ -10,7 +10,7 @@ window.AdminGrupos = (function () {
   var esc = function (t) { return C().escapeHtml(t == null ? '' : String(t)); };
   var CAT = {
     ok: 'OK', fora_de_tema: 'Fora de tema', fraude_academica: 'Fraude acadêmica', assedio: 'Assédio/ofensa',
-    odio: 'Ódio/preconceito', dados_pessoais: 'Dados pessoais', spam: 'Spam/link',
+    odio: 'Ódio/preconceito', dados_pessoais: 'Dados pessoais', spam: 'Spam/link', revisao_midia: 'Foto ou áudio para revisar',
   };
   var QUEM = { regra: 'regra automática', stub: 'moderador (stub)', anthropic: 'moderador IA', fallback: 'sem IA (falha)', seed: 'seed', teste: 'teste' };
   var motivosDenuncia = {};
@@ -36,6 +36,14 @@ window.AdminGrupos = (function () {
     } else if (tipo === 'sem_ia') {
       acoes = botao(m.id, 'conferida', 'Conferida') + botao(m.id, 'remover', 'Remover');
     }
+    var midia = '';
+    if (m.midia_tipo) {
+      midia = m.midia_disponivel
+        ? (m.midia_tipo === 'imagem'
+          ? '<img class="gr-foto" alt="Foto enviada pelo aluno" data-gr-src="/api/admin/grupos/midia/' + m.id + '">'
+          : '<audio class="gr-audio" controls preload="none" data-gr-src="/api/admin/grupos/midia/' + m.id + '"></audio>')
+        : '<p class="gr-motivo">' + (m.midia_tipo === 'imagem' ? 'Foto' : 'Áudio') + ' não guardada (bloqueada ou apagada após o prazo).</p>';
+    }
     var silenciado = m.silenciado_ate && new Date(m.silenciado_ate) > new Date();
     acoes += silenciado
       ? '<span class="gr-sil">Autor silenciado até ' + esc(quando(m.silenciado_ate)) + '</span>'
@@ -45,7 +53,9 @@ window.AdminGrupos = (function () {
         (m.confianca ? ' · confiança ' + esc(m.confianca) : '') +
         ' · ' + esc(QUEM[m.moderador] || m.moderador) + ' · ' + esc(quando(m.criado_em)) +
         ' · <span class="gr-status">' + esc(m.status) + '</span></p>' +
-      '<blockquote class="gr-texto">' + esc(m.texto) + '</blockquote>' +
+      (m.conversa_id ? '<p class="gr-privada">Conversa privada · para ' + esc(m.destinatario || 'colega') + '</p>' : '') +
+      midia +
+      (m.texto ? '<blockquote class="gr-texto">' + esc(m.texto) + '</blockquote>' : '') +
       (m.motivo ? '<p class="gr-motivo">Motivo: ' + esc(m.motivo) + '</p>' : '') +
       (den.length ? '<p class="gr-den">' + den.length + ' denúncia(s): ' + esc(den.join(', ')) + '</p>' : '') +
       '<p class="gr-autor">' + esc(m.nome) + (m.rgm ? ' · RGM ' + esc(m.rgm) : '') + ' · ' + esc(m.grupo) + '</p>' +
@@ -70,16 +80,31 @@ window.AdminGrupos = (function () {
       var s = r.resumo || {};
       box.innerHTML =
         '<div class="gr-topo"><div><h2 class="text-2xl font-bold">Grupos de estudo</h2>' +
-          '<p class="pn-sub">Toda mensagem passa pelo moderador antes de aparecer. Aqui ficam as que precisam de uma pessoa. ' +
+          '<p class="pn-sub">Toda mensagem do grupo e das conversas privadas passa pelo moderador antes de aparecer; fotos e áudios esperam a equipe. Aqui ficam as que precisam de uma pessoa. Mídia é apagada após ' + esc(r.midia_dias || 7) + ' dias. ' +
           esc(s.grupos || 0) + ' grupo(s) · ' + esc(s.mensagens_7d || 0) + ' mensagem(ns) em 7 dias · ' + esc(s.bloqueadas_7d || 0) + ' bloqueada(s).</p></div>' +
           '<p class="gr-prov">Classificador: <b>' + esc(r.provedor) + '</b>' + (r.provedor_aviso ? ' · ' + esc(r.provedor_aviso) : '') + '</p></div>' +
         secao('Precisa de decisão', 'Retidas pelo moderador ou por 3 denúncias, e bloqueios graves (ódio, assédio). O aluno vê "em análise" ou "não publicada".', r.pendentes, 'pendente', 'Nada esperando decisão.') +
         secao('Denunciadas', 'Publicadas que algum aluno denunciou. Com 3 denúncias, saem do ar sozinhas e sobem para "Precisa de decisão".', r.denunciadas, 'denunciada', 'Nenhuma denúncia aberta.') +
         secao('Publicadas sem IA', 'O classificador falhou e a mensagem não tinha nenhum sinal suspeito. Confira se está tudo certo.', r.sem_ia, 'sem_ia', 'Nenhuma.') +
         secao('Bloqueadas nos últimos 7 dias', 'O que o robô barrou: confira se há falso positivo. O autor viu a explicação.', r.bloqueadas, 'bloqueada', 'Nenhum bloqueio recente.');
+      carregarMidias(box);
     } catch (err) {
       box.innerHTML = '<p class="text-sm text-red-700">' + esc(err.message || 'Não foi possível carregar a fila.') + '</p>';
     }
+  }
+
+  // Fotos e áudios exigem o token do admin: baixa com fetch e usa URL local.
+  function carregarMidias(raiz) {
+    raiz.querySelectorAll('[data-gr-src]').forEach(function (el) {
+      var url = el.getAttribute('data-gr-src');
+      el.removeAttribute('data-gr-src');
+      fetch(url, { headers: { Authorization: 'Bearer ' + C().token() } }).then(function (r) {
+        if (!r.ok) throw new Error(String(r.status));
+        return r.blob();
+      }).then(function (b) { el.src = URL.createObjectURL(b); }).catch(function () {
+        el.outerHTML = '<p class="gr-motivo">Arquivo não disponível.</p>';
+      });
+    });
   }
 
   async function agir(btn) {

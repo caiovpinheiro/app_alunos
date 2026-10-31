@@ -23,6 +23,13 @@ normalizado (sem acento, minúsculo, espaços simples). A filiação é **calcul
 curso pelo endereço. Aluno sem curso no cadastro vê "Seu curso ainda não chegou ao portal" e não entra
 em grupo nenhum.
 
+**Conversa privada 1:1 (decidido em 2026-10-31):** no estilo WhatsApp Web, a lista à esquerda traz o grupo
+do curso e os colegas do mesmo grupo. Tocar num colega abre uma conversa privada, que só é possível entre
+colegas do mesmo curso e passa pela mesma moderação do grupo. No privado:
+- **uma denúncia** já tira a mensagem do ar e a manda para a fila (não há outros membros para somar 3);
+- o aluno pode **bloquear** o colega, e quem foi bloqueado não consegue mais mandar mensagem privada;
+- a equipe só lê as mensagens privadas que foram denunciadas, retidas ou bloqueadas pelo moderador.
+
 Próximo passo natural: **salas por disciplina dentro do grupo do curso** (ver §7), usando a lista de
 disciplinas de `csu_materias_alunos`.
 
@@ -30,11 +37,18 @@ disciplinas de `csu_materias_alunos`.
 
 - Nome exibido: **primeiro nome + inicial do sobrenome** ("Maria S."), calculado no servidor. A API do
   grupo nunca devolve RGM, e-mail, telefone, polo nem `aluno_id` de outro aluno. Cada mensagem traz só
-  `autor` (o nome exibido) e `minha: true/false`.
+  `autor` (o nome exibido) e `minha: true/false`. Na lista de conversas, cada colega é identificado por uma
+  **referência aleatória** (`csu_grupo_membros.ref`), não pelo id.
 - Apelido (sugestão §7): se for criado, passa pela mesma moderação que as mensagens.
-- **O moderador bloqueia dado pessoal**: telefone, e-mail, CPF, "me chama no zap/pv", links de
-  WhatsApp/Telegram e @ de rede social. A explicação é gentil: "Para sua segurança, não compartilhe
-  contato no grupo".
+- **O moderador bloqueia dado pessoal**: telefone (inclusive por extenso ou em emoji de número), e-mail
+  (inclusive "fulano arroba gmail ponto com"), CPF, RG, RGM ou matrícula com número, senha, endereço, data de
+  nascimento, "me chama no zap/pv", links de WhatsApp/Telegram, @ e "me segue no insta". A explicação é
+  gentil: "Para sua segurança, não compartilhe…".
+- **Fotos** são regravadas no servidor (WebP, até 1600 px) **sem metadados**: EXIF, GPS, câmera e data
+  saem antes de gravar.
+- **Fotos e áudios ficam por `GRUPO_MIDIA_DIAS` (padrão 7) e depois são apagados do disco.** A mensagem
+  continua, com "Foto apagada" e a legenda. Um aviso na lista de conversas, nas boas-vindas, na hora de
+  enviar a foto e na gravação de áudio diz isso ao aluno.
 - **Guardado:** texto da mensagem, autor, curso, resultado da moderação (categoria, motivo, quem decidiu)
   e denúncias. Mensagens bloqueadas ficam guardadas para auditoria e só o próprio autor e o admin as veem.
   Retenção: 180 dias, igual a `RASTREIO_RETENCAO_DIAS`, com limpeza automática.
@@ -59,7 +73,7 @@ texto ─► limites (500 caracteres, 6 por minuto, repetida) ─► regras bara
 | Categoria | Exemplos | Ação | O autor vê |
 |---|---|---|---|
 | `fraude_academica` | "vendo gabarito", "quem tem as respostas da prova?", "faço seu TCC", "passo cola no pix" | **Bloquear** (com confiança baixa, **segurar**) | "Não dá para combinar prova, gabarito ou trabalho pronto aqui. Isso pode anular a sua prova. Que tal postar a dúvida da matéria?" |
-| `assedio` | ofensa direta a um colega, insistência, cantada | **Segurar para revisão** (com confiança alta, bloquear) | "Sua mensagem está em análise pela equipe." |
+| `assedio` | palavrão, xingamento, ofensa a um colega, cantada | **Palavrão e xingamento: bloquear direto** (regra). Ofensa grave pelo classificador: bloquear e mandar para a fila | "Palavrões, xingamentos e ofensas não são publicados. Que tal reescrever com outras palavras?" |
 | `odio` | ataque por raça, religião, gênero, orientação, deficiência | **Bloquear e mandar para a fila** (revisão obrigatória, possível silenciamento) | "Essa mensagem vai contra as regras do grupo e não foi publicada." |
 | `dados_pessoais` | telefone, e-mail, CPF, "me chama no zap", link do WhatsApp | **Bloquear** | "Para sua segurança, não compartilhe telefone, e-mail ou outro contato no grupo." |
 | `spam` | link externo, propaganda, "promoção", pix, repetição | **Bloquear** | "Links e anúncios não são publicados no grupo." |
@@ -82,6 +96,8 @@ Ficam em `server/grupo-moderacao.js` e rodam sobre o texto normalizado (minúscu
 - **Fraude, bloqueio certo:** verbo de comércio ou oferta ("vendo", "vende", "compro", "passo", "tenho", "consigo", "alguem tem", "quem tem", "faço", "fazemos") a até 40 caracteres de "gabarito", "respostas da prova/av/avaliação", "prova", "tcc", "trabalho", "atividade" ou "cola"; ou "pix" junto de um termo acadêmico. → `fraude_academica`
 - **Fraude, só sinal:** "gabarito" ou "cola" sozinhos ("o gabarito oficial saiu?"). Vai para o LLM; se ele falhar, a mensagem é **segurada**.
 - **Spam:** "pix", "promoção", "desconto", "renda extra", "clique", 6 letras iguais seguidas, ou a mesma mensagem do mesmo autor em 10 min. → `spam`
+- **Palavrões e xingamentos (bloqueio direto, sem ir para a fila):** lista de palavrões e xingamentos comuns, tolerante a letra repetida ("merdaaa"), vogal trocada por `*` ("p*rra") e leet ("c4r4lho"), sempre como palavra inteira ("computador" e "disputa" passam). "Burro", "lixo", "ridículo"… só bloqueiam quando dirigidos a alguém ("você é burro", "seu lixo"): "sou burro em cálculo" passa. → `assedio`
+- **Dados sensíveis além de telefone/e-mail:** número junto de CPF/RG/RGM/CNH/matrícula/cartão/CEP; "meu cpf/rg/rgm/senha"; endereço ("moro na…", "rua X 123"); data de nascimento; telefone por extenso (7+ números falados); e-mail por extenso; "me segue no insta". → `dados_pessoais`
 - **Limites:** até 500 caracteres; até 6 mensagens por minuto por aluno; aluno silenciado não envia ("Você está sem enviar mensagens até dd/mm hh:mm").
 
 ### 3.3 Classificador (LLM)
@@ -101,7 +117,22 @@ provedores em `server/grupo-moderacao.js`:
   como dado: o prompt de sistema diz para não seguir instruções que estejam dentro dele.
 - **Tempo máximo:** 6 s (`GRUPO_MODERACAO_TIMEOUT_MS`).
 
-### 3.4 Fallback se o LLM falhar
+### 3.4 Fotos e áudios
+
+- **Foto:** a legenda passa pela moderação de texto (se ela barrar, a foto nem é guardada). Com o
+  provedor `anthropic`, a imagem é classificada pelo Claude (texto visível com telefone, documento, prova
+  ou gabarito fotografado, nudez, propaganda). **Com o `stub` (hoje), toda foto vai para a equipe** e
+  aparece "em análise" para o autor.
+- **Áudio:** **sempre vai para a equipe**, porque não há transcrição. Para liberar áudio automaticamente,
+  é preciso um serviço de transcrição (sugestão §7).
+- **Limites:** foto em JPG, PNG ou WebP, reduzida no aparelho para até 1600 px; áudio de até 2 minutos
+  (4 MB), gravado no navegador (WebM/Opus ou MP4 no Safari). O tipo do arquivo é conferido pelos
+  primeiros bytes, não só pelo nome.
+- **Arquivos** ficam em `GRUPO_MIDIA_DIR` (padrão `data/grupo-midia`, fora do git), com nome aleatório.
+  São servidos só a quem está na conversa (`/api/grupos/midia/:id`, com sessão) e ao admin. Uma limpeza
+  roda a cada hora e na subida: apaga o que venceu e o que a equipe removeu.
+
+### 3.5 Fallback se o LLM falhar
 
 Vale para erro, tempo esgotado, recusa ou resposta fora do schema:
 
@@ -115,7 +146,9 @@ O risco principal (contato, link, venda de gabarito) é coberto pelas regras, qu
 ## 4. Moderação humana
 
 - **Fila no admin** (Acompanhar › Grupos de estudo):
-  - **Retidas:** esperando decisão, as mais antigas primeiro.
+  - **Precisa de decisão:** retidas (fotos, áudios, mensagens ambíguas, 3 denúncias no grupo ou 1 no
+    privado) e bloqueios graves (ódio, assédio forte), as mais antigas primeiro. Foto e áudio aparecem
+    no cartão; mensagens privadas trazem "Conversa privada · para Fulano".
   - **Denunciadas:** publicadas com 1 ou mais denúncias. Com 3 denúncias de pessoas diferentes, a
     mensagem sai do ar sozinha e vai para a fila.
   - **Bloqueadas recentes:** auditoria do que o robô barrou, para achar falso positivo.
@@ -131,7 +164,8 @@ O risco principal (contato, link, venda de gabarito) é coberto pelas regras, qu
 ## 5. Tempo real: polling
 
 **Polling a cada 5 s**, só com a tela do grupo aberta e a aba visível (`document.visibilityState`).
-O cliente pede `GET /api/grupos/meu/mensagens?depois=<último id>`.
+O cliente pede a lista (`GET /api/grupos/meu/conversas`, com não lidas) e a conversa aberta
+(`…/mensagens?desde=<cursor>`). A tela só é redesenhada quando algo mudou de fato.
 
 Por que não SSE ou WebSocket agora:
 
@@ -150,11 +184,20 @@ Por que não SSE ou WebSocket agora:
 - Flag `GRUPO_ESTUDO_ATIVA_PARA` (RGM ou e-mail, separados por vírgula; `*` = todos; vazio = ninguém),
   no mesmo padrão de `AJUDA_ATIVA_PARA`. Desligada, o menu não mostra nada e `/api/grupos/*` e
   `/api/admin/grupos/*` respondem 404.
-- Tela `/grupo` com o grupo do curso: as regras fixadas no topo, a lista de mensagens, o envio com
-  moderação prévia, a explicação da mensagem bloqueada (só o autor vê), o "em análise" e a denúncia.
+- Tela `/grupo` no estilo **WhatsApp Web**, pensada para o celular:
+  - **Celular:** a lista de conversas vem primeiro. A conversa ocupa a tela inteira, com voltar (inclusive o
+    botão do aparelho).
+  - **Desktop:** lista à esquerda e conversa à direita.
+  - **Lista:** o grupo do curso e os colegas, com prévia, hora, não lidas e busca.
+  - **Conversa:** balões agrupados por autor e por dia; "Verificando…" enquanto o moderador decide; a
+    explicação da mensagem bloqueada (só o autor vê); "em análise"; denúncia pelo menu ⋯ (folha que sobe
+    de baixo); bloqueio no privado.
+  - **Escrever:** emojis, foto (com legenda e prévia) e áudio (até 2 min).
+  - **Avisos:** de privacidade e dos 7 dias.
+- Entrada para o grupo no Início, logo abaixo do banner (no celular o menu do topo esconde "Grupo").
 - Admin › Grupos de estudo: fila de retidas, denunciadas e bloqueadas recentes, com as ações acima.
-- Tabelas `csu_grupos`, `csu_grupo_membros` (silenciamento), `csu_grupo_mensagens` e
-  `csu_grupo_denuncias`, criadas sob demanda (`CREATE TABLE IF NOT EXISTS`), como o resto do projeto.
+- Tabelas `csu_grupos`, `csu_grupo_membros` (silenciamento, `ref`, lido até), `csu_grupo_mensagens`
+  (grupo e privado, com as colunas de mídia), `csu_dm_conversas`, `csu_dm_bloqueios` e `csu_grupo_denuncias`, criadas sob demanda (`CREATE TABLE IF NOT EXISTS`), como o resto do projeto.
 - Seed local `tools/seed-grupo-estudo.js` com dois alunos fictícios no curso do aluno de teste. Recusa
   rodar fora de `localhost`.
 
@@ -173,6 +216,9 @@ Por que não SSE ou WebSocket agora:
 | 9 | **Aviso de mensagem nova** no sino de avisos e no Início | Traz o aluno de volta | P |
 | 10 | **Tempo real com SSE + LISTEN/NOTIFY** | Só quando o volume pedir (§5) | M |
 | 11 | **Moderador com contexto** (ver as 5 mensagens anteriores para entender ironia ou réplica) | Menos falso positivo em assédio | P |
+| 12 | **Transcrição de áudio** (ex.: Whisper) para moderar o áudio pelo texto | Áudio sem esperar a equipe; hoje todo áudio vai para a fila | M |
+| 13 | **Foto moderada pela IA** (ligar o provedor `anthropic`, já pronto) | Foto sem esperar a equipe | P |
+| 14 | **Figurinhas e reações** (👍 numa mensagem, sem texto) | Menos "kkk"/"valeu" soltos na conversa | P |
 
 ## 8. Riscos e pendências
 
@@ -184,7 +230,12 @@ Por que não SSE ou WebSocket agora:
 - **Falso positivo em "prova"/"trabalho":** "alguém tem dica para a prova?" deve passar. As regras só
   bloqueiam a combinação de verbo de comércio ou oferta com termo de avaliação; o resto vai para o
   classificador.
-- **Moderação humana tem dono?** Alguém precisa olhar a fila todo dia útil. Sem isso, as mensagens
-  retidas envelhecem e o aluno desiste.
+- **Moderação humana tem dono?** Alguém precisa olhar a fila todo dia útil. Com o `stub`, **toda foto e
+  todo áudio** passam por ela. Sem dono, a mídia fica "em análise" para sempre e o aluno desiste.
+- **Conversa privada** é onde assédio e "me chama no zap" mais acontecem. A moderação prévia e o bloqueio
+  ajudam, mas acompanhar as denúncias privadas no piloto é obrigatório.
+- **Disco em produção:** `GRUPO_MIDIA_DIR` precisa apontar para um volume persistente (ex.:
+  `/data/grupo-midia` no EasyPanel). A limpeza de 7 dias segura o tamanho; a estimativa é de cerca de
+  300 KB por foto e 250 KB por minuto de áudio.
 - **LGPD:** citar o grupo e o envio do texto ao provedor de IA na política de privacidade antes de `*`.
 - **Termo de uso do grupo:** aceite na primeira entrada ("Li as regras"). Sugestão para antes de produção.
