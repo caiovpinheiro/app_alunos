@@ -331,14 +331,16 @@ async function painel(pool, alunoId) {
   }));
   const melhorar = itens.filter((t) => t.dominio == null || t.dominio < 0.7 || t.vencido)
     .sort((a, b) => b.peso - a.peso || a.id - b.id);
-  // O que reler: trechos das últimas questões erradas (até 5).
+  // O que reler: trechos das últimas questões erradas (até 5), só de tópicos que ainda existem
+  // (documento apagado some daqui) e sem trechos com marca d'água ou e-mail.
+  const nomes = new Set(itens.map((t) => t.nome));
   const ult = (await pool.query(
     `SELECT questoes, resultado FROM csu_sim_simulados WHERE aluno_id = $1 AND resultado IS NOT NULL ORDER BY corrigido_em DESC LIMIT 3`, [alunoId],
   )).rows;
   const reler = [];
   ult.forEach((s) => (s.resultado.correcoes || []).forEach((c, i) => {
     const q = s.questoes[i];
-    if (q && c && !c.certa && c.referencia && reler.length < 5 && !reler.some((r) => r.trecho === c.referencia)) {
+    if (q && c && !c.certa && c.referencia && nomes.has(q.topico) && !T.ehRuido(c.referencia) && reler.length < 5 && !reler.some((r) => r.trecho === c.referencia)) {
       reler.push({ topico: q.topico, trecho: String(c.referencia).slice(0, 400) });
     }
   }));

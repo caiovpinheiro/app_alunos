@@ -101,24 +101,64 @@
         $('[data-arquivo]').setAttribute('accept', $('[data-arquivo]').getAttribute('accept') + ',image/png,image/jpeg,image/webp');
       }
       renderDocs(r.documentos || []);
+      if ($('#app').hidden === false) carregarHero();
       return r;
     });
   }
 
+  var ICONE_DOC = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>';
+
   function renderDocs(docs) {
     var ul = $('[data-docs]');
     $('[data-docs-vazio]').hidden = docs.length > 0;
+    var topicos = docs.reduce(function (n, d) { return n + (d.status === 'pendente' ? 0 : (d.topicos || 0)); }, 0);
+    $('[data-docs-conta]').textContent = docs.length
+      ? docs.length + (docs.length === 1 ? ' documento' : ' documentos') + ' · ' + topicos + (topicos === 1 ? ' tópico' : ' tópicos')
+      : '';
     ul.innerHTML = docs.map(function (d) {
       var pend = d.status === 'pendente';
-      return '<li data-doc="' + d.id + '"><div><span class="sim-doc-nome">' + esc(d.nome) + '</span>' +
+      return '<li class="sim-doc" data-doc="' + d.id + '"><span class="p-ico">' + ICONE_DOC + '</span>' +
+        '<div><span class="sim-doc-nome">' + esc(d.nome) + '</span>' +
+        '<span class="sim-doc-info">' + esc(String(d.tipo).toUpperCase()) + ' · ' + (d.topicos || 0) + ' tópico(s) · enviado em ' + data(d.criado_em) + '</span>' +
         (d.revisao && !pend ? '<span class="sim-selo">em revisão</span>' : '') +
-        (pend ? '<span class="sim-selo">aguardando sua confirmação</span>' : '') +
-        '<div class="sim-doc-info">' + esc(String(d.tipo).toUpperCase()) + ' · ' + (d.topicos || 0) + ' tópico(s) · enviado em ' + data(d.criado_em) + '</div></div>' +
-        '<div class="sim-acoes" style="margin:0">' +
-        (pend ? '<button type="button" class="sim-btn" data-confirmar="' + d.id + '">Confirmar que é material de estudo</button>'
-              : '<button type="button" class="sim-btn" data-resumo-doc="' + d.id + '">Ver resumo</button>') +
-        '<button type="button" class="sim-btn sim-btn-link" data-apagar="' + d.id + '" aria-label="Apagar ' + esc(d.nome) + '">Apagar</button></div></li>';
+        (pend ? '<span class="sim-selo">aguardando sua confirmação</span>' : '') + '</div>' +
+        '<div class="sim-doc-acts">' +
+        (pend ? '<button type="button" class="portal-btn portal-btn--ghost" data-confirmar="' + d.id + '">Confirmar que é material de estudo</button>'
+              : '<button type="button" class="portal-btn portal-btn--ghost" data-resumo-doc="' + d.id + '">Ver resumo</button>') +
+        '<button type="button" class="portal-link" data-apagar="' + d.id + '" aria-label="Apagar ' + esc(d.nome) + '">Apagar</button></div></li>';
     }).join('');
+  }
+
+  // Banner: domínio médio e revisões do dia (mesma barra de progresso do banner do Início).
+  function carregarHero() {
+    return api('GET', '/painel').then(function (r) {
+      var caixa = $('[data-hero-progresso]');
+      var topicos = r.topicos || [];
+      if (!topicos.length) { caixa.hidden = true; return; }
+      var avaliados = topicos.filter(function (t) { return t.dominio != null; });
+      var vencidos = topicos.filter(function (t) { return t.vencido; }).length;
+      var revisar = vencidos ? ' · ' + vencidos + (vencidos === 1 ? ' tópico para revisar hoje' : ' tópicos para revisar hoje') : '';
+      if (!avaliados.length) {
+        caixa.innerHTML = '<span>' + topicos.length + (topicos.length === 1 ? ' tópico pronto' : ' tópicos prontos') + ' para treinar. Faça o primeiro simulado.</span>';
+      } else {
+        var media = Math.round(avaliados.reduce(function (n, t) { return n + t.dominio; }, 0) / avaliados.length * 100);
+        caixa.innerHTML = '<span class="p-bar" role="img" aria-label="Domínio médio ' + media + '%"><i style="width:' + media + '%"></i></span>' +
+          '<span>Domínio médio <strong>' + media + '%</strong>' + revisar + '</span>';
+      }
+      caixa.hidden = false;
+    }).catch(function () { /* o banner fica sem o progresso */ });
+  }
+
+  function preencherAluno() {
+    var u = (window.Auth.getUser && window.Auth.getUser()) || {};
+    $('[data-user-name]').textContent = u.name || 'Aluno';
+    $('[data-acesso-rgm]').textContent = u.rgm ? 'RGM ' + u.rgm : '';
+  }
+
+  function sairDaConta() {
+    var fim = function () { try { window.Auth.clear(); } catch (e) { /* segue */ } window.location.replace('/login'); };
+    var parar = window.Rastreio && window.Rastreio.parar ? Promise.resolve(window.Rastreio.parar()).catch(function () {}) : Promise.resolve();
+    parar.then(function () { return window.Api.logout(); }).catch(function () {}).then(fim);
   }
 
   function enviar(arquivo) {
@@ -134,13 +174,13 @@
         track('simulado_documento_confirmar', { tipo: ext });
         msg(status, 'aviso', '<p>' + esc(r.message) + '</p>' +
           (r.sinais && r.sinais.length ? '<p>O que vimos no arquivo:</p><ul>' + r.sinais.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ul>' : '') +
-          '<div class="sim-acoes"><button type="button" class="sim-btn sim-btn-principal" data-confirmar="' + r.documento_id + '">É material de estudo</button>' +
-          '<button type="button" class="sim-btn" data-desistir="' + r.documento_id + '">Não enviar este arquivo</button></div>');
+          '<div class="sim-acoes"><button type="button" class="portal-btn" data-confirmar="' + r.documento_id + '">É material de estudo</button>' +
+          '<button type="button" class="portal-btn portal-btn--ghost" data-desistir="' + r.documento_id + '">Não enviar este arquivo</button></div>');
       } else {
         track('simulado_documento_enviado', { tipo: ext, topicos: r.topicos || 0 });
         msg(status, 'ok', '<p>' + (r.repetido ? 'Este arquivo já estava na sua lista.' : 'Pronto! Encontramos ' + (r.topicos || 0) + ' tópico(s) para estudar.') + '</p>' +
-          '<div class="sim-acoes"><button type="button" class="sim-btn" data-resumo-doc="' + r.documento_id + '">Ver resumo</button>' +
-          '<button type="button" class="sim-btn sim-btn-principal" data-ir-simulado>Fazer um simulado</button></div>');
+          '<div class="sim-acoes"><button type="button" class="portal-btn portal-btn--ghost" data-resumo-doc="' + r.documento_id + '">Ver resumo</button>' +
+          '<button type="button" class="portal-btn" data-ir-simulado>Fazer um simulado</button></div>');
       }
       return carregarEstado();
     }).catch(function (e) {
@@ -166,11 +206,11 @@
     var caixa = $('[data-resumo]');
     if (botao) botao.disabled = true;
     caixa.hidden = false;
-    caixa.innerHTML = '<p class="sim-muted">Preparando o resumo…</p>';
+    caixa.innerHTML = '<p class="p-muted">Preparando o resumo…</p>';
     api('POST', '/documentos/' + id + '/resumo', {}).then(function (r) {
       track('simulado_resumo', { documento: id });
       var res = r.resumo || {};
-      caixa.innerHTML = '<h2>Resumo: ' + esc(r.documento.nome) + '</h2>' +
+      caixa.innerHTML = '<h2 class="p-h2">Resumo: ' + esc(r.documento.nome) + '</h2>' +
         '<p>' + esc(res.resumo) + '</p>' +
         (res.pontos && res.pontos.length ? '<h3>Pontos principais</h3><ul class="sim-resumo-pontos">' + res.pontos.map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ul>' : '') +
         (res.termos && res.termos.length ? '<h3>Termos-chave</h3><ul class="sim-chips">' + res.termos.map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ul>' : '') +
@@ -199,21 +239,21 @@
       }).join('') + '</fieldset>';
     }
     return '<fieldset class="sim-questao" data-q="' + q.indice + '">' + cab +
-      '<label class="sim-muted" for="disc-' + q.indice + '">Sua resposta</label><textarea id="disc-' + q.indice + '" name="d' + q.indice + '" maxlength="4000"></textarea></fieldset>';
+      '<label class="p-muted" for="disc-' + q.indice + '">Sua resposta</label><textarea id="disc-' + q.indice + '" name="d' + q.indice + '" maxlength="4000"></textarea></fieldset>';
   }
 
   function gerarSimulado(botao) {
     var status = $('[data-sim-status]');
     botao.disabled = true;
-    status.innerHTML = '<p class="sim-muted" style="margin-top:12px">Montando as questões…</p>';
+    status.innerHTML = '<p class="sim-carregando">Montando as questões…</p>';
     api('POST', '/simulados', { tipo: 'simulado' }).then(function (r) {
       estado.simulado = r.simulado;
       track('simulado_gerado', { questoes: r.simulado.questoes.length });
       status.innerHTML = '';
       var form = $('[data-sim-form]');
-      form.innerHTML = '<h2>Simulado</h2><p class="sim-muted">Marque uma alternativa em cada questão. Questões em branco contam como erro.</p>' +
+      form.innerHTML = '<h2 class="p-h2">Simulado</h2><p class="p-hint">Marque uma alternativa em cada questão. Questões em branco contam como erro.</p>' +
         r.simulado.questoes.map(function (q) { return questaoHtml(q, 's'); }).join('') +
-        '<div class="sim-acoes"><button type="submit" class="sim-btn sim-btn-principal">Corrigir simulado</button></div>';
+        '<div class="sim-acoes"><button type="submit" class="portal-btn">Corrigir simulado</button></div>';
       form.hidden = false;
       $('[data-sim-resultado]').hidden = true;
       $('[data-sim-inicio]').hidden = true;
@@ -244,6 +284,7 @@
     api('POST', '/simulados/' + sim.id + '/corrigir', { respostas: respostas }).then(function (r) {
       form.hidden = true;
       renderResultado(sim, r.resultado);
+      carregarHero();
       track('simulado_corrigido', { nota: r.nota, questoes: sim.questoes.length });
       sinalizarDificuldade(r.resultado.por_topico);
     }).catch(function (err) { window.alert(err.message); botao.disabled = false; botao.textContent = 'Corrigir simulado'; });
@@ -262,8 +303,8 @@
   function renderResultado(sim, res) {
     var caixa = $('[data-sim-resultado]');
     var porTopico = (res.por_topico || []).slice().sort(function (a, b) { return a.nota - b.nota; });
-    caixa.innerHTML = '<h2>Resultado</h2>' +
-      '<div class="sim-nota"><strong>' + String(res.nota).replace('.', ',') + '</strong><span class="sim-muted">de 10</span></div>' +
+    caixa.innerHTML = '<h2 class="p-h2">Resultado</h2>' +
+      '<div class="sim-nota"><strong>' + String(res.nota).replace('.', ',') + '</strong><span>de 10</span></div>' +
       '<h3>Nota por tópico</h3><ul class="sim-por-topico">' + porTopico.map(function (t) {
         return '<li><span>' + esc(t.topico) + '</span><strong>' + String(t.nota).replace('.', ',') + '</strong>' +
           '<div class="sim-barra ' + faixa(t.nota) + '" role="img" aria-label="' + esc(t.topico) + ': ' + t.nota + ' de 10"><span style="width:' + (t.nota * 10) + '%"></span></div></li>';
@@ -279,8 +320,8 @@
           '<p>' + esc(c.feedback) + '</p>' +
           (c.referencia ? '<p class="sim-ref">No seu material: ' + esc(c.referencia) + '</p>' : '') + '</div>';
       }).join('') +
-      '<div class="sim-acoes"><button type="button" class="sim-btn sim-btn-principal" data-ir-melhorar>Ver pontos a melhorar</button>' +
-      '<button type="button" class="sim-btn" data-novo-simulado>Fazer outro simulado</button></div>';
+      '<div class="sim-acoes"><button type="button" class="portal-btn" data-ir-melhorar>Ver pontos a melhorar</button>' +
+      '<button type="button" class="portal-btn portal-btn--ghost" data-novo-simulado>Fazer outro simulado</button></div>';
     caixa.hidden = false;
     caixa.focus();
   }
@@ -288,11 +329,11 @@
   // ---------------- pontos a melhorar ----------------
   function topicoHtml(t, completo) {
     var pct = t.dominio == null ? null : Math.round(t.dominio * 100);
-    return '<li><div class="sim-topico-topo"><strong>' + esc(t.nome) + '</strong><span class="sim-muted" style="margin:0">' +
+    return '<li><div class="sim-topico-topo"><strong>' + esc(t.nome) + '</strong><span>' +
       (pct == null ? 'ainda não avaliado' : 'domínio ' + pct + '%') + '</span></div>' +
       (pct == null ? '' : '<div class="sim-barra ' + faixa(pct / 10) + '" role="img" aria-label="Domínio ' + pct + '%"><span style="width:' + pct + '%"></span></div>') +
-      (completo ? '<p style="margin:0">' + esc(t.recomendacao) + '</p>' : '') +
-      (completo && t.proxima_revisao ? '<p class="sim-muted" style="margin:0">Próxima revisão: ' + data(t.proxima_revisao) + (t.vencido ? ' (hoje)' : '') + ' · do documento ' + esc(t.documento) + '</p>' : '') +
+      (completo ? '<p>' + esc(t.recomendacao) + '</p>' : '') +
+      (completo && t.proxima_revisao ? '<p class="sim-topico-rev">Próxima revisão: ' + data(t.proxima_revisao) + (t.vencido ? ' (hoje)' : '') + ' · do documento ' + esc(t.documento) + '</p>' : '') +
       '</li>';
   }
 
@@ -300,7 +341,7 @@
     api('GET', '/painel').then(function (r) {
       $('[data-melhorar]').innerHTML = r.melhorar.map(function (t) { return topicoHtml(t, true); }).join('');
       $('[data-melhorar-vazio]').hidden = r.melhorar.length > 0;
-      $('[data-todos]').innerHTML = r.topicos.map(function (t) { return topicoHtml(t, false); }).join('') || '<li class="sim-vazio">Nenhum tópico ainda.</li>';
+      $('[data-todos]').innerHTML = r.topicos.map(function (t) { return topicoHtml(t, false); }).join('') || '<li class="p-muted">Nenhum tópico ainda.</li>';
       $('[data-reler-card]').hidden = !r.reler.length;
       $('[data-reler]').innerHTML = r.reler.map(function (x) { return '<li><strong>' + esc(x.topico) + ':</strong> ' + esc(x.trecho) + '</li>'; }).join('');
       track('simulado_pontos_melhorar', { topicos_fracos: r.melhorar.length });
@@ -310,13 +351,13 @@
   // ---------------- flashcards ----------------
   function carregarFlash() {
     var caixa = $('[data-flash]');
-    caixa.innerHTML = '<p class="sim-muted">Carregando…</p>';
+    caixa.innerHTML = '<p class="p-muted">Carregando…</p>';
     api('GET', '/flashcards/hoje').then(function (r) {
       estado.cards = r.cards;
       estado.cardAtual = 0;
       if (!r.total) {
-        caixa.innerHTML = '<h2>Flashcards</h2><p class="sim-muted">Cartões de pergunta e resposta tirados dos seus documentos. Você revisa cada um no dia certo: o que erra volta logo; o que acerta volta cada vez mais tarde.</p>' +
-          '<button type="button" class="sim-btn sim-btn-principal" data-gerar-flash>Criar flashcards</button>';
+        caixa.innerHTML = '<h2 class="p-h2">Flashcards</h2><p class="p-hint">Cartões de pergunta e resposta tirados dos seus documentos. Você revisa cada um no dia certo: o que erra volta logo; o que acerta volta cada vez mais tarde.</p>' +
+          '<button type="button" class="portal-btn" data-gerar-flash>Criar flashcards</button>';
         return;
       }
       renderCard();
@@ -327,17 +368,17 @@
     var caixa = $('[data-flash]');
     var c = estado.cards[estado.cardAtual];
     if (!c) {
-      caixa.innerHTML = '<h2>Flashcards</h2><div class="sim-msg sim-msg-ok"><p>Revisão de hoje concluída. Volte amanhã para os próximos cartões.</p></div>' +
-        '<div class="sim-acoes"><button type="button" class="sim-btn" data-gerar-flash>Criar cartões dos tópicos novos</button></div>';
+      caixa.innerHTML = '<h2 class="p-h2">Flashcards</h2><div class="sim-msg sim-msg-ok"><p>Revisão de hoje concluída. Volte amanhã para os próximos cartões.</p></div>' +
+        '<div class="sim-acoes"><button type="button" class="portal-btn portal-btn--ghost" data-gerar-flash>Criar cartões dos tópicos novos</button></div>';
       return;
     }
-    caixa.innerHTML = '<h2>Flashcards</h2><p class="sim-progresso">Cartão ' + (estado.cardAtual + 1) + ' de ' + estado.cards.length + ' para hoje · ' + esc(c.topico) + '</p>' +
+    caixa.innerHTML = '<h2 class="p-h2">Flashcards</h2><p class="sim-progresso">Cartão ' + (estado.cardAtual + 1) + ' de ' + estado.cards.length + ' para hoje · ' + esc(c.topico) + '</p>' +
       '<div class="sim-flash"><div class="sim-flash-frente">' + esc(c.frente) + '</div>' +
       (mostrarVerso ? '<div class="sim-flash-verso" tabindex="-1" data-verso>' + esc(c.verso) + '</div>' : '') + '</div>' +
       (mostrarVerso
-        ? '<p class="sim-muted" style="margin-top:12px">Como foi?</p><div class="sim-acoes" style="margin-top:0">' +
-          ['Errei', 'Difícil', 'Bom', 'Fácil'].map(function (n, i) { return '<button type="button" class="sim-btn' + (i === 2 ? ' sim-btn-principal' : '') + '" data-revisar="' + i + '">' + n + '</button>'; }).join('') + '</div>'
-        : '<div class="sim-acoes"><button type="button" class="sim-btn sim-btn-principal" data-virar>Mostrar resposta</button></div>');
+        ? '<p class="sim-pergunta">Como foi?</p><div class="sim-acoes" style="margin-top:8px">' +
+          ['Errei', 'Difícil', 'Bom', 'Fácil'].map(function (n, i) { return '<button type="button" class="portal-btn' + (i === 2 ? '' : ' portal-btn--ghost') + '" data-revisar="' + i + '">' + n + '</button>'; }).join('') + '</div>'
+        : '<div class="sim-acoes"><button type="button" class="portal-btn" data-virar>Mostrar resposta</button></div>');
     var alvo = mostrarVerso ? caixa.querySelector('[data-verso]') : caixa.querySelector('[data-virar]');
     if (alvo) alvo.focus();
   }
@@ -353,8 +394,8 @@
 
   // ---------------- quiz relâmpago ----------------
   function renderQuizInicio() {
-    $('[data-quiz]').innerHTML = '<h2>Quiz relâmpago</h2><p class="sim-muted">5 perguntas rápidas dos tópicos que estão na hora de revisar ou em que você está mais fraco. A correção sai na hora, uma por uma.</p>' +
-      '<button type="button" class="sim-btn sim-btn-principal" data-iniciar-quiz>Começar</button><div data-quiz-status role="status" aria-live="polite"></div>';
+    $('[data-quiz]').innerHTML = '<h2 class="p-h2">Quiz relâmpago</h2><p class="p-hint">5 perguntas rápidas dos tópicos que estão na hora de revisar ou em que você está mais fraco. A correção sai na hora, uma por uma.</p>' +
+      '<button type="button" class="portal-btn" data-iniciar-quiz>Começar</button><div data-quiz-status role="status" aria-live="polite"></div>';
   }
 
   function iniciarQuiz(botao) {
@@ -372,10 +413,10 @@
   function renderQuizQuestao() {
     var qz = estado.quiz;
     var q = qz.sim.questoes[qz.i];
-    $('[data-quiz]').innerHTML = '<h2>Quiz relâmpago</h2><p class="sim-progresso">Pergunta ' + (qz.i + 1) + ' de ' + qz.sim.questoes.length + '</p>' +
+    $('[data-quiz]').innerHTML = '<h2 class="p-h2">Quiz relâmpago</h2><p class="sim-progresso">Pergunta ' + (qz.i + 1) + ' de ' + qz.sim.questoes.length + '</p>' +
       '<form data-quiz-form novalidate>' + questaoHtml(q, 'r') +
       '<div data-quiz-feedback role="status" aria-live="polite"></div>' +
-      '<div class="sim-acoes"><button type="submit" class="sim-btn sim-btn-principal">Conferir</button></div></form>';
+      '<div class="sim-acoes"><button type="submit" class="portal-btn">Conferir</button></div></form>';
     var p = $('[data-quiz] input');
     if (p) p.focus();
   }
@@ -401,7 +442,7 @@
       $('[data-quiz-feedback]').innerHTML = '<div class="sim-msg sim-msg-' + (c.certa ? 'ok' : 'erro') + '"><p><strong>' + esc(c.feedback) + '</strong></p>' +
         (c.referencia ? '<p class="sim-ref">No seu material: ' + esc(c.referencia) + '</p>' : '') + '</div>';
       var ultimo = qz.i >= qz.sim.questoes.length - 1;
-      botao.outerHTML = '<button type="button" class="sim-btn sim-btn-principal" data-quiz-proxima>' + (ultimo ? 'Ver resultado' : 'Próxima') + '</button>';
+      botao.outerHTML = '<button type="button" class="portal-btn" data-quiz-proxima>' + (ultimo ? 'Ver resultado' : 'Próxima') + '</button>';
       $('[data-quiz-proxima]').focus();
     }).catch(function (err) { botao.disabled = false; window.alert(err.message); });
   }
@@ -411,10 +452,11 @@
     if (qz.i < qz.sim.questoes.length - 1) { qz.i += 1; renderQuizQuestao(); return; }
     api('POST', '/simulados/' + qz.sim.id + '/corrigir', {}).then(function (r) {
       track('simulado_relampago_concluido', { nota: r.nota });
+      carregarHero();
       sinalizarDificuldade(r.resultado.por_topico);
-      $('[data-quiz]').innerHTML = '<h2>Quiz relâmpago</h2><div class="sim-nota"><strong>' + qz.acertos + '</strong><span class="sim-muted">de ' + qz.sim.questoes.length + ' certas</span></div>' +
-        '<p class="sim-muted">Seu domínio por tópico foi atualizado e as próximas revisões foram reagendadas.</p>' +
-        '<div class="sim-acoes"><button type="button" class="sim-btn sim-btn-principal" data-iniciar-quiz>Outro quiz</button><button type="button" class="sim-btn" data-ir-melhorar>Pontos a melhorar</button></div>';
+      $('[data-quiz]').innerHTML = '<h2 class="p-h2">Quiz relâmpago</h2><div class="sim-nota"><strong>' + qz.acertos + '</strong><span>de ' + qz.sim.questoes.length + ' certas</span></div>' +
+        '<p class="p-hint">Seu domínio por tópico foi atualizado e as próximas revisões foram reagendadas.</p>' +
+        '<div class="sim-acoes"><button type="button" class="portal-btn" data-iniciar-quiz>Outro quiz</button><button type="button" class="portal-btn portal-btn--ghost" data-ir-melhorar>Pontos a melhorar</button></div>';
       estado.quiz = null;
     }).catch(function (e) { window.alert(e.message); });
   }
@@ -440,6 +482,8 @@
       else if (t.hasAttribute('data-resumo-doc')) verResumo(t.getAttribute('data-resumo-doc'), t);
       else if (t.hasAttribute('data-apagar')) apagar(t.getAttribute('data-apagar'));
       else if (t.hasAttribute('data-ir-simulado')) abrirAba('simulado', true);
+      else if (t.hasAttribute('data-ir-docs')) { abrirAba('docs'); $('[data-drop]').scrollIntoView({ block: 'center' }); $('[data-arquivo]').focus(); }
+      else if (t.hasAttribute('data-sair')) sairDaConta();
       else if (t.hasAttribute('data-gerar-simulado')) gerarSimulado(t);
       else if (t.hasAttribute('data-novo-simulado')) { $('[data-sim-resultado]').hidden = true; $('[data-sim-inicio]').hidden = false; $('[data-gerar-simulado]').focus(); }
       else if (t.hasAttribute('data-ir-melhorar')) abrirAba('melhorar', true);
@@ -460,7 +504,9 @@
     if (!window.Auth || !window.Auth.isAuthenticated()) { window.location.replace('/login'); return; }
     window.Api.getRecursos().then(function (r) {
       if (!r || !r.simulado) { sair(); return; }
+      preencherAluno();
       return carregarEstado().then(function () {
+        carregarHero();
         $('#app').hidden = false;
         ligar();
         rastreio(r);

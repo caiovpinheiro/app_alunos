@@ -144,4 +144,7 @@ function capitaliza(s) {
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
-module.exports = { limpo, linhasLimpas, juntaLinhas, pareceVerbo, semAcento, normaliza, raiz, palavras, conteudo, frases, termos, hash, embaralha, capitaliza, STOP };
+// Trecho com marca d'água, e-mail ou texto de site (não deve aparecer para o aluno).
+function ehRuido(txt) { return RUIDO.test(String(txt || '')); }
+
+module.exports = { ehRuido, limpo, linhasLimpas, juntaLinhas, pareceVerbo, semAcento, normaliza, raiz, palavras, conteudo, frases, termos, hash, embaralha, capitaliza, STOP };
