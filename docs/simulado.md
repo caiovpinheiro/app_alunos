@@ -33,7 +33,7 @@ server/simulado/
   texto.js        utilidades de texto em português (termos, frases, raízes)
 ```
 
-### Tabelas (criadas sob demanda, `CREATE TABLE IF NOT EXISTS`, só no banco local por enquanto)
+### Tabelas (criadas sob demanda, `CREATE TABLE IF NOT EXISTS`, no primeiro uso por aluno liberado)
 
 | Tabela | Conteúdo |
 | --- | --- |
@@ -160,10 +160,24 @@ e pediu confirmação; a lista de exercícios de apoio (nome em branco, alternat
 - Custo: cada upload faz 2 chamadas (classificação e tópicos); resumo, simulado (uma por tópico), correção de discursiva e flashcards
   fazem chamadas sob demanda. Resumo e tópicos ficam guardados.
 
-## Antes de ir para produção
+## Em produção só para o aluno de teste
+
+O código está na `main` desligado por padrão: sem `SIMULADO_ATIVA_PARA` o menu não mostra nada e `/simulado`
+e `/api/simulado/*` respondem 404; com `SIMULADO_SO_LOCAL` em `true` (o padrão) também é 404 fora do localhost.
+Para abrir só para o aluno de teste, no Environment do EasyPanel:
+
+```
+SIMULADO_ATIVA_PARA=<o mesmo RGM ou e-mail de AJUDA_ATIVA_PARA>
+SIMULADO_SO_LOCAL=false
+```
+
+Sem `SIMULADO_LLM`, roda o modo de demonstração (sem custo de IA). As tabelas `csu_sim_*` são criadas no banco de
+produção na primeira chamada de um aluno liberado. Para desligar, basta apagar `SIMULADO_ATIVA_PARA`.
+
+## Antes de abrir para mais alunos
 
 1. Escolher e configurar a chave do provedor (e instalar o SDK); rever os prompts com 10 a 20 documentos reais.
-2. Mover `pdfjs-dist` de `devDependencies` para `dependencies` (o Dockerfile roda `npm ci --omit=dev`).
+2. ~~Mover `pdfjs-dist` para `dependencies`~~ (feito: o Dockerfile roda `npm ci --omit=dev`).
 3. Criar as tabelas no banco de produção (sobem sozinhas no primeiro uso, mas vale rodar antes em janela calma).
 4. Definir retenção dos textos (hoje ficam até o aluno apagar) e incluir a área na política de privacidade.
 5. Tela no admin para as detecções (hoje há a API e os eventos no percurso do aluno).
