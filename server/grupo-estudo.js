@@ -163,6 +163,8 @@ async function ensureSchema(pool) {
       aceito_em TIMESTAMPTZ NOT NULL DEFAULT now(),
       PRIMARY KEY (aluno_id, versao)
     );
+    -- Saiu do grupo: o aceite fica guardado (prova do consentimento dado) e ganha a data da revogação.
+    ALTER TABLE csu_grupo_aceites ADD COLUMN IF NOT EXISTS revogado_em TIMESTAMPTZ;
 
     CREATE TABLE IF NOT EXISTS csu_grupo_denuncias (
       id SERIAL PRIMARY KEY,
@@ -263,7 +265,8 @@ function silenciadoAte(g) {
 // Mensagem como o aluno vê: dos outros, só publicada; as próprias, com status e explicação.
 function paraAluno(row, alunoId) {
   const minha = row.aluno_id === alunoId;
-  if (row.status !== 'publicada' && !minha) return { id: Number(row.id), oculta: true };
+  // Apagada pelo próprio autor ao sair do grupo: some para todos, inclusive para ele se voltar.
+  if ((row.status !== 'publicada' && !minha) || row.categoria === 'apagada_pelo_autor') return { id: Number(row.id), oculta: true };
   const out = {
     id: Number(row.id),
     autor: nomeExibido(row.nome),
@@ -353,7 +356,7 @@ async function conversas(pool, g, alunoId) {
   const [ultGrupo, naoLidasGrupo, colegas, minhas, bloqueios] = await Promise.all([
     pool.query(
       `SELECT m.id, m.texto, m.midia_tipo, m.status, m.criado_em, m.aluno_id, a.nome FROM csu_grupo_mensagens m JOIN csu_alunos a ON a.id = m.aluno_id
-       WHERE m.grupo_id = $1 AND m.conversa_id IS NULL AND (m.status = 'publicada' OR m.aluno_id = $2) ORDER BY m.id DESC LIMIT 1`,
+       WHERE m.grupo_id = $1 AND m.conversa_id IS NULL AND (m.status = 'publicada' OR m.aluno_id = $2) AND m.categoria <> 'apagada_pelo_autor' ORDER BY m.id DESC LIMIT 1`,
       [g.id, alunoId],
     ),
     pool.query(
@@ -363,7 +366,7 @@ async function conversas(pool, g, alunoId) {
     pool.query(
       `SELECT mem.ref, mem.aluno_id, a.nome FROM csu_grupo_membros mem JOIN csu_alunos a ON a.id = mem.aluno_id
        WHERE mem.grupo_id = $1 AND mem.aluno_id <> $2 AND a.ativo
-         AND EXISTS (SELECT 1 FROM csu_grupo_aceites ac WHERE ac.aluno_id = mem.aluno_id AND ac.versao = $3)`,
+         AND EXISTS (SELECT 1 FROM csu_grupo_aceites ac WHERE ac.aluno_id = mem.aluno_id AND ac.versao = $3 AND ac.revogado_em IS NULL)`,
       [g.id, alunoId, grupoTermo.VERSAO],
     ),
     pool.query(
@@ -379,7 +382,7 @@ async function conversas(pool, g, alunoId) {
   const ultimas = ids.length ? (await pool.query(
     `SELECT DISTINCT ON (m.conversa_id) m.conversa_id, m.id, m.texto, m.midia_tipo, m.status, m.criado_em, m.aluno_id, a.nome
      FROM csu_grupo_mensagens m JOIN csu_alunos a ON a.id = m.aluno_id
-     WHERE m.conversa_id = ANY($1) AND (m.status = 'publicada' OR m.aluno_id = $2) ORDER BY m.conversa_id, m.id DESC`,
+     WHERE m.conversa_id = ANY($1) AND (m.status = 'publicada' OR m.aluno_id = $2) AND m.categoria <> 'apagada_pelo_autor' ORDER BY m.conversa_id, m.id DESC`,
     [ids, alunoId],
   )).rows : [];
   const porOutro = new Map(minhas.rows.map((c) => [c.outro, c]));
@@ -431,10 +434,26 @@ function montar(app, deps) {
   const naoEncontrado = (res) => res.status(404).json({ success: false, message: 'Recurso não encontrado.' });
 
   // Aceite das regras (server/grupo-termo.js): sem aceite da versão atual, só /meu e o próprio aceite respondem.
-  // Sem cache em memória: se o aceite for revogado (LGPD, art. 18), vale no pedido seguinte.
+  // Entrar no grupo = aceitar o termo; sair = revogar o aceite (LGPD, art. 8º, § 5º). Sem cache em memória:
+  // a saída vale no pedido seguinte.
   async function aceitou(alunoId) {
-    const r = await pool.query('SELECT 1 FROM csu_grupo_aceites WHERE aluno_id = $1 AND versao = $2', [alunoId, grupoTermo.VERSAO]);
+    const r = await pool.query(
+      'SELECT 1 FROM csu_grupo_aceites WHERE aluno_id = $1 AND versao = $2 AND revogado_em IS NULL',
+      [alunoId, grupoTermo.VERSAO],
+    );
     return r.rowCount > 0;
+  }
+
+  // Situação do aluno diante do grupo: 'membro', 'saiu' (revogou), 'regras_novas' (aceitou uma versão antiga) ou 'novo'.
+  async function situacao(alunoId) {
+    const r = await pool.query(
+      'SELECT versao, revogado_em FROM csu_grupo_aceites WHERE aluno_id = $1 ORDER BY aceito_em DESC LIMIT 1',
+      [alunoId],
+    );
+    const u = r.rows[0];
+    if (!u) return 'novo';
+    if (u.revogado_em) return 'saiu';
+    return u.versao === grupoTermo.VERSAO ? 'membro' : 'regras_novas';
   }
 
   // Endereço da tela (a SPA decide o que mostrar; a API é que libera ou não).
@@ -462,11 +481,16 @@ function montar(app, deps) {
     if (!(req.body && req.body.li === true)) return res.status(400).json({ success: false, message: 'Marque que leu e aceita as regras.' });
     try {
       await ensure();
+      const antes = await situacao(req.aluno.id);
+      // Quem saiu e volta aceita de novo: o registro ganha a nova data e deixa de estar revogado.
       const ins = await pool.query(
-        'INSERT INTO csu_grupo_aceites (aluno_id, versao) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING aceito_em',
+        `INSERT INTO csu_grupo_aceites (aluno_id, versao) VALUES ($1, $2)
+         ON CONFLICT (aluno_id, versao) DO UPDATE SET aceito_em = now(), revogado_em = NULL
+         WHERE csu_grupo_aceites.revogado_em IS NOT NULL
+         RETURNING aceito_em`,
         [req.aluno.id, versao],
       );
-      if (ins.rowCount) await evento(pool, req.aluno.id, 'grupo_aceite', { versao });
+      if (ins.rowCount) await evento(pool, req.aluno.id, 'grupo_aceite', { versao, voltou: antes === 'saiu' });
       return res.json({ success: true, versao });
     } catch (err) {
       console.error('Grupo de estudo: falha ao gravar o aceite:', err.message);
@@ -482,7 +506,7 @@ function montar(app, deps) {
     const col = (await pool.query(
       `SELECT mem.aluno_id FROM csu_grupo_membros mem
        WHERE mem.grupo_id = $1 AND mem.ref = $2 AND mem.aluno_id <> $3
-         AND EXISTS (SELECT 1 FROM csu_grupo_aceites ac WHERE ac.aluno_id = mem.aluno_id AND ac.versao = $4)`,
+         AND EXISTS (SELECT 1 FROM csu_grupo_aceites ac WHERE ac.aluno_id = mem.aluno_id AND ac.versao = $4 AND ac.revogado_em IS NULL)`,
       [g.id, String(req.params.ref), req.aluno.id, grupoTermo.VERSAO],
     )).rows[0];
     if (!col) return { erro: 404, message: 'Colega não encontrado.' };
@@ -517,13 +541,14 @@ function montar(app, deps) {
       if (!g) return res.json({ success: true, grupo: null, motivo: 'sem_curso', regras: REGRAS, aviso: aviso() });
       const n = await pool.query(
         `SELECT count(*)::int AS n FROM csu_grupo_membros mem
-         WHERE mem.grupo_id = $1 AND EXISTS (SELECT 1 FROM csu_grupo_aceites ac WHERE ac.aluno_id = mem.aluno_id AND ac.versao = $2)`,
+         WHERE mem.grupo_id = $1 AND EXISTS (SELECT 1 FROM csu_grupo_aceites ac WHERE ac.aluno_id = mem.aluno_id AND ac.versao = $2 AND ac.revogado_em IS NULL)`,
         [g.id, grupoTermo.VERSAO],
       );
       return res.json({
         success: true,
         termo: grupoTermo.termo(midiaDias()),
         aceite_pendente: !(await aceitou(req.aluno.id)),
+        situacao: await situacao(req.aluno.id),
         grupo: { nome: g.nome, membros: n.rows[0].n },
         eu: { nome: g.eu, silenciado_ate: silenciadoAte(g) },
         regras: REGRAS,
@@ -536,6 +561,39 @@ function montar(app, deps) {
     } catch (err) {
       console.error('Grupo de estudo: falha ao abrir o grupo:', err.message);
       return res.status(500).json({ success: false, message: 'Não foi possível abrir o grupo agora.' });
+    }
+  });
+
+  // Sair do grupo: revoga o aceite. Com apagar=true, retira também o que o aluno enviou (grupo e privado),
+  // menos o que tem denúncia aberta, que a equipe ainda precisa analisar.
+  app.post('/api/grupos/sair', async (req, res) => {
+    const apagar = Boolean(req.body && req.body.apagar === true);
+    try {
+      await ensure();
+      await pool.query('UPDATE csu_grupo_aceites SET revogado_em = now() WHERE aluno_id = $1 AND revogado_em IS NULL', [req.aluno.id]);
+      let apagadas = 0;
+      if (apagar) {
+        const r = await pool.query(
+          `WITH alvo AS (
+             SELECT id, midia_arquivo FROM csu_grupo_mensagens m
+             WHERE m.aluno_id = $1 AND m.status <> 'removida'
+               AND NOT EXISTS (SELECT 1 FROM csu_grupo_denuncias d WHERE d.mensagem_id = m.id AND d.resolvida_em IS NULL)
+             FOR UPDATE
+           )
+           UPDATE csu_grupo_mensagens m SET status = 'removida', texto = '', categoria = 'apagada_pelo_autor', revisar = FALSE,
+             midia_arquivo = NULL, midia_apagada = (m.midia_tipo IS NOT NULL), atualizado_em = now()
+           FROM alvo WHERE m.id = alvo.id
+           RETURNING alvo.midia_arquivo`,
+          [req.aluno.id],
+        );
+        for (const row of r.rows) await apagarArquivo(row.midia_arquivo);
+        apagadas = r.rowCount;
+      }
+      await evento(pool, req.aluno.id, 'grupo_saida', { versao: grupoTermo.VERSAO, apagou: apagar, mensagens: apagadas });
+      return res.json({ success: true, apagadas });
+    } catch (err) {
+      console.error('Grupo de estudo: falha ao sair do grupo:', err.message);
+      return res.status(500).json({ success: false, message: 'Não foi possível sair do grupo agora. Tente de novo.' });
     }
   });
 

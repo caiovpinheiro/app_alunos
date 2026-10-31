@@ -58,16 +58,28 @@ disciplinas de `csu_materias_alunos`.
 
 ### 2.1 Aceite das regras (termo versionado)
 
-- **Na primeira entrada**, antes de ver qualquer conversa, o aluno vê "Antes de entrar no grupo": seis
-  regras em linguagem simples, cada uma com a **base legal**, mais o termo completo expansível. Ele marca
-  "Li e aceito as regras do grupo e o uso dos meus dados descrito acima" e toca em "Aceitar e entrar no
-  grupo". "Agora não" volta ao Início.
+- **Entrar = aceitar.** Antes de ver qualquer conversa, o aluno vê "Entrar no grupo de …": sete regras
+  em linguagem simples, cada uma com a **base legal**, mais o termo completo expansível. Ele marca "Li e
+  aceito as regras do grupo e o uso dos meus dados descrito acima" e toca em "Entrar no grupo". "Agora
+  não" volta ao Início. A tela muda conforme a situação (`situacao` em `/api/grupos/meu`): `novo`,
+  `saiu` ("Você saiu do grupo…", botão "Voltar para o grupo") ou `regras_novas` ("As regras … mudaram",
+  botão "Aceitar e continuar"). O cartão do Início também muda ("Entrar no grupo de …" para quem está
+  fora).
 - **Texto** em `server/grupo-termo.js`, num arquivo à parte para o jurídico revisar. Seções:
   1. o que é o grupo;
-  2. regras de convivência;
-  3. como funciona a moderação;
-  4. seus dados (LGPD);
-  5. mudanças no termo.
+  2. quem oferece o grupo e quem responde pelo conteúdo;
+  3. regras de convivência;
+  4. como funciona a moderação;
+  5. seus dados (LGPD);
+  6. entrar e sair do grupo;
+  7. mudanças no termo.
+- **Cruzeiro do Sul e Eduit (seção 2):** oferecem a ferramenta, não acompanham nem leem as conversas por
+  rotina e não respondem pelo que os participantes publicam; o que se diz no grupo não é orientação
+  oficial. O texto **não** diz que elas não têm acesso nenhum, porque a equipe vê o que é denunciado,
+  retido ou bloqueado pelo moderador. Dizer o contrário seria informação falsa e invalidaria o
+  consentimento (LGPD, art. 9º, § 1º). A ressalva de responsabilidade segue o Marco Civil, arts. 19 e 21,
+  como o STF fixou em 2025 (Temas 533 e 987): a plataforma pode responder se, avisada de conteúdo
+  ilícito, não o retirar.
 - **Bases citadas:**
 
   | Tema | Lei |
@@ -80,14 +92,22 @@ disciplinas de `csu_materias_alunos`.
   | Racismo e injúria racial | Lei 7.716/1989; STF, ADO 26 (homotransfobia) |
   | Dados pessoais | LGPD (Lei 13.709/2018), arts. 6º, 7º I e IX, 9º, 15 e 18 |
   | Ordem judicial, guarda de registros e informação ao usuário | Marco Civil da Internet (Lei 12.965/2014), arts. 7º, 10 e 15 |
+  | Responsabilidade por conteúdo de terceiros | Marco Civil, arts. 19 e 21; STF, Temas 533 e 987 (2025) |
+  | Revogação do consentimento | LGPD, art. 8º, § 5º |
   | Direito de imagem | Código Civil, art. 20 |
   | Direitos autorais | Lei 9.610/1998 |
   | Intimidade e vida privada | Constituição Federal, art. 5º, X |
 
-- **Versão:** `VERSAO` em `server/grupo-termo.js` (hoje `2026-10-31`). Trocou a versão, todo aluno aceita
+- **Versão:** `VERSAO` em `server/grupo-termo.js` (hoje `2026-10-31.2`; o sufixo `.2` marca a segunda versão do dia). Trocou a versão, todo aluno aceita
   de novo antes de voltar a usar o grupo.
-- **Registro:** tabela `csu_grupo_aceites` (aluno, versão, data e hora) e evento `grupo_aceite` em
-  `csu_eventos`.
+- **Registro:** tabela `csu_grupo_aceites` (aluno, versão, data e hora, `revogado_em`) e eventos
+  `grupo_aceite` e `grupo_saida` em `csu_eventos`.
+- **Sair do grupo:** botão "Sair do grupo" no topo da lista de conversas e no painel Regras. A folha de
+  confirmação explica o que acontece e pergunta o que fazer com o que a pessoa enviou: **manter** para quem
+  ficou ou **apagar agora** (textos zerados, fotos e áudios apagados do disco, mensagem some para todos
+  pelo polling). O que tem denúncia aberta fica até a equipe concluir. `POST /api/grupos/sair`
+  `{ apagar }` marca `revogado_em` (o aceite fica guardado como prova do consentimento dado). Quem saiu
+  some da lista, não recebe mensagem privada e volta quando quiser aceitando o termo de novo.
 - **No servidor:** sem aceite da versão atual, todas as rotas de `/api/grupos/*` respondem
   `403 aceite_pendente`, exceto `/meu` e o próprio aceite. Quem não aceitou **não aparece na lista dos
   colegas** e não pode receber mensagem privada.
@@ -98,8 +118,8 @@ disciplinas de `csu_materias_alunos`.
   - confirmar se o portal precisa guardar registros de acesso por 6 meses (Marco Civil, art. 15) e onde
     eles ficam (proxy/EasyPanel), já que o grupo não grava IP;
   - definir a regra para alunos menores de 18 anos (LGPD, art. 14);
-  - incluir um botão "Sair do grupo / revogar consentimento". Hoje a revogação é pelo atendimento, e o
-    servidor já respeita a remoção do aceite no pedido seguinte.
+  - confirmar a cláusula da seção 2 (papel da Cruzeiro do Sul e da Eduit, quem é controladora dos dados e
+    o limite da responsabilidade depois da decisão do STF de 2025).
 
 ## 3. Moderação antes da publicação
 

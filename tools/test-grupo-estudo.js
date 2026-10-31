@@ -98,6 +98,11 @@ async function main() {
     confere(semAceite.status === 200 && semAceite.body.aceite_pendente === true && semAceite.body.termo && semAceite.body.termo.resumo.length >= 5,
       'sem aceite: /meu avisa aceite_pendente e traz o termo', semAceite.body && semAceite.body.termo && `versão ${semAceite.body.termo.versao}`);
     confere(semAceite.body.termo.resumo.every((r) => r.lei && r.lei.length > 10), 'cada regra do resumo traz a base legal');
+    confere(semAceite.body.situacao === 'novo', 'quem nunca aceitou está na situação "novo"', semAceite.body.situacao);
+    const secInst = semAceite.body.termo.secoes.find((sec) => /Quem oferece/.test(sec.titulo));
+    confere(secInst && /Cruzeiro do Sul/.test(secInst.itens.join(' ')) && /Eduit/.test(secInst.itens.join(' ')) && /não respondem pelo conteúdo/.test(secInst.itens.join(' ')),
+      'o termo diz que a Cruzeiro do Sul e a Eduit não respondem pelo conteúdo dos participantes');
+    confere(semAceite.body.termo.secoes.some((sec) => /Entrar e sair/.test(sec.titulo)), 'o termo explica como entrar e sair do grupo');
     const bloqueadoSemAceite = await chamar(tTeste, 'GET', '/api/grupos/meu/conversas');
     confere(bloqueadoSemAceite.status === 403 && bloqueadoSemAceite.body.codigo === 'aceite_pendente', 'sem aceite: conversas → 403 aceite_pendente');
     confere((await chamar(tTeste, 'POST', '/api/grupos/meu/mensagens', { texto: 'oi' })).status === 403, 'sem aceite: não envia mensagem');
@@ -236,6 +241,31 @@ async function main() {
     const barrado = await chamar(tTeste, 'POST', `/api/grupos/conversas/${bruna.ref}/mensagens`, { texto: `oi? ${marca}` });
     confere(barrado.status === 403, 'bloqueado não consegue mandar mensagem privada', barrado.body && barrado.body.message);
     await chamar(tBruna, 'POST', `/api/grupos/conversas/${comTeste.ref}/bloqueio`, { bloquear: false });
+
+    // ----- Sair do grupo e voltar -----
+    const refCarlos = (await chamar(tBruna, 'GET', '/api/grupos/meu/conversas')).body.colegas.find((c) => c.nome.startsWith('Carlos')).ref;
+    const doCarlos = await chamar(tCarlos, 'POST', '/api/grupos/meu/mensagens', { texto: `Alguém já fez o exercício 3 da unidade 2? ${marca}` });
+    confere(doCarlos.status === 201 || doCarlos.status === 200, 'Carlos publica no grupo antes de sair', doCarlos.body && doCarlos.body.mensagem && doCarlos.body.mensagem.status);
+    const idCarlos = doCarlos.body.mensagem.id;
+    const saida = await chamar(tCarlos, 'POST', '/api/grupos/sair', { apagar: true });
+    confere(saida.status === 200 && saida.body.apagadas >= 1, 'Carlos sai do grupo apagando o que enviou', saida.body && `${saida.body.apagadas} apagada(s)`);
+    const carlosFora = await chamar(tCarlos, 'GET', '/api/grupos/meu');
+    confere(carlosFora.body.aceite_pendente === true && carlosFora.body.situacao === 'saiu', 'depois de sair: /meu mostra situação "saiu"');
+    confere((await chamar(tCarlos, 'GET', '/api/grupos/meu/conversas')).status === 403, 'depois de sair: não abre mais as conversas');
+    confere(!(await chamar(tBruna, 'GET', '/api/grupos/meu/conversas')).body.colegas.some((c) => c.ref === refCarlos), 'quem saiu some da lista dos colegas');
+    confere((await chamar(tBruna, 'POST', `/api/grupos/conversas/${refCarlos}/mensagens`, { texto: `Carlos? ${marca}` })).status === 404, 'ninguém manda mensagem privada para quem saiu');
+    const feedBruna = (await chamar(tBruna, 'GET', '/api/grupos/meu/mensagens')).body.mensagens;
+    confere(!feedBruna.some((m) => m.id === idCarlos && !m.oculta), 'a mensagem apagada some para quem ficou');
+    const evSaida = await pool.query("SELECT dados FROM csu_eventos WHERE aluno_id = $1 AND nome = 'grupo_saida' ORDER BY id DESC LIMIT 1", [fict[1].id]);
+    confere(evSaida.rows[0] && evSaida.rows[0].dados.apagou === true, 'saída registrada em csu_eventos (grupo_saida)');
+    const aceiteGuardado = await pool.query('SELECT revogado_em FROM csu_grupo_aceites WHERE aluno_id = $1 AND versao = $2', [fict[1].id, VERSAO]);
+    confere(aceiteGuardado.rows[0] && aceiteGuardado.rows[0].revogado_em, 'o aceite fica guardado com a data da revogação');
+    confere((await chamar(tCarlos, 'POST', '/api/grupos/termo/aceite', { versao: VERSAO, li: true })).status === 200, 'Carlos volta aceitando as regras de novo');
+    const carlosVolta = await chamar(tCarlos, 'GET', '/api/grupos/meu');
+    confere(carlosVolta.body.aceite_pendente === false && carlosVolta.body.situacao === 'membro', 'de volta: situação "membro"');
+    confere((await chamar(tBruna, 'GET', '/api/grupos/meu/conversas')).body.colegas.some((c) => c.ref === refCarlos), 'de volta: aparece de novo na lista dos colegas');
+    const feedCarlos = (await chamar(tCarlos, 'GET', '/api/grupos/meu/mensagens')).body.mensagens;
+    confere(!feedCarlos.some((m) => m.id === idCarlos && !m.oculta), 'o que ele apagou continua apagado ao voltar');
 
     // ----- Silêncio e csu_eventos -----
     const sil = await chamar(tAdmin, 'POST', `/api/admin/grupos/mensagens/${au.body.mensagem.id}/acao`, { acao: 'silenciar', horas: 24, remover: true });

@@ -137,6 +137,7 @@ window.GrupoEstudo = (function () {
     var hero = document.querySelector('#dashboard-page .portal-hero');
     var d = estado.dados;
     if (!hero || !d || !d.grupo || $('ge-entrada')) return;
+    var membro = !d.aceite_pendente;
     var a = document.createElement('a');
     a.id = 'ge-entrada';
     a.className = 'ge-entrada';
@@ -144,11 +145,20 @@ window.GrupoEstudo = (function () {
     a.setAttribute('data-go', TELA);
     a.innerHTML =
       '<span class="ge-entrada-ico">' + icone('users') + '</span>' +
-      '<span class="ge-entrada-txt"><b>Grupo de ' + esc(d.grupo.nome) + '</b>' +
-      '<span>Tire dúvidas e estude com ' + (d.grupo.membros > 1 ? (d.grupo.membros - 1) + (d.grupo.membros === 2 ? ' colega' : ' colegas') : 'a sua turma') + ' do seu curso</span></span>' +
+      '<span class="ge-entrada-txt"><b>' + (membro ? 'Grupo de ' : 'Entrar no grupo de ') + esc(d.grupo.nome) + '</b>' +
+      '<span>' + (membro
+        ? 'Tire dúvidas e estude com ' + (d.grupo.membros > 1 ? (d.grupo.membros - 1) + (d.grupo.membros === 2 ? ' colega' : ' colegas') : 'a sua turma') + ' do seu curso'
+        : d.situacao === 'regras_novas' ? 'As regras mudaram: aceite a versão nova para continuar'
+          : 'Opcional: tire dúvidas e estude com colegas do seu curso') + '</span></span>' +
       icone('chevron-right');
     hero.insertAdjacentElement('afterend', a);
     icones();
+  }
+
+  function atualizarEntrada() {
+    var e = $('ge-entrada');
+    if (e) e.remove();
+    entradaNoInicio();
   }
 
   function desmontar() {
@@ -175,17 +185,25 @@ window.GrupoEstudo = (function () {
       return '<h3>' + esc(sec.titulo) + '</h3><ul>' + sec.itens.map(function (i) { return '<li>' + esc(i) + '</li>'; }).join('') + '</ul>';
     }).join('');
   }
-  function dataVersao(v) { return String(v || '').split('-').reverse().join('/'); }
+  function dataVersao(t) { return t.data || String(t.versao || '').slice(0, 10).split('-').reverse().join('/'); }
+
+  // O que a tela de entrada diz em cada situação (server: situacao()).
+  var ENTRADA = {
+    novo: { tit: 'Entrar no grupo de ', lede: 'Aqui você estuda com a sua turma e conversa com colegas do curso. Participar é opcional e você pode sair quando quiser. Para entrar, leia e aceite as regras: elas protegem você e seguem a lei.', ok: 'Entrar no grupo' },
+    saiu: { tit: 'Você saiu do grupo de ', lede: 'Você não aparece mais para os colegas e ninguém pode mandar mensagem para você. Para voltar, leia e aceite as regras de novo.', ok: 'Voltar para o grupo' },
+    regras_novas: { tit: 'As regras do grupo de ', titFim: ' mudaram', lede: 'Leia a versão nova e aceite para continuar no grupo. Se não quiser aceitar, você fica fora do grupo até mudar de ideia.', ok: 'Aceitar e continuar' },
+  };
 
   function renderTermo() {
     var root = $('ge-root');
     var d = estado.dados;
     var t = d.termo;
+    var e = ENTRADA[d.situacao] || ENTRADA.novo;
     root.innerHTML =
       '<div class="ge-termo"><div class="ge-termo-in">' +
-        '<span class="ge-intro-ico">' + icone('users') + '</span>' +
-        '<h1>Antes de entrar no grupo de ' + esc(d.grupo.nome) + '</h1>' +
-        '<p class="ge-termo-lede">Aqui você estuda com a sua turma e conversa com colegas do curso. Para participar, leia e aceite as regras: elas protegem você e seguem a lei.</p>' +
+        '<span class="ge-intro-ico' + (d.situacao === 'saiu' ? ' ge-intro-ico--saiu' : '') + '">' + icone(d.situacao === 'saiu' ? 'log-out' : 'users') + '</span>' +
+        '<h1>' + esc(e.tit) + esc(d.grupo.nome) + esc(e.titFim || '') + '</h1>' +
+        '<p class="ge-termo-lede">' + esc(e.lede) + '</p>' +
         '<ul class="ge-termo-lista">' + t.resumo.map(function (r) {
           return '<li><span class="ge-termo-ico">' + icone(r.icone) + '</span><div>' +
             '<p class="ge-termo-tit">' + esc(r.titulo) + '</p>' +
@@ -198,10 +216,10 @@ window.GrupoEstudo = (function () {
           '<label class="ge-opcao ge-opcao--check ge-termo-check"><input type="checkbox" id="ge-termo-li">' +
             '<span>Li e aceito as regras do grupo e o uso dos meus dados descrito acima.</span></label>' +
           '<p class="ge-erro" id="ge-termo-erro" role="alert" hidden></p>' +
-          '<button type="submit" class="ge-sheet-ok" id="ge-termo-ok">Aceitar e entrar no grupo</button>' +
+          '<button type="submit" class="ge-sheet-ok" id="ge-termo-ok">' + esc(e.ok) + '</button>' +
           '<a href="/inicio" class="ge-termo-depois" data-go="dashboard-page">Agora não</a>' +
         '</form>' +
-        '<p class="ge-termo-versao">Versão de ' + esc(dataVersao(t.versao)) + '</p>' +
+        '<p class="ge-termo-versao">Versão de ' + esc(dataVersao(t)) + '</p>' +
       '</div></div>';
     icones();
     $('ge-root').scrollTop = 0;
@@ -235,7 +253,7 @@ window.GrupoEstudo = (function () {
       '<div class="ge-sheet-topo"><h2 id="ge-sheet-tit">' + esc(t.titulo) + '</h2>' +
         '<button type="button" class="ge-sheet-x" data-ge-fechar aria-label="Fechar">' + icone('x') + '</button></div>' +
       '<div class="ge-termo-texto">' + secoesHtml(t) + '</div>' +
-      '<p class="ge-termo-versao">Versão de ' + esc(dataVersao(t.versao)) + ', aceita por você.</p>' +
+      '<p class="ge-termo-versao">Versão de ' + esc(dataVersao(t)) + ', aceita por você.</p>' +
       '<button type="button" class="ge-sheet-ok" data-ge-fechar>Voltar à conversa</button></div>';
     icones();
     mostrarDialogo(sheet);
@@ -256,6 +274,7 @@ window.GrupoEstudo = (function () {
       '<aside class="ge-lado" aria-label="Conversas">' +
         '<div class="ge-lado-topo">' +
           '<div><h1>Conversas</h1><p>' + esc(d.grupo.nome) + ' · você é <b>' + esc(d.eu.nome) + '</b></p></div>' +
+          '<button type="button" class="ge-sair-btn" data-ge-sair>' + icone('log-out') + '<span>Sair do grupo</span></button>' +
         '</div>' +
         '<div class="ge-busca">' + icone('search') +
           '<label for="ge-busca" class="ge-sr">Buscar colega</label>' +
@@ -381,7 +400,10 @@ window.GrupoEstudo = (function () {
       '<div class="ge-regras" id="ge-regras" hidden>' +
         '<ul>' + d.regras.map(function (r) { return '<li>' + esc(r) + '</li>'; }).join('') + '</ul>' +
         '<p class="ge-regras-aviso">' + esc(d.aviso) + '</p>' +
-        '<button type="button" class="ge-link ge-link--regras" data-ge-termo>' + icone('file-text') + '<span>Ler o termo completo</span></button>' +
+        '<div class="ge-regras-acoes">' +
+          '<button type="button" class="ge-link ge-link--regras" data-ge-termo>' + icone('file-text') + '<span>Ler o termo completo</span></button>' +
+          '<button type="button" class="ge-link ge-link--regras ge-link--sair" data-ge-sair>' + icone('log-out') + '<span>Sair do grupo</span></button>' +
+        '</div>' +
       '</div>' +
       '<div class="ge-feed" id="ge-feed" role="log" aria-live="polite" aria-label="Mensagens"><p class="ge-carregando">Carregando a conversa…</p></div>' +
       rodape;
@@ -597,6 +619,7 @@ window.GrupoEstudo = (function () {
       if (err.status === 404 || err.status === 401) { desmontar(); window.showScreen('dashboard-page', { replace: true }); }
       return;
     }
+    atualizarEntrada();
     estado.atual = null;
     estado.msgs = {};
     estado.cursor = null;
@@ -920,6 +943,55 @@ window.GrupoEstudo = (function () {
     mostrarDialogo(sheet);
   }
 
+  // ---------- Sair do grupo (revoga o aceite; opcionalmente apaga o que a pessoa enviou) ----------
+  function abrirSair() {
+    var sheet = $('ge-sheet');
+    var d = estado.dados;
+    if (!sheet || !d || !d.grupo) return;
+    sheet.setAttribute('aria-labelledby', 'ge-sheet-tit');
+    sheet.innerHTML =
+      '<form method="dialog" class="ge-sheet-in" id="ge-sair-form">' +
+        '<div class="ge-sheet-topo"><h2 id="ge-sheet-tit">Sair do grupo de ' + esc(d.grupo.nome) + '?</h2>' +
+          '<button type="button" class="ge-sheet-x" data-ge-fechar aria-label="Cancelar">' + icone('x') + '</button></div>' +
+        '<ul class="ge-sair-lista">' +
+          '<li>' + icone('eye-off') + '<span>Você deixa de ver o grupo e as suas conversas privadas.</span></li>' +
+          '<li>' + icone('user-x') + '<span>Os colegas deixam de ver você na lista e não podem mais mandar mensagem para você.</span></li>' +
+          '<li>' + icone('rotate-ccw') + '<span>Você pode voltar quando quiser, aceitando as regras de novo.</span></li>' +
+        '</ul>' +
+        '<fieldset><legend>E o que você já enviou?</legend>' +
+          '<label class="ge-opcao"><input type="radio" name="apagar" value="0" checked><span>Manter para quem ficou no grupo</span></label>' +
+          '<label class="ge-opcao"><input type="radio" name="apagar" value="1"><span>Apagar minhas mensagens, fotos e áudios agora</span></label>' +
+        '</fieldset>' +
+        '<p class="ge-sheet-nota">Mensagens com denúncia em análise ficam guardadas até a equipe concluir.</p>' +
+        '<p class="ge-erro" role="alert" hidden></p>' +
+        '<button type="submit" class="ge-sheet-ok ge-sheet-ok--perigo">Sair do grupo</button>' +
+        '<button type="button" class="ge-sheet-cancelar" data-ge-fechar>Continuar no grupo</button>' +
+      '</form>';
+    var form = sheet.querySelector('form');
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var ok = form.querySelector('.ge-sheet-ok');
+      var err = form.querySelector('.ge-erro');
+      var apagar = form.querySelector('input[name="apagar"]:checked').value === '1';
+      ok.disabled = true;
+      err.hidden = true;
+      try {
+        await api('/api/grupos/sair', { method: 'POST', body: { apagar: apagar } });
+        fecharSheet();
+        parar();
+        pararGravacao(true);
+        estado.empurrou = false;
+        abrir();
+      } catch (er) {
+        ok.disabled = false;
+        err.textContent = er.message;
+        err.hidden = false;
+      }
+    });
+    icones();
+    mostrarDialogo(sheet);
+  }
+
   async function bloquear(sim, opts) {
     opts = opts || {};
     var a = estado.atual;
@@ -1004,6 +1076,7 @@ window.GrupoEstudo = (function () {
       if ((b = t.closest('[data-ge-foto]'))) { abrirVisor(b.getAttribute('data-ge-foto')); return; }
       if ((b = t.closest('[data-ge-bloquear]'))) { bloquear(b.getAttribute('data-ge-bloquear') === '1'); return; }
       if (t.closest('[data-ge-termo]')) { abrirTermoCompleto(); return; }
+      if (t.closest('[data-ge-sair]')) { abrirSair(); return; }
       if (t.closest('[data-ge-fechar]')) { fecharSheet(); return; }
       if (t.closest('[data-ge-fechar-visor]')) { fecharDialogo($('ge-visor')); return; }
       var sheet = $('ge-sheet');

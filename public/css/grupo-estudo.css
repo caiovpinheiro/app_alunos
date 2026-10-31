@@ -334,3 +334,24 @@ body.ge-on { overflow: hidden; }
 .ge-link--regras { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 0; padding: 0; }
 #app .ge-link--regras svg { width: 16px; height: 16px; }
 .ge-sheet .ge-termo-texto { margin-top: 6px; }
+
+/* ---------- Entrar e sair do grupo ---------- */
+/* Título e "Sair do grupo" na mesma linha; o curso e o nome ocupam a largura toda embaixo. */
+.ge-lado-topo { display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: 12px; }
+.ge-lado-topo > div { display: contents; }
+.ge-lado-topo h1 { grid-column: 1; grid-row: 1; }
+.ge-lado-topo p { grid-column: 1 / -1; grid-row: 2; }
+.ge-lado-topo .ge-sair-btn { grid-column: 2; grid-row: 1; }
+.ge-sair-btn { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px; border: 1.5px solid var(--ds-line); border-radius: 999px; background: #fff; color: var(--ds-muted); font: 700 14px/1 var(--ds-font); cursor: pointer; }
+.ge-sair-btn:hover { border-color: var(--ds-bad-line); background: var(--ds-bad-soft); color: var(--ds-bad); }
+#app .ge-sair-btn svg { width: 16px; height: 16px; }
+.ge-regras-acoes { display: flex; flex-wrap: wrap; gap: 0 20px; margin-top: 8px; }
+.ge-regras-acoes .ge-link--regras { margin: 0; }
+.ge-link--sair { color: var(--ds-bad); }
+.ge-intro-ico--saiu { background: var(--ds-surface-2); color: var(--ds-muted); }
+.ge-sair-lista { list-style: none; margin: 6px 0 16px; padding: 0; display: grid; gap: 10px; font-size: 16px; color: var(--ds-ink); }
+.ge-sair-lista li { display: flex; align-items: flex-start; gap: 10px; }
+#app .ge-sair-lista svg { flex: none; width: 20px; height: 20px; margin-top: 1px; color: var(--ds-muted); }
+.ge-sheet-ok--perigo { background: var(--ds-bad); color: #fff; }
+.ge-sheet-ok--perigo:hover { background: #8f1c13; }
+.ge-sheet-cancelar { width: 100%; min-height: 48px; margin-top: 4px; border: 0; background: none; color: var(--ds-navy); font: 700 16px/1 var(--ds-font); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
