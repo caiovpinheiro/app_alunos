@@ -40,7 +40,8 @@ body.ge-on { overflow: hidden; }
 .ge-item.tem-novas .ge-item-prev { color: var(--ds-ink); font-weight: 600; }
 .ge-novas { flex: none; min-width: 22px; height: 22px; padding: 0 7px; border-radius: 99px; background: var(--ds-star); color: var(--ds-on-star); font-size: 12px; font-weight: 800; display: grid; place-items: center; font-variant-numeric: tabular-nums; }
 .ge-item-tag { flex: none; font-size: 12px; font-weight: 700; color: var(--ds-bad); }
-.ge-lado-aviso { flex: none; display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 10px 16px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--ds-line); font-size: 13px; line-height: 1.45; color: var(--ds-muted); background: var(--ds-surface-2); }
+.ge-lado-rodape { flex: none; padding: 8px 16px calc(4px + env(safe-area-inset-bottom)); border-top: 1px solid var(--ds-line); background: var(--ds-surface-2); }
+.ge-lado-aviso { display: flex; gap: 8px; align-items: flex-start; margin: 0; font-size: 13px; line-height: 1.45; color: var(--ds-muted); }
 #app .ge-lado-aviso svg { width: 16px; height: 16px; margin-top: 2px; color: var(--ds-blue); }
 
 /* ---------- Avatares ---------- */
@@ -357,13 +358,8 @@ body.ge-on { overflow: hidden; }
 
 /* ---------- Entrar e sair do grupo ---------- */
 /* Título e "Sair do grupo" na mesma linha; o curso e o nome ocupam a largura toda embaixo. */
-.ge-lado-topo { display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: 12px; }
-.ge-lado-topo > div { display: contents; }
-.ge-lado-topo h1 { grid-column: 1; grid-row: 1; }
-.ge-lado-topo p { grid-column: 1 / -1; grid-row: 2; }
-.ge-lado-topo .ge-sair-btn { grid-column: 2; grid-row: 1; }
-.ge-sair-btn { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px; border: 1.5px solid var(--ds-line); border-radius: 999px; background: #fff; color: var(--ds-muted); font: 700 14px/1 var(--ds-font); cursor: pointer; }
-.ge-sair-btn:hover { border-color: var(--ds-bad-line); background: var(--ds-bad-soft); color: var(--ds-bad); }
+.ge-sair-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0; border: 0; background: none; color: var(--ds-muted); font: 600 14px/1.2 var(--ds-font); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.ge-sair-btn:hover { color: var(--ds-bad); }
 #app .ge-sair-btn svg { width: 16px; height: 16px; }
 .ge-regras-acoes { display: flex; flex-wrap: wrap; gap: 0 20px; margin-top: 8px; }
 .ge-regras-acoes .ge-link--regras { margin: 0; }

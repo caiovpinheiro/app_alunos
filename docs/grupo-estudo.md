@@ -110,7 +110,7 @@ disciplinas de `csu_materias_alunos`.
   a fila do admin mostra o nome real com o apelido entre parênteses. `POST /api/grupos/perfil
   { apelido }` (vazio volta ao nome curto). Termo `2026-10-31.3` menciona o apelido nas regras e nos
   dados.
-- **Sair do grupo:** botão "Sair do grupo" no topo da lista de conversas e no painel Regras. A folha de
+- **Sair do grupo:** botão "Sair do grupo" no rodapé da lista de conversas e no painel Regras. A folha de
   confirmação explica o que acontece e pergunta o que fazer com o que a pessoa enviou: **manter** para quem
   ficou ou **apagar agora** (textos zerados, fotos e áudios apagados do disco, mensagem some para todos
   pelo polling). O que tem denúncia aberta fica até a equipe concluir. `POST /api/grupos/sair`

@@ -288,13 +288,16 @@ window.GrupoEstudo = (function () {
           '<div><h1>Conversas</h1><p>' + esc(d.grupo.nome) + ' · você aparece como ' +
             '<button type="button" class="ge-eu" id="ge-eu" data-ge-perfil aria-label="Mudar nome ou apelido (você aparece como ' + esc(d.eu.nome) + ')">' +
             '<b>' + esc(d.eu.nome) + '</b>' + icone('pencil') + '</button></p></div>' +
-          '<button type="button" class="ge-sair-btn" data-ge-sair>' + icone('log-out') + '<span>Sair do grupo</span></button>' +
         '</div>' +
         '<div class="ge-busca">' + icone('search') +
           '<label for="ge-busca" class="ge-sr">Buscar colega</label>' +
           '<input id="ge-busca" type="search" placeholder="Buscar colega" autocomplete="off" value="' + esc(estado.filtro) + '"></div>' +
         '<nav class="ge-lista" id="ge-lista" aria-label="Lista de conversas"><p class="ge-carregando">Carregando…</p></nav>' +
-        '<p class="ge-lado-aviso">' + icone('lock') + '<span>' + esc(d.aviso) + '</span></p>' +
+        // Sair é raro: fica no rodapé, sempre à vista, sem disputar atenção com o título e as conversas.
+        '<div class="ge-lado-rodape">' +
+          '<p class="ge-lado-aviso">' + icone('lock') + '<span>' + esc(d.aviso) + '</span></p>' +
+          '<button type="button" class="ge-sair-btn" data-ge-sair>' + icone('log-out') + '<span>Sair do grupo</span></button>' +
+        '</div>' +
       '</aside>' +
       '<section class="ge-chat" id="ge-chat" aria-label="Conversa aberta">' +
         '<div class="ge-vazio-chat"><span class="ge-intro-ico">' + icone('messages-square') + '</span>' +
