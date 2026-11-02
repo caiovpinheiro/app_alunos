@@ -4,6 +4,10 @@ Status: **oculta, em validação local.** Liga só para as contas de `SIMULADO_A
 `SIMULADO_SO_LOCAL` estiver ligado (padrão), só em `localhost`. Fora disso, o menu não mostra nada e
 `/simulado`, `/api/simulado/*` e `/api/admin/simulado/*` respondem 404.
 
+A página (`/simulado`, `/simulado.html`) e o JS e o CSS dela exigem também o cookie `app_simulado`, gravado em `/api/recursos` para quem
+está liberado. O pedido da página não leva a sessão (o token fica no navegador), então o cookie só decide se ela é entregue; as
+permissões continuam nas APIs. Com `SIMULADO_ATIVA_PARA=*`, o cookie não é exigido.
+
 ## O que o aluno faz
 
 1. **Envia documentos** (PDF, DOCX, TXT; imagem só com um provedor de IA com visão) em *Documentos*.

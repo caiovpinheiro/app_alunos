@@ -16,6 +16,7 @@
 - Adaptativo: domínio por tópico (média móvel), repetição espaçada (SM-2 simplificado) e mais questões dos tópicos fracos ou vencidos.
 - Sem CRM (pedido do usuário): a tela do simulado não carrega o chat nem chama `Rastreio.contexto`/`track`/`setContext`; os eventos vão só para `csu_eventos` via `Rastreio.registrar`.
 - IA: `server/simulado/llm.js` com stub determinístico (padrão, sem chave) e Claude via `@anthropic-ai/sdk` quando houver `ANTHROPIC_API_KEY`.
+- Página oculta de verdade: `/simulado`, `/simulado.html`, `/js/simulado.js` e `/css/simulado.css` respondem 404 sem o cookie `app_simulado`, gravado em `/api/recursos` para quem está liberado (com `*`, não exige). Conta liberada que abrir o endereço direto sem o cookie precisa passar pelo Início uma vez.
 - `enviarIndex` passou a usar `sendFile('index.html', { root })`: mesmo arquivo, mas funciona em worktrees (o `send` recusa caminho absoluto com pasta oculta, como `.claude/`).
 
 **Impacto**

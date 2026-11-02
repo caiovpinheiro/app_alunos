@@ -643,6 +643,8 @@ app.get('/api/recursos', authMiddleware, async (req, res) => {
     }
     chat.identity = webchat.identidadePara(req.aluno, { curso: perfil && perfil.curso, polo: perfil && perfil.unidade });
   }
+  const simuladoLiberado = simulado.liberadoPara(req.aluno, req);
+  simulado.gravarCookiePagina(req, res, simuladoLiberado);
   // preparo: conta sem RGM ("acesso em preparação"); a tela leva à Aula Inaugural.
   res.json({
     success: true,
@@ -650,7 +652,7 @@ app.get('/api/recursos', authMiddleware, async (req, res) => {
     webchat: chat,
     rastreio: acompanhamento.liberadoPara(req.aluno),
     ajuda: ajudaPedidos.liberadoPara(req.aluno),
-    simulado: simulado.liberadoPara(req.aluno, req),
+    simulado: simuladoLiberado,
     preparo: !req.aluno.rgm,
   });
 });
@@ -1808,12 +1810,19 @@ function enviarIndex(req, res) {
   res.sendFile('index.html', { root: versao.verNova(req) ? PUBLIC_DIR : ANTIGO_DIR });
 }
 app.get(['/', '/index.html'], enviarIndex);
-// Tela do simulado: só existe com a flag ligada (e em localhost, com SIMULADO_SO_LOCAL). Quem não está
-// na lista recebe a página, mas as APIs respondem 404 e a tela volta para o início.
-app.get(['/simulado', '/simulado.html'], (req, res, next) => {
-  if (!simulado.configurada() || (simulado.soLocal() && !simulado.hostLocal(req))) return res.status(404).send('Não encontrado');
-  res.set('Cache-Control', 'no-cache');
+// Tela do simulado: só existe com a flag ligada (e em localhost, com SIMULADO_SO_LOCAL) e para quem
+// recebeu o cookie da área em /api/recursos. Os demais recebem 404, inclusive no JS e no CSS dela.
+function simuladoSemPagina(req) {
+  return !simulado.configurada() || (simulado.soLocal() && !simulado.hostLocal(req)) || !simulado.paginaLiberada(req);
+}
+app.get(['/simulado', '/simulado.html'], (req, res) => {
+  if (simuladoSemPagina(req)) return res.status(404).send('Não encontrado');
+  res.set({ 'Cache-Control': 'no-cache', Vary: 'Cookie' });
   return res.sendFile('simulado.html', { root: PUBLIC_DIR });
+});
+app.get(['/js/simulado.js', '/css/simulado.css'], (req, res, next) => {
+  if (simuladoSemPagina(req)) return res.status(404).send('Não encontrado');
+  return next();
 });
 app.use('/antigo', express.static(ANTIGO_DIR, { index: false }));
 app.use(express.static(PUBLIC_DIR));

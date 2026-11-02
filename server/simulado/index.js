@@ -51,6 +51,21 @@ function liberadoPara(aluno, req) {
   return Boolean((rgm && l.map((x) => x.replace(/\D+/g, '')).includes(rgm)) || (email && l.includes(email)));
 }
 
+// Sem sessão no pedido da página (o token fica no navegador), quem é liberado recebe este cookie em
+// /api/recursos. Ele só decide se a página é entregue; as permissões continuam nas APIs (como app_versao).
+const COOKIE_PAGINA = 'app_simulado';
+
+function paginaLiberada(req) {
+  if (lista().includes('*')) return true;
+  return String(req.headers.cookie || '').split(';').some((par) => par.trim() === COOKIE_PAGINA + '=1');
+}
+
+function gravarCookiePagina(req, res, liberado) {
+  const https = req.secure || String(req.headers['x-forwarded-proto'] || '').split(',')[0].trim() === 'https';
+  const fim = 'Path=/; SameSite=Lax; HttpOnly' + (https ? '; Secure' : '');
+  res.append('Set-Cookie', liberado ? `${COOKIE_PAGINA}=1; Max-Age=2592000; ${fim}` : `${COOKIE_PAGINA}=; Max-Age=0; ${fim}`);
+}
+
 // ---------------------------------------------------------------- schema
 async function ensureSchema(pool) {
   await pool.query(`
@@ -623,4 +638,4 @@ function criarRotas({ pool, getSessionAluno, requireAdmin, garantirEventos }) {
   return { aluno, admin };
 }
 
-module.exports = { criarRotas, liberadoPara, configurada, soLocal, hostLocal, ensureSchema, processarDocumento };
+module.exports = { criarRotas, liberadoPara, configurada, soLocal, hostLocal, ensureSchema, processarDocumento, paginaLiberada, gravarCookiePagina };
