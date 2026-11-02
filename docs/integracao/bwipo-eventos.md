@@ -34,7 +34,7 @@ O Bwipo deve conferir o `userHash` com o `identitySecret` do canal. Sem a confer
 ### `BwipoWebchat.track(nome, dados, { important, at })`
 
 São eventos de uso, como `trilha_travei`, `central_busca_sem_resultado`, `certificado_erro` e `pedido_ajuda`:
-- com `important: true`, o evento vira nota interna na conversa;
+- com `important: true`, o evento vira nota interna na conversa; o portal não usa isso, porque a nota é uma só, a do pedido de ajuda;
 - os demais vão para o painel "Atividade no portal".
 
 ### `BwipoWebchat.open({ message, ref })` com `BwipoWebchat.capabilities.prefill = true`
@@ -69,7 +69,7 @@ Idempotency-Key: AJ-7K2Q                      (o protocolo; o mesmo pedido não 
   "ref": "AJ-7K2Q",
   "category": "travei",
   "priority": "high",
-  "text": "Pedido de ajuda AJ-7K2Q · 28/10 14:32 · Ana Souza · RGM 2501234-5 ...",
+  "text": "Tocou em \"Travei\": Módulo 3 · Estudando no AVA\nJá viu o vídeo, viu a dica.\nProgresso: 2 de 7 módulos · Protocolo AJ-7K2Q · RGM 2501234-5",
   "fields": { "protocolo": "AJ-7K2Q", "ultimo_sinal": "...", "curso": "Pedagogia", "polo": "Barra Funda", "modulo": "3 · Estudando no AVA", "parte": "2 · Atividades" },
   "links": [{ "label": "Percurso do aluno", "url": "https://app.cruzeiroead.com.br/admin#acompanhamento/aluno/482" }]
 }

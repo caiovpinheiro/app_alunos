@@ -60,7 +60,18 @@ async function testaServidor() {
   assert.ok(Object.keys(c.fields).every((k) => /^[A-Za-z0-9_][A-Za-z0-9_.-]{0,63}$/.test(k)));
   assert.ok(Object.values(c.fields).every((v) => typeof v === 'string'));
   assert.deepStrictEqual(c.links, [{ label: 'Percurso do aluno', url: 'https://app.cruzeiroead.com.br/admin#acompanhamento/aluno/482' }]);
-  assert.ok(!c.text.includes('Ver percurso:'), 'o link vai em links, não duplicado na nota');
+  assert.ok(!c.text.includes('Ver percurso'), 'o link vai em links, não duplicado na nota');
+  assert.strictEqual(c.text, 'Tocou em Travei: Módulo 3 · Estudando no AVA, parte 2 "Atividades"\nProgresso: 1 de 7 módulos · Protocolo AJ-TESTE · RGM 2501234-5');
+  // Nota curta: últimos passos e aparelho ficam no percurso.
+  const cheio = pedido();
+  cheio.contexto.onde.video = 'assistiu';
+  cheio.contexto.tentou = { viu_dica: true };
+  cheio.contexto.dispositivo = 'tablet · Chrome Mac';
+  cheio.contexto.ultimos_eventos = [{ nome: 'video_pausa', em: '2026-11-02T12:00:00Z', dados: { titulo: 'aula/cap_06' } }];
+  const curta = ajuda.corpoCRM(cheio).text;
+  assert.strictEqual(curta.split('\n').length, 3);
+  assert.match(curta, /^Já viu o vídeo, viu a dica\.$/m);
+  assert.ok(!/cap_06|Chrome|Últimos passos/.test(curta));
   assert.strictEqual(ajuda.corpoCRM(pedido({ origem: 'busca_vazia' })).priority, 'normal');
 
   // A nota nunca passa do limite do CRM.
@@ -114,11 +125,12 @@ async function testaServidor() {
 function testaNavegador() {
   const log = [];
   const ouvintes = {};
+  const opcoesTrack = [];
   const widget = {
     capabilities: { prefill: true },
     identify: (x) => log.push(['identify', x.externalId, x.userHash]),
     setContext: (x) => log.push(['setContext', JSON.parse(JSON.stringify(x))]),
-    track: (n) => log.push(['track', n]),
+    track: (n, d, o) => { opcoesTrack.push(o || {}); log.push(['track', n]); },
     open: () => log.push(['open']),
   };
   const janela = { addEventListener: (t, f) => { ouvintes[t] = f; }, location: { pathname: '/inicio' } };
@@ -162,6 +174,7 @@ function testaNavegador() {
   assert.match(log[0][1].ultimo_sinal, /^Tocou em "Travei" \(módulo 3, parte 2\) às /);
   assert.strictEqual(log[0][1].modulo, '3 · AVA');
   assert.deepStrictEqual(log[1], ['track', 'trilha_travei']);
+  assert.strictEqual(opcoesTrack[opcoesTrack.length - 1].important, undefined, 'sinal não vira nota no CRM');
 }
 
 (async () => {

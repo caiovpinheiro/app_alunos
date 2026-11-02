@@ -295,6 +295,33 @@ function webhookUrl() { return String(envValue('PEDIDO_AJUDA_WEBHOOK_URL') || ''
 
 const MAX_NOTA_CRM = 4000;
 
+// Nota curta para quem atende no CRM: o que aconteceu, o que o aluno já tentou e onde ele está no curso.
+// O detalhe (últimos passos, aparelho) fica no percurso e no painel "No site agora".
+function notaCRM(row) {
+  const c = row.contexto || {};
+  const a = c.aluno || {};
+  const o = c.onde || {};
+  const t = c.tentou || {};
+  const prog = c.progresso || {};
+  const onde = o.nivel
+    ? `Módulo ${o.nivel} · ${o.nivel_titulo}` + (o.parte ? `, parte ${o.parte} "${o.parte_titulo}"` : '')
+    : ondeTexto(c);
+  const linhas = [`${c.motivo || row.origem}: ${onde}`];
+  if (o.pergunta) {
+    const erradas = o.opcoes_erradas && o.opcoes_erradas.length ? `, marcou "${o.opcoes_erradas.join('", "')}"` : '';
+    linhas.push(`Pergunta: "${o.pergunta}" (${o.tentativas || 0} tentativa(s)${erradas})`);
+  }
+  const tentou = [];
+  if (o.video === 'assistiu') tentou.push('viu o vídeo');
+  else if (o.video === 'pulou') tentou.push('pulou o vídeo');
+  else if (t.video_pct != null) tentou.push(`viu ${t.video_pct}% do vídeo`);
+  if (t.viu_dica) tentou.push('viu a dica');
+  if (t.termos && t.termos.length) tentou.push(`buscou ${t.termos.slice(0, 3).map((x) => `"${x}"`).join(', ')}`);
+  if (tentou.length) linhas.push(`Já ${tentou.join(', ')}.`);
+  linhas.push(`Progresso: ${prog.concluidos || 0} de ${prog.total || 7} módulos · Protocolo ${row.protocolo}` + (a.rgm ? ` · RGM ${a.rgm}` : ''));
+  return linhas.join('\n');
+}
+
 // Só https, sem usuário e senha: o admin usa estes endereços em links.
 function urlSegura(v) {
   if (typeof v !== 'string' || !v || v.length > 2000) return null;
@@ -317,7 +344,7 @@ function corpoCRM(row) {
   const externalId = String(a.rgm || '').replace(/\D+/g, '');
   if (!externalId) return null;
   const link = urlSegura(c.link_percurso);
-  const nota = notaEquipe(row).split('\n').filter((l) => !(link && l.startsWith('Ver percurso:'))).join('\n');
+  const nota = notaCRM(row);
   const fields = { protocolo: row.protocolo, ultimo_sinal: c.motivo || row.origem };
   if (a.curso) fields.curso = a.curso;
   if (a.polo) fields.polo = a.polo;
@@ -433,6 +460,6 @@ async function mudarSituacao(pool, id, situacao, adminId) {
 }
 
 module.exports = {
-  ORIGENS, liberadoPara, ensureSchema, criar, aberto, mensagemAluno, notaEquipe, corpoCRM, enviarCRM, reenviarPendentes,
+  ORIGENS, liberadoPara, ensureSchema, criar, aberto, mensagemAluno, notaEquipe, notaCRM, corpoCRM, enviarCRM, reenviarPendentes,
   listarAdmin, contarAbertos, mudarSituacao, lerEntrada, mascara,
 };
