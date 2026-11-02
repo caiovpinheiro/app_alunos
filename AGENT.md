@@ -14,6 +14,10 @@
 - O aviso de prévia ficou mais curto e deixou de citar o app Duda. "Portal oficial" continua sendo link.
 - "Entender os descontos" saiu do cartão; a regra completa, com bolsa e feriados, continua no acordeão no fim da tela.
 
+- Disciplinas viraram linha do tempo por mês; atividades, uma lista com colunas (cartões no celular). A linha em destaque é a do próximo prazo preferencial, calculada na tela, porque `destaque` no cadastro vale para todas.
+- "Próxima data" mostra um evento e abre os demais no próprio cartão. O bloco de ajuda leva só à Central: "Preciso de ajuda" segue no botão Ajuda do topo e a Aula Inaugural, no Início e na Central.
+- "Prazo final" só na Avaliação Integrada; as demais atividades mantêm "Disponível até".
+
 **Impacto**
 - Só `public/js/meu-semestre.js` e `public/css/semestre.css`, sem mudança no servidor.
 

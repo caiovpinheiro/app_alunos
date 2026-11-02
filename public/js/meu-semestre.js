@@ -368,24 +368,39 @@ window.MeuSemestre = (function () {
     );
   }
 
+  // Cartão com o mês em cima, ligado aos outros meses numa linha do tempo do semestre.
   function disciplinaCard(d) {
     var mes = d.mes || monthShort(d.data_inicio);
     var periodo = d.data_inicio ? timeRange(d.data_inicio, d.data_fim) : '';
     var prova = d.prova_inicio ? timeRange(d.prova_inicio, d.prova_fim) : '';
     return (
-      '<li class="sm-disc' + (d.status === 'atual' ? ' is-current' : '') + '"' + (d.status === 'atual' ? ' aria-current="true"' : '') + '>' +
-        (mes ? '<span class="sm-month" aria-hidden="true">' + escapeHtml(mes) + '</span>' : '') +
-        '<div class="sm-disc-body">' +
+      '<li class="sm-disc-col sm-disc-col--' + escapeHtml(d.status || 'proxima') + '"' + (d.status === 'atual' ? ' aria-current="true"' : '') + '>' +
+        '<span class="sm-tl" aria-hidden="true">' + (mes ? '<span class="sm-tl-mes">' + escapeHtml(mes) + '</span>' : '') + '</span>' +
+        '<div class="sm-disc">' +
           (d.status ? '<span class="sm-tag sm-tag--' + escapeHtml(d.status) + '">' + escapeHtml(statusLabel(d.status)) + '</span>' : '') +
           '<h3>' + escapeHtml(d.titulo) + '</h3>' +
-          '<dl class="sm-dl">' +
-            (periodo ? '<div><dt>Período</dt><dd>' + periodo + '</dd></div>' : '') +
-            (prova ? '<div><dt>Prova</dt><dd>' + prova + '</dd></div>' : '') +
-          '</dl>' +
+          ((periodo || prova)
+            ? '<dl class="sm-dl">' +
+                (periodo ? '<div><dt>Período:</dt><dd>' + periodo + '</dd></div>' : '') +
+                (prova ? '<div><dt>Prova:</dt><dd>' + prova + '</dd></div>' : '') +
+              '</dl>'
+            : '') +
         '</div>' +
       '</li>'
     );
   }
+
+  // Título da seção com a contagem ao lado e, à direita, uma informação de contexto.
+  function cabecalhoSecao(id, titulo, contagem, info, foco) {
+    return (
+      '<div class="sm-head"><div class="sm-head-tit"><h2 id="' + id + '"' + (foco ? ' tabindex="-1"' : '') + '>' + titulo + '</h2>' +
+        (contagem ? '<span class="sm-head-n">' + contagem + '</span>' : '') + '</div>' +
+        (info ? '<span class="sm-head-info">' + info + '</span>' : '') +
+      '</div>'
+    );
+  }
+
+  function contagem(n, um, varios) { return n ? n + ' ' + (n === 1 ? um : varios) : ''; }
 
   function atividadeIcon(titulo) {
     var t = String(titulo || '').toLowerCase();
@@ -397,20 +412,54 @@ window.MeuSemestre = (function () {
   }
 
   // Prazos com o rótulo da fonte: "Prazo preferencial" e "Disponível até" (não vira "prazo final").
-  function atividadeRow(item, integrada) {
-    var prazos = [];
-    if (item.prazo_preferencial) prazos.push('<span>Prazo preferencial: <strong>' + timeRange(item.prazo_preferencial, null, true) + '</strong></span>');
-    if (item.prazo) prazos.push('<span>' + (integrada ? 'Prazo até' : 'Disponível até') + ': <strong>' + timeRange(item.prazo, null, true) + '</strong></span>');
+  // Só a Avaliação Integrada tem prazo final de verdade. Com um ano só na lista, ele fica no título da seção.
+  function atividadeRow(item, integrada, proxima, comAno) {
+    var pref = item.prazo_preferencial ? timeRange(item.prazo_preferencial, null, comAno) : '';
+    var fim = item.prazo ? timeRange(item.prazo, null, comAno) : '';
     return (
-      '<li class="sm-act' + (integrada ? ' sm-act--integrada' : '') + '">' +
-        '<span class="sm-ico" aria-hidden="true"><i data-lucide="' + (integrada ? 'bar-chart-3' : atividadeIcon(item.titulo)) + '"></i></span>' +
-        '<div class="sm-act-body">' +
+      '<li class="sm-ativ' + (proxima ? ' is-proxima' : '') + '">' +
+        '<span class="sm-ativ-ico' + (integrada ? ' sm-ativ-ico--integrada' : '') + '" aria-hidden="true"><i data-lucide="' + (integrada ? 'bar-chart-3' : atividadeIcon(item.titulo)) + '"></i></span>' +
+        '<div class="sm-ativ-nome">' +
           (integrada ? '<span class="sm-tag sm-tag--integrada">Avaliação integrada</span>' : '') +
           '<h3>' + escapeHtml(item.titulo) + '</h3>' +
-          (prazos.length ? '<p class="sm-prazos">' + prazos.join('<span class="sm-sep" aria-hidden="true">·</span>') + '</p>' : '') +
+          (proxima ? '<span class="sr-only">Próximo prazo preferencial.</span>' : '') +
         '</div>' +
-        orientacaoLink(item, 'Ver orientações') +
+        '<p class="sm-ativ-pref' + (pref ? '' : ' is-vazio') + '"><span class="sm-ativ-rot">Prazo preferencial</span> ' +
+          (pref ? '<strong>' + pref + '</strong>' : '<span aria-hidden="true">—</span><span class="sr-only">não tem</span>') + '</p>' +
+        '<p class="sm-ativ-fim">' +
+          (fim ? '<span>' + (integrada ? 'Prazo final' : 'Disponível até') + '</span> <strong>' + fim + '</strong>' : '<span aria-hidden="true">—</span>') + '</p>' +
+        '<div class="sm-ativ-acao">' + orientacaoLink(item, 'Ver orientações', 'arrow-right') + '</div>' +
       '</li>'
+    );
+  }
+
+  // Quem tem prazo preferencial à frente vem primeiro, do mais próximo ao mais distante; o resto segue na ordem do cadastro.
+  function atividadesHtml(atividades, avaliacao) {
+    var hoje = hojeIso();
+    var futuro = function (a) { return a.prazo_preferencial && a.prazo_preferencial >= hoje; };
+    var comPrazo = atividades.filter(futuro).sort(function (a, b) { return a.prazo_preferencial.localeCompare(b.prazo_preferencial); });
+    var lista = comPrazo.concat(atividades.filter(function (a) { return !futuro(a); }));
+    var todas = lista.concat(avaliacao ? [avaliacao] : []);
+    var anos = {};
+    todas.forEach(function (a) {
+      [a.prazo, a.prazo_preferencial].forEach(function (d) { var x = parseIso(d); if (x) anos[x.y] = true; });
+    });
+    var chaves = Object.keys(anos);
+    var comAno = chaves.length > 1;
+    return (
+      '<section aria-labelledby="sm-h-ativ">' +
+        cabecalhoSecao('sm-h-ativ', 'Atividades do semestre', contagem(todas.length, 'atividade', 'atividades'), chaves.length === 1 ? 'Datas de ' + chaves[0] : '') +
+        (todas.length
+          ? '<div class="sm-ativs">' +
+              '<div class="sm-ativs-topo" aria-hidden="true"><span></span><span>Atividade</span><span>Prazo preferencial</span><span>Disponibilidade / prazo</span><span>Orientações</span></div>' +
+              '<ul class="sm-ativs-lista">' +
+                lista.map(function (a, i) { return atividadeRow(a, false, i === 0 && futuro(a), comAno); }).join('') +
+                (avaliacao ? atividadeRow(avaliacao, true, false, comAno) : '') +
+              '</ul>' +
+              '<p class="sm-ativs-nota">Prazo preferencial e disponibilidade são datas diferentes. Confira as orientações de cada atividade.</p>' +
+            '</div>'
+          : '<p class="sm-muted">Nenhuma atividade obrigatória cadastrada.</p>') +
+      '</section>'
     );
   }
 
@@ -451,20 +500,25 @@ window.MeuSemestre = (function () {
     return { futuros: futuros, passados: passados };
   }
 
+  // A próxima data em destaque; as demais abrem no próprio cartão.
   function calendarioHtml() {
     var ev = eventosDoSemestre();
-    var VISIVEIS = 4;
-    var primeiros = ev.futuros.slice(0, VISIVEIS);
-    var resto = ev.futuros.slice(VISIVEIS);
+    var prox = ev.futuros[0];
+    var resto = ev.futuros.slice(1);
     var temMais = resto.length || ev.passados.length;
+    var p = prox && parseIso(prox.data_inicio);
     return (
       '<section class="sm-card sm-cal" aria-labelledby="sm-h-datas">' +
-        '<div class="sm-head"><h2 id="sm-h-datas">Próximas datas</h2>' +
+        '<h2 id="sm-h-datas">Próxima data</h2>' +
+        '<div class="sm-prox">' +
+          (p
+            ? '<span class="sm-prox-data" aria-hidden="true"><b>' + escapeHtml(p.d) + '</b><small>' + escapeHtml(monthShort(p.iso)) + '</small></span>' +
+              '<div class="sm-prox-txt"><p class="sm-prox-tit">' + escapeHtml(prox.titulo) + '</p>' +
+                (prox.subtitulo ? '<p class="sm-muted">' + escapeHtml(prox.subtitulo) + '</p>' : '') +
+                '<p class="sm-muted">' + timeRange(prox.data_inicio, prox.data_fim, !prox.data_fim || prox.data_fim === prox.data_inicio) + '</p></div>'
+            : '<p class="sm-muted">Nenhuma data futura cadastrada.</p>') +
           (temMais ? '<button type="button" class="sm-link" data-sm-toggle aria-expanded="false" aria-controls="sm-cal-mais">Ver calendário completo<i data-lucide="chevron-down" aria-hidden="true"></i></button>' : '') +
         '</div>' +
-        (primeiros.length
-          ? '<ol class="sm-evs">' + primeiros.map(function (e, i) { return eventoItem(e, i === 0); }).join('') + '</ol>'
-          : '<p class="sm-muted">Nenhuma data futura cadastrada.</p>') +
         (temMais
           ? '<div id="sm-cal-mais" hidden>' +
               (resto.length ? '<h3 class="sm-h3">Mais adiante</h3><ol class="sm-evs">' + resto.map(function (e) { return eventoItem(e, false); }).join('') + '</ol>' : '') +
@@ -476,18 +530,11 @@ window.MeuSemestre = (function () {
   }
 
   function apoioHtml() {
-    var comTrilha = document.body.classList.contains('trilha-on');
     return (
       '<aside class="sm-help" aria-labelledby="sm-h-help">' +
-        '<p class="sm-eyebrow">Precisa de orientação?</p>' +
-        '<h2 id="sm-h-help">A gente te ajuda!</h2>' +
-        '<p>Aprenda a acessar o AVA, fazer provas e acompanhar suas notas.</p>' +
-        '<div class="sm-help-acts">' +
-          '<a class="portal-btn portal-btn--primary" href="/tutoriais" data-go="tutoriais-page">Consultar tutoriais<i data-lucide="chevron-right" aria-hidden="true"></i></a>' +
-          '<button type="button" class="sm-help-link" data-help-open>Preciso de ajuda</button>' +
-          (comTrilha ? '<button type="button" class="sm-help-link" data-open-trilha="">Ver a Aula Inaugural</button>' : '') +
-        '</div>' +
-        '<span class="sm-help-art" aria-hidden="true"><i data-lucide="message-circle-question"></i></span>' +
+        '<div class="sm-help-txt"><h2 id="sm-h-help">Precisa de orientação?</h2>' +
+        '<p>Veja como acessar o AVA, fazer provas e acompanhar suas notas.</p></div>' +
+        '<a class="portal-btn sm-help-btn" href="/tutoriais" data-go="tutoriais-page">Ir para a Central de ajuda<i data-lucide="arrow-right" aria-hidden="true"></i></a>' +
       '</aside>'
     );
   }
@@ -572,19 +619,13 @@ window.MeuSemestre = (function () {
       '</section>' +
 
       '<section aria-labelledby="sm-h-disc">' +
-        '<div class="sm-head"><div><h2 id="sm-h-disc" tabindex="-1">Disciplinas do semestre</h2><span class="p-squiggle" aria-hidden="true"></span></div></div>' +
+        cabecalhoSecao('sm-h-disc', 'Disciplinas do semestre', contagem(disciplinas.length, 'disciplina', 'disciplinas'), escapeHtml(cache.plano.periodo), true) +
         (disciplinas.length
           ? '<ol class="sm-discs">' + disciplinas.map(disciplinaCard).join('') + '</ol>'
           : '<p class="sm-muted">Nenhuma disciplina mensal cadastrada.</p>') +
       '</section>' +
 
-      '<section aria-labelledby="sm-h-ativ">' +
-        '<div class="sm-head"><div><h2 id="sm-h-ativ">Atividades do semestre</h2><span class="p-squiggle" aria-hidden="true"></span></div></div>' +
-        ((atividades.length || avaliacao)
-          ? '<ul class="sm-acts">' + atividades.map(function (a) { return atividadeRow(a, false); }).join('') +
-              (avaliacao ? atividadeRow(avaliacao, true) : '') + '</ul>'
-          : '<p class="sm-muted">Nenhuma atividade obrigatória cadastrada.</p>') +
-      '</section>' +
+      atividadesHtml(atividades, avaliacao) +
 
       '<div class="sm-bottom">' + calendarioHtml() + apoioHtml() + '</div>' +
 
