@@ -84,6 +84,8 @@ window.Dificuldade = (function () {
     track('ajuda_aceita', { origem: o.origem, nivel: o.nivel || null, protocolo: r.protocolo });
     // Para o chat do CRM (vira nota interna quando o widget aceitar track): o protocolo liga a conversa ao pedido.
     track('pedido_ajuda', { protocolo: r.protocolo, origem: o.origem, nivel: o.nivel || null, mensagem: r.mensagem }, { importante: true });
+    // Identifica antes de abrir: a primeira mensagem já cai no contato e no negócio do aluno.
+    if (window.Rastreio && window.Rastreio.sincronizarChat) window.Rastreio.sincronizarChat();
     var canal = abrirCanal(r, janela);
     return { r: r, canal: canal };
   }

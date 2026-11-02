@@ -183,6 +183,11 @@ window.Rastreio = (function () {
   var identidade = null;
   var identificado = false;
   var fila = [];
+  // Onde o aluno está agora (painel "No site agora" do CRM, via setContext). Só chaves curtas e texto:
+  // tela, modulo, parte, ultimo_sinal. Nada digitado em formulário. O CRM junta o que recebe às chaves que
+  // já tem, e null apaga uma chave; por isso vai só o que mudou.
+  var contextoPendente = {};
+  var ouvindoPronto = false;
   var timer = null;
   var tentativas = 0;
 
@@ -196,6 +201,9 @@ window.Rastreio = (function () {
     if (!b) return false;
     if (!identificado && identidade && typeof b.identify === 'function') {
       try { b.identify(identidade); identificado = true; } catch (e) { /* tenta de novo depois */ }
+    }
+    if (typeof b.setContext === 'function' && Object.keys(contextoPendente).length) {
+      try { b.setContext(contextoPendente); contextoPendente = {}; } catch (e) { /* tenta de novo depois */ }
     }
     while (fila.length) {
       var ev = fila.shift();
@@ -213,11 +221,34 @@ window.Rastreio = (function () {
     }, 2000);
   }
 
+  // Atualiza o contexto do chat. Valor null ou vazio apaga a chave.
+  function contexto(parcial) {
+    if (!chatAtivo) return;
+    Object.keys(parcial || {}).forEach(function (k) {
+      var v = parcial[k];
+      contextoPendente[k] = v == null || v === '' ? null : String(v).slice(0, 120);
+    });
+    if (!descarrega()) agenda();
+  }
+
+  var ROTULO_SINAL = {
+    trilha_travei: 'Tocou em "Travei"', certificado_erro: 'Erro ao gerar o certificado',
+    central_busca_sem_resultado: 'Busca sem resultado na Central', pedido_ajuda: 'Pediu ajuda',
+  };
+  function hora() { return new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }); }
+
   // Evento explícito das telas: vai para o servidor e para o chat.
   function track(nome, dados, opts) {
     if (!nome) return;
     registrar(nome, dados);
     if (!chatAtivo) return;
+    if (opts && opts.importante) {
+      var d = dados || {};
+      var onde = d.nivel ? ' (módulo ' + d.nivel + (d.parte ? ', parte ' + d.parte : '') + ')' : '';
+      var sinal = { ultimo_sinal: (ROTULO_SINAL[nome] || nome) + onde + ' às ' + hora() };
+      if (d.nivel) sinal.modulo = d.nivel + (d.nivel_titulo ? ' · ' + d.nivel_titulo : '');
+      contexto(sinal);
+    }
     fila.push({
       nome: String(nome),
       dados: limpa(dados),
@@ -250,8 +281,16 @@ window.Rastreio = (function () {
         };
       }
       if (!descarrega()) agenda();
+      // O aviso de pronto evita a espera de até 2 s: quem abre o chat já chega identificado.
+      if (!ouvindoPronto) {
+        ouvindoPronto = true;
+        window.addEventListener('bwipo:webchat:ready', function () { if (chatAtivo) descarrega(); });
+      }
     }
   }
+
+  // Identifica o aluno no chat agora, antes de abrir a conversa com a mensagem pronta.
+  function sincronizarChat() { return chatAtivo ? descarrega() : false; }
 
   // Logout: manda o que falta (ainda com o token) e desliga tudo. Devolve uma promessa
   // para o logout esperar o envio (no máximo 1,5 s) antes de apagar a sessão no servidor.
@@ -268,6 +307,7 @@ window.Rastreio = (function () {
     identidade = null;
     identificado = false;
     fila = [];
+    contextoPendente = {};
     if (timer) { clearInterval(timer); timer = null; }
     return Promise.race([envio, new Promise(function (r) { setTimeout(r, 1500); })]).catch(function () {});
   }
@@ -280,5 +320,5 @@ window.Rastreio = (function () {
     };
   }
 
-  return { iniciar: iniciar, track: track, registrar: registrar, enviar: enviar, parar: parar, debug: debug };
+  return { iniciar: iniciar, track: track, contexto: contexto, sincronizarChat: sincronizarChat, registrar: registrar, enviar: enviar, parar: parar, debug: debug };
 })();

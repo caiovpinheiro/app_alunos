@@ -70,6 +70,11 @@ async function ensureSchema(pool) {
     CREATE INDEX IF NOT EXISTS idx_csu_pedidos_ajuda_aluno ON csu_pedidos_ajuda (aluno_id, criado_em DESC);
     CREATE INDEX IF NOT EXISTS idx_csu_pedidos_ajuda_situacao ON csu_pedidos_ajuda (situacao, criado_em DESC);
   `);
+  await pool.query(`
+    ALTER TABLE csu_pedidos_ajuda
+      ADD COLUMN IF NOT EXISTS crm_url TEXT,
+      ADD COLUMN IF NOT EXISTS crm_negocio_url TEXT
+  `);
   const dias = Math.max(30, Number(envValue('RASTREIO_RETENCAO_DIAS', '180')) || 180);
   await pool.query(`DELETE FROM csu_pedidos_ajuda WHERE criado_em < now() - ($1::int * interval '1 day')`, [dias]);
 }
@@ -288,42 +293,92 @@ async function aberto(pool, alunoId) {
 // ---------- CRM (servidor a servidor, assinado) ----------
 function webhookUrl() { return String(envValue('PEDIDO_AJUDA_WEBHOOK_URL') || '').trim(); }
 
+const MAX_NOTA_CRM = 4000;
+
+// Só https, sem usuário e senha: o admin usa estes endereços em links.
+function urlSegura(v) {
+  if (typeof v !== 'string' || !v || v.length > 2000) return null;
+  try {
+    const u = new URL(v);
+    return u.protocol === 'https:' && !u.username && !u.password ? u.toString() : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+// Corpo da entrada servidor a servidor do CRM (docs/integracao/bwipo-eventos.md). O identificador é o mesmo do
+// identify do chat (server/webchat.js): só os dígitos do RGM. Sem RGM não vai: o chat dessa conta também não se
+// identifica, e o CRM criaria um contato solto. Precisa sair igual a cada tentativa, porque o CRM recusa a mesma
+// chave de idempotência com outro corpo.
+function corpoCRM(row) {
+  const c = row.contexto || {};
+  const a = c.aluno || {};
+  const o = c.onde || {};
+  const externalId = String(a.rgm || '').replace(/\D+/g, '');
+  if (!externalId) return null;
+  const link = urlSegura(c.link_percurso);
+  const nota = notaEquipe(row).split('\n').filter((l) => !(link && l.startsWith('Ver percurso:'))).join('\n');
+  const fields = { protocolo: row.protocolo, ultimo_sinal: c.motivo || row.origem };
+  if (a.curso) fields.curso = a.curso;
+  if (a.polo) fields.polo = a.polo;
+  if (o.nivel) fields.modulo = o.nivel + (o.nivel_titulo ? ' · ' + o.nivel_titulo : '');
+  if (o.parte) fields.parte = o.parte + (o.parte_titulo ? ' · ' + o.parte_titulo : '');
+  return {
+    external_id: externalId,
+    ref: row.protocolo,
+    category: row.origem,
+    priority: ['travei', 'certificado_erro', 'quiz_erros'].includes(row.origem) ? 'high' : 'normal',
+    text: nota.length > MAX_NOTA_CRM ? nota.slice(0, MAX_NOTA_CRM - 1) + '…' : nota,
+    fields,
+    links: link ? [{ label: 'Percurso do aluno', url: link }] : [],
+  };
+}
+
 async function enviarCRM(pool, row) {
   const url = webhookUrl();
   if (!url) return { enviado: false, motivo: 'sem_url' };
-  const c = row.contexto || {};
-  const corpo = JSON.stringify({
-    tipo: 'pedido_ajuda',
-    external_id: (c.aluno && (c.aluno.rgm || c.aluno.email)) || String(row.aluno_id),
-    protocolo: row.protocolo,
-    origem: row.origem,
-    prioridade: ['travei', 'certificado_erro', 'quiz_erros'].includes(row.origem) ? 'alta' : 'normal',
-    texto: notaEquipe(row),
-    campos: c,
-    link_percurso: c.link_percurso,
-    criado_em: row.criado_em,
-  });
-  const ts = String(Math.floor(Date.now() / 1000));
   const segredo = String(envValue('PEDIDO_AJUDA_WEBHOOK_SECRET') || '');
-  const headers = { 'Content-Type': 'application/json', 'X-Timestamp': ts, 'Idempotency-Key': row.protocolo };
-  if (segredo) headers['X-Signature'] = 'sha256=' + crypto.createHmac('sha256', segredo).update(ts + '.' + corpo).digest('hex');
+  if (!segredo) return { enviado: false, motivo: 'sem_segredo' };
+  const dados = corpoCRM(row);
+  if (!dados) {
+    await pool.query('UPDATE csu_pedidos_ajuda SET crm_tentativas = 5 WHERE id = $1', [row.id]);
+    return { enviado: false, motivo: 'sem_rgm' };
+  }
+  const corpo = JSON.stringify(dados);
+  const ts = String(Math.floor(Date.now() / 1000));
+  const headers = {
+    'Content-Type': 'application/json',
+    'X-Timestamp': ts,
+    'Idempotency-Key': row.protocolo,
+    'X-Signature': 'sha256=' + crypto.createHmac('sha256', segredo).update(ts + '.' + corpo).digest('hex'),
+  };
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 8000);
   let ok = false;
   let ref = null;
+  let conversa = null;
+  let negocio = null;
   try {
     const res = await fetch(url, { method: 'POST', headers, body: corpo, signal: controller.signal });
     ok = res.ok;
-    if (ok) { try { const j = await res.json(); ref = j && (j.conversation_id || j.id) ? String(j.conversation_id || j.id).slice(0, 80) : null; } catch (e) { /* sem corpo */ } }
-    else console.error('Webhook do pedido de ajuda: HTTP', res.status);
+    if (ok) {
+      try {
+        const j = await res.json();
+        ref = j && j.conversation_id ? String(j.conversation_id).slice(0, 80) : null;
+        conversa = urlSegura(j && j.url);
+        negocio = urlSegura(j && j.deal_url);
+      } catch (e) { /* resposta sem corpo: o pedido foi entregue, só fica sem o link */ }
+    } else console.error('Webhook do pedido de ajuda: HTTP', res.status);
   } catch (err) {
     console.error('Webhook do pedido de ajuda falhou:', err.message);
   } finally {
     clearTimeout(timer);
   }
   await pool.query(
-    'UPDATE csu_pedidos_ajuda SET crm_enviado = crm_enviado OR $2, crm_tentativas = crm_tentativas + 1, crm_ref = COALESCE($3, crm_ref) WHERE id = $1',
-    [row.id, ok, ref]);
+    `UPDATE csu_pedidos_ajuda SET crm_enviado = crm_enviado OR $2, crm_tentativas = crm_tentativas + 1,
+       crm_ref = COALESCE($3, crm_ref), crm_url = COALESCE($4, crm_url), crm_negocio_url = COALESCE($5, crm_negocio_url)
+     WHERE id = $1`,
+    [row.id, ok, ref, conversa, negocio]);
   return { enviado: ok };
 }
 
@@ -346,7 +401,8 @@ async function listarAdmin(pool, { situacao } = {}) {
     id: row.id, protocolo: row.protocolo, aluno_id: row.aluno_id, nome: row.nome, rgm: row.rgm, email: row.email,
     origem: row.origem, motivo: ORIGENS[row.origem] || row.origem, onde: ondeTexto(row.contexto || {}), situacao: row.situacao,
     criado_em: row.criado_em, atendido_em: row.atendido_em, resolvido_em: row.resolvido_em,
-    crm_enviado: row.crm_enviado, nota: notaEquipe(row), mensagem: mensagemAluno(row),
+    crm_enviado: row.crm_enviado, crm_url: urlSegura(row.crm_url), crm_negocio_url: urlSegura(row.crm_negocio_url),
+    nota: notaEquipe(row), mensagem: mensagemAluno(row),
   }));
 }
 
@@ -377,6 +433,6 @@ async function mudarSituacao(pool, id, situacao, adminId) {
 }
 
 module.exports = {
-  ORIGENS, liberadoPara, ensureSchema, criar, aberto, mensagemAluno, notaEquipe, enviarCRM, reenviarPendentes,
+  ORIGENS, liberadoPara, ensureSchema, criar, aberto, mensagemAluno, notaEquipe, corpoCRM, enviarCRM, reenviarPendentes,
   listarAdmin, contarAbertos, mudarSituacao, lerEntrada, mascara,
 };

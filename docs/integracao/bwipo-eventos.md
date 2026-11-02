@@ -6,11 +6,12 @@ Escrito em 28/10/2026. Arquivos do portal: `public/js/rastreio.js`, `public/js/d
 
 ## Hoje
 
-- O portal carrega o `embed.js` do Bwipo só para as contas de `WEBCHAT_LIBERADO_PARA`.
-- O widget só expõe `open()`, `close()` e `toggle()`. Por isso:
-  - os eventos do aluno (`track`) ficam numa fila no navegador e se perdem ao fechar a página;
-  - o pedido de ajuda abre o **WhatsApp do polo** com a mensagem pronta e o protocolo.
-- Todo pedido de ajuda fica gravado no portal (`csu_pedidos_ajuda`) e aparece no admin, em Quem contatar.
+Atualizado em 02/11/2026. O widget v2 do Bwipo já aceita `identify`, `setContext`, `track` e `open({ message, ref })`.
+
+- O portal carrega o `embed.js` só para as contas de `WEBCHAT_LIBERADO_PARA`, identifica o aluno com o RGM assinado e envia o contexto ao vivo (tela, módulo, parte, último sinal).
+- O pedido de ajuda abre o chat com a mensagem pronta. Se o chat não estiver disponível, segue para o WhatsApp do polo.
+- Todo pedido fica gravado no portal (`csu_pedidos_ajuda`), aparece no admin e, com `PEDIDO_AJUDA_WEBHOOK_URL` e `PEDIDO_AJUDA_WEBHOOK_SECRET`, vai ao CRM pelo servidor. O CRM devolve o link da conversa e, se houver, o do negócio; os dois aparecem no admin.
+- Para o aluno cair no contato e no negócio que já existem, o canal precisa usar o vínculo por campo de negócio (PRs `backend_crm1#236` e `frontend_crm1#242`). Antes disso, o CRM não acha o RGM guardado no negócio e cria um contato novo.
 
 ## 1. No navegador (widget)
 
@@ -50,48 +51,35 @@ Avisar quando o widget terminou de carregar (por exemplo, `window.dispatchEvent(
 
 ## 2. No servidor: o pedido de ajuda (portal → CRM)
 
-O portal envia cada pedido quando o Environment tem `PEDIDO_AJUDA_WEBHOOK_URL`. Se o envio falhar, ele tenta de novo a cada 10 min, até 5 vezes em 48 h.
+Contrato do CRM: `docs/decisoes/webchat-widget.md`, §9.6, no `backend_crm1`. Se o envio falhar, o portal tenta de novo a cada 10 min, até 5 vezes em 48 h, sempre com o mesmo corpo.
 
 ```
-POST {PEDIDO_AJUDA_WEBHOOK_URL}
+POST {PEDIDO_AJUDA_WEBHOOK_URL}               .../api/public/webchat/s2s/{chave pública do canal}
 Content-Type: application/json
 X-Timestamp: 1793210000                       (segundos)
 X-Signature: sha256=<hex>                     HMAC-SHA256(PEDIDO_AJUDA_WEBHOOK_SECRET, X-Timestamp + "." + corpo)
 Idempotency-Key: AJ-7K2Q                      (o protocolo; o mesmo pedido não pode duplicar)
 ```
 
+`PEDIDO_AJUDA_WEBHOOK_SECRET` é a chave S2S do canal, diferente da chave de identidade (`WEBCHAT_IDENTITY_SECRET`).
+
 ```json
 {
-  "tipo": "pedido_ajuda",
-  "external_id": "1234567",
-  "protocolo": "AJ-7K2Q",
-  "origem": "travei",
-  "prioridade": "alta",
-  "texto": "Pedido de ajuda AJ-7K2Q · 28/10 14:32 · Ana Souza · RGM 1234567 ...",
-  "campos": { "aluno": {}, "motivo": "", "onde": {}, "tentou": {}, "progresso": {}, "dispositivo": "", "ultimos_eventos": [], "link_percurso": "" },
-  "link_percurso": "https://app.cruzeiroead.com.br/admin#acompanhamento/aluno/482",
-  "criado_em": "2026-10-28T17:32:00.000Z"
+  "external_id": "25012345",
+  "ref": "AJ-7K2Q",
+  "category": "travei",
+  "priority": "high",
+  "text": "Pedido de ajuda AJ-7K2Q · 28/10 14:32 · Ana Souza · RGM 2501234-5 ...",
+  "fields": { "protocolo": "AJ-7K2Q", "ultimo_sinal": "...", "curso": "Pedagogia", "polo": "Barra Funda", "modulo": "3 · Estudando no AVA", "parte": "2 · Atividades" },
+  "links": [{ "label": "Percurso do aluno", "url": "https://app.cruzeiroead.com.br/admin#acompanhamento/aluno/482" }]
 }
 ```
 
-Os valores de `origem` são estes:
+- `external_id`: só os dígitos do RGM, igual ao `identify`. Conta sem RGM não vai ao CRM.
+- `category`: a origem do pedido (`travei`, `certificado_erro`, `quiz_erros`, `busca_vazia`...).
+- `priority`: `high` para `travei`, `certificado_erro` e `quiz_erros`; `normal` para as demais. As regras do canal decidem o que isso faz.
 
-| Valor | O que aconteceu |
-|---|---|
-| `travei` | o aluno tocou em "Travei" |
-| `quiz_erros` | errou 2 vezes a mesma pergunta |
-| `video_pausas` | pausou o vídeo 3 vezes antes de 90% |
-| `busca_vazia` | fez 2 buscas sem resultado na Central |
-| `certificado_erro` | deu erro ao gerar o certificado |
-| `parado` | ficou 4 min parado no módulo |
-| `ajuda_painel` | escolheu "Falar com a equipe" no painel de ajuda |
-
-O que o Bwipo deve fazer:
-- **Rejeitar** o pedido se a assinatura não conferir ou se o `X-Timestamp` tiver mais de 5 min.
-- **Anexar o `texto` como nota interna** na conversa aberta daquele `external_id`. Se não houver conversa, criar uma na fila do polo, com a etiqueta `pedido-ajuda`.
-- **Responder** `200 { "conversation_id": "...", "url": "..." }`. O portal guarda o `conversation_id` em `crm_ref`.
-
-O pacote não leva nada digitado em formulários, nem senha, CPF ou IP. A única exceção é o termo de busca, com sequências de 6 ou mais dígitos mascaradas.
+A resposta 200 traz `{ conversation_id, url, deal_id?, deal_url? }`. O portal guarda `url` e `deal_url` (só https) em `csu_pedidos_ajuda`, e o admin mostra "Abrir conversa no CRM" e "Abrir negócio no CRM".
 
 ## 3. Retorno de situação (CRM → portal), a fazer
 
@@ -101,12 +89,7 @@ Quando o atendente atender ou resolver, o CRM chama o portal com a mesma assinat
 POST /api/integracao/pedidos/{protocolo}/situacao   { "situacao": "em_atendimento" | "resolvido" }
 ```
 
-A rota ainda não existe no portal. Ela entra quando o Bwipo confirmar o item 2.
-
-## Perguntas em aberto para o Bwipo
-
-1. O WhatsApp do polo também cai no inbox do Bwipo? Se cair, o protocolo na primeira mensagem já liga a conversa ao pedido.
-2. Qual é a data para `identify`, `open({ message })` e o recebimento do item 2?
+O CRM já oferece esse retorno (`config.v2.s2s.callbackUrl`, com `{ ref, status: "attended" | "resolved", conversation_id }`), mas a rota ainda não existe no portal. Quando existir, ela deve seguir esse formato em vez do acima.
 
 ## Privacidade
 

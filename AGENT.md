@@ -7,6 +7,18 @@
 - Push em `main` dispara `.github/workflows/deploy.yml`: publica `ghcr.io/caiovpinheiro/app_alunos:latest` e chama o webhook do EasyPanel (`secrets.EASYPANEL_DEPLOY_APP`).
 - Não invente outro fluxo de deploy (n8n, branch de homologação, etc.) sem pedido explícito.
 
+### 2026-11-02 - Pedido de ajuda vinculado à conversa e ao negócio no CRM
+
+**Decisão**
+- `server/ajuda-pedidos.js` envia o pedido no formato da entrada S2S do webchat (`docs/integracao/bwipo-eventos.md`): `external_id` são os dígitos do RGM, igual ao `identify`; sem RGM, não envia. O corpo sai igual a cada tentativa, porque o CRM recusa a mesma chave com outro corpo.
+- A resposta do CRM grava `crm_url` e `crm_negocio_url` (só https), e o admin mostra "Abrir conversa no CRM" e "Abrir negócio no CRM".
+- `public/js/rastreio.js` envia o contexto ao vivo (`setContext`) só com o que mudou, porque o CRM junta as chaves e só `null` apaga. O aluno é identificado no aviso de pronto do widget e antes do `open`, para a primeira mensagem já cair no contato certo.
+
+**Impacto**
+- Precisa, no EasyPanel: `WEBCHAT_IDENTITY_SECRET`, `PEDIDO_AJUDA_WEBHOOK_URL` e `PEDIDO_AJUDA_WEBHOOK_SECRET` (chave S2S do canal). Sem a URL ou a chave, o pedido fica só no portal, como antes.
+- O vínculo com negócio existente depende dos PRs `backend_crm1#236` e `frontend_crm1#242` e de o canal usar o campo de negócio. O retorno de situação (CRM → portal) ainda não existe.
+- Teste sem banco: `node tools/test-pedido-crm.js`.
+
 ### 2026-10-31 - Área de simulado e estudo adaptativo (SIMULADO_ATIVA_PARA, oculta)
 
 **Decisão**

@@ -23,6 +23,9 @@ window.AdminPedidos = (function () {
       ? '<button type="button" class="bg-white border font-semibold px-3 py-2 rounded-lg" data-ped-sit="em_atendimento" data-ped="' + p.id + '">Marcar em atendimento</button>'
       : '';
     if (p.situacao === 'aberto' || p.situacao === 'em_atendimento') acoes += '<button type="button" class="bg-white border font-semibold px-3 py-2 rounded-lg" data-ped-sit="resolvido" data-ped="' + p.id + '">Resolvido</button>';
+    var estilo = 'class="bg-white border font-semibold px-3 py-2 rounded-lg" target="_blank" rel="noopener noreferrer"';
+    var crm = (p.crm_url ? '<a ' + estilo + ' href="' + esc(p.crm_url) + '">Abrir conversa no CRM</a>' : '') +
+      (p.crm_negocio_url ? '<a ' + estilo + ' href="' + esc(p.crm_negocio_url) + '">Abrir negócio no CRM</a>' : '');
     return (
       '<article class="ped ped--' + esc(p.situacao) + '">' +
         '<div class="ped-top">' +
@@ -32,7 +35,7 @@ window.AdminPedidos = (function () {
           '<p class="ped-motivo">' + esc(p.motivo) + ', ' + esc(p.onde) + '</p></div>' +
         '</div>' +
         '<details class="ped-nota"><summary>O que a equipe precisa saber</summary><pre>' + esc(p.nota) + '</pre></details>' +
-        '<div class="ac-acts">' + wa +
+        '<div class="ac-acts">' + crm + wa +
           '<button type="button" class="bg-white border font-semibold px-3 py-2 rounded-lg" data-acomp-percurso="' + p.aluno_id + '">Ver percurso</button>' + acoes +
         '</div>' +
       '</article>'

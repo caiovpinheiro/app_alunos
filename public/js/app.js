@@ -343,6 +343,8 @@
   function rastreiaTela(id) {
     if (!NOMES_TELA[id]) return;
     window.Rastreio && window.Rastreio.track('tela_aberta', { tela: NOMES_TELA[id], caminho: window.location.pathname });
+    // Contexto do chat: trocou de tela, sai o módulo e fica o último sinal de dificuldade.
+    window.Rastreio && window.Rastreio.contexto && window.Rastreio.contexto({ tela: NOMES_TELA[id], modulo: null, parte: null });
   }
 
   async function logout() {

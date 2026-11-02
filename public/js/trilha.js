@@ -692,6 +692,7 @@ window.Trilha = (function () {
     if (!n || n < 1) { window.showScreen('trilha-page'); return; }
     var lv = C && L()[n - 1];
     window.Rastreio && window.Rastreio.track('trilha_nivel_aberto', { nivel: n, nivel_titulo: lv ? lv.t : null });
+    window.Rastreio && window.Rastreio.contexto && window.Rastreio.contexto({ modulo: n + (lv ? ' · ' + lv.t : ''), parte: null });
     alvo = n - 1;
     window.showScreen('trilha-page');
     try { window.history.replaceState(window.history.state, '', '/trilha#nivel-' + n); } catch (e) { /* ignore */ }
