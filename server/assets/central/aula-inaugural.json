@@ -7,7 +7,8 @@
    "resumo": "Um recado para quem decidiu estudar para mudar de vida.",
    "v": "/trilha-midia/aula/cap_00",
    "duracao": "0:35",
-   "nivel_trilha": null
+   "nivel_trilha": null,
+   "capa": "/trilha-midia/capas/aula-cap-0.webp"
   },
   {
    "titulo": "Como funciona o EaD",
@@ -23,7 +24,8 @@
    "resumo": "O app Duda, o e-mail acadêmico e a sua senha.",
    "v": "/trilha-midia/aula/cap_02",
    "duracao": "0:59",
-   "nivel_trilha": 1
+   "nivel_trilha": 1,
+   "capa": "/trilha-midia/capas/aula-cap-2.webp"
   },
   {
    "titulo": "Área do Aluno",
@@ -66,7 +68,8 @@
    "resumo": "Vencimento, descontos e como pagar com segurança.",
    "v": "/trilha-midia/aula/cap_07",
    "duracao": "0:56",
-   "nivel_trilha": 5
+   "nivel_trilha": 5,
+   "capa": "/trilha-midia/capas/aula-cap-7.webp"
   },
   {
    "titulo": "Rematrícula",
@@ -82,7 +85,8 @@
    "resumo": "O que são e como enviar as horas complementares.",
    "v": "/trilha-midia/aula/cap_08",
    "duracao": "0:47",
-   "nivel_trilha": 6
+   "nivel_trilha": 6,
+   "capa": "/trilha-midia/capas/aula-cap-9.webp"
   },
   {
    "titulo": "Rumo à formatura",
