@@ -267,66 +267,102 @@ window.MeuSemestre = (function () {
   }
 
   // Link de orientação: mesmo destino de antes (nível da trilha ou tutoriais), rótulo curto.
-  function orientacaoLink(item, rotulo) {
+  function orientacaoLink(item, rotulo, icone) {
     if (!item) return '';
+    var seta = '<i data-lucide="' + (icone || 'chevron-right') + '" aria-hidden="true"></i>';
     var ctx = '<span class="sr-only">: ' + escapeHtml(item.titulo) + '</span>';
     var dica = item.trilha ? ' title="Módulo ' + Number(item.trilha.nivel) + ' da Aula Inaugural: ' + escapeHtml(item.trilha.titulo) + '"' : '';
     if (item.trilha && document.body.classList.contains('trilha-on')) {
-      return '<button type="button" class="sm-link" data-open-trilha="' + Number(item.trilha.nivel) + '"' + dica + '>' + rotulo + ctx + '<i data-lucide="chevron-right" aria-hidden="true"></i></button>';
+      return '<button type="button" class="sm-link" data-open-trilha="' + Number(item.trilha.nivel) + '"' + dica + '>' + rotulo + ctx + seta + '</button>';
     }
     if (!item.tutorial_categoria && !item.trilha) return '';
-    return '<button type="button" class="sm-link" data-open-tutoriais="' + escapeHtml(item.tutorial_categoria || '') + '">' + rotulo + ctx + '<i data-lucide="chevron-right" aria-hidden="true"></i></button>';
+    return '<button type="button" class="sm-link" data-open-tutoriais="' + escapeHtml(item.tutorial_categoria || '') + '">' + rotulo + ctx + seta + '</button>';
+  }
+
+  // Bloco de data: rótulo pequeno e valor grande. Lista de definição para o leitor de tela ler os dois juntos.
+  function statHtml(icone, rotulo, valor) {
+    return '<div class="sm-stat"><span class="sm-stat-ico" aria-hidden="true"><i data-lucide="' + icone + '"></i></span>' +
+      '<div class="sm-stat-txt"><dt>' + rotulo + '</dt><dd>' + valor + '</dd></div></div>';
+  }
+
+  function statsDisciplina(d) {
+    var itens = [];
+    if (d.data_fim) itens.push(statHtml('clock-3', 'Estudos até', timeRange(d.data_fim)));
+    if (d.prova_inicio) itens.push(statHtml('calendar-days', 'Período de prova', timeRange(d.prova_inicio, d.prova_fim)));
+    return itens.length ? '<dl class="sm-stats">' + itens.join('') + '</dl>' : '';
+  }
+
+  function topoDisciplina(rotulo, titulo) {
+    return (
+      '<div class="sm-now-top">' +
+        '<span class="sm-now-pill">' + rotulo + '</span>' +
+        '<h3>' + escapeHtml(titulo) + '</h3>' +
+        '<span class="sm-now-ico" aria-hidden="true"><i data-lucide="book-open"></i></span>' +
+      '</div>'
+    );
   }
 
   function disciplinaAtualHtml(lista) {
     if (!lista.length) {
       var prox = (cache.disciplinas || []).filter(function (d) { return d.status === 'proxima'; })[0];
       return (
-        '<article class="sm-card sm-now">' +
-          '<span class="sm-ico" aria-hidden="true"><i data-lucide="book-open"></i></span>' +
-          '<div class="sm-now-body"><p class="sm-eyebrow">Sua disciplina atual</p>' +
-          '<h2>Nenhuma disciplina mensal em andamento agora.</h2>' +
-          (prox ? '<p class="sm-muted">A próxima é ' + escapeHtml(prox.titulo) + (prox.data_inicio ? ', a partir de ' + timeRange(prox.data_inicio, null, true) : '') + '.</p>' : '') +
-          '</div>' +
+        '<article class="sm-card sm-now sm-now--vazia">' +
+          topoDisciplina('Disciplina atual', 'Nenhuma disciplina mensal em andamento agora.') +
+          (prox ? '<div class="sm-now-body"><p class="sm-muted">A próxima é ' + escapeHtml(prox.titulo) + (prox.data_inicio ? ', a partir de ' + timeRange(prox.data_inicio, null, true) : '') + '.</p></div>' : '') +
         '</article>'
       );
     }
+    var varias = lista.length > 1;
+    var temProva = lista.some(function (d) { return d.prova_inicio; });
     var corpo = lista.map(function (d) {
-      var chips = [];
-      if (d.data_fim) chips.push('<span class="sm-chip"><i data-lucide="clock-3" aria-hidden="true"></i>Estudos até <strong>' + timeRange(d.data_fim) + '</strong></span>');
-      if (d.prova_inicio) chips.push('<span class="sm-chip"><i data-lucide="calendar-days" aria-hidden="true"></i>Prova: <strong>' + timeRange(d.prova_inicio, d.prova_fim) + '</strong></span>');
-      return '<div class="sm-now-item"><h2>' + escapeHtml(d.titulo) + '</h2>' + (chips.length ? '<div class="sm-chips">' + chips.join('') + '</div>' : '') + '</div>';
+      return varias
+        ? '<div class="sm-now-item"><h4>' + escapeHtml(d.titulo) + '</h4>' + statsDisciplina(d) + '</div>'
+        : statsDisciplina(d);
     }).join('');
     return (
       '<article class="sm-card sm-now">' +
-        '<span class="sm-ico" aria-hidden="true"><i data-lucide="book-open"></i></span>' +
-        '<div class="sm-now-body">' +
-          '<p class="sm-eyebrow">' + (lista.length > 1 ? 'Suas disciplinas atuais (' + lista.length + ')' : 'Sua disciplina atual') + '</p>' + corpo +
-        '</div>' +
-        '<div class="sm-now-acts">' +
-          // Não existe link direto para cada disciplina: o botão leva ao AVA (onde ficam todas).
-          '<a class="portal-btn" href="' + AVA_URL + '" target="_blank" rel="noopener noreferrer">Acessar o AVA' + NOVA_ABA + '<i data-lucide="external-link" aria-hidden="true"></i></a>' +
-          orientacaoLink(lista[0], lista[0].tutorial_hint || 'Ver orientações') +
+        (varias
+          ? topoDisciplina('Disciplinas atuais', 'Você tem ' + lista.length + ' disciplinas em andamento')
+          : topoDisciplina('Disciplina atual', lista[0].titulo)) +
+        '<div class="sm-now-body">' + corpo +
+          '<p class="sm-now-dica">' + (temProva ? 'Organize seus estudos e confira as orientações da prova.' : 'Organize seus estudos e confira os prazos.') + '</p>' +
+          '<div class="sm-now-acts">' +
+            // Não existe link direto para cada disciplina: o botão leva ao AVA (onde ficam todas).
+            '<a class="portal-btn" href="' + AVA_URL + '" target="_blank" rel="noopener noreferrer">Acessar o AVA' + NOVA_ABA + '<i data-lucide="external-link" aria-hidden="true"></i></a>' +
+            orientacaoLink(lista[0], lista[0].tutorial_hint || 'Ver orientações', 'arrow-right') +
+          '</div>' +
         '</div>' +
       '</article>'
     );
   }
 
   // Card da mensalidade: a data efetiva do próximo vencimento (proximaMensalidade) + recorte da regra única.
+  // A regra completa, com bolsa e feriados, fica no acordeão no fim da tela (financeiroHtml).
   function mensalidadeCardHtml() {
     var prox = proximaMensalidade();
     return (
       '<article class="sm-card sm-pay">' +
-        '<span class="sm-ico sm-ico--star" aria-hidden="true"><i data-lucide="receipt-text"></i></span>' +
-        '<div class="sm-pay-body">' +
-          '<p class="sm-eyebrow">Mensalidades</p>' +
-          '<h2>Próximo vencimento: <time datetime="' + prox.data + '">' + formatDayMonth(prox.data) + '</time></h2>' +
-          '<p class="sm-pay-rule">Vence todo <strong>dia 25</strong> (ou no próximo dia útil). Da 2ª mensalidade em diante: até o <strong>dia 10</strong>, <strong>25%</strong> de desconto de pontualidade; do dia 11 ao 25, <strong>15%</strong>. Na 1ª mensalidade, todos os descontos valem até o dia 25.</p>' +
-          '<p class="sm-muted">Consulte seus boletos, valores e datas no portal.</p>' +
-          '<div class="sm-pay-acts">' +
-            '<a class="portal-btn" href="' + PORTAL_URL + '" target="_blank" rel="noopener noreferrer">Ver pagamentos<span class="sr-only"> na Área do Aluno, menu Financeiro (abre em nova aba)</span><i data-lucide="external-link" aria-hidden="true"></i></a>' +
-            '<a class="sm-link" href="#sm-financeiro" data-sm-financeiro>Entender os descontos<i data-lucide="chevron-down" aria-hidden="true"></i></a>' +
+        '<div class="sm-pay-top">' +
+          '<span class="sm-pay-ico" aria-hidden="true"><i data-lucide="receipt-text"></i></span>' +
+          '<div class="sm-pay-venc">' +
+            '<p class="sm-eyebrow">Mensalidades</p>' +
+            '<h3>Próximo vencimento</h3>' +
+            '<p class="sm-pay-data"><time datetime="' + prox.data + '">' + formatDayMonth(prox.data) + '</time></p>' +
+            '<p class="sm-muted">Todo dia 25 ou próximo dia útil.</p>' +
           '</div>' +
+        '</div>' +
+        '<div class="sm-desc">' +
+          '<h3>Desconto de pontualidade</h3>' +
+          '<p class="sm-muted">A partir da 2ª mensalidade</p>' +
+          '<ul class="sm-desc-lista">' +
+            '<li class="sm-desc-item sm-desc-item--25"><strong>25%</strong><span>Até o dia 10</span></li>' +
+            '<li class="sm-desc-item sm-desc-item--15"><strong>15%</strong><span>Do dia 11 ao dia 25</span></li>' +
+          '</ul>' +
+          '<p class="sm-desc-nota">Na 1ª mensalidade, os descontos valem até o dia 25.</p>' +
+        '</div>' +
+        '<div class="sm-pay-fim">' +
+          '<p class="sm-muted">Consulte valores e boletos no portal.</p>' +
+          '<a class="portal-btn" href="' + PORTAL_URL + '" target="_blank" rel="noopener noreferrer">Ver pagamentos<span class="sr-only"> na Área do Aluno, menu Financeiro (abre em nova aba)</span><i data-lucide="external-link" aria-hidden="true"></i></a>' +
         '</div>' +
       '</article>'
     );
@@ -526,15 +562,14 @@ window.MeuSemestre = (function () {
 
       '<div data-apps-slot></div>' +
 
-      '<div class="sm-note" role="note">' +
-        '<i data-lucide="info" aria-hidden="true"></i>' +
-        '<p>Esta é uma prévia. Confira todas as informações no portal oficial ou no app Duda.</p>' +
-        '<div class="sm-note-acts">' +
-          '<a class="sm-link" href="' + PORTAL_URL + '" target="_blank" rel="noopener noreferrer">Acessar portal oficial' + NOVA_ABA + '<i data-lucide="external-link" aria-hidden="true"></i></a>' +
+      '<section class="sm-foco-sec" aria-labelledby="sm-foco-h">' +
+        '<div class="sm-foco"><h2 id="sm-foco-h">Seu semestre em foco</h2><p>Prazos de estudo e mensalidades, em um só lugar.</p></div>' +
+        '<div class="sm-note" role="note">' +
+          '<i data-lucide="info" aria-hidden="true"></i>' +
+          '<p>Esta é uma prévia. Confirme as informações no <a href="' + PORTAL_URL + '" target="_blank" rel="noopener noreferrer">portal oficial' + NOVA_ABA + '</a>.</p>' +
         '</div>' +
-      '</div>' +
-
-      '<div class="sm-main">' + disciplinaAtualHtml(atuais) + mensalidadeCardHtml() + '</div>' +
+        '<div class="sm-main">' + disciplinaAtualHtml(atuais) + mensalidadeCardHtml() + '</div>' +
+      '</section>' +
 
       '<section aria-labelledby="sm-h-disc">' +
         '<div class="sm-head"><div><h2 id="sm-h-disc" tabindex="-1">Disciplinas do semestre</h2><span class="p-squiggle" aria-hidden="true"></span></div></div>' +
@@ -624,16 +659,6 @@ window.MeuSemestre = (function () {
           tit.scrollIntoView({ behavior: calmo ? 'auto' : 'smooth', block: 'start' });
           tit.focus({ preventScroll: true });
         }
-        return;
-      }
-      var fin = event.target.closest('[data-sm-financeiro]');
-      if (fin) {
-        event.preventDefault();
-        var b = document.querySelector('#sm-financeiro [data-sm-toggle]');
-        if (b && b.getAttribute('aria-expanded') !== 'true') alternar(b);
-        var sec = document.getElementById('sm-financeiro');
-        if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        if (b) b.focus({ preventScroll: true });
         return;
       }
       var btn = event.target.closest('[data-open-tutoriais]');

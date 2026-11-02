@@ -32,35 +32,83 @@
 .sm-page #sm-h-disc{scroll-margin-top:96px}
 .sm-page #sm-h-disc:focus{outline:none}
 
-/* Aviso de prévia */
-.sm-note{display:flex;align-items:center;flex-wrap:wrap;gap:6px 14px;padding:10px 16px;border-radius:14px;background:var(--portal-blue-soft);border:1px solid #c8daf5;color:var(--portal-navy-2)}
-.sm-note > svg.lucide{color:var(--portal-blue)}
-.sm-note p{flex:1 1 260px;margin:0;font-size:.95rem;line-height:1.5}
-.sm-note-acts{display:flex;flex-wrap:wrap;gap:0 18px}
-.sm-stores{flex-basis:100%;display:flex;flex-wrap:wrap;gap:10px;padding:4px 0 6px}
-.sm-stores[hidden]{display:none}
+/* "Seu semestre em foco": título, aviso de prévia e os dois cartões principais */
+.sm-foco-sec{display:grid;gap:18px;min-width:0}
+.sm-foco{position:relative;padding-left:20px}
+.sm-foco::before{content:"";position:absolute;left:0;top:5px;bottom:5px;width:7px;border-radius:99px;background:var(--portal-yellow)}
+.sm-page .sm-foco h2{margin:0;font:800 clamp(1.7rem,3.6vw,2.6rem)/1.12 var(--portal-display);letter-spacing:-.02em;color:var(--portal-navy)}
+.sm-foco p{margin:4px 0 0;color:var(--portal-muted);font-size:1.06rem;line-height:1.4}
+.sm-note{display:flex;align-items:center;gap:12px;padding:12px 18px;border-radius:20px;background:var(--portal-blue-soft);border:1px solid #c8daf5;color:var(--portal-navy-2)}
+@media (min-width:640px){.sm-note{border-radius:999px;padding:12px 24px}}
+.sm-page .sm-note > svg.lucide{width:24px;height:24px;color:var(--portal-blue)}
+.sm-note p{flex:1;min-width:0;margin:0;font-size:1rem;line-height:1.45}
+.sm-note a{color:inherit;font-weight:700;text-decoration:underline;text-underline-offset:3px}
 
-/* Linha principal: disciplina (2/3) + mensalidades (1/3) */
+/* Linha principal: disciplina + mensalidades */
 .sm-main{display:grid;gap:18px}
-@media (min-width:1024px){.sm-main{grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:22px}}
-.sm-now{display:flex;flex-wrap:wrap;gap:14px 18px;align-items:flex-start}
-.sm-now-body{flex:1 1 180px;min-width:0}
-.sm-now-item + .sm-now-item{margin-top:14px;padding-top:14px;border-top:1px solid var(--portal-border)}
-.sm-now h2{margin:0;font:700 clamp(1.25rem,2.6vw,1.6rem)/1.25 var(--portal-display);color:var(--portal-navy);overflow-wrap:anywhere}
-.sm-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-.sm-chip{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:12px;border:1px solid var(--portal-border);background:var(--portal-surface-2);color:var(--portal-muted);font-size:.95rem}
-.sm-chip strong{color:var(--portal-navy)}
-.sm-page .sm-chip svg.lucide{width:18px;height:18px;color:var(--portal-blue)}
-.sm-now-acts{flex:1 1 100%;display:flex;flex-wrap:wrap;align-items:center;gap:6px 20px}
-@media (min-width:1200px){.sm-now-acts{flex:0 0 auto;flex-direction:column;align-items:stretch;align-self:center}}
-.sm-pay{display:flex;gap:14px;align-items:flex-start;border-top:4px solid var(--portal-yellow)}
-.sm-pay-body{flex:1;min-width:0}
-.sm-pay h2{margin:0;font:700 1.2rem/1.3 var(--portal-display);color:var(--portal-navy)}
-.sm-pay-rule{margin:6px 0 0;line-height:1.5}
-.sm-pay-rule strong{font-weight:700;color:var(--portal-navy)}
-.sm-pay .sm-muted{margin-top:4px}
-.sm-pay-acts{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;margin-top:14px}
-.sm-pay .portal-btn{min-height:46px}
+@media (min-width:1024px){.sm-main{grid-template-columns:minmax(0,1.38fr) minmax(0,1fr);gap:22px}}
+.sm-now,.sm-pay{border-radius:24px}
+
+/* Disciplina atual: faixa azul-marinho em cima, datas e ações embaixo */
+.sm-now{display:flex;flex-direction:column;padding:0;overflow:hidden}
+@media (min-width:900px){.sm-card.sm-now{padding:0}}
+.sm-now-top{position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:12px 16px;padding:22px 20px 24px;color:#fff;background:linear-gradient(115deg,var(--portal-navy) 0%,var(--portal-navy-2) 62%,var(--portal-blue) 100%)}
+.sm-now-top::after{content:"";position:absolute;right:-14%;bottom:-62%;width:62%;aspect-ratio:1.5;border-radius:50%;background:rgba(120,170,255,.14);pointer-events:none}
+.sm-now-pill{grid-column:1;justify-self:start;padding:6px 14px;border-radius:999px;background:#1a62d0;color:#fff;font:700 13px/1.3 var(--portal-body);letter-spacing:.1em;text-transform:uppercase}
+.sm-page .sm-now-top h3{grid-column:1;position:relative;z-index:1;margin:0;color:#fff;font:800 clamp(1.6rem,3.1vw,2.5rem)/1.14 var(--portal-display);letter-spacing:-.015em;overflow-wrap:anywhere;text-wrap:balance}
+.sm-now-ico{grid-column:2;grid-row:1/span 2;position:relative;z-index:1;color:#62aeff}
+.sm-page .sm-now-ico svg.lucide{width:44px;height:44px;stroke-width:1.5}
+.sm-now-body{flex:1;display:flex;flex-direction:column;gap:16px;padding:20px 18px 22px;min-width:0}
+.sm-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:12px;margin:0}
+.sm-stat{display:flex;align-items:center;gap:14px;min-width:0;padding:14px 16px;border-radius:16px;border:1px solid var(--portal-border);background:var(--portal-surface-2)}
+.sm-stat-ico{flex:none;padding-right:14px;border-right:1px solid var(--portal-border);color:var(--portal-blue);line-height:0}
+.sm-page .sm-stat-ico svg.lucide{width:34px;height:34px;stroke-width:1.75}
+.sm-stat-txt{min-width:0}
+.sm-stat dt{color:var(--portal-muted);font-size:1rem;line-height:1.3}
+.sm-stat dd{margin:2px 0 0;color:var(--portal-navy);font:800 clamp(1.6rem,2.5vw,2.25rem)/1.1 var(--portal-display);letter-spacing:-.01em}
+.sm-now-item + .sm-now-item{padding-top:16px;border-top:1px solid var(--portal-border)}
+.sm-page .sm-now-item h4{margin:0 0 10px;color:var(--portal-navy);font:700 1.15rem/1.3 var(--portal-display);overflow-wrap:anywhere}
+.sm-now-dica{margin:0;color:var(--portal-muted)}
+.sm-now-acts{display:flex;flex-wrap:wrap;align-items:center;gap:10px 24px;margin-top:auto}
+.sm-now-acts .sm-link{font-size:1.05rem}
+.sm-page .sm-now-acts .sm-link svg.lucide{width:20px;height:20px}
+@media (min-width:900px){
+  .sm-now-top{padding:30px 32px 32px}
+  .sm-page .sm-now-ico svg.lucide{width:72px;height:72px}
+  .sm-now-body{padding:26px 32px 30px;gap:18px}
+}
+/* Lado a lado, os dois cartões têm a mesma altura: a faixa e as datas crescem para não sobrar vazio. */
+@media (min-width:1200px){
+  .sm-now-top{gap:18px 16px;padding:38px 36px 44px}
+  .sm-now-body{padding:30px 36px 32px;gap:22px}
+  .sm-stat{gap:18px;padding:24px 20px}
+  .sm-stat-ico{padding-right:18px}
+  .sm-page .sm-stat-ico svg.lucide{width:40px;height:40px}
+  .sm-stat dd{font-size:2.5rem}
+}
+/* Sem disciplina em andamento: a faixa ocupa o cartão, sem um branco grande embaixo. */
+.sm-now--vazia .sm-now-top{flex:1;align-content:center}
+.sm-now--vazia .sm-now-body{flex:none}
+
+/* Mensalidades: vencimento em destaque e os dois descontos em faixas */
+.sm-pay{display:flex;flex-direction:column;gap:16px;border-top:6px solid var(--portal-yellow)}
+.sm-pay-top{display:flex;align-items:flex-start;gap:14px}
+.sm-pay-ico{flex:none;display:grid;place-items:center;width:60px;height:60px;border-radius:16px;background:#fff1c7;color:#7a5200}
+.sm-page .sm-pay-ico svg.lucide{width:32px;height:32px;stroke-width:1.75}
+.sm-pay-venc{flex:1;min-width:0;padding-left:14px;border-left:1px solid var(--portal-border)}
+.sm-page .sm-pay-venc h3{margin:0;color:var(--portal-navy);font:800 1.2rem/1.25 var(--portal-display)}
+.sm-pay-data{margin:2px 0;color:var(--portal-navy);font:800 clamp(2.2rem,3.4vw,3rem)/1.05 var(--portal-display);letter-spacing:-.015em}
+.sm-desc{padding-top:16px;border-top:1px solid var(--portal-border)}
+.sm-page .sm-desc h3{margin:0;color:var(--portal-navy);font:800 1.3rem/1.25 var(--portal-display)}
+.sm-desc-lista{list-style:none;display:grid;gap:8px;margin:10px 0 8px;padding:0}
+.sm-desc-item{display:grid;grid-template-columns:84px minmax(0,1fr);align-items:center;gap:14px;min-height:56px;padding:6px 16px;border-radius:14px;color:var(--portal-navy)}
+.sm-desc-item strong{font:800 1.75rem/1 var(--portal-display)}
+.sm-desc-item span{padding-left:14px;border-left:1px solid rgba(11,43,95,.2);line-height:1.3}
+.sm-desc-item--25{background:#fff1c7}
+.sm-desc-item--15{background:var(--portal-blue-soft)}
+.sm-desc-nota{margin:0;color:var(--portal-muted);font-size:.95rem;line-height:1.4}
+.sm-pay-fim{display:grid;gap:12px;margin-top:auto;padding-top:14px;border-top:1px solid var(--portal-border)}
+.sm-pay-fim .portal-btn{width:100%;min-height:52px}
 
 /* Disciplinas: 1 / 2 / 3 colunas, todas visíveis */
 .sm-discs{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr;gap:14px}

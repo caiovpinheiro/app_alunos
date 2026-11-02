@@ -7,6 +7,16 @@
 - Push em `main` dispara `.github/workflows/deploy.yml`: publica `ghcr.io/caiovpinheiro/app_alunos:latest` e chama o webhook do EasyPanel (`secrets.EASYPANEL_DEPLOY_APP`).
 - Não invente outro fluxo de deploy (n8n, branch de homologação, etc.) sem pedido explícito.
 
+### 2026-11-02 - Meu semestre: bloco "Seu semestre em foco"
+
+**Decisão**
+- Disciplina atual e mensalidades foram redesenhadas a partir da referência do usuário: datas em blocos grandes e descontos em faixas, em vez de frases. Datas e vencimento continuam vindo dos mesmos dados (`disciplinas`, `proximaMensalidade`).
+- O aviso de prévia ficou mais curto e deixou de citar o app Duda. "Portal oficial" continua sendo link.
+- "Entender os descontos" saiu do cartão; a regra completa, com bolsa e feriados, continua no acordeão no fim da tela.
+
+**Impacto**
+- Só `public/js/meu-semestre.js` e `public/css/semestre.css`, sem mudança no servidor.
+
 ### 2026-11-02 - Headers novos nas cinco páginas do aluno
 
 **Decisão**
