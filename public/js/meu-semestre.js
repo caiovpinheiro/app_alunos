@@ -516,11 +516,12 @@ window.MeuSemestre = (function () {
       '<section class="portal-hero sm-hero" aria-labelledby="sm-h1">' +
         '<div class="portal-hero__content">' +
           '<p class="portal-eyebrow">Meu semestre</p>' +
-          '<h1 id="sm-h1">Meu semestre</h1>' +
-          '<p class="portal-hero__lede">Suas disciplinas, atividades e próximas datas.</p>' +
+          '<h1 id="sm-h1">Seu semestre, passo a passo.</h1>' +
+          '<p class="portal-hero__lede">Acompanhe disciplinas, organize seus estudos e confira os prazos.</p>' +
           '<p class="sm-hero-meta">' + escapeHtml(cache.plano.curso) + ' · ' + escapeHtml(cache.plano.periodo) + '</p>' +
+          '<div class="portal-hero__acts"><button type="button" class="portal-btn portal-btn--primary" data-sm-disciplinas>Ver minhas disciplinas<i data-lucide="chevron-right" aria-hidden="true"></i></button></div>' +
         '</div>' +
-        '<span class="sm-hero-art" aria-hidden="true"><i data-lucide="book-open"></i><i data-lucide="calendar-days"></i></span>' +
+        '<div class="portal-hero__art" aria-hidden="true"><picture><source media="(min-width: 640px)" srcset="/assets/portal/hero-semestre-720.webp 720w, /assets/portal/hero-semestre-1080.webp 1058w" sizes="(min-width: 1360px) 666px, 52vw" width="1058" height="674"><img src="/assets/portal/hero-semestre-m750.webp" srcset="/assets/portal/hero-semestre-m480.webp 480w, /assets/portal/hero-semestre-m750.webp 750w" sizes="calc(100vw - 40px)" width="750" height="375" alt="" decoding="async" loading="lazy" fetchpriority="high"></picture></div>' +
       '</section>' +
 
       '<div data-apps-slot></div>' +
@@ -536,7 +537,7 @@ window.MeuSemestre = (function () {
       '<div class="sm-main">' + disciplinaAtualHtml(atuais) + mensalidadeCardHtml() + '</div>' +
 
       '<section aria-labelledby="sm-h-disc">' +
-        '<div class="sm-head"><div><h2 id="sm-h-disc">Disciplinas do semestre</h2><span class="p-squiggle" aria-hidden="true"></span></div></div>' +
+        '<div class="sm-head"><div><h2 id="sm-h-disc" tabindex="-1">Disciplinas do semestre</h2><span class="p-squiggle" aria-hidden="true"></span></div></div>' +
         (disciplinas.length
           ? '<ol class="sm-discs">' + disciplinas.map(disciplinaCard).join('') + '</ol>'
           : '<p class="sm-muted">Nenhuma disciplina mensal cadastrada.</p>') +
@@ -616,6 +617,15 @@ window.MeuSemestre = (function () {
       if (page.classList.contains('hidden')) return;
       var tog = event.target.closest('[data-sm-toggle]');
       if (tog) { alternar(tog); return; }
+      if (event.target.closest('[data-sm-disciplinas]')) {
+        var tit = document.getElementById('sm-h-disc');
+        if (tit) {
+          var calmo = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          tit.scrollIntoView({ behavior: calmo ? 'auto' : 'smooth', block: 'start' });
+          tit.focus({ preventScroll: true });
+        }
+        return;
+      }
       var fin = event.target.closest('[data-sm-financeiro]');
       if (fin) {
         event.preventDefault();

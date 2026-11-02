@@ -132,26 +132,30 @@ window.GrupoEstudo = (function () {
     });
   }
 
-  // No celular o menu do topo rola e "Grupo" fica fora da tela: o Início ganha uma entrada logo depois do banner.
+  // A conversa ocupa a janela inteira e não tem espaço para banner: o banner do grupo fica aqui, no Início,
+  // logo depois do banner principal. Também resolve o celular, onde "Grupo" fica fora da tela no menu do topo.
   function entradaNoInicio() {
     var hero = document.querySelector('#dashboard-page .portal-hero');
     var d = estado.dados;
     if (!hero || !d || !d.grupo || $('ge-entrada')) return;
     var membro = !d.aceite_pendente;
-    var a = document.createElement('a');
-    a.id = 'ge-entrada';
-    a.className = 'ge-entrada';
-    a.href = PATH;
-    a.setAttribute('data-go', TELA);
-    a.innerHTML =
-      '<span class="ge-entrada-ico">' + icone('users') + '</span>' +
-      '<span class="ge-entrada-txt"><b>' + (membro ? 'Grupo de ' : 'Entrar no grupo de ') + esc(d.grupo.nome) + '</b>' +
-      '<span>' + (membro
-        ? 'Tire dúvidas e estude com ' + (d.grupo.membros > 1 ? (d.grupo.membros - 1) + (d.grupo.membros === 2 ? ' colega' : ' colegas') : 'a sua turma') + ' do seu curso'
-        : d.situacao === 'regras_novas' ? 'As regras mudaram: aceite a versão nova para continuar'
-          : 'Opcional: tire dúvidas e estude com colegas do seu curso') + '</span></span>' +
-      icone('chevron-right');
-    hero.insertAdjacentElement('afterend', a);
+    var novas = d.situacao === 'regras_novas';
+    var colegas = d.grupo.membros > 1 ? ' · ' + (d.grupo.membros - 1) + (d.grupo.membros === 2 ? ' colega' : ' colegas') : '';
+    var sec = document.createElement('section');
+    sec.id = 'ge-entrada';
+    sec.className = 'portal-hero ge-hero';
+    sec.setAttribute('aria-labelledby', 'ge-hero-tit');
+    sec.innerHTML =
+      '<div class="portal-hero__content">' +
+        '<p class="portal-eyebrow">Grupo de estudo</p>' +
+        '<h2 id="ge-hero-tit">Aprender junto faz a diferença.</h2>' +
+        '<p class="portal-hero__lede">' + (novas ? 'As regras mudaram: aceite a versão nova para continuar.' : 'Troque experiências e estude com colegas do seu curso.') + '</p>' +
+        '<p class="ge-hero-meta">Grupo de ' + esc(d.grupo.nome) + (membro ? colegas : ' · participar é opcional') + '</p>' +
+        '<div class="portal-hero__acts"><a class="portal-btn portal-btn--primary" href="' + PATH + '" data-go="' + TELA + '">' +
+          (membro ? 'Acessar meu grupo' : novas ? 'Ver as regras novas' : d.situacao === 'saiu' ? 'Voltar para o grupo' : 'Entrar no grupo') + icone('chevron-right') + '</a></div>' +
+      '</div>' +
+      '<div class="portal-hero__art" aria-hidden="true"><picture><source media="(min-width: 640px)" srcset="/assets/portal/hero-grupo-720.webp 720w, /assets/portal/hero-grupo-1080.webp 1080w" sizes="(min-width: 1360px) 666px, 52vw" width="1080" height="604"><img src="/assets/portal/hero-grupo-m750.webp" srcset="/assets/portal/hero-grupo-m480.webp 480w, /assets/portal/hero-grupo-m750.webp 750w" sizes="calc(100vw - 40px)" width="750" height="375" alt="" decoding="async" loading="lazy"></picture></div>';
+    hero.insertAdjacentElement('afterend', sec);
     icones();
   }
 

@@ -30,8 +30,9 @@
   .portal-nav{order:0;flex:0 1 auto;margin:0 auto;padding:0}
 }
 
-/* Banner com pessoa (Início e Central) */
-.portal-hero{position:relative;isolation:isolate;overflow:hidden;border-radius:22px;padding:28px 22px;color:#fff;
+/* Banner: texto e botões em HTML; a ilustração (recorte da arte de cada página) é decorativa.
+   Celular: ilustração em cima, texto embaixo, para nunca cobrir o rosto. A partir de 640px: lado a lado. */
+.portal-hero{--hero-py:28px;--hero-px:22px;display:flex;flex-direction:column;position:relative;isolation:isolate;overflow:hidden;border-radius:22px;padding:var(--hero-py) var(--hero-px);color:#fff;
   background:linear-gradient(110deg,var(--portal-navy) 0%,var(--portal-navy-2) 55%,#06458e 100%);box-shadow:0 2px 6px rgba(0,40,90,.08),0 28px 56px -24px rgba(0,40,90,.4)}
 .portal-hero__content{position:relative;z-index:2;min-width:0}
 .portal-eyebrow{margin:0 0 8px;font:700 12px/1.3 var(--portal-body);letter-spacing:.18em;text-transform:uppercase;color:#bcd3f5}
@@ -42,17 +43,23 @@
 .portal-hero__link:hover{color:var(--portal-yellow)!important}
 .portal-hero__link svg{width:18px;height:18px}
 .portal-hero :is(a,button,input):focus-visible{outline:3px solid var(--portal-yellow);outline-offset:3px}
-.portal-hero__art{display:none}
+.portal-hero__art{position:relative;z-index:1;order:-1;flex:none;margin:calc(var(--hero-py)*-1) calc(var(--hero-px)*-1) 18px;aspect-ratio:2/1;pointer-events:none;
+  -webkit-mask-image:linear-gradient(#000 74%,transparent);mask-image:linear-gradient(#000 74%,transparent)}
+.portal-hero__art picture{display:contents}
+.portal-hero__art img{display:block;width:100%;height:100%;object-fit:cover}
 @media (min-width:640px){
-  .portal-hero{padding:36px 36px}
-  .portal-hero__content{max-width:62%}
-  /* Pessoa decorativa: círculo azul em CSS + recorte em webp. Some no celular. */
-  .portal-hero__art{display:block;position:absolute;z-index:1;right:0;bottom:0;width:36%;height:100%;pointer-events:none}
-  .portal-hero__art::before{content:"";position:absolute;left:50%;bottom:-14%;width:min(92%,330px);aspect-ratio:1;transform:translateX(-50%);border-radius:50%;
-    background:radial-gradient(circle at 40% 35%,#2f7bf0 0%,#0b5ad0 55%,#0848aa 100%);box-shadow:0 0 0 14px rgba(94,146,250,.12)}
-  .portal-hero__art img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center bottom}
+  .portal-hero{--hero-py:36px;--hero-px:36px;flex-direction:row;align-items:center;min-height:300px}
+  .portal-hero__content{width:50%}
+  .portal-hero__art{position:absolute;top:0;right:0;bottom:0;order:0;width:52%;margin:0;aspect-ratio:auto;
+    -webkit-mask-image:linear-gradient(90deg,transparent,#000 22%);mask-image:linear-gradient(90deg,transparent,#000 22%)}
+  /* Ponto de foco de cada arte: quando a área estreita ou alonga, o rosto continua à vista. */
+  .hero-inicio .portal-hero__art img{object-position:46% 18%}
+  .sm-hero .portal-hero__art img{object-position:70% 8%}
+  .c-hero .portal-hero__art img{object-position:44% 12%}
+  .hero-simulado .portal-hero__art img{object-position:38% 14%}
+  .ge-hero .portal-hero__art img{object-position:30% 12%}
 }
-@media (min-width:1024px){.portal-hero{padding:44px 48px}.portal-hero__content{max-width:64%}.portal-hero__art{width:34%;right:2%}}
+@media (min-width:1024px){.portal-hero{--hero-py:44px;--hero-px:48px}}
 
 /* Botões */
 .portal-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:50px;padding:0 22px;border-radius:999px;border:0;background:var(--portal-blue);color:#fff!important;font:700 15px/1.15 var(--portal-body);text-decoration:none;cursor:pointer;transition:background .15s,transform .15s;text-align:center}

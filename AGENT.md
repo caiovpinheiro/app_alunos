@@ -7,6 +7,19 @@
 - Push em `main` dispara `.github/workflows/deploy.yml`: publica `ghcr.io/caiovpinheiro/app_alunos:latest` e chama o webhook do EasyPanel (`secrets.EASYPANEL_DEPLOY_APP`).
 - Não invente outro fluxo de deploy (n8n, branch de homologação, etc.) sem pedido explícito.
 
+### 2026-11-02 - Headers novos nas cinco páginas do aluno
+
+**Decisão**
+- As artes vêm com texto e botões desenhados, então só o lado ilustrado entra como imagem (`public/assets/portal/hero-{inicio,semestre,central,simulado,grupo}-*.webp`, decorativa, `alt` vazio). Texto, busca e botões continuam em HTML.
+- `.portal-hero`: no celular a ilustração fica em cima e o texto embaixo, para nunca cobrir o rosto; a partir de 640 px ficam lado a lado, com ponto de foco por página (`object-position`).
+- Início: o texto da arte só vale quando combina com a situação do aluno. `inicio.js` mantém os estados (frase real do semestre, acesso em preparação, sem matérias, sem trilha) e o destino de cada um; o rótulo só diz "Ver meu semestre" quando leva ao semestre.
+- Grupo de estudo: a tela `/grupo` ocupa a janela inteira e não tem espaço para banner, então ele fica em `#ge-entrada`, no Início, logo abaixo do banner principal.
+- `loading="lazy"` nas imagens de Início, Meu semestre e Central: o mesmo `index.html` serve o login e as demais telas, e o Meu semestre renderiza escondido. Assim cada tela baixa só a própria ilustração.
+
+**Impacto**
+- Simulado e Grupo continuam atrás das flags. Meu semestre sem matérias continua com a tela vazia, sem banner.
+- `public-antigo/` não muda. `hero-estudante*.webp` saiu do repositório porque nada mais usa.
+
 ### 2026-11-02 - Pedido de ajuda vinculado à conversa e ao negócio no CRM
 
 **Decisão**

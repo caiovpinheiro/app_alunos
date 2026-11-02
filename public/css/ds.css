@@ -169,18 +169,15 @@ body{font-family:var(--ds-font)!important;color:var(--ds-ink);background:var(--d
 #app .p-alert--info{background:var(--ds-blue-soft);border-color:var(--ds-blue-line);color:var(--ds-navy)}
 
 /* Banner: o único lugar com cor cheia na tela. */
-#app .portal-hero{border-radius:var(--ds-r-xl);background:var(--ds-navy);box-shadow:none;padding:32px 24px}
-#app .portal-hero::after{content:"";position:absolute;z-index:0;right:-60px;top:-60px;width:260px;height:260px;pointer-events:none;opacity:.07;
-  background:center/contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1l2.6 8.4H23l-6.8 5 2.6 8.4L12 17.8l-6.8 5 2.6-8.4L1 9.4h8.4z' fill='%23ffffff'/%3E%3C/svg%3E")}
-@media (min-width:640px){#app .portal-hero{padding:40px 40px}}
-@media (min-width:1024px){#app .portal-hero{padding:48px 56px;min-height:300px;display:flex;align-items:center}}
+#app .portal-hero{--hero-py:24px;--hero-px:20px;border-radius:var(--ds-r-xl);background:var(--ds-navy);box-shadow:none;padding:var(--hero-py) var(--hero-px)}
+@media (min-width:640px){#app .portal-hero{--hero-py:36px;--hero-px:32px}}
+@media (min-width:1024px){#app .portal-hero{--hero-py:48px;--hero-px:56px;min-height:320px}}
 #app .portal-eyebrow{font:700 15px/1.3 var(--ds-font);letter-spacing:0;text-transform:none;color:var(--ds-star);margin-bottom:10px}
 #app .portal-hero h1{font:800 clamp(2rem,4.4vw,3rem)/1.08 var(--ds-font);letter-spacing:-.025em}
-#app .portal-hero__lede{color:#d5e0f2;font-size:1.1rem;line-height:1.5;max-width:46ch}
+#app .portal-hero__lede{margin-top:10px;color:#d5e0f2;font-size:1.1rem;line-height:1.5;max-width:46ch}
 #app .portal-hero__acts{margin-top:26px}
 #app .portal-hero .portal-btn--primary{min-height:54px;padding:0 26px;font-size:17px}
 #app .portal-hero__link{font-weight:700;text-decoration-thickness:1.5px}
-#app .portal-hero__art::before{background:#1a4a92;box-shadow:none}
 #app .portal-progress .p-bar{background:rgba(255,255,255,.14);height:8px}
 #app .portal-progress .p-bar i{background:var(--ds-star)}
 

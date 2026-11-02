@@ -111,9 +111,7 @@
 
 /* ===== Refatoração do portal (pacote 2026-10-20) ===== */
 /* Banner compacto (≈220–280px no desktop) com busca */
-.c-hero.portal-hero{padding:26px 20px}
-@media (min-width:640px){.c-hero.portal-hero{padding:32px 36px}}
-@media (min-width:1024px){.c-hero.portal-hero{padding:36px 48px}.c-hero .portal-hero__content{max-width:66%}}
+@media (min-width:640px){.c-hero .portal-hero__content{width:54%}}
 .c-hero h1{font-size:clamp(1.6rem,3.6vw,2.4rem)}
 .c-search{display:flex;align-items:center;gap:8px;margin-top:18px;max-width:640px;background:#fff;color:var(--c-muted);border-radius:16px;padding:6px 6px 6px 14px;box-shadow:0 12px 30px -14px rgba(0,10,30,.6)}
 .c-search svg{flex:none;width:20px;height:20px}

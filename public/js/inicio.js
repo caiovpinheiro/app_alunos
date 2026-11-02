@@ -75,14 +75,14 @@ window.Inicio = (function () {
         tail.textContent = 'Acompanhe seu semestre.';
         lede.textContent = fraseSemestre;
       } else {
-        tail.textContent = 'Vamos começar?';
-        lede.textContent = 'Seu polo está aqui para ajudar você a estudar.';
+        tail.textContent = 'Acompanhe seu semestre.';
+        lede.textContent = 'Seus estudos, próximos passos e apoio em um só lugar.';
       }
       acao('Ver meu semestre', { tela: 'meu-semestre-page' });
       return;
     }
     tail.textContent = 'Vamos começar?';
-    lede.textContent = 'Seu polo está aqui para ajudar você a estudar.';
+    lede.textContent = 'Seus estudos, próximos passos e apoio em um só lugar.';
     acao('Conhecer os primeiros passos', { tela: 'tutoriais-page' });
   }
 

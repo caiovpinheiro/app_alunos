@@ -9,9 +9,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:ital,wght@0,400..800;1,400&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/portal.css?v=9">
+    <link rel="stylesheet" href="/css/portal.css?v=10">
     <link rel="stylesheet" href="/css/painel.css?v=8">
-    <link rel="stylesheet" href="/css/ds.css?v=2">
+    <link rel="stylesheet" href="/css/ds.css?v=3">
     <link rel="stylesheet" href="/css/simulado.css?v=3">
 </head>
 <body>
@@ -41,14 +41,14 @@
 
         <main class="painel portal-container sim-main">
             <!-- Banner: uma ação principal (amarela) e um link de apoio -->
-            <section class="portal-hero" aria-labelledby="sim-hero-title">
+            <section class="portal-hero hero-simulado" aria-labelledby="sim-hero-title">
                 <div class="portal-hero__content">
-                    <p class="portal-eyebrow">Em teste · só você vê esta área</p>
-                    <h1 id="sim-hero-title">Simulado e estudo</h1>
-                    <p class="portal-hero__lede">Envie apostilas e resumos. A gente monta simulados no formato das suas provas e reforça o que você ainda erra.</p>
+                    <p class="portal-eyebrow">Simulado</p>
+                    <h1 id="sim-hero-title">Pratique hoje. Avance nas provas.</h1>
+                    <p class="portal-hero__lede">Teste seus conhecimentos e descubra o que precisa revisar.</p>
                     <div class="portal-hero__acts">
                         <button type="button" class="portal-btn portal-btn--primary" data-ir-simulado>
-                            Fazer um simulado
+                            Começar simulado
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
                         </button>
                         <button type="button" class="portal-hero__link" data-ir-docs>Enviar material <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
@@ -56,7 +56,7 @@
                     <div class="portal-progress" data-hero-progresso hidden></div>
                 </div>
                 <div class="portal-hero__art" aria-hidden="true">
-                    <img src="/assets/portal/hero-estudante-640.webp" srcset="/assets/portal/hero-estudante-640.webp 640w, /assets/portal/hero-estudante.webp 1310w" sizes="(min-width: 1024px) 420px, 280px" width="640" height="587" alt="" decoding="async">
+                    <picture><source media="(min-width: 640px)" srcset="/assets/portal/hero-simulado-720.webp 720w, /assets/portal/hero-simulado-1080.webp 1080w" sizes="(min-width: 1360px) 666px, 52vw" width="1080" height="620"><img src="/assets/portal/hero-simulado-m750.webp" srcset="/assets/portal/hero-simulado-m480.webp 480w, /assets/portal/hero-simulado-m750.webp 750w" sizes="calc(100vw - 40px)" width="750" height="375" alt="" decoding="async" fetchpriority="high"></picture>
                 </div>
             </section>
 

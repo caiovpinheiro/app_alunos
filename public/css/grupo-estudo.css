@@ -280,15 +280,17 @@ body.ge-on { overflow: hidden; }
 @media (min-width: 1200px) { .ge-lado { width: 400px; } }
 
 /* ---------- Entrada no Início (logo depois do banner) ---------- */
-#app .ge-entrada { display: flex; align-items: center; gap: 14px; margin: -12px 0 0; /* o Início já separa as seções com 28px; esta fica junto do banner */ padding: 14px 16px; border-radius: var(--ds-r-lg); background: #fff; border: 1px solid var(--ds-line);
-  color: var(--ds-ink); text-decoration: none; transition: border-color 120ms ease-out; }
-#app .ge-entrada:hover { border-color: var(--ds-navy); }
-.ge-entrada-ico { flex: none; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: var(--ds-navy); color: var(--ds-star); }
-#app .ge-entrada svg { width: 22px; height: 22px; flex: none; }
-#app .ge-entrada > svg { color: var(--ds-faint); }
-.ge-entrada-txt { flex: 1; min-width: 0; display: grid; gap: 2px; }
-.ge-entrada-txt b { font-size: 17px; line-height: 1.3; color: var(--ds-navy); font-weight: 800; }
-.ge-entrada-txt span { font-size: 15px; line-height: 1.4; color: var(--ds-muted); }
+/* Banner do grupo no Início: mesmo .portal-hero, menor, para não pesar logo abaixo do banner principal. */
+#app .ge-hero { min-height: 0; }
+#app .ge-hero h2 { margin: 0; color: #fff; font: 800 clamp(1.6rem, 3.4vw, 2.4rem)/1.1 var(--ds-font); letter-spacing: -.02em; text-wrap: balance; }
+#app .ge-hero .portal-hero__art { aspect-ratio: 5/2; }
+#app .ge-hero .portal-hero__art img { object-position: 30% 12%; }
+.ge-hero-meta { margin: 8px 0 0; font-weight: 700; color: #fff; overflow-wrap: anywhere; }
+#app .ge-hero .portal-btn svg { width: 20px; height: 20px; flex: none; }
+@media (min-width: 640px) {
+  #app .ge-hero { min-height: 280px; }
+  #app .ge-hero .portal-hero__art { aspect-ratio: auto; }
+}
 
 /* ---------- Campos: o ds.css põe borda, cantos e anel de foco com !important em todo input/textarea do
    #app; aqui a moldura é a da pílula (.ge-campo / .ge-busca), então o campo de dentro fica sem nada.

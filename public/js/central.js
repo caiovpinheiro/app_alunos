@@ -91,7 +91,7 @@ window.Central = (function () {
             return '<button type="button" data-c-q="' + esc(q) + '">' + esc(q) + '</button>';
           }).join(', ') + '</p>' +
         '</div>' +
-        '<div class="portal-hero__art" aria-hidden="true"><img src="/assets/portal/hero-estudante-640.webp" srcset="/assets/portal/hero-estudante-640.webp 640w, /assets/portal/hero-estudante.webp 1310w" sizes="(min-width: 1024px) 360px, 260px" width="640" height="587" alt="" decoding="async"></div>' +
+        '<div class="portal-hero__art" aria-hidden="true"><picture><source media="(min-width: 640px)" srcset="/assets/portal/hero-central-720.webp 720w, /assets/portal/hero-central-1080.webp 1040w" sizes="(min-width: 1360px) 666px, 52vw" width="1040" height="658"><img src="/assets/portal/hero-central-m750.webp" srcset="/assets/portal/hero-central-m480.webp 480w, /assets/portal/hero-central-m750.webp 750w" sizes="calc(100vw - 40px)" width="750" height="375" alt="" decoding="async" loading="lazy" fetchpriority="high"></picture></div>' +
       '</section>'
     );
   }

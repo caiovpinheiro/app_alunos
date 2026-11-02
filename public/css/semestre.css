@@ -27,19 +27,10 @@
 .sm-tag--atual{color:var(--portal-blue)}
 .sm-tag--integrada{color:#7a5200}
 
-/* Abertura compacta, sem pessoa */
-.sm-hero.portal-hero{padding:26px 22px}
-.sm-hero h1{font-size:clamp(1.7rem,3.6vw,2.5rem)}
+/* Abertura */
 .sm-hero-meta{margin:8px 0 0;font-weight:700;color:#fff}
-.sm-hero-art{display:none}
-@media (min-width:640px){
-  .sm-hero.portal-hero{padding:30px 36px}
-  .sm-hero-art{position:absolute;right:6%;top:50%;transform:translateY(-50%);display:flex;align-items:center;justify-content:center;gap:10px;width:150px;height:150px;border-radius:50%;
-    background:radial-gradient(circle at 40% 35%,#2f7bf0 0%,#0b5ad0 60%,#0848aa 100%);box-shadow:0 0 0 12px rgba(94,146,250,.12);color:#fff}
-  .sm-page .sm-hero-art svg.lucide{width:44px;height:44px}
-  .sm-page .sm-hero-art svg.lucide + svg.lucide{color:var(--portal-yellow)}
-}
-@media (min-width:1024px){.sm-hero.portal-hero{padding:34px 48px}}
+.sm-page #sm-h-disc{scroll-margin-top:96px}
+.sm-page #sm-h-disc:focus{outline:none}
 
 /* Aviso de prévia */
 .sm-note{display:flex;align-items:center;flex-wrap:wrap;gap:6px 14px;padding:10px 16px;border-radius:14px;background:var(--portal-blue-soft);border:1px solid #c8daf5;color:var(--portal-navy-2)}
