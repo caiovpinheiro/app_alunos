@@ -23,7 +23,7 @@
 - As artes vêm com texto e botões desenhados, então só o lado ilustrado entra como imagem (`public/assets/portal/hero-{inicio,semestre,central,simulado,grupo}-*.webp`, decorativa, `alt` vazio). Texto, busca e botões continuam em HTML.
 - `.portal-hero`: no celular a ilustração fica em cima e o texto embaixo, para nunca cobrir o rosto; a partir de 640 px ficam lado a lado, com ponto de foco por página (`object-position`).
 - Início: o texto da arte só vale quando combina com a situação do aluno. `inicio.js` mantém os estados (frase real do semestre, acesso em preparação, sem matérias, sem trilha) e o destino de cada um; o rótulo só diz "Ver meu semestre" quando leva ao semestre.
-- Grupo de estudo: a tela `/grupo` ocupa a janela inteira e não tem espaço para banner, então ele fica em `#ge-entrada`, no Início, logo abaixo do banner principal.
+- Grupo de estudo: a arte fica dentro da área. Quem ainda não entrou vê o banner completo em cima das regras; quem já está no grupo vê uma faixa compacta em cima da lista de conversas. O Início mantém só o atalho compacto `#ge-entrada`, porque dois banners seguidos pesavam demais (pedido do usuário).
 - `loading="lazy"` nas imagens de Início, Meu semestre e Central: o mesmo `index.html` serve o login e as demais telas, e o Meu semestre renderiza escondido. Assim cada tela baixa só a própria ilustração.
 
 **Impacto**
