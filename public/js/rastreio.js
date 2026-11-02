@@ -207,7 +207,8 @@ window.Rastreio = (function () {
     }
     while (fila.length) {
       var ev = fila.shift();
-      try { b.track(ev.nome, ev.dados, { important: ev.importante, at: ev.at }); } catch (e) { fila.unshift(ev); return false; }
+      // Sem important: o CRM viraria cada sinal em nota na conversa. A nota é uma só, a do pedido de ajuda.
+      try { b.track(ev.nome, ev.dados, { at: ev.at }); } catch (e) { fila.unshift(ev); return false; }
     }
     return true;
   }
