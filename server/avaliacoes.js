@@ -148,6 +148,7 @@ async function totaisPositivos(pool, tipo) {
 }
 
 async function placar(pool) {
+  const desde = await require('./recorte').contarDesde(pool); // aqui dentro: recorte depende de módulos que usam este
   const r = await pool.query(`
     SELECT tipo, conteudo_id,
            count(*) FILTER (WHERE voto = 1)::int AS positivos,
@@ -155,16 +156,17 @@ async function placar(pool) {
            count(*)::int AS total,
            max(atualizado_em) AS ultimo_voto_em
     FROM csu_avaliacoes
+    WHERE rgm IN (${require('./recorte').rgmsNoCorte(1)})
     GROUP BY tipo, conteudo_id
-  `);
+  `, [desde]);
   // Comentários dos 👎, mais novos primeiro, sem o RGM (até 50 por conteúdo).
   const c = await pool.query(`
     SELECT tipo, conteudo_id, comentario, comentario_em FROM (
       SELECT tipo, conteudo_id, comentario, comentario_em,
              row_number() OVER (PARTITION BY tipo, conteudo_id ORDER BY comentario_em DESC) AS n
-      FROM csu_avaliacoes WHERE voto = -1 AND comentario IS NOT NULL
+      FROM csu_avaliacoes WHERE voto = -1 AND comentario IS NOT NULL AND rgm IN (${require('./recorte').rgmsNoCorte(1)})
     ) t WHERE n <= 50 ORDER BY comentario_em DESC
-  `);
+  `, [desde]);
   const comentarios = new Map();
   c.rows.forEach((x) => {
     const k = x.tipo + ':' + x.conteudo_id;

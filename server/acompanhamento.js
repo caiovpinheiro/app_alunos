@@ -311,6 +311,7 @@ function sinaisDo(r, cfg) {
 async function listar(pool, opts) {
   const dias = Math.max(1, Math.min(180, Number(opts.dias) || 30));
   const busca = String(opts.q || '').trim().toLowerCase();
+  const desde = (await lerConfig(pool)).faixas.contar_desde;
   const { rows } = await pool.query(
     `WITH ac AS (
        SELECT aluno_id, COUNT(*)::int AS acessos, COALESCE(SUM(segundos_ativos),0)::int AS segundos,
@@ -362,8 +363,9 @@ async function listar(pool, opts) {
      LEFT JOIN tr ON tr.aluno_id = a.id
      LEFT JOIN fu ON fu.aluno_id = a.id
      WHERE a.ativo
+       AND ($3::date IS NULL OR a.created_at >= (($3::date)::timestamp AT TIME ZONE 'America/Sao_Paulo'))
        AND ($2::text = '' OR lower(a.nome) LIKE '%' || $2 || '%' OR a.rgm LIKE '%' || $2 || '%' OR lower(a.email) LIKE '%' || $2 || '%')`,
-    [dias, busca],
+    [dias, busca, desde],
   );
   return { dias, rows };
 }

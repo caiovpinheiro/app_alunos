@@ -23,11 +23,12 @@ const INDICADORES = [
 const MENOR = INDICADORES.reduce((m, x) => { m[x.id] = Boolean(x.menor); return m; }, {});
 const MIN_AMOSTRA = 5; // abaixo disso a faixa fica "poucos dados"
 const DIAS_SUMIU = 7;
+const CONTAR_DESDE = '2026-10-29'; // alunos mais antigos não usam o portal novo: ficam fora das estatísticas
 
 function faixasPadrao() {
   const ind = {};
   INDICADORES.forEach((x) => { ind[x.id] = { bom: x.bom, regular: x.regular }; });
-  return { dias_sumiu: DIAS_SUMIU, ind };
+  return { dias_sumiu: DIAS_SUMIU, contar_desde: CONTAR_DESDE, ind };
 }
 
 function pctInteiro(v, padrao) {
@@ -41,7 +42,11 @@ function normalizaFaixas(raw) {
   const base = faixasPadrao();
   const r = raw && typeof raw === 'object' ? raw : {};
   const d = Math.round(Number(r.dias_sumiu));
-  const out = { dias_sumiu: Number.isFinite(d) && d >= 1 && d <= 90 ? d : base.dias_sumiu, ind: {} };
+  // Sem o campo: o padrão. Vazio: conta todos. Data inválida: o padrão.
+  let desde = base.contar_desde;
+  if (r.contar_desde === null || r.contar_desde === '') desde = null;
+  else if (/^\d{4}-\d{2}-\d{2}$/.test(String(r.contar_desde)) && !Number.isNaN(Date.parse(r.contar_desde))) desde = r.contar_desde;
+  const out = { dias_sumiu: Number.isFinite(d) && d >= 1 && d <= 90 ? d : base.dias_sumiu, contar_desde: desde, ind: {} };
   INDICADORES.forEach((x) => {
     const v = (r.ind && r.ind[x.id]) || {};
     let bom = pctInteiro(v.bom, base.ind[x.id].bom);
@@ -119,13 +124,14 @@ async function votosPorRgm(pool) {
   }
 }
 
-async function buscasSemResultado(pool, dias) {
+async function buscasSemResultado(pool, dias, desde) {
   try {
     const r = await pool.query(
       `SELECT lower(trim(dados->>'termo')) AS termo, COUNT(*)::int AS vezes, COUNT(DISTINCT aluno_id)::int AS alunos
        FROM csu_eventos
        WHERE nome = 'central_busca_sem_resultado' AND criado_em >= now() - ($1::int * interval '1 day') AND COALESCE(trim(dados->>'termo'), '') <> ''
-       GROUP BY 1 ORDER BY vezes DESC LIMIT 5`, [dias]);
+         AND aluno_id IN (SELECT id FROM csu_alunos WHERE $2::date IS NULL OR created_at >= (($2::date)::timestamp AT TIME ZONE 'America/Sao_Paulo'))
+       GROUP BY 1 ORDER BY vezes DESC LIMIT 5`, [dias, desde]);
     return r.rows;
   } catch (err) {
     if (err.code === '42P01') return [];
@@ -134,7 +140,7 @@ async function buscasSemResultado(pool, dias) {
 }
 
 // Junta tudo. `lista` = acompanhamento.montar(...) de todos os alunos ativos (com sinais).
-async function visaoGeral(pool, { dias, lista, certificados, funil, uso, ondeTrava, resumoAula, cfg, pedidosAbertos }) {
+async function visaoGeral(pool, { dias, lista, certificados, uso, ondeTrava, resumoAula, cfg, pedidosAbertos }) {
   const F = normalizaFaixas(cfg && cfg.faixas);
   const dSumiu = F.dias_sumiu;
   const sits = situacoes(dSumiu);
@@ -143,36 +149,20 @@ async function visaoGeral(pool, { dias, lista, certificados, funil, uso, ondeTra
   lista.forEach((a) => { contagem[situacaoDe(a, certificados, dSumiu)] += 1; });
 
   const total = lista.length;
-  const entraram = lista.filter((a) => a.primeiro_acesso || a.trilha_ultima).length;
   const comecaram = lista.filter((a) => a.trilha_ultima).length;
-  const concluiram = lista.filter((a) => a.niveis_concluidos >= a.total_niveis).length;
-  const comCertificado = lista.filter((a) => certificados[a.id]).length;
-  const ativos = lista.filter((a) => a.dias_sem_acesso != null && a.dias_sem_acesso < dSumiu).length;
   const travados = lista.filter((a) => a.trilha_ultima && a.niveis_concluidos < a.total_niveis && a.travei_total > 0).length;
   const videosIni = lista.reduce((n, a) => n + a.videos_inicio, 0);
   const videosFim = lista.reduce((n, a) => n + a.videos_fim, 0);
   const comSinal = lista.filter((a) => a.sinais.length).length;
   const av = (uso && uso.avaliacoes) || { positivos: 0, total: 0, piores: [] };
-  const ft = (funil && funil.total) || { contas: 0, entraram_24h: 0 };
 
   const link = (situacao) => ({ aba: 'acompanhamento', situacao });
   const indicadores = [
-    indicador(F, 'entraram', 'Entraram no portal', entraram, total, 'Alunos ativos que já fizeram login pelo menos uma vez.',
-      contagem.nunca_entrou ? { texto: `${contagem.nunca_entrou} nunca entraram`, ...link('nunca_entrou') } : null),
-    indicador(F, 'entraram_24h', 'Primeiro acesso em até 24 h', ft.entraram_24h, ft.contas, `Contas criadas nos últimos ${funil ? funil.dias : dias} dias que entraram em até 24 h.`),
-    indicador(F, 'comecaram_aula', 'Começaram a Aula Inaugural', comecaram, entraram, 'De quem já entrou, quantos abriram a Aula Inaugural.',
-      contagem.sem_aula ? { texto: `${contagem.sem_aula} entraram e não começaram`, ...link('sem_aula') } : null),
-    indicador(F, 'concluiram_aula', 'Concluíram a Aula Inaugural', concluiram, comecaram, 'De quem começou, quantos fizeram todos os módulos.',
-      contagem.travado ? { texto: `${contagem.travado} travaram ou pararam`, ...link('travado') } : null),
-    indicador(F, 'certificado', 'Emitiram o certificado', comCertificado, concluiram, 'De quem concluiu os módulos, quantos emitiram o certificado.',
-      contagem.sem_certificado ? { texto: `${contagem.sem_certificado} sem certificado`, ...link('sem_certificado') } : null),
-    indicador(F, 'ativos', `Acessaram nos últimos ${dSumiu} dias`, ativos, entraram, 'De quem já entrou, quantos estiveram no portal na última semana.',
-      contagem.sumiu ? { texto: `${contagem.sumiu} sumiram`, ...link('sumiu') } : null),
     indicador(F, 'travados', 'Travados na Aula (menos é melhor)', travados, comecaram, 'De quem começou a Aula, quantos tocaram em "Travei" e não concluíram.',
       travados ? { texto: 'Ver onde travam', aba: 'trilha', sub: 'onde-trava' } : null),
     indicador(F, 'avaliacao', 'Avaliação dos conteúdos (👍)', av.positivos, av.total, 'Joinhas positivos sobre o total de avaliações de vídeos, perguntas e módulos.',
       av.negativos ? { texto: `${av.negativos} 👎 para revisar`, aba: 'avaliacoes' } : null),
-    indicador(F, 'videos', 'Vídeos assistidos até o fim', videosFim, videosIni, `Vídeos terminados sobre os começados nos últimos ${dias} dias (só contas com rastreio).`),
+    indicador(F, 'videos', 'Vídeos assistidos até o fim', videosFim, videosIni, `Vídeos terminados sobre os começados ${dias === 1 ? 'nas últimas 24 h' : `nos últimos ${dias} dias`} (só contas com rastreio).`),
     indicador(F, 'fila', 'Precisam de contato (menos é melhor)', comSinal, total, 'Alunos com algum sinal: travou, parou, sumiu, erro no certificado...',
       comSinal ? { texto: `Abrir a fila (${comSinal})`, ...link('com_sinal') } : null),
   ];
@@ -210,20 +200,16 @@ async function visaoGeral(pool, { dias, lista, certificados, funil, uso, ondeTra
     { texto: 'Ver perguntas difíceis', aba: 'trilha', sub: 'onde-trava' });
   const pior = av.piores && av.piores[0];
   if (pior && pior.negativos >= 2) add('conteudo', `Revisar "${pior.titulo}"`, `Recebeu ${pior.negativos} 👎 e ${pior.positivos} 👍.`, { texto: 'Ver avaliações', aba: 'avaliacoes' });
-  const buscas = await buscasSemResultado(pool, dias);
+  const buscas = await buscasSemResultado(pool, dias, F.contar_desde);
   if (buscas.length) add('conteudo', 'Criar respostas para o que procuram e não acham na Central',
     'Buscas sem resultado: ' + buscas.map((b) => `"${b.termo}" (${b.vezes}x)`).join(', ') + '.', { texto: 'Abrir tutoriais', aba: 'tutoriais' });
   const ordem = { ruim: 0, regular: 1, conteudo: 2 };
   acoes.sort((x, y) => ordem[x.gravidade] - ordem[y.gravidade]);
 
-  const resumoFaixas = { bom: 0, regular: 0, ruim: 0 };
-  indicadores.forEach((i) => { if (resumoFaixas[i.faixa] != null) resumoFaixas[i.faixa] += 1; });
-
   return {
     dias,
     gerado_em: new Date().toISOString(),
     total_alunos: total,
-    resumo_faixas: resumoFaixas,
     indicadores,
     acoes,
     situacoes: sits.map((x) => ({ ...x, total: contagem[x.id] })),
@@ -234,4 +220,4 @@ async function visaoGeral(pool, { dias, lista, certificados, funil, uso, ondeTra
   };
 }
 
-module.exports = { visaoGeral, situacaoDe, situacoes, votosPorRgm, SITUACOES, SITUACAO, faixasPadrao, normalizaFaixas, catalogoFaixas };
+module.exports = { visaoGeral, situacaoDe, situacoes, votosPorRgm, SITUACOES, SITUACAO, faixasPadrao, normalizaFaixas, catalogoFaixas, faixaDe, metaTexto };

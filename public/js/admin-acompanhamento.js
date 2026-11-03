@@ -9,6 +9,7 @@ window.AdminAcomp = (function () {
   var sinaisCarregados = false;
   var situacoes = {};
   var pendente = null; // filtro pedido pela Visão geral antes de as opções existirem
+  var paginaAtual = 1;
 
   var NOMES_EVENTO = {
     tela_aberta: 'Abriu a tela', clique: 'Clicou', saiu: 'Saiu do portal',
@@ -43,7 +44,7 @@ window.AdminAcomp = (function () {
     var mostrar = String(fd.get('sinal') || 'com_sinal');
     // "sit:<id>" = filtro por situação (Visão geral); o resto é sinal ou grupo de sinais.
     var sit = mostrar.indexOf('sit:') === 0 ? mostrar.slice(4) : '';
-    return new URLSearchParams({ dias: fd.get('dias') || '30', sinal: sit ? 'todos' : mostrar, situacao: sit, q: (fd.get('q') || '').trim() });
+    return new URLSearchParams({ dias: fd.get('dias') || '30', sinal: sit ? 'todos' : mostrar, situacao: sit, etapa: fd.get('etapa') || '', criada_de: fd.get('criada_de') || '', criada_ate: fd.get('criada_ate') || '', q: (fd.get('q') || '').trim() });
   }
 
   function card(rotulo, valor, dica) {
@@ -90,6 +91,7 @@ window.AdminAcomp = (function () {
         '</div>' +
         jornada(a) +
         '<dl class="ac-dados">' +
+          dado('Conta criada', esc(quando(a.created_at))) +
           dado('Último acesso', esc(haDias(a.dias_sem_acesso)), a.dias_sem_acesso == null || a.dias_sem_acesso >= 7) +
           dado('Acessos', a.acessos + ' no período <small>(' + a.acessos_total + ' no total)</small>') +
           dado('Tempo no período', esc(minutos(a.segundos))) +
@@ -117,47 +119,14 @@ window.AdminAcomp = (function () {
     var valor = f.situacao ? 'sit:' + f.situacao : (f.sinal || 'com_sinal');
     if (!Array.prototype.some.call(sel.options, function (o) { return o.value === valor; })) return false;
     sel.value = valor;
+    document.getElementById('acomp-etapa').value = f.etapa || '';
+    document.getElementById('acomp-criada-de').value = f.criada_de || '';
+    document.getElementById('acomp-criada-ate').value = f.criada_ate || '';
+    paginaAtual = 1;
     return true;
   }
   function filtrar(f) {
     if (!aplicarFiltro(f || {})) pendente = f;
-  }
-
-  // Funil por dia de matrícula (dia em que a conta foi criada). Dias antes de VERSAO_NOVA_DESDE ficam
-  // marcados "versão antiga": quem está nela não vê a Aula Inaugural, então essas colunas ficam perto de zero.
-  function pct(n, d) { return d ? Math.round(n / d * 100) + '%' : '—'; }
-  function celula(n, d) {
-    return '<td class="px-3 py-2 text-right whitespace-nowrap"><b>' + n + '</b> <span class="text-gray-400">' + pct(n, d) + '</span></td>';
-  }
-  function diaBr(iso) { var p = String(iso).split('-'); return p[2] + '/' + p[1]; }
-  async function carregarFunil(diasPedidos) {
-    var box = document.getElementById('acomp-funil');
-    if (!box) return;
-    var dias = Math.min(90, Number(diasPedidos) || Number(filtros().get('dias')) || 30);
-    try {
-      var r = await C().request('/api/admin/acompanhamento/funil?dias=' + dias);
-      var desde = r.versao_nova_desde ? new Date(r.versao_nova_desde) : null;
-      var linha = function (c, total) {
-        var antiga = !total && !r.versao_nova_todos && (!desde || new Date(c.dia + 'T23:59:59-03:00') < desde);
-        return '<tr class="border-t' + (total ? ' font-semibold bg-slate-50' : '') + '">' +
-          '<th scope="row" class="px-3 py-2 text-left whitespace-nowrap">' + (total ? 'Total' : esc(diaBr(c.dia))) +
-            (antiga ? ' <span class="text-xs font-normal text-gray-400">versão antiga</span>' : '') + '</th>' +
-          '<td class="px-3 py-2 text-right">' + c.contas + '</td>' + celula(c.entraram, c.contas) + celula(c.entraram_24h, c.contas) +
-          celula(c.comecaram, c.contas) + celula(c.concluiram, c.contas) + celula(c.certificado, c.contas) + '</tr>';
-      };
-      var th = function (t, esq) { return '<th scope="col" class="px-3 py-2 font-semibold ' + (esq ? 'text-left' : 'text-right') + '">' + t + '</th>'; };
-      box.innerHTML = '<section class="bg-white border rounded-xl p-4" aria-labelledby="acomp-funil-h">' +
-        '<h3 id="acomp-funil-h" class="font-bold text-gray-800">Funil por dia de matrícula</h3>' +
-        '<p class="text-xs text-gray-500 mb-3">Alunos agrupados pelo dia em que a conta foi criada (até 30 min depois de aparecerem no relatório de matriculados). Porcentagens sobre as contas do dia.</p>' +
-        (r.coortes.length
-          ? '<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="text-xs text-gray-500">' +
-            th('Dia', true) + th('Contas') + th('Entraram') + th('Em até 24 h') + th('Começaram a Aula') + th('Concluíram (' + r.total_modulos + ' módulos)') + th('Certificado') +
-            '</tr></thead><tbody>' + r.coortes.map(function (c) { return linha(c, false); }).join('') + linha(r.total, true) + '</tbody></table></div>'
-          : '<p class="text-sm text-gray-500">Nenhuma conta criada no período.</p>') +
-        '</section>';
-    } catch (err) {
-      box.innerHTML = '<p class="text-sm text-red-700">' + esc(err.message || 'Não foi possível carregar o funil.') + '</p>';
-    }
   }
 
   // Versão das telas (VERSAO_NOVA_PARA / VERSAO_NOVA_DESDE): o que o servidor leu e por que cada aluno vê uma ou outra.
@@ -189,8 +158,11 @@ window.AdminAcomp = (function () {
   async function load() {
     var msg = document.getElementById('acomp-msg');
     msg.textContent = 'Carregando...';
+    if (window.AdminBase) window.AdminBase.carregar();
     try {
-      var r = await C().request('/api/admin/acompanhamento?' + filtros().toString());
+      var pedido = filtros();
+      pedido.set('pagina', paginaAtual);
+      var r = await C().request('/api/admin/acompanhamento?' + pedido.toString());
       dados = r;
       if (!sinaisCarregados) {
         var gs = document.getElementById('acomp-sit-grupo');
@@ -215,11 +187,28 @@ window.AdminAcomp = (function () {
       document.getElementById('acomp-lista').innerHTML = r.alunos.length
         ? r.alunos.map(linhaAluno).join('')
         : '<p class="text-gray-500 text-sm">Ninguém nesse filtro.</p>';
-      msg.textContent = r.total_filtrado > r.alunos.length ? 'Mostrando ' + r.alunos.length + ' de ' + r.total_filtrado + '. Use a busca ou o CSV para ver todos.' : r.total_filtrado + ' aluno(s).';
+      paginaAtual = r.pagina;
+      var ini = (r.pagina - 1) * r.por_pagina + 1;
+      var contagem = r.paginas > 1 ? 'Mostrando ' + ini + ' a ' + (ini + r.alunos.length - 1) + ' de ' + r.total_filtrado + ' alunos.' : r.total_filtrado + ' aluno(s).';
+      var etapaAtiva = filtros().get('etapa');
+      msg.textContent = r.novas && !etapaAtiva ? r.novas.contas + ' conta(s) nova(s): ' + r.novas.entraram + (r.novas.entraram === 1 ? ' entrou, ' : ' entraram, ') + (r.novas.contas - r.novas.entraram) + ' ainda não.' + (r.paginas > 1 ? ' ' + contagem : '') : contagem;
+      desenharPaginas(r);
     } catch (err) {
       msg.textContent = err.message || 'Não foi possível carregar.';
     }
   }
+
+  function desenharPaginas(r) {
+    var box = document.getElementById('acomp-paginas');
+    box.hidden = r.paginas <= 1;
+    if (box.hidden) { box.innerHTML = ''; return; }
+    box.innerHTML =
+      '<button type="button" class="pn-ir" data-acomp-pagina="' + (r.pagina - 1) + '"' + (r.pagina <= 1 ? ' disabled' : '') + '>Anterior</button>' +
+      '<span>Página ' + r.pagina + ' de ' + r.paginas + '</span>' +
+      '<button type="button" class="pn-ir" data-acomp-pagina="' + (r.pagina + 1) + '"' + (r.pagina >= r.paginas ? ' disabled' : '') + '>Próxima</button>';
+  }
+
+  function novaBusca() { paginaAtual = 1; load(); }
 
   function aluno(id) { return dados && dados.alunos.find(function (a) { return String(a.id) === String(id); }); }
 
@@ -407,8 +396,14 @@ window.AdminAcomp = (function () {
     }
     var f = document.getElementById('acomp-filtros');
     if (!f) return;
-    f.addEventListener('submit', function (e) { e.preventDefault(); load(); });
-    f.querySelectorAll('select').forEach(function (s) { s.addEventListener('change', load); });
+    f.addEventListener('submit', function (e) { e.preventDefault(); novaBusca(); });
+    f.querySelectorAll('select, input[type="date"]').forEach(function (s) { s.addEventListener('change', novaBusca); });
+    document.getElementById('acomp-paginas').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-acomp-pagina]');
+      if (!b || b.disabled) return;
+      paginaAtual = Number(b.getAttribute('data-acomp-pagina'));
+      load().then(function () { f.scrollIntoView({ block: 'start' }); });
+    });
     document.getElementById('btn-acomp-export').addEventListener('click', exportar);
     document.getElementById('acomp-modal-close').addEventListener('click', fecharModal);
     document.getElementById('acomp-modal').addEventListener('click', function (e) { if (e.target.id === 'acomp-modal') fecharModal(); });
@@ -434,5 +429,5 @@ window.AdminAcomp = (function () {
     if (painel && !painel.classList.contains('hidden') && C() && C().token() && !dados) load();
   });
 
-  return { load: load, loadConfig: loadConfig, filtrar: filtrar, carregarFunil: carregarFunil, percurso: percurso };
+  return { load: load, loadConfig: loadConfig, filtrar: filtrar, percurso: percurso };
 })();

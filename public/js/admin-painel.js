@@ -47,8 +47,7 @@ window.AdminPainel = (function () {
   }
 
   function indicadoresHtml(lista) {
-    return '<section class="pn-sec" aria-labelledby="pn-h-ind">' +
-      '<h3 id="pn-h-ind" class="pn-h3">Como está a turma</h3>' +
+    return '<details class="pn-sec pn-mais"><summary class="pn-h3">Outros indicadores</summary>' +
       '<div class="pn-inds">' + lista.map(function (i) {
         var valor = i.valor == null ? '—' : i.valor + '%';
         return '<article class="pn-ind pn-ind--' + esc(i.faixa) + '">' +
@@ -59,7 +58,7 @@ window.AdminPainel = (function () {
           '<p class="pn-ind-meta">' + esc(i.meta) + '</p>' +
           (i.acao ? '<div class="pn-ind-a">' + botao(i.acao) + '</div>' : '') +
         '</article>';
-      }).join('') + '</div></section>';
+      }).join('') + '</div></details>';
   }
 
   function situacoesHtml(sits, total) {
@@ -68,7 +67,7 @@ window.AdminPainel = (function () {
     }).join('');
     return '<section class="pn-sec" aria-labelledby="pn-h-sit">' +
       '<h3 id="pn-h-sit" class="pn-h3">Situação dos alunos</h3>' +
-      '<p class="pn-sub">Cada aluno aparece em uma situação só, na ordem da tabela. ' + total + ' aluno(s) ativo(s).</p>' +
+      '<p class="pn-sub">Todos os ' + total + ' alunos ativos, em qualquer período. Cada aluno aparece em uma situação só.</p>' +
       '<div class="pn-barra" role="img" aria-label="Distribuição dos alunos por situação">' + (barra || '<i style="flex:1;background:#e8edf4"></i>') + '</div>' +
       '<div class="overflow-x-auto"><table class="pn-sits"><thead><tr><th scope="col">Situação</th><th scope="col" class="pn-num">Alunos</th><th scope="col">O que fazer</th><th scope="col"><span class="sr-only">Abrir</span></th></tr></thead><tbody>' +
       sits.map(function (s) {
@@ -80,20 +79,24 @@ window.AdminPainel = (function () {
       }).join('') + '</tbody></table></div></section>';
   }
 
+  var corte = null; // antes desta data as contas não entram nas estatísticas
+
   async function load() {
+    if (window.AdminBase) window.AdminBase.carregar();
     var box = document.getElementById('painel-conteudo');
     var msg = document.getElementById('painel-msg');
-    var dias = document.getElementById('painel-dias').value || '30';
+    var periodo = document.getElementById('painel-periodo').value || '30';
     msg.textContent = 'Carregando...';
     try {
-      if (window.AdminAcomp) window.AdminAcomp.carregarFunil(dias);
-      var r = await C().request('/api/admin/painel?dias=' + encodeURIComponent(dias));
-      var f = r.resumo_faixas;
-      msg.innerHTML = '<b>' + r.total_alunos + '</b> aluno(s) ativo(s) · indicadores: ' +
-        '<span class="pn-conta pn-conta--bom">' + f.bom + ' bom</span> ' +
-        '<span class="pn-conta pn-conta--regular">' + f.regular + ' regular</span> ' +
-        '<span class="pn-conta pn-conta--ruim">' + f.ruim + ' ruim</span> · atualizado às ' + esc(hora(r.gerado_em));
-      box.innerHTML = acoesHtml(r.acoes) + indicadoresHtml(r.indicadores) + situacoesHtml(r.situacoes, r.total_alunos) +
+      var pedido = new URLSearchParams({ periodo: periodo });
+      if (periodo === 'datas') {
+        pedido.set('de', document.getElementById('painel-de').value);
+        pedido.set('ate', document.getElementById('painel-ate').value);
+      }
+      var r = await C().request('/api/admin/painel?' + pedido.toString());
+      corte = r.resultado.contar_desde;
+      msg.innerHTML = '<b>' + r.total_alunos + '</b> aluno(s) ativo(s) no portal · atualizado às ' + esc(hora(r.gerado_em));
+      box.innerHTML = window.AdminResultado.html(r.resultado) + acoesHtml(r.acoes) + situacoesHtml(r.situacoes, r.total_alunos) + indicadoresHtml(r.indicadores) +
         (r.rastreio ? '' : '<p class="pn-nota">Tempo de uso, vídeos e buscas só aparecem para as contas com rastreio ligado (RASTREIO_LIBERADO_PARA).</p>');
     } catch (err) {
       msg.textContent = err.message || 'Não foi possível carregar a visão geral.';
@@ -101,13 +104,31 @@ window.AdminPainel = (function () {
   }
 
   function ir(b) {
-    if (b.aba === 'acompanhamento' && window.AdminAcomp) window.AdminAcomp.filtrar({ situacao: b.situacao, sinal: b.sinal });
+    if (b.aba === 'acompanhamento' && window.AdminAcomp) window.AdminAcomp.filtrar({ situacao: b.situacao, sinal: b.sinal, etapa: b.etapa, criada_de: b.criada_de, criada_ate: b.criada_ate });
     C().irPara(b.aba, b.sub);
   }
 
   document.addEventListener('DOMContentLoaded', function () {
-    var sel = document.getElementById('painel-dias');
-    if (sel) sel.addEventListener('change', load);
+    var sel = document.getElementById('painel-periodo');
+    var de = document.getElementById('painel-de');
+    var ate = document.getElementById('painel-ate');
+    // "Escolher datas" abre o calendário, já com os últimos 30 dias. Nenhuma data no futuro.
+    var isoSP = function (ms) { return new Date(ms).toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' }); };
+    if (sel) sel.addEventListener('change', function () {
+      var datas = sel.value === 'datas';
+      document.getElementById('painel-datas').hidden = !datas;
+      if (datas) {
+        var hoje = isoSP(Date.now());
+        de.max = hoje; ate.max = hoje;
+        if (!ate.value) ate.value = hoje;
+        if (!de.value) {
+          var inicio = isoSP(Date.now() - 29 * 86400000);
+          de.value = corte && corte > inicio ? corte : inicio;
+        }
+      }
+      load();
+    });
+    [de, ate].forEach(function (c) { if (c) c.addEventListener('change', function () { if (de.value && ate.value) load(); }); });
     var at = document.getElementById('painel-atualizar');
     if (at) at.addEventListener('click', load);
     // O login pode terminar antes deste arquivo carregar: se a aba já está aberta e vazia, carrega agora.
@@ -154,6 +175,8 @@ window.AdminPainel = (function () {
       linhas + '</tbody></table></div>' +
       '<label class="fx-dias"><span>Aluno conta como <b>sumiu</b> depois de</span> <input type="number" name="dias_sumiu" min="1" max="90" value="' + Number(f.dias_sumiu) + '" class="fx-n" required> dias sem acessar ' +
         '<small>Vale para a situação "Sumiu" e para o indicador "Acessaram nos últimos dias". Padrão: ' + r.padrao.dias_sumiu + '.</small></label>' +
+      '<label class="fx-dias"><span>Contar nas estatísticas as contas criadas a partir de</span> <input type="date" name="contar_desde" value="' + esc(f.contar_desde || '') + '" class="border rounded-lg px-2 py-1"> ' +
+        '<small>Contas mais antigas ficam fora dos números e de Quem contatar, mas nada é apagado e elas continuam podendo entrar. Em branco, conta todas.</small></label>' +
       '<p class="fx-nota">Se "Bom" e "Regular" ficarem na ordem errada, o sistema troca os dois; se ficarem iguais, volta ao padrão.</p>' +
       '<p id="faixas-msg" class="fx-msg" role="status"></p>' +
       '<div class="fx-acts"><button type="submit" class="bg-cruzeiro text-white font-semibold px-4 py-2 rounded-lg">Salvar faixas</button>' +
@@ -162,7 +185,7 @@ window.AdminPainel = (function () {
   }
 
   function lerFaixas(form) {
-    var out = { faixas: { dias_sumiu: Number(form.querySelector('[name="dias_sumiu"]').value), ind: {} } };
+    var out = { faixas: { dias_sumiu: Number(form.querySelector('[name="dias_sumiu"]').value), contar_desde: form.querySelector('[name="contar_desde"]').value, ind: {} } };
     form.querySelectorAll('[data-faixa]').forEach(function (tr) {
       out.faixas.ind[tr.getAttribute('data-faixa')] = {
         bom: Number(tr.querySelector('[name="bom"]').value),

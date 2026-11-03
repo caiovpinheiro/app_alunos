@@ -7,6 +7,18 @@
 - Push em `main` dispara `.github/workflows/deploy.yml`: publica `ghcr.io/caiovpinheiro/app_alunos:latest` e chama o webhook do EasyPanel (`secrets.EASYPANEL_DEPLOY_APP`).
 - Não invente outro fluxo de deploy (n8n, branch de homologação, etc.) sem pedido explícito.
 
+### 2026-11-03 - Admin: base de alunos e contas novas
+
+**Decisão**
+- A barra de base (`GET /api/admin/base`, `admin-base.js`) mostra de quando é o relatório de matriculados, a última conferência e os alertas. Relatório com mais de 24 h vira aviso.
+- O sync guarda em `csu_sync_state` quem está em curso no relatório e ficou sem conta (sem RGM, nome ou e-mail, e-mail repetido, erro ao criar). Quem já tem conta ativa não conta. `fora_count` nulo força um novo sync do mesmo relatório, como foi feito com `revoked_count`.
+- `sinal=novas_hoje|novas_7d|novas_30d|novas_90d` listam por dia de criação da conta, no horário de Brasília, mais recentes primeiro. `etapa=` filtra pela etapa do funil.
+- A Visão geral abre com o Resultado (`server/resultado.js`): só existe um funil. Base única = contas criadas no período; etapas cumulativas (certificado implica concluiu, que implica começou, que implica entrou). É calculado da mesma lista de Quem contatar, para o número bater com os nomes. O funil por SQL (`funilCoortes`, `/api/admin/acompanhamento/funil`) saiu.
+- O período da Visão geral aceita calendário (`periodo=datas&de=&ate=`); Quem contatar filtra por `criada_de` e `criada_ate`, e os botões do Resultado levam o intervalo junto.
+- As estatísticas do admin contam só as contas criadas a partir de `faixas.contar_desde` (padrão 29/10/2026, editável em Configurações). Vale para Visão geral, Quem contatar, CSV, Aula Inaugural e Avaliações (`server/recorte.js`). Nada é apagado; "Acessos dos alunos" continua com todos.
+- Bom/Regular/Ruim das etapas vale para a conversão da etapa anterior, com as mesmas faixas de Configurações. "Primeiro acesso em até 24 h" não conta contas com menos de 24 h.
+- A lista passou a ser paginada (`pagina`, `por_pagina`, 50 por padrão e até 100), no lugar do corte em 300. O CSV continua com todos.
+
 ### 2026-11-02 - Meu semestre: bloco "Seu semestre em foco"
 
 **Decisão**

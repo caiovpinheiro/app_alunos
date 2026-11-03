@@ -295,6 +295,15 @@ async function ensureSchema(pool) {
     ADD COLUMN IF NOT EXISTS revoked_count INTEGER
   `);
   await pool.query(`
+    ALTER TABLE csu_sync_state
+      ADD COLUMN IF NOT EXISTS em_curso_count INTEGER,
+      ADD COLUMN IF NOT EXISTS fora_count INTEGER,
+      ADD COLUMN IF NOT EXISTS fora JSONB,
+      ADD COLUMN IF NOT EXISTS verificado_em TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS ultimo_erro TEXT,
+      ADD COLUMN IF NOT EXISTS ultimo_erro_em TIMESTAMPTZ
+  `);
+  await pool.query(`
     ALTER TABLE csu_alunos
     ADD COLUMN IF NOT EXISTS curso TEXT
   `);
@@ -636,7 +645,9 @@ async function deactivateAlunosByRgm(pool, rgms) {
 
 async function getSyncState(pool, id = 'matriculados') {
   const result = await pool.query(
-    'SELECT snapshot_id, snapshot_at, file_name, row_count, created_count, updated_count, skipped_count, revoked_count, synced_at FROM csu_sync_state WHERE id = $1',
+    `SELECT snapshot_id, snapshot_at, file_name, row_count, created_count, updated_count, skipped_count, revoked_count, synced_at,
+       em_curso_count, fora_count, fora, verificado_em, ultimo_erro, ultimo_erro_em
+     FROM csu_sync_state WHERE id = $1`,
     [id],
   );
   return result.rows[0] || null;
@@ -645,8 +656,9 @@ async function getSyncState(pool, id = 'matriculados') {
 async function saveSyncState(pool, state, id = 'matriculados') {
   await pool.query(
     `INSERT INTO csu_sync_state
-      (id, snapshot_id, snapshot_at, file_name, row_count, created_count, updated_count, skipped_count, revoked_count, synced_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, now())
+      (id, snapshot_id, snapshot_at, file_name, row_count, created_count, updated_count, skipped_count, revoked_count,
+       em_curso_count, fora_count, fora, verificado_em, ultimo_erro, ultimo_erro_em, synced_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::jsonb, now(), NULL, NULL, now())
      ON CONFLICT (id) DO UPDATE SET
        snapshot_id = EXCLUDED.snapshot_id,
        snapshot_at = EXCLUDED.snapshot_at,
@@ -656,6 +668,12 @@ async function saveSyncState(pool, state, id = 'matriculados') {
        updated_count = EXCLUDED.updated_count,
        skipped_count = EXCLUDED.skipped_count,
        revoked_count = EXCLUDED.revoked_count,
+       em_curso_count = EXCLUDED.em_curso_count,
+       fora_count = EXCLUDED.fora_count,
+       fora = EXCLUDED.fora,
+       verificado_em = now(),
+       ultimo_erro = NULL,
+       ultimo_erro_em = NULL,
        synced_at = now()`,
     [
       id,
@@ -667,11 +685,37 @@ async function saveSyncState(pool, state, id = 'matriculados') {
       state.updated_count,
       state.skipped_count,
       state.revoked_count || 0,
+      state.em_curso_count == null ? null : state.em_curso_count,
+      state.fora_count == null ? null : state.fora_count,
+      JSON.stringify(state.fora || []),
     ],
   );
 }
 
+// Conferência do relatório que não aplicou nada: sem erro = base em dia; com erro = aparece no admin.
+async function registrarVerificacaoSync(pool, erro, id = 'matriculados') {
+  await pool.query(
+    `INSERT INTO csu_sync_state (id, verificado_em, ultimo_erro, ultimo_erro_em)
+     VALUES ($1, CASE WHEN $2::text IS NULL THEN now() END, $2::text, CASE WHEN $2::text IS NOT NULL THEN now() END)
+     ON CONFLICT (id) DO UPDATE SET
+       verificado_em = CASE WHEN $2::text IS NULL THEN now() ELSE csu_sync_state.verificado_em END,
+       ultimo_erro = $2::text,
+       ultimo_erro_em = CASE WHEN $2::text IS NOT NULL THEN now() END`,
+    [id, erro || null],
+  );
+}
+
+// Dos RGMs informados, os que já têm conta ativa no portal.
+async function rgmsComConta(pool, rgms) {
+  const unicos = [...new Set((rgms || []).filter(Boolean))];
+  if (!unicos.length) return new Set();
+  const r = await pool.query('SELECT rgm FROM csu_alunos WHERE ativo AND rgm = ANY($1::text[])', [unicos]);
+  return new Set(r.rows.map((x) => x.rgm));
+}
+
 module.exports = {
+  registrarVerificacaoSync,
+  rgmsComConta,
   TOKEN_TTL_MS,
   DERIVED_PW_MARKER,
   createPool,

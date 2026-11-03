@@ -24,6 +24,7 @@ const trilhaRelatorios = require('./trilha-relatorios');
 const central = require('./central');
 const acompanhamento = require('./acompanhamento');
 const painel = require('./painel');
+const resultado = require('./resultado');
 const ajudaPedidos = require('./ajuda-pedidos');
 const avaliacoes = require('./avaliacoes');
 const preparo = require('./preparo');
@@ -1445,20 +1446,43 @@ async function listaAcompanhamento(req) {
   const situacao = String(req.query.situacao || '');
   if (painel.SITUACAO[situacao]) lista = lista.filter((x) => x.situacao === situacao);
   const filtro = String(req.query.sinal || (situacao ? 'todos' : 'com_sinal'));
-  if (filtro === 'com_sinal') lista = lista.filter((x) => x.sinais.length);
+  // Contas novas: por dia de criação (hoje, 7, 30 ou 90 dias, no horário de Brasília), mais recentes primeiro.
+  let novas = null;
+  const intervalo = resultado.intervaloDe(req.query.criada_de, req.query.criada_ate);
+  if (intervalo) {
+    lista = lista.filter((x) => {
+      if (!x.created_at) return false;
+      const d = resultado.diaSP(x.created_at);
+      return d >= intervalo.de && d <= intervalo.ate;
+    });
+  }
+  const contarNovas = () => ({ contas: lista.length, entraram: lista.filter((x) => resultado.etapasDe(x, certificados).entrou).length });
+  if (intervalo && filtro === 'todos') novas = contarNovas();
+  if (resultado.FILTROS_NOVAS[filtro]) {
+    lista = lista.filter((x) => resultado.criadaDesde(x, resultado.FILTROS_NOVAS[filtro]));
+    novas = contarNovas();
+  } else if (filtro === 'com_sinal') lista = lista.filter((x) => x.sinais.length);
   else if (filtro !== 'todos' && filtro !== 'em_espera') lista = lista.filter((x) => x.sinais.some((s) => s.id === filtro));
   else if (filtro === 'em_espera') lista = lista.filter((x) => x.em_espera);
-  lista.sort((a, b) => a.prioridade - b.prioridade || new Date(b.ultimo_acesso || 0) - new Date(a.ultimo_acesso || 0));
-  return { dias, lista, rows, cfg };
+  // Etapa do funil: a mesma regra do Resultado da Visão geral, para os números baterem com os nomes.
+  const etapa = String(req.query.etapa || '');
+  if (etapa) lista = lista.filter((x) => resultado.temEtapa(x, etapa, certificados, cfg.faixas.dias_sumiu));
+  lista.sort(novas
+    ? (a, b) => new Date(b.created_at) - new Date(a.created_at)
+    : (a, b) => a.prioridade - b.prioridade || new Date(b.ultimo_acesso || 0) - new Date(a.ultimo_acesso || 0));
+  return { dias, lista, rows, cfg, novas };
 }
 
 app.get('/api/admin/acompanhamento', requireAdmin, async (req, res) => {
   if (!pool) return unavailable(res);
   try {
-    const { dias, lista, rows, cfg } = await listaAcompanhamento(req);
-    const pagina = lista.slice(0, 300);
-    const tels = await telefonesDe(pagina.map((x) => x.rgm));
-    pagina.forEach((x) => { const n = waNumero(tels.get(x.rgm)); x.whatsapp_numero = n; });
+    const { dias, lista, rows, cfg, novas } = await listaAcompanhamento(req);
+    const porPagina = Math.max(1, Math.min(100, Math.floor(Number(req.query.por_pagina)) || 50));
+    const paginas = Math.max(1, Math.ceil(lista.length / porPagina));
+    const pagina = Math.max(1, Math.min(paginas, Math.floor(Number(req.query.pagina)) || 1));
+    const trecho = lista.slice((pagina - 1) * porPagina, pagina * porPagina);
+    const tels = await telefonesDe(trecho.map((x) => x.rgm));
+    trecho.forEach((x) => { const n = waNumero(tels.get(x.rgm)); x.whatsapp_numero = n; });
     const ativos = rows.filter((r) => r.acessos > 0);
     const totais = {
       alunos: rows.length,
@@ -1471,10 +1495,23 @@ app.get('/api/admin/acompanhamento', requireAdmin, async (req, res) => {
     };
     const sinais = acompanhamento.catalogo().filter((x) => cfg.sinais[x.id].ativo);
     const situacoes = painel.situacoes(cfg.faixas.dias_sumiu).map((x) => ({ id: x.id, rotulo: x.rotulo, faixa: x.faixa, acao: x.acao }));
-    return res.json({ success: true, dias, totais, sinais, situacoes, total_filtrado: lista.length, alunos: pagina });
+    return res.json({ success: true, dias, totais, sinais, situacoes, novas, total_filtrado: lista.length, pagina, paginas, por_pagina: porPagina, alunos: trecho });
   } catch (err) {
     console.error('Falha no acompanhamento:', err.message);
     return res.status(500).json({ success: false, message: 'Não foi possível carregar o acompanhamento.' });
+  }
+});
+
+// De quando é a base de alunos (relatório de matriculados) e quem ficou sem conta.
+app.get('/api/admin/base', requireAdmin, async (req, res) => {
+  if (!pool) return unavailable(res);
+  try {
+    await ensureAcompanhamento();
+    const estado = await db.getSyncState(pool);
+    return res.json({ success: true, ...syncAcessos.resumoBase(estado, { configurada: matriculados.isConfigured() }) });
+  } catch (err) {
+    console.error('Falha ao ler o estado da base:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível ver a atualização da base.' });
   }
 });
 
@@ -1483,21 +1520,23 @@ app.get('/api/admin/painel', requireAdmin, async (req, res) => {
   if (!pool) return unavailable(res);
   try {
     await ensureAcompanhamento();
-    const dias = Math.max(1, Math.min(180, Number(req.query.dias) || 30));
+    const periodo = resultado.periodoDe(req.query.periodo, req.query.de, req.query.ate);
+    const dias = Math.min(180, periodo.dias || 180);
     const { rows } = await acompanhamento.listar(pool, { dias });
     const cfg = await acompanhamento.lerConfig(pool);
     const lista = acompanhamento.montar(rows, trilha.NIVEIS, cfg);
     const certificados = await certificadosEmitidos();
-    const [funil, uso, ondeTrava, resumoAula] = await Promise.all([
-      trilhaRelatorios.funilCoortes(pool, { dias: Math.min(90, dias) }),
+    const [uso, ondeTrava, resumoAula] = await Promise.all([
       trilhaRelatorios.dashboardUso(pool),
       trilhaAdmin.ondeTrava(pool),
       trilhaAdmin.resumoAdmin(pool, certificados),
     ]);
     await ensureAjuda().catch(() => {});
     const pedidosAbertos = await ajudaPedidos.contarAbertos(pool);
-    const visao = await painel.visaoGeral(pool, { dias, lista, certificados, funil, uso, ondeTrava, resumoAula, cfg, pedidosAbertos });
-    return res.json({ success: true, ...visao });
+    const visao = await painel.visaoGeral(pool, { dias, lista, certificados, uso, ondeTrava, resumoAula, cfg, pedidosAbertos });
+    const desde = versao.desde();
+    const contas = resultado.calcular(lista, certificados, periodo, { faixas: cfg.faixas, contar_desde: cfg.faixas.contar_desde, versao: { todos: versao.paraTodos(), desde: desde ? desde.toISOString() : null } });
+    return res.json({ success: true, ...visao, resultado: contas });
   } catch (err) {
     console.error('Falha na visão geral:', err.message);
     return res.status(500).json({ success: false, message: 'Não foi possível carregar a visão geral.' });
@@ -1610,20 +1649,6 @@ app.get('/api/admin/versao', requireAdmin, async (req, res) => {
   } catch (err) {
     console.error('Falha ao conferir a versão:', err.message);
     return res.status(500).json({ success: false, message: 'Não foi possível conferir.' });
-  }
-});
-
-// Funil por coorte de matrícula (dia em que a conta foi criada): entrou, começou a Aula, concluiu, certificado.
-app.get('/api/admin/acompanhamento/funil', requireAdmin, async (req, res) => {
-  if (!pool) return unavailable(res);
-  try {
-    await ensureAcompanhamento();
-    const funil = await trilhaRelatorios.funilCoortes(pool, { dias: req.query.dias });
-    const desde = versao.desde();
-    return res.json({ success: true, ...funil, versao_nova_desde: desde ? desde.toISOString() : null, versao_nova_todos: versao.paraTodos() });
-  } catch (err) {
-    console.error('Falha no funil:', err.message);
-    return res.status(500).json({ success: false, message: 'Não foi possível carregar o funil.' });
   }
 });
 
@@ -1902,6 +1927,7 @@ async function runAcessosSync(reason) {
     }
   } catch (err) {
     console.error('Sync automático de acessos falhou:', err.message);
+    await db.registrarVerificacaoSync(pool, 'A última conferência do relatório de matriculados falhou.').catch(() => {});
   } finally {
     acessosSyncRunning = false;
   }
@@ -1912,11 +1938,11 @@ function startAcessosSyncScheduler() {
     console.log('Sync automático de acessos desligado: defina MATRICULADOS_HOST e MATRICULADOS_DATABASE.');
     return;
   }
-  const minutes = Number(process.env.ACESSOS_SYNC_INTERVAL_MIN || 30);
-  const delayMs = Math.max(5, minutes) * 60 * 1000;
+  const minutes = syncAcessos.intervaloSyncMin();
+  const delayMs = minutes * 60 * 1000;
   setTimeout(() => runAcessosSync('boot'), 15000);
   setInterval(() => runAcessosSync('intervalo'), delayMs);
-  console.log(`Sync automático de acessos a cada ${Math.max(5, minutes)} min (novos do relatório de matriculados).`);
+  console.log(`Sync automático de acessos a cada ${minutes} min (novos do relatório de matriculados).`);
 }
 
 let materiasAutoRunning = false;

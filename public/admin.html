@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="/css/styles.css?v=31">
   <link rel="stylesheet" href="/css/ds.css?v=1">
   <link rel="stylesheet" href="/css/ds-admin.css?v=1">
-  <link rel="stylesheet" href="/css/ds-painel.css?v=6">
+  <link rel="stylesheet" href="/css/ds-painel.css?v=7">
   <link rel="stylesheet" href="/css/admin-grupos.css?v=3">
 </head>
 <body class="bg-slate-50">
@@ -93,17 +93,21 @@
         <div class="admin-panel-head flex flex-wrap justify-between items-end gap-3">
           <div>
             <h2 class="text-xl font-bold">Visão geral</h2>
-            <p class="admin-panel-desc">Como está a turma, o que fazer primeiro e em que situação está cada aluno. Clique em uma ação para abrir a lista já filtrada.</p>
+            <p class="admin-panel-desc">Quantas contas foram criadas e até onde chegaram. Depois, o que fazer primeiro e a situação de cada aluno. Cada botão abre a lista com os nomes.</p>
           </div>
           <div class="flex flex-wrap items-end gap-2 text-sm">
-            <label class="flex flex-col gap-1"><span class="text-gray-600">Período</span>
-              <select id="painel-dias" class="border rounded-lg px-3 py-2 bg-white"><option value="7">Últimos 7 dias</option><option value="30" selected>Últimos 30 dias</option><option value="90">Últimos 90 dias</option></select></label>
+            <label class="flex flex-col gap-1"><span class="text-gray-600">Contas criadas</span>
+              <select id="painel-periodo" class="border rounded-lg px-3 py-2 bg-white"><option value="hoje">Hoje</option><option value="7">Últimos 7 dias</option><option value="30" selected>Últimos 30 dias</option><option value="90">Últimos 90 dias</option><option value="todos">Desde o início</option><option value="datas">Escolher datas</option></select></label>
+            <span id="painel-datas" class="pn-datas" hidden>
+              <label class="flex flex-col gap-1"><span class="text-gray-600">De</span><input type="date" id="painel-de" class="border rounded-lg px-3 py-2 bg-white"></label>
+              <label class="flex flex-col gap-1"><span class="text-gray-600">Até</span><input type="date" id="painel-ate" class="border rounded-lg px-3 py-2 bg-white"></label>
+            </span>
             <button type="button" id="painel-atualizar" class="bg-white border text-sm font-semibold px-4 py-2 rounded-lg">Atualizar</button>
           </div>
         </div>
         <p id="painel-msg" class="pn-msg" role="status"></p>
+        <div data-base-status="painel"></div>
         <div id="painel-conteudo" class="pn"></div>
-        <div id="acomp-funil" class="pn-funil"></div>
       </div>
 
       <div id="tab-acompanhamento" class="admin-panel hidden">
@@ -117,13 +121,20 @@
             <button type="button" id="btn-acomp-export" class="bg-cruzeiro text-white text-sm font-semibold px-4 py-2 rounded-lg">Baixar CSV (para o CRM)</button>
           </div>
         </div>
+        <div data-base-status="acomp"></div>
         <!-- Pedidos de ajuda (admin-pedidos.js): Travei / dificuldade, com protocolo e contexto. -->
         <section id="acomp-pedidos" class="ped-box" aria-label="Pedidos de ajuda" hidden></section>
         <form id="acomp-filtros" class="flex flex-wrap items-end gap-3 mb-4 text-sm">
           <label class="flex flex-col gap-1"><span class="text-gray-600">Período</span>
             <select name="dias" class="border rounded-lg px-3 py-2 bg-white"><option value="7">Últimos 7 dias</option><option value="30" selected>Últimos 30 dias</option><option value="90">Últimos 90 dias</option></select></label>
           <label class="flex flex-col gap-1"><span class="text-gray-600">Mostrar</span>
-            <select name="sinal" id="acomp-sinal" class="border rounded-lg px-3 py-2 bg-white"><option value="com_sinal">Quem precisa de contato</option><option value="em_espera">Contatados recentemente (em espera)</option><option value="todos">Todos os alunos</option><optgroup label="Por situação" id="acomp-sit-grupo"></optgroup><optgroup label="Por sinal" id="acomp-sinal-grupo"></optgroup></select></label>
+            <select name="sinal" id="acomp-sinal" class="border rounded-lg px-3 py-2 bg-white"><option value="com_sinal">Quem precisa de contato</option><option value="em_espera">Contatados recentemente (em espera)</option><option value="todos">Todos os alunos</option><optgroup label="Contas novas"><option value="novas_hoje">Criadas hoje</option><option value="novas_7d">Criadas nos últimos 7 dias</option><option value="novas_30d">Criadas nos últimos 30 dias</option><option value="novas_90d">Criadas nos últimos 90 dias</option></optgroup><optgroup label="Por situação" id="acomp-sit-grupo"></optgroup><optgroup label="Por sinal" id="acomp-sinal-grupo"></optgroup></select></label>
+          <label class="flex flex-col gap-1"><span class="text-gray-600">Etapa</span>
+            <select name="etapa" id="acomp-etapa" class="border rounded-lg px-3 py-2 bg-white"><option value="">Todas</option><option value="nao_entrou">Não entraram</option><option value="nao_comecou">Entraram e não começaram a Aula</option><option value="nao_concluiu">Começaram e não concluíram</option><option value="sem_certificado">Concluíram sem certificado</option><option value="certificado">Com certificado</option><option value="parou_de_acessar">Entraram e pararam de acessar</option></select></label>
+          <label class="flex flex-col gap-1"><span class="text-gray-600">Conta criada de</span>
+            <input type="date" name="criada_de" id="acomp-criada-de" class="border rounded-lg px-3 py-2 bg-white"></label>
+          <label class="flex flex-col gap-1"><span class="text-gray-600">até</span>
+            <input type="date" name="criada_ate" id="acomp-criada-ate" class="border rounded-lg px-3 py-2 bg-white"></label>
           <label class="flex flex-col gap-1 flex-1 min-w-[200px]"><span class="text-gray-600">Buscar aluno</span>
             <input name="q" type="search" placeholder="Nome, RGM ou e-mail" class="border rounded-lg px-3 py-2"></label>
           <button type="submit" class="bg-white border text-sm font-semibold px-4 py-2 rounded-lg">Atualizar</button>
@@ -132,6 +143,7 @@
         <!-- Totais e funil ficam na Visão geral; aqui só a lista. -->
         <div id="acomp-totais" class="hidden"></div>
         <div id="acomp-lista" class="space-y-3"></div>
+        <nav id="acomp-paginas" class="bs-paginas" aria-label="Páginas da lista de alunos" hidden></nav>
       </div>
 
       <div id="tab-avisos" class="admin-panel hidden">
@@ -386,8 +398,10 @@
   </div>
 
   <script src="/js/admin.js?v=31"></script>
-  <script src="/js/admin-acompanhamento.js?v=10"></script>
-  <script src="/js/admin-painel.js?v=5"></script>
+  <script src="/js/admin-base.js?v=1"></script>
+  <script src="/js/admin-resultado.js?v=1"></script>
+  <script src="/js/admin-acompanhamento.js?v=11"></script>
+  <script src="/js/admin-painel.js?v=6"></script>
   <script src="/js/admin-pedidos.js?v=2"></script>
   <script src="/js/admin-aula.js?v=2"></script>
   <script src="/js/admin-avaliacoes.js?v=2"></script>

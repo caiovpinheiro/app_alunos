@@ -10,6 +10,7 @@ const path = require('node:path');
 const trilha = require('./trilha');
 const { lerEventos, chaveVideo, MODULO_DO_VIDEO } = require('./trilha-admin');
 const { tituloDe, carregarTitulos } = require('./avaliacoes');
+const recorte = require('./recorte');
 
 const { NIVEIS, ABERTURA, PONTOS_MODULO, statusCertificado } = trilha;
 
@@ -46,8 +47,9 @@ const CATALOGO = (() => {
 })();
 
 async function votos(pool) {
+  const desde = await recorte.contarDesde(pool);
   try {
-    const r = await pool.query('SELECT rgm, tipo, conteudo_id, voto FROM csu_avaliacoes');
+    const r = await pool.query(`SELECT rgm, tipo, conteudo_id, voto FROM csu_avaliacoes WHERE rgm IN (${recorte.rgmsNoCorte(1)})`, [desde]);
     return r.rows;
   } catch (err) {
     if (err.code === '42P01') return [];
@@ -56,11 +58,12 @@ async function votos(pool) {
 }
 
 async function acessos(pool) {
+  const desde = await recorte.contarDesde(pool);
   try {
     const r = await pool.query(`
       SELECT aluno_id, COUNT(*)::int AS acessos, COALESCE(SUM(segundos_ativos), 0)::int AS segundos,
              MIN(inicio) AS primeiro, MAX(fim) AS ultimo
-      FROM csu_acessos GROUP BY aluno_id`);
+      FROM csu_acessos WHERE aluno_id IN (${recorte.idsNoCorte(1)}) GROUP BY aluno_id`, [desde]);
     return r.rows;
   } catch (err) {
     if (err.code === '42P01') return [];
@@ -73,11 +76,13 @@ function pct(n, de) { return de ? Math.round((100 * n) / de) : null; }
 // ---------- por aluno × módulo ----------
 
 async function porAluno(pool, certificados = {}) {
+  const desde = await recorte.contarDesde(pool);
   const [prog, vs, ev, ac] = await Promise.all([
     pool.query(`
       SELECT p.aluno_id, a.nome, a.rgm, a.email, p.nivel, p.partes_vistas, p.video_ok, p.pulou_video, p.respostas, p.travei,
              p.pontos, p.concluido_em, p.criado_em, p.atualizado_em
-      FROM csu_trilha_progresso p JOIN csu_alunos a ON a.id = p.aluno_id ORDER BY a.nome, p.nivel`),
+      FROM csu_trilha_progresso p JOIN csu_alunos a ON a.id = p.aluno_id
+      WHERE a.id IN (${recorte.idsNoCorte(1)}) ORDER BY a.nome, p.nivel`, [desde]),
     votos(pool),
     lerEventos(pool),
     acessos(pool),
@@ -271,39 +276,4 @@ async function dashboardUso(pool) {
   return { acessos: acessosOut, videos: videosOut, avaliacoes: avaliacoesOut };
 }
 
-// Funil por coorte: alunos agrupados pelo dia em que a conta foi criada (≈ dia da matrícula: a conta nasce
-// na sincronização do relatório de matriculados). Para cada dia: contas, quantas entraram (e em até 24 h),
-// começaram a Aula Inaugural, concluíram os módulos e emitiram o certificado. "Entrou" também conta quem
-// tem progresso ou certificado, para os dias de antes do registro de login (20/10/2026).
-async function funilCoortes(pool, opts = {}) {
-  const dias = Math.max(1, Math.min(90, Number(opts.dias) || 14));
-  const totalModulos = trilha.NIVEIS.length;
-  const { rows } = await pool.query(
-    `WITH base AS (
-       SELECT a.id, (a.created_at AT TIME ZONE 'America/Sao_Paulo')::date AS dia, a.created_at, a.primeiro_login_em
-       FROM csu_alunos a
-       WHERE a.ativo
-         AND a.created_at >= (date_trunc('day', now() AT TIME ZONE 'America/Sao_Paulo') - (($1::int - 1) * interval '1 day')) AT TIME ZONE 'America/Sao_Paulo'),
-     tr AS (
-       SELECT aluno_id, COUNT(*) FILTER (WHERE concluido_em IS NOT NULL)::int AS feitos
-       FROM csu_trilha_progresso WHERE aluno_id IN (SELECT id FROM base) GROUP BY aluno_id),
-     ce AS (SELECT DISTINCT aluno_id FROM csu_certificados WHERE aluno_id IN (SELECT id FROM base))
-     SELECT to_char(b.dia, 'YYYY-MM-DD') AS dia,
-       COUNT(*)::int AS contas,
-       COUNT(*) FILTER (WHERE b.primeiro_login_em IS NOT NULL OR tr.aluno_id IS NOT NULL OR ce.aluno_id IS NOT NULL)::int AS entraram,
-       COUNT(*) FILTER (WHERE b.primeiro_login_em <= b.created_at + interval '24 hours')::int AS entraram_24h,
-       COUNT(*) FILTER (WHERE tr.aluno_id IS NOT NULL)::int AS comecaram,
-       COUNT(*) FILTER (WHERE tr.feitos >= $2::int)::int AS concluiram,
-       COUNT(*) FILTER (WHERE ce.aluno_id IS NOT NULL)::int AS certificado
-     FROM base b LEFT JOIN tr ON tr.aluno_id = b.id LEFT JOIN ce ON ce.aluno_id = b.id
-     GROUP BY b.dia ORDER BY b.dia DESC`,
-    [dias, totalModulos],
-  );
-  const total = { dia: 'total' };
-  ['contas', 'entraram', 'entraram_24h', 'comecaram', 'concluiram', 'certificado'].forEach((k) => {
-    total[k] = rows.reduce((n, r) => n + r[k], 0);
-  });
-  return { dias, total_modulos: totalModulos, coortes: rows, total };
-}
-
-module.exports = { porAluno, csvPorAluno, dashboardUso, funilCoortes, CATALOGO };
+module.exports = { porAluno, csvPorAluno, dashboardUso, CATALOGO };

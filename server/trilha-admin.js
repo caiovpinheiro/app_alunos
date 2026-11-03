@@ -5,6 +5,7 @@
 // Pontos saem sempre de concluido_em (a coluna `pontos` pode ter valores da escala antiga).
 
 const { NIVEIS, MAX_PONTOS, ABERTURA, PONTOS_MODULO, META_CERTIFICADO, HORAS_CERTIFICADO, statusCertificado } = require('./trilha');
+const recorte = require('./recorte');
 
 
 // Vídeo como o rastreio grava (public/js/rastreio.js, nomeVideo): últimos 2 trechos do caminho, sem .mp4.
@@ -19,12 +20,14 @@ function chaveVideo(v) {
 async function visualizacoesAbertura(pool) {
   if (!ABERTURA.length) return null;
   const chaves = ABERTURA.map((c) => chaveVideo(c.v));
+  const desde = await recorte.contarDesde(pool);
   try {
     const r = await pool.query(
       `SELECT COUNT(DISTINCT aluno_id) FILTER (WHERE nome = 'video_inicio')::int AS iniciaram,
               COUNT(DISTINCT aluno_id) FILTER (WHERE nome = 'video_fim')::int AS terminaram
-       FROM csu_eventos WHERE nome IN ('video_inicio', 'video_fim') AND dados->>'video' = ANY($1::text[])`,
-      [chaves],
+       FROM csu_eventos WHERE nome IN ('video_inicio', 'video_fim') AND dados->>'video' = ANY($1::text[])
+         AND aluno_id IN (${recorte.idsNoCorte(2)})`,
+      [chaves, desde],
     );
     return { titulo: ABERTURA.map((c) => c.t).join(' + '), iniciaram: r.rows[0].iniciaram, terminaram: r.rows[0].terminaram };
   } catch (err) {
@@ -36,10 +39,11 @@ async function visualizacoesAbertura(pool) {
 // `certificados`: { [aluno_id]: data da 1ª emissão } — vem de index.js (mesma fonte de certificadoEmitido),
 // para a regra "quem já emitiu continua valendo" ficar num lugar só.
 async function resumoAdmin(pool, certificados = {}) {
+  const desde = await recorte.contarDesde(pool);
   const porAluno = await pool.query(`
     SELECT aluno_id,
            COUNT(*) FILTER (WHERE concluido_em IS NOT NULL)::int AS concluidos
-    FROM csu_trilha_progresso GROUP BY aluno_id`);
+    FROM csu_trilha_progresso WHERE aluno_id IN (${recorte.idsNoCorte(1)}) GROUP BY aluno_id`, [desde]);
   let concluiram = 0;
   let atingiram_meta = 0;
   let liberados = 0;
@@ -56,8 +60,8 @@ async function resumoAdmin(pool, certificados = {}) {
            COUNT(*)::int AS abriram,
            COUNT(*) FILTER (WHERE video_ok)::int AS viram_video,
            COUNT(*) FILTER (WHERE concluido_em IS NOT NULL)::int AS concluiram
-    FROM csu_trilha_progresso GROUP BY nivel ORDER BY nivel`);
-  const rows = await pool.query('SELECT nivel, respostas, travei, concluido_em FROM csu_trilha_progresso');
+    FROM csu_trilha_progresso WHERE aluno_id IN (${recorte.idsNoCorte(1)}) GROUP BY nivel ORDER BY nivel`, [desde]);
+  const rows = await pool.query(`SELECT nivel, respostas, travei, concluido_em FROM csu_trilha_progresso WHERE aluno_id IN (${recorte.idsNoCorte(1)})`, [desde]);
   const erros = {};
   const travei = {};
   const semErro = {}; // nivel → quantos concluíram acertando todas de primeira
@@ -119,14 +123,16 @@ async function resumoAdmin(pool, certificados = {}) {
 
 // Uma linha por aluno que começou a Aula Inaugural (para o CRM chamar quem parou).
 async function exportAlunos(pool, certificados = {}) {
+  const desde = await recorte.contarDesde(pool);
   const r = await pool.query(`
     SELECT a.id AS aluno_id, a.nome, a.rgm, a.email,
            COUNT(*) FILTER (WHERE p.concluido_em IS NOT NULL)::int AS concluidos,
            MAX(p.atualizado_em) AS ultimo_acesso
     FROM csu_trilha_progresso p
     JOIN csu_alunos a ON a.id = p.aluno_id
+    WHERE a.id IN (${recorte.idsNoCorte(1)})
     GROUP BY a.id
-    ORDER BY ultimo_acesso DESC`);
+    ORDER BY ultimo_acesso DESC`, [desde]);
   return r.rows.map((row) => ({
     ...row,
     certificado: statusCertificado(row),
@@ -163,13 +169,16 @@ function mediana(xs) {
 // (Central, abertura) entra em `videos` com modulo null.
 async function lerEventos(pool) {
   let rows;
+  const desde = await recorte.contarDesde(pool);
   try {
     rows = (await pool.query(
       `SELECT aluno_id, nome, dados, criado_em FROM csu_eventos
        WHERE nome IN ('tela_aberta', 'trilha_nivel_aberto', 'trilha_video_assistido', 'trilha_video_pulado', 'trilha_travei',
                       'trilha_resposta', 'trilha_nivel_concluido', 'trilha_tarefa', 'whatsapp_clicado',
                       'video_inicio', 'video_progresso', 'video_pausa', 'video_fim', 'video_retomado')
+         AND aluno_id IN (${recorte.idsNoCorte(1)})
        ORDER BY aluno_id, criado_em`,
+      [desde],
     )).rows;
   } catch (err) {
     if (err.code === '42P01') return { disponivel: false, rastreados: 0, porAluno: {} };
@@ -236,8 +245,10 @@ async function sinaisDosEventos(pool) {
 async function votosPorModulo(pool) {
   const out = {};
   NIVEIS.forEach((_, i) => { out[i + 1] = { positivos: 0, negativos: 0, rgms_negativos: new Set() }; });
+  const desde = await recorte.contarDesde(pool);
   try {
-    const r = await pool.query(`SELECT rgm, conteudo_id, voto FROM csu_avaliacoes WHERE tipo = 'aula' AND conteudo_id LIKE 'modulo-%'`);
+    const r = await pool.query(`SELECT rgm, conteudo_id, voto FROM csu_avaliacoes
+      WHERE tipo = 'aula' AND conteudo_id LIKE 'modulo-%' AND rgm IN (${recorte.rgmsNoCorte(1)})`, [desde]);
     r.rows.forEach((v) => {
       const n = Number(v.conteudo_id.slice(7));
       if (!out[n]) return;
@@ -251,13 +262,15 @@ async function votosPorModulo(pool) {
 }
 
 async function ondeTrava(pool) {
+  const desde = await recorte.contarDesde(pool);
   const [eventos, votos, progresso] = await Promise.all([
     sinaisDosEventos(pool),
     votosPorModulo(pool),
     pool.query(`
       SELECT p.aluno_id, a.nome, a.rgm, p.nivel, p.partes_vistas, p.video_ok, p.pulou_video, p.respostas, p.travei, p.pontos,
              p.concluido_em, p.atualizado_em
-      FROM csu_trilha_progresso p JOIN csu_alunos a ON a.id = p.aluno_id ORDER BY p.aluno_id, p.nivel`),
+      FROM csu_trilha_progresso p JOIN csu_alunos a ON a.id = p.aluno_id
+      WHERE a.id IN (${recorte.idsNoCorte(1)}) ORDER BY p.aluno_id, p.nivel`, [desde]),
   ]);
   const porModulo = {};
   NIVEIS.forEach((_, i) => { porModulo[i + 1] = { erros: 0, travei: 0, abandonaram_aqui: 0 }; });

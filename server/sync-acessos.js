@@ -4,6 +4,25 @@ const db = require('./db');
 const matriculados = require('./matriculados');
 
 const CONCURRENCY = 8;
+const RELATORIO_ANTIGO_H = 24;
+const MAX_FORA_GUARDADOS = 1000;
+
+// Por que um aluno em curso no relatório ficou sem conta no portal.
+const MOTIVOS_FORA = {
+  sem_rgm: 'Sem RGM no relatório',
+  sem_nome: 'Sem nome no relatório',
+  sem_email: 'Sem e-mail no relatório',
+  email_repetido: 'E-mail já usado por outro RGM',
+  erro: 'Erro ao criar a conta',
+};
+
+function intervaloSyncMin() {
+  return Math.max(5, Number(process.env.ACESSOS_SYNC_INTERVAL_MIN || 30));
+}
+
+function foraDe(aluno, motivo) {
+  return { nome: aluno.nome || null, rgm: aluno.rgm || null, email: aluno.email || null, motivo };
+}
 
 function mapAluno(data) {
   return matriculados.mapRow(data);
@@ -47,16 +66,31 @@ async function loadLatestEmCurso(sourcePool) {
   const emails = new Set();
   const emCurso = new Set();
   const allRgms = new Set();
+  const semRgm = [];
+  const semConta = new Map(); // RGM em curso sem dados para virar conta (outra linha do mesmo RGM pode resolver)
 
   for (const row of rows.rows) {
     const aluno = mapAluno(row.data);
-    if (!aluno.rgm) continue;
+    if (!aluno.rgm) {
+      if (aluno.situacao === 'EM CURSO' && (aluno.nome || aluno.email)) semRgm.push(foraDe(aluno, 'sem_rgm'));
+      continue;
+    }
     allRgms.add(aluno.rgm);
     if (aluno.situacao !== 'EM CURSO') continue;
     emCurso.add(aluno.rgm);
-    if (!aluno.nome || !aluno.email) continue;
-    if (!matriculados.derivedPassword(aluno.nome)) continue;
-    if (byRgm.has(aluno.rgm) || emails.has(aluno.email)) continue;
+    if (!aluno.nome || !matriculados.derivedPassword(aluno.nome)) {
+      semConta.set(aluno.rgm, foraDe(aluno, 'sem_nome'));
+      continue;
+    }
+    if (!aluno.email) {
+      semConta.set(aluno.rgm, foraDe(aluno, 'sem_email'));
+      continue;
+    }
+    if (byRgm.has(aluno.rgm)) continue;
+    if (emails.has(aluno.email)) {
+      semConta.set(aluno.rgm, foraDe(aluno, 'email_repetido'));
+      continue;
+    }
     byRgm.set(aluno.rgm, {
       nome: aluno.nome,
       rgm: aluno.rgm,
@@ -68,6 +102,7 @@ async function loadLatestEmCurso(sourcePool) {
   }
 
   const revokeRgms = [...allRgms].filter((rgm) => !emCurso.has(rgm));
+  const fora = semRgm.concat([...semConta].filter(([rgm]) => !byRgm.has(rgm)).map(([, x]) => x));
 
   return {
     snapshot_id: snap.id,
@@ -76,6 +111,8 @@ async function loadLatestEmCurso(sourcePool) {
     row_count: snap.row_count,
     alunos: [...byRgm.values()],
     revokeRgms,
+    em_curso: emCurso.size + semRgm.length,
+    fora,
   };
 }
 
@@ -84,6 +121,7 @@ async function applyAcessos(destPool, alunos) {
   let updated = 0;
   let skipped = 0;
   let cursor = 0;
+  const falhas = [];
 
   async function worker() {
     while (cursor < alunos.length) {
@@ -95,13 +133,14 @@ async function applyAcessos(destPool, alunos) {
         else updated += 1;
       } catch (err) {
         skipped += 1;
+        falhas.push(foraDe(aluno, 'erro'));
         console.error('Falha ao upsert acesso:', aluno.rgm, err.code || err.message);
       }
     }
   }
 
   await Promise.all(Array.from({ length: CONCURRENCY }, () => worker()));
-  return { created, updated, skipped, total: alunos.length };
+  return { created, updated, skipped, total: alunos.length, falhas };
 }
 
 async function syncFromMatriculados(destPool, { force = false } = {}) {
@@ -118,6 +157,10 @@ async function syncFromMatriculados(destPool, { force = false } = {}) {
         'Sync de acessos adiado: snapshot incompleto',
         `${payload.loaded_rows}/${payload.row_count}`,
         payload.snapshot_id,
+      );
+      await db.registrarVerificacaoSync(
+        destPool,
+        `O último relatório chegou incompleto (${payload.loaded_rows} de ${payload.row_count} linhas) e ainda não foi aplicado.`,
       );
       return {
         skippedRun: true,
@@ -141,8 +184,10 @@ async function syncFromMatriculados(destPool, { force = false } = {}) {
       && previous.snapshot_id === payload.snapshot_id
       && Number(previous.row_count) === Number(payload.row_count)
       && previous.revoked_count != null
+      && previous.fora_count != null
       && appliedWork > 0
     ) {
+      await db.registrarVerificacaoSync(destPool, null);
       return {
         skippedRun: true,
         snapshot_id: payload.snapshot_id,
@@ -156,6 +201,7 @@ async function syncFromMatriculados(destPool, { force = false } = {}) {
 
     if (payload.alunos.length === 0 && Number(payload.row_count) > 0) {
       console.warn('Sync de acessos adiado: dump sem alunos elegíveis', payload.snapshot_id);
+      await db.registrarVerificacaoSync(destPool, 'O último relatório não trouxe nenhum aluno em curso e não foi aplicado.');
       return {
         skippedRun: true,
         incomplete: true,
@@ -170,6 +216,10 @@ async function syncFromMatriculados(destPool, { force = false } = {}) {
 
     const result = await applyAcessos(destPool, payload.alunos);
     const revoked = await db.deactivateAlunosByRgm(destPool, payload.revokeRgms);
+    // Quem já tem conta (de um relatório anterior) continua entrando: não conta como fora.
+    const candidatos = payload.fora.concat(result.falhas);
+    const comConta = await db.rgmsComConta(destPool, candidatos.map((x) => x.rgm));
+    const fora = candidatos.filter((x) => !x.rgm || !comConta.has(x.rgm));
     await db.saveSyncState(destPool, {
       snapshot_id: payload.snapshot_id,
       snapshot_at: payload.snapshot_at,
@@ -179,12 +229,16 @@ async function syncFromMatriculados(destPool, { force = false } = {}) {
       updated_count: result.updated,
       skipped_count: result.skipped,
       revoked_count: revoked,
+      em_curso_count: payload.em_curso,
+      fora_count: fora.length,
+      fora: fora.slice(0, MAX_FORA_GUARDADOS),
     });
     console.log(
       'Sync de acessos:',
       `novos=${result.created}`,
       `atualizados=${result.updated}`,
       `revogados=${revoked}`,
+      `fora=${fora.length}`,
       `snapshot=${payload.file_name}`,
     );
     return {
@@ -199,7 +253,36 @@ async function syncFromMatriculados(destPool, { force = false } = {}) {
   }
 }
 
+// O que o admin mostra sobre a base: de quando é o relatório, se a conferência está rodando e quem ficou de fora.
+function resumoBase(estado, { configurada = true, agora = Date.now(), intervaloMin = intervaloSyncMin() } = {}) {
+  const e = estado || {};
+  const alertas = [];
+  const horas = (d) => (agora - new Date(d).getTime()) / 3600000;
+  if (!configurada) alertas.push({ tipo: 'aviso', texto: 'O relatório de matriculados não está configurado: nenhuma conta nova é criada automaticamente.' });
+  if (e.ultimo_erro) alertas.push({ tipo: 'erro', texto: e.ultimo_erro, em: e.ultimo_erro_em });
+  if (configurada && e.snapshot_at && horas(e.snapshot_at) > RELATORIO_ANTIGO_H) {
+    alertas.push({ tipo: 'aviso', texto: `O último relatório tem mais de ${RELATORIO_ANTIGO_H} horas. Matrículas novas só viram conta quando chegar um relatório novo.` });
+  }
+  if (configurada && e.verificado_em && horas(e.verificado_em) * 60 > intervaloMin * 3) {
+    alertas.push({ tipo: 'aviso', texto: `A conferência automática deveria rodar a cada ${intervaloMin} min, mas está parada desde o horário acima.` });
+  }
+  const lista = Array.isArray(e.fora) ? e.fora : [];
+  return {
+    configurada,
+    relatorio: e.snapshot_at ? { arquivo: e.file_name || null, em: e.snapshot_at, linhas: e.row_count } : null,
+    aplicado_em: e.snapshot_at ? e.synced_at : null,
+    verificado_em: e.verificado_em || null,
+    ultima_carga: e.snapshot_at ? { novos: e.created_count || 0, atualizados: e.updated_count || 0, revogados: e.revoked_count || 0 } : null,
+    em_curso: e.em_curso_count == null ? null : e.em_curso_count,
+    fora_total: e.fora_count == null ? null : e.fora_count,
+    fora: lista.map((x) => ({ ...x, motivo_rotulo: MOTIVOS_FORA[x.motivo] || x.motivo })),
+    alertas,
+  };
+}
+
 module.exports = {
+  intervaloSyncMin,
+  resumoBase,
   loadLatestEmCurso,
   applyAcessos,
   syncFromMatriculados,
