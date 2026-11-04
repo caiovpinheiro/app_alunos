@@ -1521,8 +1521,8 @@ app.get('/api/admin/base', requireAdmin, async (req, res) => {
 // Ao vivo: funil do portal, régua do CRM e atendimento. Só agregados. Guardado em memória para
 // que várias telas abertas não multipliquem as consultas: no máximo uma leitura a cada CACHE_AO_VIVO_MS.
 const CACHE_AO_VIVO_MS = 30000;
-const leitorCrm = aoVivoCrm.novoLeitor();
-const cacheAoVivo = { em: 0, dados: null, promessa: null, telefones: { em: 0, mapa: null } };
+const leitoresCrm = { novos: aoVivoCrm.novoLeitor(), todas: aoVivoCrm.novoLeitor() };
+const cacheAoVivo = { novos: { em: 0, dados: null, promessa: null }, todas: { em: 0, dados: null, promessa: null }, telefones: { em: 0, mapa: null } };
 
 async function telefonesParaAoVivo(rgms) {
   const t = cacheAoVivo.telefones;
@@ -1534,18 +1534,19 @@ async function telefonesParaAoVivo(rgms) {
   return mapa;
 }
 
-async function montarAoVivo() {
+async function montarAoVivo(base) {
   await ensureAcompanhamento();
   const agora = Date.now();
   const cfg = await acompanhamento.lerConfig(pool);
-  const desde = cfg.faixas.contar_desde || painel.faixasPadrao().contar_desde;
+  const corte = cfg.faixas.contar_desde || painel.faixasPadrao().contar_desde;
+  const desde = aoVivo.desdeDaBase(base, corte);
   const { rows } = await acompanhamento.listar(pool, { dias: 180 });
   const lista = acompanhamento.montar(rows, trilha.NIVEIS, cfg);
   const [certificados, progresso, estado, crm] = await Promise.all([
     certificadosEmitidos(),
     aoVivo.progressoModulos(pool, desde),
     db.getSyncState(pool),
-    leitorCrm.ler(desde, agora, aoVivoTestes.passosDe(aoVivoTestes.TESTES)),
+    leitoresCrm[base].ler(desde, agora, aoVivoTestes.passosDe(aoVivoTestes.TESTES)),
   ]);
   const naoEntraram = lista.filter((a) => a.created_at && resultado.diaSP(a.created_at) >= desde && !resultado.etapasDe(a, certificados).entrou).map((a) => a.rgm).filter(Boolean);
   const defs = aoVivoTestes.TESTES;
@@ -1558,10 +1559,12 @@ async function montarAoVivo() {
     alcance: crm && crm.alcance, chave: crm && crm.chave,
   });
   const em = new Date(agora).toISOString();
-  const base = syncAcessos.resumoBase(estado, { configurada: matriculados.isConfigured(), agora });
+  const relatorio = syncAcessos.resumoBase(estado, { configurada: matriculados.isConfigured(), agora });
   return {
     success: true,
     gerado_em: em,
+    base,
+    bases: aoVivo.basesDe(corte),
     atualiza_em_s: 45,
     funil,
     crm: crm ? crm.resumo : null,
@@ -1569,7 +1572,7 @@ async function montarAoVivo() {
       lista: contasDoCorte, telefones, marcos, agora, totalNiveis: trilha.NIVEIS.length,
       coorte: crm && crm.coorte, login: crm && crm.alcance ? crm.alcance.login : null, chave: crm && crm.chave,
     })),
-    fontes: [aoVivo.fontePortal(em), aoVivo.fonteBase(base), aoVivo.fonteTelefones(Boolean(telefones), em), ...aoVivoCrm.fontes(crm && crm.estado, agora, { comTestes: defs.length > 0 })],
+    fontes: [aoVivo.fontePortal(em), aoVivo.fonteBase(relatorio), aoVivo.fonteTelefones(Boolean(telefones), em), ...aoVivoCrm.fontes(crm && crm.estado, agora, { comTestes: defs.length > 0 })],
     limites: aoVivo.LIMITES,
   };
 }
@@ -1578,12 +1581,14 @@ app.get('/api/admin/ao-vivo', requireAdmin, async (req, res) => {
   if (!pool) return unavailable(res);
   res.set('Cache-Control', 'no-store');
   try {
-    if (Date.now() - cacheAoVivo.em >= CACHE_AO_VIVO_MS || !cacheAoVivo.dados) {
-      cacheAoVivo.promessa = cacheAoVivo.promessa || montarAoVivo().finally(() => { cacheAoVivo.promessa = null; });
-      cacheAoVivo.dados = await cacheAoVivo.promessa;
-      cacheAoVivo.em = Date.now();
+    const base = aoVivo.baseValida(req.query.base);
+    const cache = cacheAoVivo[base];
+    if (Date.now() - cache.em >= CACHE_AO_VIVO_MS || !cache.dados) {
+      cache.promessa = cache.promessa || montarAoVivo(base).finally(() => { cache.promessa = null; });
+      cache.dados = await cache.promessa;
+      cache.em = Date.now();
     }
-    return res.json(cacheAoVivo.dados);
+    return res.json(cache.dados);
   } catch (err) {
     console.error('Falha no Ao vivo:', err.message);
     return res.status(500).json({ success: false, message: 'Não foi possível atualizar o painel.' });

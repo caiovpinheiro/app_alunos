@@ -8,6 +8,17 @@ const { etapasDe, diaSP } = require('./resultado');
 const { chaveTelefone, chaveEmbaralhada } = require('./ao-vivo-crm');
 
 const UM_DIA = 86400000;
+// Foco do painel: as contas novas, já sob a régua atual. A base inteira continua a um clique.
+const NOVOS_DESDE = '2026-11-04';
+const baseValida = (raw) => (raw === 'todas' ? 'todas' : 'novos');
+const desdeDaBase = (base, corte) => (base === 'todas' || corte > NOVOS_DESDE ? corte : NOVOS_DESDE);
+const diaBr = (iso) => iso.split('-').reverse().slice(0, 2).join('/');
+function basesDe(corte) {
+  return [
+    { id: 'novos', rotulo: `Novos, desde ${diaBr(desdeDaBase('novos', corte))}` },
+    { id: 'todas', rotulo: `Todas, desde ${diaBr(corte)}` },
+  ];
+}
 const pct = (n, de) => (de ? Math.round((100 * n) / de) : null);
 const somaDias = (dia, n) => new Date(Date.parse(`${dia}T12:00:00Z`) + n * UM_DIA).toISOString().slice(0, 10);
 
@@ -171,4 +182,4 @@ function fonteTelefones(ok, em) {
     : { id: 'telefones', rotulo: 'Telefones dos alunos', status: 'indisponivel', atualizado_em: em, detalhe: 'Sem acesso à base de telefones: os motivos de quem nunca entrou ficam agrupados.' };
 }
 
-module.exports = { funil, progressoModulos, moduloParado, motivoNaoEntrou, fontePortal, fonteBase, fonteTelefones, LIMITES, MOTIVOS };
+module.exports = { baseValida, desdeDaBase, basesDe, funil, progressoModulos, moduloParado, motivoNaoEntrou, fontePortal, fonteBase, fonteTelefones, LIMITES, MOTIVOS };

@@ -12,6 +12,7 @@ window.AdminAoVivo = (function () {
   var timer = null;
   var ultimo = null;
   var carregando = false;
+  var base = 'novos';
   var ligadoEventos = false;
 
   function hora(iso) {
@@ -46,7 +47,8 @@ window.AdminAoVivo = (function () {
       return '<article class="rs-et"><h4>' + esc(e.rotulo) + '</h4>' +
         '<p class="rs-n">' + e.n + ' <span>' + pctTxt(e.pct) + '</span></p>' +
         '<div class="rs-barra" aria-hidden="true"><i style="width:' + (e.pct || 0) + '%"></i></div>' +
-        '<p class="rs-sub av-falta">' + (e.faltam > 0 ? 'Faltam <b>' + e.faltam + '</b> para 100%' : '100% atingido') + esc(base) + '</p></article>';
+        '<p class="rs-sub av-falta">' + (!e.de ? (e.id === 'em24' ? 'Nenhuma conta completou 24 h ainda' : 'Nenhuma conta ainda')
+          : (e.faltam > 0 ? 'Faltam <b>' + e.faltam + '</b> para 100%' : '100% atingido') + esc(base)) + '</p></article>';
     }).join('') + '</div>';
   }
 
@@ -231,20 +233,35 @@ window.AdminAoVivo = (function () {
     el.textContent = msg + (document.hidden ? ' · pausado com a aba em segundo plano' : ' · atualiza sozinho a cada ' + (ultimo.atualiza_em_s || INTERVALO_PADRAO) + ' s');
   }
 
+  function mostrarBases(r) {
+    var campo = document.getElementById('aovivo-base');
+    if (!campo || !r.bases) return;
+    r.bases.forEach(function (b) {
+      var op = campo.querySelector('option[value="' + b.id + '"]');
+      if (op) op.textContent = b.rotulo;
+    });
+  }
+
   async function carregar() {
     if (carregando) return;
     carregando = true;
     mostrarStatus();
+    var pedida = base;
     try {
-      var r = await C().request('/api/admin/ao-vivo');
-      ultimo = r;
-      desenhar(r);
+      var r = await C().request('/api/admin/ao-vivo?base=' + encodeURIComponent(pedida));
+      // Trocaram de base durante a leitura: esta resposta já não vale.
+      if (pedida === base) {
+        ultimo = r;
+        desenhar(r);
+        mostrarBases(r);
+      }
     } catch (err) {
       if (ultimo) ultimo.erro = true;
       else { var alvo = document.getElementById('aovivo-conteudo'); if (alvo) alvo.innerHTML = aviso((err && err.message) || 'Não foi possível carregar o painel.', 'ruim'); }
     }
     carregando = false;
     mostrarStatus();
+    if (pedida !== base) await carregar();
   }
 
   function agendar() {
@@ -259,6 +276,8 @@ window.AdminAoVivo = (function () {
       ligadoEventos = true;
       var b = document.getElementById('aovivo-atualizar');
       if (b) b.addEventListener('click', function () { carregar().then(agendar); });
+      var campo = document.getElementById('aovivo-base');
+      if (campo) campo.addEventListener('change', function () { base = campo.value; carregar().then(agendar); });
       // Em segundo plano não consulta nada; ao voltar, atualiza na hora.
       document.addEventListener('visibilitychange', function () {
         if (!ligado) return;

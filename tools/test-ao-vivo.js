@@ -59,6 +59,19 @@ assert.strictEqual(f.etapas.find((e) => e.id === 'em24').n, r.primeiro_acesso_24
 assert.strictEqual(f.etapas.find((e) => e.id === 'em24').de, r.primeiro_acesso_24h.de);
 assert.strictEqual(f.total.contas, 11);
 
+// Base de novos: a aba abre nela, e o corte de Configurações mais recente prevalece.
+assert.strictEqual(aoVivo.baseValida('todas'), 'todas');
+assert.strictEqual(aoVivo.baseValida('qualquer'), 'novos');
+assert.strictEqual(aoVivo.desdeDaBase('novos', DESDE), '2026-11-04');
+assert.strictEqual(aoVivo.desdeDaBase('todas', DESDE), DESDE);
+assert.strictEqual(aoVivo.desdeDaBase('novos', '2026-12-01'), '2026-12-01');
+assert.deepStrictEqual(aoVivo.basesDe(DESDE).map((b) => b.rotulo), ['Novos, desde 04/11', 'Todas, desde 29/10']);
+const novos = aoVivo.funil(lista, certificados, { ...opts, desde: '2026-11-04' });
+assert.strictEqual(novos.total.contas, 1, 'só a conta criada a partir do corte');
+assert.strictEqual(novos.por_dia.length, 1);
+assert.strictEqual(novos.total.primeiros_acessos, 0, 'acesso antigo não entra');
+assert.strictEqual(novos.falta_100.motivos.reduce((n, m) => n + m.n, 0), novos.falta_100.total);
+
 // Por dia: do mais novo ao corte, sem buraco, e a soma é o total.
 assert.strictEqual(f.por_dia.length, 7);
 assert.strictEqual(f.por_dia[0].dia, '2026-11-04');
