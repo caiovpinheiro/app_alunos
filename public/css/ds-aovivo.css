@@ -1,0 +1,31 @@
+/* Admin › Ao vivo (admin-aovivo.js). Reaproveita .pn-*, .rs-* e os tokens de ds.css; aqui só o que é novo. */
+.av{--rs-sim:#1452b8}
+.av-relogio{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:12px}
+.av-relogio p{margin:0;color:var(--ds-muted);font-size:14px;font-variant-numeric:tabular-nums}
+.av-funil{grid-template-columns:repeat(6,minmax(0,1fr))}
+.av-falta{color:var(--ds-muted)}
+.av-falta b{color:var(--ds-navy)}
+.av-aviso{margin:0;padding:12px 14px;border-left:4px solid var(--f-reg-bar);border-radius:var(--ds-r-sm);background:var(--f-reg-bg);color:var(--ds-ink);font-size:15px;line-height:1.45}
+.av-aviso--ruim{border-left-color:var(--f-ruim);background:var(--f-ruim-bg)}
+.av-barra-c{min-width:120px}
+.av-dono{white-space:nowrap}
+#admin-app .av-dias tbody th{min-width:96px}
+#admin-app .av-dias .av-total th,#admin-app .av-dias .av-total td{background:var(--ds-surface-2)}
+#admin-app .av-fontes tbody th{min-width:200px}
+#admin-app .av-fontes td{padding:12px}
+.av-quando{white-space:nowrap;font-variant-numeric:tabular-nums}
+.av-auto{display:flex;flex-direction:column;gap:12px;margin-top:18px}
+.av-auto-top{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.av-auto-top .pn-h4{margin:0}
+.av-kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+.av-kpi{display:flex;flex-direction:column;gap:4px;min-width:0;padding:14px 16px;border:1px solid var(--ds-line);border-radius:var(--ds-r-md);background:#fff}
+.av-kpi span{font:700 14px/1.3 var(--ds-font);color:var(--ds-ink)}
+.av-kpi b{font:800 28px/1.1 var(--ds-font);color:var(--ds-navy);font-variant-numeric:tabular-nums}
+.av-kpi small{color:var(--ds-muted);font-size:13px;line-height:1.35}
+#admin-app .av-dias .av-principal{background:var(--ds-blue-soft)}
+.av-leitura{white-space:nowrap}
+#admin-app .av-leitura small{display:block;margin-top:3px;color:var(--ds-faint);font-size:13px}
+.av-limites{margin:0;padding-left:20px;color:var(--ds-muted);font-size:15px;line-height:1.5;max-width:80ch}
+.av-limites b{color:var(--ds-ink)}
+@media (max-width:1280px){.av-funil{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}}
+@media (max-width:700px){.av-relogio{justify-content:flex-start}}

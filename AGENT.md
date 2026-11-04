@@ -7,6 +7,21 @@
 - Push em `main` dispara `.github/workflows/deploy.yml`: publica `ghcr.io/caiovpinheiro/app_alunos:latest` e chama o webhook do EasyPanel (`secrets.EASYPANEL_DEPLOY_APP`).
 - Não invente outro fluxo de deploy (n8n, branch de homologação, etc.) sem pedido explícito.
 
+### 2026-11-04 - Admin: aba Ao vivo
+
+**Decisão**
+- Aba `aovivo` (`public/js/admin-aovivo.js`, `public/css/ds-aovivo.css`, `GET /api/admin/ao-vivo`, `server/ao-vivo.js` e `server/ao-vivo-crm.js`), no portal e não no CRM: o funil já vive aqui, e o CRM precisaria de frontend, backend e uma API nova do portal. Atualiza a cada 45 s com a aba aberta e visível. O servidor guarda a leitura por 30 s, para várias telas não multiplicarem consultas.
+- Só números agregados de alunos. As etapas usam `resultado.etapasDe`, para bater com a Visão geral. Cada conta entra em um só motivo de "quanto falta para 100%".
+- Rotas de automação e painel do CRM só aceitam sessão de navegador. Por isso o CRM ganha `GET /api/painel/portal-aluno` (`backend_crm1`), só leitura, com token de usuário ADMIN ou MANAGER. A resposta não traz nome, telefone nem id de contato ou conversa.
+- O motivo de quem nunca entrou cruza telefones em memória: o CRM devolve HMAC-SHA256 com o token como chave (DDD + 8 últimos dígitos) e o portal compara. Nada disso é gravado nem sai na tela. Não cria evento nem amplia o rastreio do aluno.
+- Os ids dos passos das automações ficam em `server/ao-vivo-crm.js`. Se um mudar no CRM, a tela avisa em vez de mostrar zero em silêncio.
+- Testes A/B/C (`server/ao-vivo-testes.js`): a lista `TESTES` começa vazia e ligar um teste exige publicar. O CRM devolve a primeira passagem por variante (`coorte`) e o portal cruza pelo telefone embaralhado. Quem falhou no envio fica no grupo; cada métrica só conta quem já teve o prazo inteiro; o resultado só sai depois do fim do teste mais o prazo da métrica, com margem mais rígida para 3 grupos. Só cobre as rodadas na régua do CRM: a rodada na tela da Aula ainda não tem sorteio no portal.
+- Espera de senha conta só as terminadas: o passo de espera do CRM não grava log. Por atendente, só contagens de humanos. Ficam de fora o tempo por atendente, que depende da réplica de leitura, e `/api/analytics/inbox`.
+
+**Impacto**
+- Precisa, no EasyPanel: `CRM_API_URL` e `CRM_API_TOKEN`. Sem elas, o funil do portal funciona e o bloco do CRM aparece como "Falta ligar".
+- Teste sem banco: `node tools/test-ao-vivo.js`.
+
 ### 2026-11-03 - Admin: base de alunos e contas novas
 
 **Decisão**

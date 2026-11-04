@@ -25,6 +25,9 @@ const central = require('./central');
 const acompanhamento = require('./acompanhamento');
 const painel = require('./painel');
 const resultado = require('./resultado');
+const aoVivo = require('./ao-vivo');
+const aoVivoCrm = require('./ao-vivo-crm');
+const aoVivoTestes = require('./ao-vivo-testes');
 const ajudaPedidos = require('./ajuda-pedidos');
 const avaliacoes = require('./avaliacoes');
 const preparo = require('./preparo');
@@ -1512,6 +1515,78 @@ app.get('/api/admin/base', requireAdmin, async (req, res) => {
   } catch (err) {
     console.error('Falha ao ler o estado da base:', err.message);
     return res.status(500).json({ success: false, message: 'Não foi possível ver a atualização da base.' });
+  }
+});
+
+// Ao vivo: funil do portal, régua do CRM e atendimento. Só agregados. Guardado em memória para
+// que várias telas abertas não multipliquem as consultas: no máximo uma leitura a cada CACHE_AO_VIVO_MS.
+const CACHE_AO_VIVO_MS = 30000;
+const leitorCrm = aoVivoCrm.novoLeitor();
+const cacheAoVivo = { em: 0, dados: null, promessa: null, telefones: { em: 0, mapa: null } };
+
+async function telefonesParaAoVivo(rgms) {
+  const t = cacheAoVivo.telefones;
+  if (t.mapa && Date.now() - t.em < 5 * 60000 && rgms.every((r) => t.mapa.has(r) || t.conhecidos.has(r))) return t.mapa;
+  const mapa = await telefonesDe(rgms);
+  // Nenhum telefone para uma lista cheia é falha na base, não "ninguém tem telefone".
+  if (rgms.length && !mapa.size) return null;
+  Object.assign(t, { em: Date.now(), mapa, conhecidos: new Set(rgms) });
+  return mapa;
+}
+
+async function montarAoVivo() {
+  await ensureAcompanhamento();
+  const agora = Date.now();
+  const cfg = await acompanhamento.lerConfig(pool);
+  const desde = cfg.faixas.contar_desde || painel.faixasPadrao().contar_desde;
+  const { rows } = await acompanhamento.listar(pool, { dias: 180 });
+  const lista = acompanhamento.montar(rows, trilha.NIVEIS, cfg);
+  const [certificados, progresso, estado, crm] = await Promise.all([
+    certificadosEmitidos(),
+    aoVivo.progressoModulos(pool, desde),
+    db.getSyncState(pool),
+    leitorCrm.ler(desde, agora, aoVivoTestes.passosDe(aoVivoTestes.TESTES)),
+  ]);
+  const naoEntraram = lista.filter((a) => a.created_at && resultado.diaSP(a.created_at) >= desde && !resultado.etapasDe(a, certificados).entrou).map((a) => a.rgm).filter(Boolean);
+  const defs = aoVivoTestes.TESTES;
+  // Com teste rodando, o placar precisa do telefone de todas as contas, não só de quem nunca entrou.
+  const contasDoCorte = lista.filter((a) => a.created_at && resultado.diaSP(a.created_at) >= desde);
+  const telefones = await telefonesParaAoVivo(defs.length ? contasDoCorte.map((a) => a.rgm).filter(Boolean) : naoEntraram);
+  const marcos = defs.length ? await aoVivoTestes.marcosAula(pool, contasDoCorte.map((a) => a.id)) : new Map();
+  const funil = aoVivo.funil(lista, certificados, {
+    desde, agora, niveis: trilha.NIVEIS, progresso, telefones,
+    alcance: crm && crm.alcance, chave: crm && crm.chave,
+  });
+  const em = new Date(agora).toISOString();
+  const base = syncAcessos.resumoBase(estado, { configurada: matriculados.isConfigured(), agora });
+  return {
+    success: true,
+    gerado_em: em,
+    atualiza_em_s: 45,
+    funil,
+    crm: crm ? crm.resumo : null,
+    testes: defs.map((def) => aoVivoTestes.placar(def, {
+      lista: contasDoCorte, telefones, marcos, agora, totalNiveis: trilha.NIVEIS.length,
+      coorte: crm && crm.coorte, login: crm && crm.alcance ? crm.alcance.login : null, chave: crm && crm.chave,
+    })),
+    fontes: [aoVivo.fontePortal(em), aoVivo.fonteBase(base), aoVivo.fonteTelefones(Boolean(telefones), em), ...aoVivoCrm.fontes(crm && crm.estado, agora, { comTestes: defs.length > 0 })],
+    limites: aoVivo.LIMITES,
+  };
+}
+
+app.get('/api/admin/ao-vivo', requireAdmin, async (req, res) => {
+  if (!pool) return unavailable(res);
+  res.set('Cache-Control', 'no-store');
+  try {
+    if (Date.now() - cacheAoVivo.em >= CACHE_AO_VIVO_MS || !cacheAoVivo.dados) {
+      cacheAoVivo.promessa = cacheAoVivo.promessa || montarAoVivo().finally(() => { cacheAoVivo.promessa = null; });
+      cacheAoVivo.dados = await cacheAoVivo.promessa;
+      cacheAoVivo.em = Date.now();
+    }
+    return res.json(cacheAoVivo.dados);
+  } catch (err) {
+    console.error('Falha no Ao vivo:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível atualizar o painel.' });
   }
 });
 
