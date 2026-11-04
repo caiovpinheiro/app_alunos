@@ -12,7 +12,7 @@ const MOTIVOS_FORA = {
   sem_rgm: 'Sem RGM no relatório',
   sem_nome: 'Sem nome no relatório',
   sem_email: 'Sem e-mail no relatório',
-  email_repetido: 'E-mail já usado por outro RGM',
+  email_repetido: 'E-mail igual ao de outra pessoa',
   erro: 'Erro ao criar a conta',
 };
 
@@ -20,8 +20,13 @@ function intervaloSyncMin() {
   return Math.max(5, Number(process.env.ACESSOS_SYNC_INTERVAL_MIN || 30));
 }
 
-function foraDe(aluno, motivo) {
-  return { nome: aluno.nome || null, rgm: aluno.rgm || null, email: aluno.email || null, motivo };
+function foraDe(aluno, motivo, extra) {
+  return { nome: aluno.nome || null, rgm: aluno.rgm || null, email: aluno.email || null, motivo, ...extra };
+}
+
+// Mesmo e-mail e mesmo nome (sem contar acento, maiúsculas e espaços) = a mesma pessoa, com outra matrícula.
+function nomeComparavel(nome) {
+  return String(nome || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim().toUpperCase();
 }
 
 function mapAluno(data) {
@@ -63,11 +68,12 @@ async function loadLatestEmCurso(sourcePool) {
   }
 
   const byRgm = new Map();
-  const emails = new Set();
+  const donoDoEmail = new Map(); // e-mail → aluno que ficou com a conta
   const emCurso = new Set();
   const allRgms = new Set();
   const semRgm = [];
   const semConta = new Map(); // RGM em curso sem dados para virar conta (outra linha do mesmo RGM pode resolver)
+  const outroCurso = new Set(); // RGM da mesma pessoa de outro RGM: ela entra pelo e-mail, na conta única
 
   for (const row of rows.rows) {
     const aluno = mapAluno(row.data);
@@ -87,8 +93,14 @@ async function loadLatestEmCurso(sourcePool) {
       continue;
     }
     if (byRgm.has(aluno.rgm)) continue;
-    if (emails.has(aluno.email)) {
-      semConta.set(aluno.rgm, foraDe(aluno, 'email_repetido'));
+    const dono = donoDoEmail.get(aluno.email);
+    if (dono) {
+      if (nomeComparavel(dono.nome) === nomeComparavel(aluno.nome)) {
+        outroCurso.add(aluno.rgm);
+        semConta.delete(aluno.rgm);
+      } else if (!outroCurso.has(aluno.rgm)) {
+        semConta.set(aluno.rgm, foraDe(aluno, 'email_repetido', { conflito: { nome: dono.nome, rgm: dono.rgm } }));
+      }
       continue;
     }
     byRgm.set(aluno.rgm, {
@@ -98,7 +110,7 @@ async function loadLatestEmCurso(sourcePool) {
       curso: aluno.curso,
       unidade: aluno.unidade,
     });
-    emails.add(aluno.email);
+    donoDoEmail.set(aluno.email, aluno);
   }
 
   const revokeRgms = [...allRgms].filter((rgm) => !emCurso.has(rgm));
@@ -113,6 +125,7 @@ async function loadLatestEmCurso(sourcePool) {
     revokeRgms,
     em_curso: emCurso.size + semRgm.length,
     fora,
+    mais_de_um_curso: [...outroCurso].filter((rgm) => !byRgm.has(rgm)).length,
   };
 }
 
@@ -185,6 +198,7 @@ async function syncFromMatriculados(destPool, { force = false } = {}) {
       && Number(previous.row_count) === Number(payload.row_count)
       && previous.revoked_count != null
       && previous.fora_count != null
+      && previous.mais_de_um_curso_count != null
       && appliedWork > 0
     ) {
       await db.registrarVerificacaoSync(destPool, null);
@@ -232,6 +246,7 @@ async function syncFromMatriculados(destPool, { force = false } = {}) {
       em_curso_count: payload.em_curso,
       fora_count: fora.length,
       fora: fora.slice(0, MAX_FORA_GUARDADOS),
+      mais_de_um_curso_count: payload.mais_de_um_curso,
     });
     console.log(
       'Sync de acessos:',
@@ -239,6 +254,7 @@ async function syncFromMatriculados(destPool, { force = false } = {}) {
       `atualizados=${result.updated}`,
       `revogados=${revoked}`,
       `fora=${fora.length}`,
+      `mais_de_um_curso=${payload.mais_de_um_curso}`,
       `snapshot=${payload.file_name}`,
     );
     return {
@@ -275,6 +291,7 @@ function resumoBase(estado, { configurada = true, agora = Date.now(), intervaloM
     ultima_carga: e.snapshot_at ? { novos: e.created_count || 0, atualizados: e.updated_count || 0, revogados: e.revoked_count || 0 } : null,
     em_curso: e.em_curso_count == null ? null : e.em_curso_count,
     fora_total: e.fora_count == null ? null : e.fora_count,
+    mais_de_um_curso: e.mais_de_um_curso_count == null ? null : e.mais_de_um_curso_count,
     fora: lista.map((x) => ({ ...x, motivo_rotulo: MOTIVOS_FORA[x.motivo] || x.motivo })),
     alertas,
   };

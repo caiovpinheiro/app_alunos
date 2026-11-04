@@ -23,6 +23,8 @@ function fonte(rows, rowCount = rows.length) {
     linha('', 'Sem Rgm', 'semrgm@exemplo.com'),
     linha('555', 'Saiu', 'saiu@exemplo.com', 'CANCELADO'), // fora de curso não é "sem conta"
     linha('', '', ''), // linha em branco não conta
+    linha('777', 'ANA  SOUZA', 'ana@exemplo.com'), // mesma pessoa, outro curso: maiúsculas e espaços não importam
+    linha('778', 'Ána Souza', 'ana@exemplo.com'), // e acento também não
     linha('666', '', ''), // sem dados nesta linha...
     linha('666', 'Dani Melo', 'dani@exemplo.com'), // ...mas outra linha do mesmo RGM resolve
   ]));
@@ -32,7 +34,9 @@ function fonte(rows, rowCount = rows.length) {
   assert.deepStrictEqual(motivos, {
     'semrgm@exemplo.com': 'sem_rgm', 222: 'sem_nome', 333: 'sem_email', 444: 'email_repetido',
   });
-  assert.strictEqual(p.em_curso, 6); // 111, 222, 333, 444, 666 + o sem RGM
+  assert.strictEqual(p.mais_de_um_curso, 2);
+  assert.deepStrictEqual(p.fora.find((x) => x.rgm === '444').conflito, { nome: 'Ana Souza', rgm: '111' });
+  assert.strictEqual(p.em_curso, 8); // 111, 222, 333, 444, 666, 777, 778 + o sem RGM
   assert.deepStrictEqual(p.revokeRgms, ['555']);
 
   // Falha ao criar a conta vai para a lista, com o aluno.

@@ -19,10 +19,11 @@ window.AdminBase = (function () {
   function foraHtml(r) {
     if (!r.fora_total) return '';
     var linhas = r.fora.map(function (x) {
-      return '<tr><td>' + esc(x.nome || '—') + '</td><td>' + esc(x.rgm || '—') + '</td><td>' + esc(x.email || '—') + '</td><td>' + esc(x.motivo_rotulo) + '</td></tr>';
+      var motivo = esc(x.motivo_rotulo) + (x.conflito ? ': ' + esc(x.conflito.nome) + ' (RGM ' + esc(x.conflito.rgm) + ')' : '');
+      return '<tr><td>' + esc(x.nome || '—') + '</td><td>' + esc(x.rgm || '—') + '</td><td>' + esc(x.email || '—') + '</td><td>' + motivo + '</td></tr>';
     }).join('');
     return '<details class="bs-fora"><summary>' + r.fora_total + ' aluno(s) em curso no relatório sem conta no portal</summary>' +
-      '<p>Eles não conseguem entrar. Corrija os dados no relatório: a conta é criada na conferência seguinte.' +
+      '<p>Eles ainda não têm conta. Corrija os dados no relatório: a conta é criada na conferência seguinte.' +
       (r.fora_total > r.fora.length ? ' Mostrando os ' + r.fora.length + ' primeiros.' : '') + '</p>' +
       '<div class="bs-rolagem"><table><thead><tr><th scope="col">Nome</th><th scope="col">RGM</th><th scope="col">E-mail</th><th scope="col">Motivo</th></tr></thead><tbody>' + linhas + '</tbody></table></div></details>';
   }
@@ -36,7 +37,8 @@ window.AdminBase = (function () {
     if (r.ultima_carga) detalhes.push('na última carga: ' + r.ultima_carga.novos + ' novos, ' + r.ultima_carga.atualizados + ' atualizados, ' + r.ultima_carga.revogados + ' revogados');
     return '<section class="bs" aria-label="Atualização da base de alunos">' +
       '<div class="bs-topo"><div><p class="bs-t">' + titulo + '</p>' +
-        (detalhes.length ? '<p class="bs-s">' + detalhes.join(' · ') + '</p>' : '') + '</div></div>' +
+        (detalhes.length ? '<p class="bs-s">' + detalhes.join(' · ') + '</p>' : '') +
+        (r.mais_de_um_curso ? '<p class="bs-s">' + r.mais_de_um_curso + ' matrícula(s) são de alunos com mais de um curso. Eles entram pelo e-mail, na mesma conta.</p>' : '') + '</div></div>' +
       r.alertas.map(function (a) {
         return '<p class="bs-alerta bs-alerta--' + esc(a.tipo) + '"' + (a.tipo === 'erro' ? ' role="alert"' : '') + '>' + esc(a.texto) + (a.em ? ' (' + esc(quando(a.em)) + ')' : '') + '</p>';
       }).join('') +

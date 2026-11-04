@@ -298,6 +298,7 @@ async function ensureSchema(pool) {
     ALTER TABLE csu_sync_state
       ADD COLUMN IF NOT EXISTS em_curso_count INTEGER,
       ADD COLUMN IF NOT EXISTS fora_count INTEGER,
+      ADD COLUMN IF NOT EXISTS mais_de_um_curso_count INTEGER,
       ADD COLUMN IF NOT EXISTS fora JSONB,
       ADD COLUMN IF NOT EXISTS verificado_em TIMESTAMPTZ,
       ADD COLUMN IF NOT EXISTS ultimo_erro TEXT,
@@ -646,7 +647,7 @@ async function deactivateAlunosByRgm(pool, rgms) {
 async function getSyncState(pool, id = 'matriculados') {
   const result = await pool.query(
     `SELECT snapshot_id, snapshot_at, file_name, row_count, created_count, updated_count, skipped_count, revoked_count, synced_at,
-       em_curso_count, fora_count, fora, verificado_em, ultimo_erro, ultimo_erro_em
+       em_curso_count, fora_count, mais_de_um_curso_count, fora, verificado_em, ultimo_erro, ultimo_erro_em
      FROM csu_sync_state WHERE id = $1`,
     [id],
   );
@@ -657,8 +658,8 @@ async function saveSyncState(pool, state, id = 'matriculados') {
   await pool.query(
     `INSERT INTO csu_sync_state
       (id, snapshot_id, snapshot_at, file_name, row_count, created_count, updated_count, skipped_count, revoked_count,
-       em_curso_count, fora_count, fora, verificado_em, ultimo_erro, ultimo_erro_em, synced_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::jsonb, now(), NULL, NULL, now())
+       em_curso_count, fora_count, mais_de_um_curso_count, fora, verificado_em, ultimo_erro, ultimo_erro_em, synced_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::jsonb, now(), NULL, NULL, now())
      ON CONFLICT (id) DO UPDATE SET
        snapshot_id = EXCLUDED.snapshot_id,
        snapshot_at = EXCLUDED.snapshot_at,
@@ -670,6 +671,7 @@ async function saveSyncState(pool, state, id = 'matriculados') {
        revoked_count = EXCLUDED.revoked_count,
        em_curso_count = EXCLUDED.em_curso_count,
        fora_count = EXCLUDED.fora_count,
+       mais_de_um_curso_count = EXCLUDED.mais_de_um_curso_count,
        fora = EXCLUDED.fora,
        verificado_em = now(),
        ultimo_erro = NULL,
@@ -687,6 +689,7 @@ async function saveSyncState(pool, state, id = 'matriculados') {
       state.revoked_count || 0,
       state.em_curso_count == null ? null : state.em_curso_count,
       state.fora_count == null ? null : state.fora_count,
+      state.mais_de_um_curso_count == null ? null : state.mais_de_um_curso_count,
       JSON.stringify(state.fora || []),
     ],
   );

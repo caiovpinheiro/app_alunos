@@ -11,7 +11,7 @@
 
 **Decisão**
 - A barra de base (`GET /api/admin/base`, `admin-base.js`) mostra de quando é o relatório de matriculados, a última conferência e os alertas. Relatório com mais de 24 h vira aviso.
-- O sync guarda em `csu_sync_state` quem está em curso no relatório e ficou sem conta (sem RGM, nome ou e-mail, e-mail repetido, erro ao criar). Quem já tem conta ativa não conta. `fora_count` nulo força um novo sync do mesmo relatório, como foi feito com `revoked_count`.
+- O sync guarda em `csu_sync_state` quem está em curso no relatório e ficou sem conta (sem RGM, nome ou e-mail, e-mail de outra pessoa, erro ao criar). Mesmo e-mail e mesmo nome = a mesma pessoa com mais de um curso: ela entra pelo e-mail, então vira só uma contagem (`mais_de_um_curso_count`), fora da lista. Quem já tem conta ativa não conta. `fora_count` nulo força um novo sync do mesmo relatório, como foi feito com `revoked_count`.
 - `sinal=novas_hoje|novas_7d|novas_30d|novas_90d` listam por dia de criação da conta, no horário de Brasília, mais recentes primeiro. `etapa=` filtra pela etapa do funil.
 - A Visão geral abre com o Resultado (`server/resultado.js`): só existe um funil. Base única = contas criadas no período; etapas cumulativas (certificado implica concluiu, que implica começou, que implica entrou). É calculado da mesma lista de Quem contatar, para o número bater com os nomes. O funil por SQL (`funilCoortes`, `/api/admin/acompanhamento/funil`) saiu.
 - O período da Visão geral aceita calendário (`periodo=datas&de=&ate=`); Quem contatar filtra por `criada_de` e `criada_ate`, e os botões do Resultado levam o intervalo junto.
