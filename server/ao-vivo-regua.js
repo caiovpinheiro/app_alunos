@@ -6,6 +6,7 @@
 //
 // No CRM, um webhook que falha interrompe o resto daquele fluxo. Por isso a resposta só é erro
 // quando o segredo está errado: evento estranho ou banco fora não podem parar a régua do aluno.
+// O segredo vem no corpo: o editor do CRM grava cabeçalhos como lista, e o envio só lê objeto.
 
 const crypto = require('node:crypto');
 const { envValue } = require('./env');

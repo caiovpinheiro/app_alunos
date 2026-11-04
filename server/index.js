@@ -1578,7 +1578,7 @@ async function montarAoVivo(base) {
 // Avisos da régua: o passo webhook das automações do CRM chama aqui. Só o segredo errado devolve erro,
 // porque no CRM um webhook que falha interrompe o resto do fluxo daquele aluno.
 app.post('/api/integracoes/regua', async (req, res) => {
-  if (!aoVivoRegua.autorizado(req.get('x-regua-segredo'))) return res.status(401).json({ success: false });
+  if (!aoVivoRegua.autorizado(req.body && req.body.segredo)) return res.status(401).json({ success: false });
   if (!pool) return res.status(202).json({ success: false, registrado: false });
   const evento = aoVivoRegua.normalizar(req.body);
   if (!evento) {

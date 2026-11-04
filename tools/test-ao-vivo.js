@@ -127,6 +127,8 @@ process.env.REGUA_WEBHOOK_SEGREDO = 'segredo-teste';
 assert.strictEqual(regua.autorizado('segredo-teste'), true);
 assert.strictEqual(regua.autorizado('errado'), false);
 assert.strictEqual(regua.autorizado(undefined), false);
+assert.strictEqual(regua.autorizado(12345), false);
+assert.ok(!('segredo' in regua.normalizar({ automacao: 'bv', passo: 'login', negocio: 'x', segredo: 'segredo-teste' })), 'segredo não é gravado');
 const ev = regua.normalizar({ automacao: 'bv', passo: 'login', negocio: 'cmw2be3rh', rgm: '2501234-5', extra: 'ignorado', telefone: '11912345678' });
 assert.deepStrictEqual(ev, { automacao: 'bv', passo: 'login', negocio: 'cmw2be3rh', rgm: '25012345', teste: null, variante: null });
 assert.strictEqual(regua.normalizar({ automacao: 'bv', passo: 'login', negocio: 'x', rgm: '' }).rgm, null, 'campo vazio no CRM vira nulo');
