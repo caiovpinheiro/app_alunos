@@ -2,13 +2,13 @@
 // Aba Ao vivo, sem banco e sem rede: node tools/test-ao-vivo.js
 const assert = require('node:assert');
 const aoVivo = require('../server/ao-vivo');
-const crm = require('../server/ao-vivo-crm');
+const regua = require('../server/ao-vivo-regua');
+const testes = require('../server/ao-vivo-testes');
 const resultado = require('../server/resultado');
 
 const AGORA = Date.parse('2026-11-04T15:00:00-03:00');
 const NIVEIS = [1, 2, 3, 4, 5, 6, 7].map((n) => ({ t: `Módulo ${n}` }));
 const DESDE = '2026-10-29';
-const CHAVE = 'eduit_teste';
 let seq = 0;
 
 function aluno(extra) {
@@ -23,15 +23,13 @@ const entrou = { primeiro_acesso: '2026-11-01T12:20:00-03:00' };
 const comecou = { ...entrou, trilha_ultima: '2026-11-01T13:00:00-03:00', nivel_aberto: 3, niveis_concluidos: 2 };
 const concluiu = { ...entrou, trilha_ultima: '2026-11-02T13:00:00-03:00', niveis_concluidos: 7 };
 
-const telLogin = '5511912340001';
-const telOferta = '11912340002';
-const telNada = '11912340003';
 const lista = [
   aluno({ created_at: '2026-11-04T14:00:00-03:00' }), // no prazo
-  aluno({ rgm: 'sem-tel' }),
-  aluno({ rgm: 'login' }),
-  aluno({ rgm: 'oferta' }),
-  aluno({ rgm: 'nada' }),
+  aluno({ rgm: '111-1' }), // sem telefone e sem aviso
+  aluno({ rgm: '222-2' }), // recebeu o login
+  aluno({ rgm: '333-3' }), // só a oferta
+  aluno({ rgm: '444-4' }), // sem aviso nenhum
+  aluno({ rgm: '555-5' }), // nasceu sem senha
   aluno(entrou),
   aluno(comecou),
   aluno({ ...comecou, trilha_ultima: '2026-11-04T14:30:00-03:00' }),
@@ -40,13 +38,15 @@ const lista = [
   aluno(concluiu), // este tem certificado
   aluno({ created_at: '2026-10-20T12:00:00-03:00' }), // antes do corte
 ];
-const certificados = { [lista[10].id]: '2026-11-03T10:00:00-03:00' };
-const telefones = new Map([['login', telLogin], ['oferta', telOferta], ['nada', telNada]]);
+const certificados = { [lista[11].id]: '2026-11-03T10:00:00-03:00' };
+const telefones = new Map([['222-2', '5511912340001'], ['333-3', '11912340002'], ['444-4', '11912340003'], ['555-5', '11912340004']]);
 const alcance = {
-  login: new Set([crm.chaveEmbaralhada(CHAVE, '11 91234-0001')]),
-  oferta: new Set([crm.chaveEmbaralhada(CHAVE, telLogin), crm.chaveEmbaralhada(CHAVE, telOferta)]),
+  inicio: Date.parse('2026-10-29T00:00:00-03:00'),
+  oferta: new Set(['2222', '3333']),
+  sem_senha: new Set(['5555']),
+  login: new Set(['2222']),
 };
-const opts = { desde: DESDE, agora: AGORA, niveis: NIVEIS, telefones, alcance, chave: CHAVE, progresso: { 1: { abriram: 5, concluiram: 5 } } };
+const opts = { desde: DESDE, agora: AGORA, niveis: NIVEIS, telefones, alcance, progresso: { 1: { abriram: 5, concluiram: 5 } } };
 const f = aoVivo.funil(lista, certificados, opts);
 
 // Funil: bate com o Resultado da Visão geral, a mesma regra.
@@ -57,7 +57,7 @@ assert.strictEqual(f.total.contas, r.contas);
 });
 assert.strictEqual(f.etapas.find((e) => e.id === 'em24').n, r.primeiro_acesso_24h.n);
 assert.strictEqual(f.etapas.find((e) => e.id === 'em24').de, r.primeiro_acesso_24h.de);
-assert.strictEqual(f.total.contas, 11);
+assert.strictEqual(f.total.contas, 12);
 
 // Base de novos: a aba abre nela, e o corte de Configurações mais recente prevalece.
 assert.strictEqual(aoVivo.baseValida('todas'), 'todas');
@@ -80,25 +80,29 @@ assert.strictEqual(f.por_dia.reduce((n, d) => n + d.contas, 0), f.total.contas);
 assert.strictEqual(f.por_dia.find((d) => d.dia === '2026-11-01').primeiros_acessos, 6);
 
 // Motivos: cada conta em um só e a soma é o que falta.
-const motivo = (id) => (f.falta_100.motivos.find((m) => m.id === id) || { n: 0 }).n;
-assert.strictEqual(f.falta_100.total, 10);
+const motivo = (id, x = f) => (x.falta_100.motivos.find((m) => m.id === id) || { n: 0 }).n;
+assert.strictEqual(f.falta_100.total, 11);
 assert.strictEqual(f.falta_100.motivos.reduce((n, m) => n + m.n, 0), f.falta_100.total);
 assert.strictEqual(motivo('no_prazo'), 1);
 assert.strictEqual(motivo('sem_telefone'), 1);
 assert.strictEqual(motivo('login_nao_entrou'), 1);
 assert.strictEqual(motivo('oferta_sem_login'), 1);
-assert.strictEqual(motivo('sem_oferta'), 1);
+assert.strictEqual(motivo('sem_senha'), 1);
+assert.strictEqual(motivo('sem_registro'), 1);
 assert.strictEqual(motivo('nao_comecou'), 1);
 assert.strictEqual(motivo('nao_concluiu'), 2);
 assert.strictEqual(motivo('cert_erro'), 1);
 assert.strictEqual(motivo('cert_sem_tentar'), 1);
 
-// Sem CRM ou sem base de telefones: agrupa em vez de inventar o motivo.
-const semCrm = aoVivo.funil(lista, certificados, { ...opts, alcance: null });
-assert.strictEqual(semCrm.falta_100.motivos.find((m) => m.id === 'nao_entrou').n, 3);
-assert.ok(!semCrm.falta_100.motivos.some((m) => m.id === 'sem_oferta'));
+// Sem avisos, ou conta anterior ao primeiro aviso: agrupa em vez de inventar o motivo.
+const semRegua = aoVivo.funil(lista, certificados, { ...opts, alcance: null });
+assert.strictEqual(motivo('nao_entrou', semRegua), 4);
+assert.strictEqual(motivo('sem_registro', semRegua), 0);
+const avisoDepois = aoVivo.funil(lista, certificados, { ...opts, alcance: { ...alcance, inicio: Date.parse('2026-11-02T00:00:00-03:00') } });
+assert.strictEqual(motivo('login_nao_entrou', avisoDepois), 0, 'conta anterior aos avisos não usa os avisos');
+assert.strictEqual(motivo('nao_entrou', avisoDepois), 4);
 const semTel = aoVivo.funil(lista, certificados, { ...opts, telefones: null, alcance: null });
-assert.ok(!semTel.falta_100.motivos.some((m) => m.id === 'sem_telefone'));
+assert.strictEqual(motivo('sem_telefone', semTel), 0);
 assert.strictEqual(semTel.falta_100.motivos.reduce((n, m) => n + m.n, 0), semTel.falta_100.total);
 
 // Módulos: parado no aberto; sem nenhum aberto, no seguinte ao último concluído.
@@ -108,198 +112,148 @@ assert.strictEqual(aoVivo.moduloParado({ nivel_aberto: null, niveis_concluidos: 
 const m3 = f.modulos.lista.find((x) => x.modulo === 3);
 assert.strictEqual(m3.parados, 2);
 assert.strictEqual(m3.parados_24h, 1, 'quem mexeu há menos de 24 h não conta como parado há 24 h');
-assert.strictEqual(f.modulos.nao_entraram, 5);
+assert.strictEqual(f.modulos.nao_entraram, 6);
 assert.strictEqual(f.modulos.nao_comecaram, 1);
 assert.strictEqual(f.modulos.lista[0].abriram, 5);
 
-// Telefone: mesma chave do CRM, com e sem 55 e o nono dígito.
-assert.strictEqual(crm.chaveTelefone('5511912345678'), '1112345678');
-assert.strictEqual(crm.chaveTelefone('1112345678'), '1112345678');
-assert.strictEqual(crm.chaveTelefone('123'), null);
-assert.strictEqual(crm.chaveEmbaralhada('k', '5511912345678'), crm.chaveEmbaralhada('k', '1112345678'));
-
 // Privacidade: nada do aluno na resposta do funil.
 const texto = JSON.stringify(f);
-['Nome Secreto', 'segredo.test', '99001', 'sem-tel', '91234'].forEach((s) => assert.ok(!texto.includes(s), `vazou ${s}`));
+['Nome Secreto', 'segredo.test', '99001', '222-2', '91234'].forEach((s) => assert.ok(!texto.includes(s), `vazou ${s}`));
 
-// CRM: soma por passo e dia, falha vem de qualquer passo, status fora do mapa é ignorado.
-const def = crm.AUTOMACOES[0];
-const payloadAuto = {
-  id: def.id, nome: 'BV - Calouros', ativa: true, atualizadaEm: '2026-11-03T14:17:00Z', ultimoRegistroEm: '2026-11-04T16:00:00Z',
-  passos: Object.values(def.passos).map((id) => ({ id, tipo: 'x' })).concat([{ id: 'outro', tipo: 'x' }]),
-  porDia: [
-    { dia: '2026-11-03', passo: def.passos.oferta, status: 'SUCCESS', n: 10 },
-    { dia: '2026-11-04', passo: def.passos.oferta, status: 'SUCCESS', n: 5 },
-    { dia: '2026-11-04', passo: def.passos.oferta, status: 'FAILED', n: 1 },
-    { dia: '2026-11-04', passo: def.passos.login, status: 'SUCCESS', n: 3 },
-    { dia: '2026-11-04', passo: def.passos.espera_1h, status: 'SUCCESS', n: 2 },
-    { dia: '2026-11-04', passo: 'outro', status: 'FAILED_HANDLED', n: 4 },
-    { dia: '2026-11-04', passo: 'outro', status: 'SUCCESS', n: 99 },
-    { dia: '2026-11-04', passo: null, status: 'STARTED', n: 50 },
-  ],
-};
-const a = crm.resumirAutomacao(def, payloadAuto);
-assert.strictEqual(a.total.oferta, 15);
-assert.strictEqual(a.total.login, 3);
-assert.strictEqual(a.total.falhas, 5);
-assert.strictEqual(a.total.espera_1h, 2);
-assert.strictEqual(a.dias[0].dia, '2026-11-04');
-assert.deepStrictEqual(a.avisos, []);
+// Webhook: segredo, formato e o que vem vazio do CRM.
+delete process.env.REGUA_WEBHOOK_SEGREDO;
+assert.strictEqual(regua.autorizado('qualquer'), false, 'sem segredo configurado, ninguém entra');
+process.env.REGUA_WEBHOOK_SEGREDO = 'segredo-teste';
+assert.strictEqual(regua.autorizado('segredo-teste'), true);
+assert.strictEqual(regua.autorizado('errado'), false);
+assert.strictEqual(regua.autorizado(undefined), false);
+const ev = regua.normalizar({ automacao: 'bv', passo: 'login', negocio: 'cmw2be3rh', rgm: '2501234-5', extra: 'ignorado', telefone: '11912345678' });
+assert.deepStrictEqual(ev, { automacao: 'bv', passo: 'login', negocio: 'cmw2be3rh', rgm: '25012345', teste: null, variante: null });
+assert.strictEqual(regua.normalizar({ automacao: 'bv', passo: 'login', negocio: 'x', rgm: '' }).rgm, null, 'campo vazio no CRM vira nulo');
+assert.strictEqual(regua.normalizar({ automacao: 'bv', passo: 'entrou', negocio: 'x' }), null);
+assert.strictEqual(regua.normalizar({ automacao: 'bv', passo: 'login', negocio: "x'; drop" }), null);
+assert.strictEqual(regua.normalizar({ automacao: 'BV Calouros', passo: 'login', negocio: 'x' }), null);
+assert.strictEqual(regua.normalizar(null), null);
 
-// Passo que mudou de id no CRM vira aviso, não zero silencioso.
-const semPasso = crm.resumirAutomacao(def, { ...payloadAuto, passos: payloadAuto.passos.filter((p) => p.id !== def.passos.lembrete_24h) });
-assert.ok(semPasso.avisos[0].includes('lembrete_24h'));
-assert.strictEqual(crm.resumirAutomacao(def, undefined).encontrada, false);
+// Resumo: conta por dia em Brasília, separa automações e deixa variante fora.
+const evento = (passo, rgm, quando, extra) => ({ automacao: 'bv', passo, rgm, teste: '', variante: '', criado_em: quando, ...extra });
+const eventos = [
+  evento('oferta', '2222', '2026-11-04T02:30:00Z'), // ainda 03/11 em Brasília
+  evento('oferta', '3333', '2026-11-04T12:00:00Z'),
+  evento('sem_senha', '5555', '2026-11-04T12:10:00Z'),
+  evento('login', '2222', '2026-11-04T12:30:00Z'),
+  evento('variante', '3333', '2026-11-04T12:40:00Z', { teste: 'r1', variante: 'A' }),
+  evento('oferta', '7777', '2026-11-04T13:00:00Z', { automacao: 'outra' }),
+];
+const resumo = regua.resumir(eventos);
+const bv = resumo.automacoes.find((a) => a.id === 'bv');
+assert.strictEqual(resumo.automacoes.length, 2);
+assert.strictEqual(bv.total.oferta, 2);
+assert.strictEqual(bv.total.sem_senha, 1);
+assert.strictEqual(bv.total.login, 1);
+assert.deepStrictEqual(bv.dias.map((d) => d.dia), ['2026-11-04', '2026-11-03']);
+assert.strictEqual(bv.dias[1].oferta, 1);
+assert.strictEqual(resumo.ultimo_evento_em, '2026-11-04T13:00:00.000Z');
+assert.ok(!JSON.stringify(resumo).includes('2222'), 'RGM não sai no resumo');
+assert.deepStrictEqual(regua.resumir([]).automacoes, []);
+assert.strictEqual(regua.alcanceDe([]), null);
+const alc = regua.alcanceDe(eventos);
+assert.ok(alc.login.has('2222') && alc.oferta.has('3333') && !alc.login.has('3333'));
+assert.strictEqual(alc.inicio, Date.parse('2026-11-04T02:30:00Z'));
 
-// Testes A/B/C: grupo pela primeira passagem, falha fica no grupo, prazo inteiro e leitura só no fim.
-function testesAbc() {
-  const placarDe = require('../server/ao-vivo-testes');
+// Fonte: o que a tela diz em cada situação.
+const t0 = Date.parse('2026-11-04T15:00:00Z');
+assert.strictEqual(regua.fonte(resumo, t0).status, 'em_dia');
+assert.strictEqual(regua.fonte(resumo, t0 + 3 * 86400000).status, 'atrasado');
+assert.strictEqual(regua.fonte({ ultimo_evento_em: null }, t0).status, 'nao_ligado');
+delete process.env.REGUA_WEBHOOK_SEGREDO;
+assert.strictEqual(regua.fonte(resumo, t0).status, 'nao_ligado');
+process.env.REGUA_WEBHOOK_SEGREDO = 'segredo-teste';
+
+// Testes A/B/C: grupo pelo primeiro aviso, prazo inteiro e leitura só no fim.
+(function testesAbc() {
   const def = {
     id: 'r1', titulo: 'Primeira mensagem', inicio: '2026-11-10', duracao_dias: 21, por_grupo: 3, metrica: 'entrou_24h',
-    variantes: [{ id: 'A', rotulo: 'Atual', passo: 'pa' }, { id: 'B', rotulo: 'Login direto', passo: 'pb' }, { id: 'C', rotulo: 'Um botão', passo: 'pc' }],
+    variantes: [{ id: 'A', rotulo: 'Atual' }, { id: 'B', rotulo: 'Login direto' }, { id: 'C', rotulo: 'Um botão' }],
   };
-  assert.deepStrictEqual(placarDe.passosDe([def]), ['pa', 'pb', 'pc']);
   const em = '2026-11-11T12:00:00-03:00';
   const emMs = Date.parse(em);
-  const conta = (id, tel, extra) => ({ id, rgm: `r${id}`, nome: `Nome Secreto ${id}`, tel, primeiro_acesso: null, ...extra });
+  const conta = (id, extra) => ({ id, rgm: `10${id}-0`, nome: `Nome Secreto ${id}`, primeiro_acesso: null, ...extra });
   const contas = [
-    conta(1, '11900000001', { primeiro_acesso: '2026-11-11T13:00:00-03:00' }),
-    conta(2, '11900000002', { primeiro_acesso: '2026-11-13T13:00:00-03:00' }), // entrou depois de 24 h
-    conta(3, '11900000003', { primeiro_acesso: '2026-11-11T14:00:00-03:00' }),
-    conta(4, '11900000004', { primeiro_acesso: '2026-11-11T15:00:00-03:00' }),
-    conta(5, '11900000005'),
-    conta(6, '11900000009'), // mesmo telefone da 7: não dá para atribuir
-    conta(7, '11900000009'),
+    conta(1, { primeiro_acesso: '2026-11-11T13:00:00-03:00' }),
+    conta(2, { primeiro_acesso: '2026-11-13T13:00:00-03:00' }), // entrou depois de 24 h
+    conta(3, { primeiro_acesso: '2026-11-11T14:00:00-03:00' }),
+    conta(4, { primeiro_acesso: '2026-11-11T15:00:00-03:00' }),
+    conta(5),
   ];
-  const telefones = new Map(contas.map((c) => [c.rgm, c.tel]));
-  const k = (t) => crm.chaveEmbaralhada(CHAVE, t);
-  const item = (t, ok = true, quando = em) => ({ k: k(t), em: new Date(quando).toISOString(), ok });
-  const coorte = {
-    pa: [item('11900000001'), item('11900000002', false), item('11988888888')], // o último não tem conta
-    pb: [item('11900000003'), item('11900000004'), item('11900000001', true, '2026-11-12T12:00:00-03:00')], // a 1 já estava em A
-    pc: [item('11900000005'), item('11900000009'), item('11900000006', true, '2026-11-09T12:00:00-03:00')], // antes do início
-  };
+  const aviso = (id, variante, quando = em) => ({ passo: 'variante', teste: 'r1', variante, rgm: `10${id}0`, criado_em: quando });
+  const avisos = [
+    aviso(1, 'A'), aviso(2, 'A'), aviso(99, 'A'), // o 99 não tem conta
+    aviso(3, 'B'), aviso(4, 'B'), aviso(1, 'B', '2026-11-12T12:00:00-03:00'), // o 1 já estava em A
+    aviso(5, 'C'), aviso(6, 'C', '2026-11-09T12:00:00-03:00'), // antes do início
+    { passo: 'variante', teste: 'outro', variante: 'A', rgm: '1050', criado_em: em }, // outro teste
+    { passo: 'variante', teste: 'r1', variante: 'C', rgm: null, criado_em: em }, // sem RGM
+    { passo: 'login', teste: '', variante: '', rgm: '1030', criado_em: em },
+  ];
   const marcos = new Map([[3, { comecou_em: '2026-11-11T16:00:00-03:00', ultimo_concluido: '2026-11-12T10:00:00-03:00', concluidos: 7 }], [4, { comecou_em: '2026-11-14T16:00:00-03:00', ultimo_concluido: null, concluidos: 1 }]]);
-  const dados = { lista: contas, telefones, marcos, coorte, login: new Set([k('11900000003')]), chave: CHAVE, totalNiveis: 7 };
+  const dados = { lista: contas, marcos, eventos: avisos, login: new Set(['1030']), totalNiveis: 7 };
 
-  const fim = placarDe.placar(def, { ...dados, agora: Date.parse('2026-12-03T12:00:00-03:00') });
+  const fim = testes.placar(def, { ...dados, agora: Date.parse('2026-12-03T12:00:00-03:00') });
   assert.strictEqual(fim.status, 'encerrado');
   const [a, b, c] = fim.grupos;
   assert.strictEqual(a.sorteados, 3);
-  assert.strictEqual(a.falhas, 1, 'quem falhou fica no grupo');
   assert.strictEqual(a.sem_conta, 1);
   assert.strictEqual(a.metricas.entrou_24h.de, 2);
   assert.strictEqual(a.metricas.entrou_24h.n, 1, 'entrar depois de 24 h não conta');
-  assert.strictEqual(b.sorteados, 2, 'vale a primeira passagem');
+  assert.strictEqual(b.sorteados, 2, 'vale o primeiro aviso');
   assert.strictEqual(b.login, 1);
   assert.strictEqual(b.metricas.entrou_24h.pct, 100);
   assert.strictEqual(b.metricas.comecou_24h.n, 1);
   assert.strictEqual(b.metricas.concluiu_7d.n, 1);
-  assert.strictEqual(c.sorteados, 2, 'antes do início não entra');
-  assert.strictEqual(c.sem_conta, 1, 'telefone repetido fica sem vínculo');
+  assert.strictEqual(c.sorteados, 1, 'antes do início e sem RGM não entram');
   assert.ok(fim.avisos.some((x) => x.includes('outra variante')));
-  assert.ok(fim.avisos.some((x) => x.includes('mais de uma conta')));
-  assert.ok(fim.avisos.some((x) => x.includes('abaixo')) , 'C e B abaixo do planejado');
+  assert.ok(fim.avisos.some((x) => x.includes('sem RGM')));
+  assert.ok(fim.avisos.some((x) => x.includes('abaixo')));
   assert.ok(['melhor', 'pior', 'sem_diferenca'].includes(fim.comparacoes[0].leitura));
   assert.ok(fim.comparacoes[0].margem != null);
 
   // Durante o teste: sem veredito, e quem ainda está dentro do prazo não conta.
-  const durante = placarDe.placar(def, { ...dados, agora: emMs + 3600000 });
+  const durante = testes.placar(def, { ...dados, agora: emMs + 3600000 });
   assert.strictEqual(durante.status, 'em_andamento');
   assert.strictEqual(durante.grupos[0].metricas.entrou_24h.de, 0);
   assert.strictEqual(durante.comparacoes[0].leitura, 'sem_dados');
-  const parcial = placarDe.placar(def, { ...dados, agora: emMs + 2 * 86400000 });
+  const parcial = testes.placar(def, { ...dados, agora: emMs + 2 * 86400000 });
   assert.strictEqual(parcial.comparacoes[0].leitura, 'parcial');
   assert.strictEqual(parcial.comparacoes[0].margem, undefined);
   // Fim do teste, mas ainda dentro do prazo da métrica: continua sem veredito.
-  assert.strictEqual(placarDe.placar(def, { ...dados, agora: Date.parse('2026-12-01T12:00:00-03:00') }).status, 'amadurecendo');
+  assert.strictEqual(testes.placar(def, { ...dados, agora: Date.parse('2026-12-01T12:00:00-03:00') }).status, 'amadurecendo');
 
   // Veredito: 250 por grupo. A com 59%, B com 72% (ganha), C com 60% (empate).
   const pessoas = [];
-  const coorteGrande = { pa: [], pb: [], pc: [] };
-  const entra = { pa: 148, pb: 180, pc: 150 };
-  Object.keys(coorteGrande).forEach((passo, g) => {
+  const grandes = [];
+  const entra = { A: 148, B: 180, C: 150 };
+  Object.keys(entra).forEach((v, g) => {
     for (let i = 0; i < 250; i += 1) {
-      const tel = `119${String(g)}${String(i).padStart(7, '0')}`;
-      pessoas.push({ id: 1000 + g * 1000 + i, rgm: `g${g}-${i}`, tel, primeiro_acesso: i < entra[passo] ? '2026-11-11T13:00:00-03:00' : null });
-      coorteGrande[passo].push({ k: k(tel), em: new Date(em).toISOString(), ok: true });
+      const rgm = `9${g}${String(i).padStart(4, '0')}`;
+      pessoas.push({ id: 1000 + g * 1000 + i, rgm, primeiro_acesso: i < entra[v] ? '2026-11-11T13:00:00-03:00' : null });
+      grandes.push({ passo: 'variante', teste: 'r1', variante: v, rgm, criado_em: em });
     }
   });
-  const decidido = placarDe.placar(def, {
-    lista: pessoas, telefones: new Map(pessoas.map((p) => [p.rgm, p.tel])), marcos: new Map(), coorte: coorteGrande,
-    login: new Set(), chave: CHAVE, totalNiveis: 7, agora: Date.parse('2026-12-03T12:00:00-03:00'),
-  });
+  const decidido = testes.placar(def, { lista: pessoas, marcos: new Map(), eventos: grandes, login: new Set(), totalNiveis: 7, agora: Date.parse('2026-12-03T12:00:00-03:00') });
   assert.strictEqual(decidido.comparacoes[0].diferenca, 13);
   assert.strictEqual(decidido.comparacoes[0].leitura, 'melhor');
   assert.strictEqual(decidido.comparacoes[1].leitura, 'sem_diferenca');
   assert.ok(!decidido.avisos.some((x) => x.includes('abaixo')));
 
   // Antes do início e sem dados.
-  assert.strictEqual(placarDe.placar(def, { ...dados, agora: Date.parse('2026-11-01T12:00:00-03:00') }).status, 'agendado');
-  const semDados = placarDe.placar(def, { ...dados, coorte: null, agora: emMs });
+  assert.strictEqual(testes.placar(def, { ...dados, agora: Date.parse('2026-11-01T12:00:00-03:00') }).status, 'agendado');
+  const semDados = testes.placar(def, { ...dados, eventos: null, agora: emMs });
   assert.strictEqual(semDados.status, 'indisponivel');
   assert.deepStrictEqual(semDados.grupos, []);
 
-  // Privacidade: nem hash, nem telefone, nem nome no placar.
-  const texto = JSON.stringify(fim);
-  ['Nome Secreto', '119000', k('11900000001'), '"r2"'].forEach((x) => assert.ok(!texto.includes(x), `vazou ${x}`));
-}
-testesAbc();
+  // Privacidade: nem RGM nem nome no placar.
+  const textoPlacar = JSON.stringify(fim);
+  ['Nome Secreto', '1010', '101-0', '9900'].forEach((x) => assert.ok(!textoPlacar.includes(x), `vazou ${x}`));
+}());
 
-async function leitura() {
-  process.env.CRM_API_URL = 'https://crm.teste/';
-  process.env.CRM_API_TOKEN = CHAVE;
-  const pedidos = [];
-  const bloco = (data) => ({ ok: true, data });
-  const bom = {
-    automacoes: bloco([payloadAuto]),
-    alcance: bloco({ [def.passos.oferta]: ['chave1'], [def.passos.login]: ['chave2'], 'rea-template': ['chave3'] }),
-    atendimento: bloco({ aguardandoResposta: 108 }),
-    atendentes: bloco({ hoje: [], periodo: [], periodoDesde: DESDE, cortado: false }),
-  };
-  let resposta = () => ({ ok: true, status: 200, json: async () => bom });
-  const leitor = crm.novoLeitor(async (url, init) => { pedidos.push({ url, init }); return resposta(); });
-
-  const t0 = Date.parse('2026-11-04T15:00:00Z');
-  const lido = await leitor.ler(DESDE, t0);
-  assert.strictEqual(pedidos[0].init.method, 'GET');
-  assert.strictEqual(pedidos[0].init.headers.Authorization, `Bearer ${CHAVE}`);
-  assert.ok(pedidos[0].url.startsWith('https://crm.teste/api/painel/portal-aluno?'));
-  assert.ok(pedidos[0].url.includes(`desde=${DESDE}`));
-  assert.ok(!pedidos[0].url.includes('coorte='), 'sem teste não pede a coorte');
-  assert.ok(!crm.fontes(lido.estado, t0).some((x) => x.id === 'crm_coorte'));
-  await leitor.ler(DESDE, t0, ['pa', 'pb']);
-  assert.ok(pedidos[1].url.includes('coorte=pa%2Cpb'));
-  assert.ok(lido.alcance.oferta.has('chave1') && lido.alcance.oferta.has('chave3') && lido.alcance.login.has('chave2'));
-  assert.strictEqual(lido.resumo.atendimento.aguardandoResposta, 108);
-  assert.ok(crm.fontes(lido.estado, t0).every((x) => x.status === 'em_dia'));
-
-  // Um bloco caiu: os outros seguem e ele mostra a última leitura boa.
-  resposta = () => ({ ok: true, status: 200, json: async () => ({ ...bom, atendimento: { ok: false, error: 'x' } }) });
-  const parcial = await leitor.ler(DESDE, t0 + 60000);
-  assert.strictEqual(parcial.resumo.atendimento.aguardandoResposta, 108);
-  const fp = crm.fontes(parcial.estado, t0 + 60000);
-  assert.strictEqual(fp.find((x) => x.id === 'crm_atendimento').status, 'atrasado');
-  assert.strictEqual(fp.find((x) => x.id === 'crm_atendimento').atualizado_em, new Date(t0).toISOString());
-  assert.strictEqual(fp.find((x) => x.id === 'crm_automacoes').status, 'em_dia');
-
-  // CRM fora: mantém os números, marca atrasado e não vaza o token no erro.
-  const erros = console.error;
-  const logs = [];
-  console.error = (...x) => logs.push(x.join(' '));
-  resposta = () => ({ ok: false, status: 503, json: async () => ({}) });
-  const fora = await leitor.ler(DESDE, t0 + 10 * 60000);
-  console.error = erros;
-  assert.ok(fora.resumo.automacoes);
-  assert.ok(crm.fontes(fora.estado, t0 + 10 * 60000).every((x) => x.status === 'atrasado'));
-  assert.ok(!logs.join(' ').includes(CHAVE), 'token no log');
-
-  // Sem configuração: não chama nada e o painel diz o que falta.
-  delete process.env.CRM_API_TOKEN;
-  const qtd = pedidos.length;
-  assert.strictEqual(await leitor.ler(DESDE, t0), null);
-  assert.strictEqual(pedidos.length, qtd);
-  assert.ok(crm.fontes(null, t0).every((x) => x.status === 'nao_ligado'));
-}
-
-leitura().then(() => console.log('ok: tools/test-ao-vivo.js')).catch((err) => { console.error(err); process.exit(1); });
+console.log('ok: tools/test-ao-vivo.js');

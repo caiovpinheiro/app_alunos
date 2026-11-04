@@ -1,11 +1,11 @@
 'use strict';
 
-// Admin › Ao vivo: funil do portal, régua do CRM e atendimento, para o time acompanhar a meta de 100%.
+// Admin › Ao vivo: funil do portal e régua do CRM, para o time acompanhar a meta de 100%.
 // Só números agregados de alunos: nome, telefone, e-mail e RGM são usados aqui dentro e nunca saem na resposta.
 // As etapas vêm de resultado.etapasDe, a mesma regra da Visão geral e de Quem contatar.
 
 const { etapasDe, diaSP } = require('./resultado');
-const { chaveTelefone, chaveEmbaralhada } = require('./ao-vivo-crm');
+const { soDigitos } = require('./ao-vivo-regua');
 
 const UM_DIA = 86400000;
 // Foco do painel: as contas novas, já sob a régua atual. A base inteira continua a um clique.
@@ -51,25 +51,28 @@ function moduloParado(a) {
   return Math.max(1, Math.min(total, n));
 }
 
-// Por que a pessoa nunca entrou. Uma razão só, na ordem em que a equipe consegue agir.
+// Por que a pessoa nunca entrou. Uma razão só: primeiro o que a régua sabe dela.
 function motivoNaoEntrou(a, ctx) {
-  if (ctx.agora - new Date(a.created_at).getTime() < UM_DIA) return 'no_prazo';
-  const tel = ctx.telefones ? ctx.telefones.get(a.rgm) : null;
-  if (ctx.telefones && !chaveTelefone(tel)) return 'sem_telefone';
-  if (!ctx.alcance) return 'nao_entrou';
-  const chave = chaveEmbaralhada(ctx.chave, tel);
-  if (chave && ctx.alcance.login.has(chave)) return 'login_nao_entrou';
-  if (chave && ctx.alcance.oferta.has(chave)) return 'oferta_sem_login';
-  return 'sem_oferta';
+  const criada = new Date(a.created_at).getTime();
+  if (ctx.agora - criada < UM_DIA) return 'no_prazo';
+  const rgm = soDigitos(a.rgm);
+  // Conta anterior ao primeiro aviso do CRM: não dá para saber o que ela recebeu.
+  const conhecida = Boolean(ctx.alcance) && criada >= ctx.alcance.inicio;
+  if (conhecida && ctx.alcance.login.has(rgm)) return 'login_nao_entrou';
+  if (conhecida && ctx.alcance.oferta.has(rgm)) return 'oferta_sem_login';
+  if (conhecida && ctx.alcance.sem_senha.has(rgm)) return 'sem_senha';
+  if (ctx.telefones && soDigitos(ctx.telefones.get(a.rgm)).length < 10) return 'sem_telefone';
+  return conhecida ? 'sem_registro' : 'nao_entrou';
 }
 
 const MOTIVOS = [
   { id: 'no_prazo', etapa: 'acesso', texto: 'Conta com menos de 24 h: ainda no prazo', dono: 'Aguardar' },
   { id: 'sem_telefone', etapa: 'acesso', texto: 'Nunca entraram e não têm telefone válido: a régua não alcança', dono: 'Corrigir o cadastro' },
-  { id: 'sem_oferta', etapa: 'acesso', texto: 'Nunca entraram e não receberam a oferta de acesso (sem negócio, sem senha ou mensagem antiga)', dono: 'CRM' },
+  { id: 'sem_senha', etapa: 'acesso', texto: 'Nunca entraram e o negócio nasceu sem senha: podem ter ido para a mensagem sem link', dono: 'CRM' },
+  { id: 'sem_registro', etapa: 'acesso', texto: 'Nunca entraram e não há aviso delas na régua (sem negócio no CRM ou sem RGM)', dono: 'CRM' },
   { id: 'oferta_sem_login', etapa: 'acesso', texto: 'Receberam a oferta e não pediram o login', dono: 'CRM' },
   { id: 'login_nao_entrou', etapa: 'acesso', texto: 'Receberam o login e não entraram', dono: 'Atendimento' },
-  { id: 'nao_entrou', etapa: 'acesso', texto: 'Nunca entraram (sem o detalhe do CRM neste momento)', dono: 'CRM' },
+  { id: 'nao_entrou', etapa: 'acesso', texto: 'Nunca entraram (conta anterior aos avisos do CRM)', dono: 'CRM' },
   { id: 'nao_comecou', etapa: 'aula', texto: 'Entraram e não começaram a Aula', dono: 'Produto e CRM' },
   { id: 'nao_concluiu', etapa: 'aula', texto: 'Começaram e não concluíram a Aula', dono: 'Produto e atendimento' },
   { id: 'cert_erro', etapa: 'certificado', texto: 'Concluíram e deu erro ao gerar o certificado', dono: 'Produto' },
@@ -85,7 +88,7 @@ function funil(lista, certificados, opts) {
   MOTIVOS.forEach((m) => { faltam[m.id] = 0; });
   const parados = {};
   niveis.forEach((_, i) => { parados[i + 1] = { aqui: 0, ha_24h: 0 }; });
-  const ctx = { agora, telefones: opts.telefones || null, alcance: opts.alcance || null, chave: opts.chave || null };
+  const ctx = { agora, telefones: opts.telefones || null, alcance: opts.alcance || null };
 
   lista.forEach((a) => {
     if (!a.created_at) return;
@@ -153,9 +156,10 @@ async function progressoModulos(pool, desde) {
 
 // O que este painel não mostra de propósito, para ninguém achar que o número existe.
 const LIMITES = [
-  { fonte: 'Esperas de senha em andamento', texto: 'O CRM não registra a entrada na espera. O painel mostra só as esperas já terminadas (rechecagem de 1 h e de 4 h).' },
-  { fonte: 'Tempo de resposta por atendente', texto: 'Depende da réplica de leitura do CRM, que está fora. Por atendente, só as contagens de conversas.' },
-  { fonte: 'Resolução e tempo médio do inbox', texto: 'Misturam robô e humano e têm a taxa errada. Não são usados aqui.' },
+  { fonte: 'Fila e atendentes', texto: 'A leitura do CRM só funciona com sessão de navegador. Por enquanto, esses números ficam no próprio CRM.' },
+  { fonte: 'Oferta enviada', texto: 'O aviso sai quando o negócio nasce com senha. Mostra quem entrou no caminho da oferta, não a entrega no WhatsApp.' },
+  { fonte: 'Senha que chegou depois', texto: 'Quem nasceu sem senha aparece assim mesmo que a senha chegue durante as esperas.' },
+  { fonte: 'Histórico', texto: 'A régua só conta o que passou pelo webhook depois de ligado.' },
   { fonte: 'Login que falhou', texto: 'O portal ainda não registra tentativa de login sem sucesso.' },
 ];
 

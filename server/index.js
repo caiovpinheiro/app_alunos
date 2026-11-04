@@ -26,7 +26,7 @@ const acompanhamento = require('./acompanhamento');
 const painel = require('./painel');
 const resultado = require('./resultado');
 const aoVivo = require('./ao-vivo');
-const aoVivoCrm = require('./ao-vivo-crm');
+const aoVivoRegua = require('./ao-vivo-regua');
 const aoVivoTestes = require('./ao-vivo-testes');
 const ajudaPedidos = require('./ajuda-pedidos');
 const avaliacoes = require('./avaliacoes');
@@ -1518,10 +1518,9 @@ app.get('/api/admin/base', requireAdmin, async (req, res) => {
   }
 });
 
-// Ao vivo: funil do portal, régua do CRM e atendimento. Só agregados. Guardado em memória para
+// Ao vivo: funil do portal e régua do CRM. Só agregados. Guardado em memória para
 // que várias telas abertas não multipliquem as consultas: no máximo uma leitura a cada CACHE_AO_VIVO_MS.
 const CACHE_AO_VIVO_MS = 30000;
-const leitoresCrm = { novos: aoVivoCrm.novoLeitor(), todas: aoVivoCrm.novoLeitor() };
 const cacheAoVivo = { novos: { em: 0, dados: null, promessa: null }, todas: { em: 0, dados: null, promessa: null }, telefones: { em: 0, mapa: null } };
 
 async function telefonesParaAoVivo(rgms) {
@@ -1542,21 +1541,21 @@ async function montarAoVivo(base) {
   const desde = aoVivo.desdeDaBase(base, corte);
   const { rows } = await acompanhamento.listar(pool, { dias: 180 });
   const lista = acompanhamento.montar(rows, trilha.NIVEIS, cfg);
-  const [certificados, progresso, estado, crm] = await Promise.all([
+  const [certificados, progresso, estado, eventos] = await Promise.all([
     certificadosEmitidos(),
     aoVivo.progressoModulos(pool, desde),
     db.getSyncState(pool),
-    leitoresCrm[base].ler(desde, agora, aoVivoTestes.passosDe(aoVivoTestes.TESTES)),
+    aoVivoRegua.ler(pool, desde, agora).catch((err) => { console.error('Ao vivo: eventos da régua:', err.message); return null; }),
   ]);
-  const naoEntraram = lista.filter((a) => a.created_at && resultado.diaSP(a.created_at) >= desde && !resultado.etapasDe(a, certificados).entrou).map((a) => a.rgm).filter(Boolean);
-  const defs = aoVivoTestes.TESTES;
-  // Com teste rodando, o placar precisa do telefone de todas as contas, não só de quem nunca entrou.
   const contasDoCorte = lista.filter((a) => a.created_at && resultado.diaSP(a.created_at) >= desde);
-  const telefones = await telefonesParaAoVivo(defs.length ? contasDoCorte.map((a) => a.rgm).filter(Boolean) : naoEntraram);
+  const naoEntraram = contasDoCorte.filter((a) => !resultado.etapasDe(a, certificados).entrou).map((a) => a.rgm).filter(Boolean);
+  const telefones = await telefonesParaAoVivo(naoEntraram);
+  const defs = aoVivoTestes.TESTES;
   const marcos = defs.length ? await aoVivoTestes.marcosAula(pool, contasDoCorte.map((a) => a.id)) : new Map();
+  const alcance = eventos ? aoVivoRegua.alcanceDe(eventos) : null;
   const funil = aoVivo.funil(lista, certificados, {
     desde, agora, niveis: trilha.NIVEIS, progresso, telefones,
-    alcance: crm && crm.alcance, chave: crm && crm.chave,
+    alcance,
   });
   const em = new Date(agora).toISOString();
   const relatorio = syncAcessos.resumoBase(estado, { configurada: matriculados.isConfigured(), agora });
@@ -1567,15 +1566,33 @@ async function montarAoVivo(base) {
     bases: aoVivo.basesDe(corte),
     atualiza_em_s: 45,
     funil,
-    crm: crm ? crm.resumo : null,
+    regua: eventos ? aoVivoRegua.resumir(eventos) : null,
     testes: defs.map((def) => aoVivoTestes.placar(def, {
-      lista: contasDoCorte, telefones, marcos, agora, totalNiveis: trilha.NIVEIS.length,
-      coorte: crm && crm.coorte, login: crm && crm.alcance ? crm.alcance.login : null, chave: crm && crm.chave,
+      lista: contasDoCorte, marcos, agora, totalNiveis: trilha.NIVEIS.length, eventos, login: alcance ? alcance.login : null,
     })),
-    fontes: [aoVivo.fontePortal(em), aoVivo.fonteBase(relatorio), aoVivo.fonteTelefones(Boolean(telefones), em), ...aoVivoCrm.fontes(crm && crm.estado, agora, { comTestes: defs.length > 0 })],
+    fontes: [aoVivo.fontePortal(em), aoVivo.fonteBase(relatorio), aoVivo.fonteTelefones(Boolean(telefones), em), aoVivoRegua.fonte(eventos ? aoVivoRegua.resumir(eventos) : { ultimo_evento_em: null }, agora)],
     limites: aoVivo.LIMITES,
   };
 }
+
+// Avisos da régua: o passo webhook das automações do CRM chama aqui. Só o segredo errado devolve erro,
+// porque no CRM um webhook que falha interrompe o resto do fluxo daquele aluno.
+app.post('/api/integracoes/regua', async (req, res) => {
+  if (!aoVivoRegua.autorizado(req.get('x-regua-segredo'))) return res.status(401).json({ success: false });
+  if (!pool) return res.status(202).json({ success: false, registrado: false });
+  const evento = aoVivoRegua.normalizar(req.body);
+  if (!evento) {
+    console.error('Régua: aviso ignorado, passo ou automação inválidos.');
+    return res.status(202).json({ success: false, registrado: false });
+  }
+  try {
+    await aoVivoRegua.registrar(pool, evento);
+    return res.status(202).json({ success: true, registrado: true });
+  } catch (err) {
+    console.error('Régua: falha ao gravar aviso:', err.message);
+    return res.status(202).json({ success: false, registrado: false });
+  }
+});
 
 app.get('/api/admin/ao-vivo', requireAdmin, async (req, res) => {
   if (!pool) return unavailable(res);
