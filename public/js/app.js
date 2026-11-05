@@ -55,6 +55,18 @@
     }
   }
 
+  // Depois de entrar, quem ainda não começou a Aula Inaugural vai direto para ela.
+  function irParaAulaSeNaoComecou() {
+    if (!document.body.classList.contains('trilha-on')) return Promise.resolve();
+    return window.Api.getTrilhaResumo().then(function (r) {
+      var emitido = r && r.certificado && r.certificado.emitido;
+      if (!r || r.comecou || r.concluidos || emitido) return;
+      if (window.UI.screenFromPath(window.location.pathname) !== 'dashboard-page') return;
+      window.Rastreio && window.Rastreio.track('aula_aberta_apos_login', {});
+      window.showScreen('trilha-page', { replace: true });
+    }).catch(function () { /* sem o resumo, fica no Início */ });
+  }
+
   async function handleLogin(event) {
     event.preventDefault();
     var UI = window.UI;
@@ -79,7 +91,7 @@
       window.showScreen(nextScreen, { replace: true });
       window.Avisos.refresh();
       if (window.MeuSemestre) window.MeuSemestre.refresh();
-      carregarRecursos();
+      carregarRecursos().then(function () { if (nextScreen === 'dashboard-page') irParaAulaSeNaoComecou(); });
     } catch (err) {
       UI.showLoginError(err.status === 401
         ? 'RGM ou senha incorretos. A senha inicial é o seu primeiro nome com a inicial maiúscula + 123@. Se já trocou a senha e não lembra, use "Esqueci minha senha".'
@@ -115,7 +127,7 @@
       }
       window.Avisos.refresh();
       if (window.MeuSemestre) window.MeuSemestre.refresh();
-      carregarRecursos();
+      carregarRecursos().then(function () { if (!res.cadastro_pendente) irParaAulaSeNaoComecou(); });
     } catch (err) {
       if (err.details) UI.showFieldErrors(mapRegisterErrors(err.details));
       UI.showRegisterError(err.message || 'Não foi possível concluir o cadastro. Tente novamente.');
@@ -506,6 +518,7 @@
     if (id !== 'tutoriais-page' && window.Central) window.Central.close();
     if (id === 'trilha-page' && window.Trilha) window.Trilha.refresh();
     if (id === 'dashboard-page' && window.Trilha && document.body.classList.contains('trilha-on')) window.Trilha.refreshDashboard();
+    if (id === 'meu-semestre-page' && window.MeuSemestre) window.MeuSemestre.avisoAula();
     if (id === 'dashboard-page' && window.Central && document.body.classList.contains('trilha-on')) window.Central.renderInicio();
     if (id !== 'trilha-page' && window.Trilha) window.Trilha.pause();
     if ((id === 'atendimento-page' || id === 'dashboard-page') && window.Atendimento) window.Atendimento.refresh();

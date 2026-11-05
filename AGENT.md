@@ -7,6 +7,18 @@
 - Push em `main` dispara `.github/workflows/deploy.yml`: publica `ghcr.io/caiovpinheiro/app_alunos:latest` e chama o webhook do EasyPanel (`secrets.EASYPANEL_DEPLOY_APP`).
 - Não invente outro fluxo de deploy (n8n, branch de homologação, etc.) sem pedido explícito.
 
+### 2026-11-05 - Aula Inaugural: chegar mais rápido ao primeiro módulo
+
+**Decisão**
+- Depois de entrar, quem ainda não começou a Aula vai direto para ela (`irParaAulaSeNaoComecou`, em `public/js/app.js`). Quem veio de cadastro pendente ou de outro link continua como antes.
+- A página da Aula abre com o cartão "Comece por aqui" ou "Continue de onde parou" (`comece`, em `public/js/trilha.js`), que leva ao próximo módulo e já toca o vídeo. Primeira semana, ajuda e aplicativos desceram para depois dos módulos.
+- Meu Semestre mostra um convite para a Aula enquanto ela não estiver concluída (`avisoAula`).
+- O módulo 1 deixa claro que ativar o acesso à faculdade não é preciso para concluir o módulo ("Fazer agora" ou "Fazer depois"). A regra de conclusão não mudou: basta acertar as perguntas.
+- Eventos novos: `aula_aberta_apos_login`, `aula_cartao_clicado` e `aula_pratica_escolha`.
+
+**Motivo**
+- Em 04/11/2026, 34 de 55 alunos que não começaram abriram a página da Aula, mas só 8 abriram um módulo; 71% estavam no celular. O módulo 1 foi o único que travou: 9 de 40 pararam nele.
+
 ### 2026-11-04 - Admin: aba Ao vivo
 
 **Decisão**

@@ -213,8 +213,48 @@ window.Trilha = (function () {
     }
   }
 
+  // Cartão do topo: leva direto ao próximo módulo, sem precisar rolar a página.
+  function comece() {
+    var box = $('#tComece');
+    if (!box) return;
+    if (emitido) { box.hidden = true; box.innerHTML = ''; return; }
+    var tot = L().length;
+    var d = doneCount();
+    var cur = currentIdx();
+    var mexeu = d > 0 || Object.keys(S.pseen || {}).length > 0 || L().some(function (_, i) { return S.watched[i] || S.skipped[i]; });
+    var k; var tit; var txt; var btn; var estado;
+    if (cur >= tot) {
+      estado = 'certificado'; k = 'Você concluiu os módulos'; tit = 'Seu certificado de ' + horas() + ' horas está liberado';
+      txt = 'Falta só emitir.'; btn = 'Ir para o certificado';
+    } else if (!mexeu) {
+      estado = 'comecar'; k = 'Comece por aqui'; tit = 'Módulo 1 de ' + tot + ': ' + L()[0].t;
+      txt = 'São cerca de 30 minutos no total, e você pode parar e voltar quando quiser.'; btn = 'Começar agora';
+    } else {
+      var faltam = tot - d;
+      estado = 'continuar'; k = 'Continue de onde parou'; tit = 'Módulo ' + (cur + 1) + ' de ' + tot + ': ' + L()[cur].t;
+      txt = (faltam === 1 ? 'Falta 1 módulo' : 'Faltam ' + faltam + ' módulos') + ' para o certificado de ' + horas() + ' horas.'; btn = 'Continuar';
+    }
+    box.hidden = false;
+    box.innerHTML = '<div class="tcomece-txt"><span class="tcomece-k">' + esc(k) + '</span><h2 id="tComeceH">' + esc(tit) + '</h2><p>' + esc(txt) + '</p></div>' +
+      '<button type="button" class="tcomece-btn" data-comece="' + estado + '">' + esc(btn) + '</button>';
+  }
+
+  function irPeloCartao(estado) {
+    var cur = currentIdx();
+    var lv = L()[cur];
+    window.Rastreio && window.Rastreio.track('aula_cartao_clicado', { estado: estado, modulo: lv ? cur + 1 : null });
+    if (!lv) { $('#tFinal').scrollIntoView({ behavior: smooth(), block: 'start' }); return; }
+    window.Rastreio && window.Rastreio.track('trilha_nivel_aberto', { nivel: cur + 1, nivel_titulo: lv.t });
+    alvo = cur;
+    irParaAlvo();
+    // O toque do aluno libera o vídeo para tocar sozinho no celular.
+    var sec = document.getElementById('tlv' + cur);
+    var v = sec && !S.watched[cur] && !S.skipped[cur] ? sec.querySelector('.player video') : null;
+    if (v) { var pr = v.play(); if (pr && pr.catch) pr.catch(function () {}); }
+  }
+
   function refreshUI() {
-    hud(); map();
+    hud(); map(); comece();
     L().forEach(function (_, i) { levelState(i); });
     todoCount();
   }
@@ -228,35 +268,32 @@ window.Trilha = (function () {
     h += '<header class="hero"><div class="hero-txt">';
     h += '<div class="eyebrow">' + (primeiro ? 'Olá, ' + esc(primeiro) + '! · ' : '') + 'Aula Inaugural · Graduação EaD</div>';
     h += '<h1>Aula <span class="hl">Inaugural</span></h1>';
-    h += '<p class="lede">Tudo o que você precisa para começar, em ' + L().length + ' módulos curtos. Em cada um: assista ao capítulo da aula, leia o resumo e responda às perguntas. Pode errar à vontade: cada módulo concluído vale ' + pm() + ' pontos. Concluiu os ' + L().length + ' (' + num(meta()) + ' pontos)? Emita o certificado de ' + horas() + ' horas. O que você já fez fica salvo na sua conta.</p>';
-    h += '<p class="lede lede-atalho">Já sabe algum assunto? Em cada módulo, toque em <b>Já sei isso</b> para ir direto às perguntas. Prefere ver tudo de uma vez? <button type="button" class="linkbtn lede-link" data-open-aula>Assistir à aula completa (sem pontos)</button></p>';
-    h += '<ol class="how" aria-label="Em cada módulo"><li><span>1</span>Assista</li><li><span>2</span>Leia</li><li><span>3</span>Responda</li></ol>';
-    h += '<div class="a11y" role="group" aria-label="Facilidades de leitura">';
-    h += '<button class="chipbtn" id="tBig" type="button" aria-pressed="false">A+ Letra maior</button>';
-    h += '<button class="chipbtn" id="tSlow" type="button" aria-pressed="false">Vídeos mais devagar</button></div>';
+    h += '<p class="lede">São ' + L().length + ' módulos curtos: assista, leia o resumo e responda. Pode errar à vontade, e o que você fez fica salvo. Concluiu os ' + L().length + '? Emita o certificado de ' + horas() + ' horas.</p>';
     h += '</div></header>';
-    h += '<div data-apps-slot data-apps-variant="compacta" class="t-apps"></div>';
+    h += '<section class="tcomece" id="tComece" aria-labelledby="tComeceH" hidden></section>';
 
-    h += '<div class="intro"><section class="start card" aria-labelledby="tStartTitle"><div class="cardhead"><div>';
+    // Primeira semana e ajuda ficam depois dos módulos: no celular, o aluno chega à aula sem rolar a tela inteira.
+    var rodape = '';
+    rodape += '<div class="intro"><section class="start card" aria-labelledby="tStartTitle"><div class="cardhead"><div>';
     // Lista automática: cada item se marca sozinho pelo progresso real (módulos concluídos, certificado emitido).
-    h += '<h2 id="tStartTitle">Sua primeira semana</h2>';
-    h += '<p class="hint">Se marca sozinho conforme você avança nos módulos.</p></div>';
-    h += '<span class="count" id="tTodoCount" aria-live="polite"></span></div><ul class="todo" id="tTodo">';
+    rodape += '<h2 id="tStartTitle">Sua primeira semana</h2>';
+    rodape += '<p class="hint">Se marca sozinho conforme você avança nos módulos.</p></div>';
+    rodape += '<span class="count" id="tTodoCount" aria-live="polite"></span></div><ul class="todo" id="tTodo">';
     C.tarefas.forEach(function (t, k) {
-      h += '<li data-todo="' + k + '"><span class="tk" aria-hidden="true"></span><span class="tx">' + t.html + '<span class="sr"></span></span></li>';
+      rodape += '<li data-todo="' + k + '"><span class="tk" aria-hidden="true"></span><span class="tx">' + t.html + '<span class="sr"></span></span></li>';
     });
-    h += '</ul></section>';
-    h += '<aside class="help" aria-labelledby="tHelpTitle"><div class="hh">' + HELP_ICON + '<h2 id="tHelpTitle">Travou? Peça ajuda, é normal</h2></div>';
-    C.ajuda.forEach(function (p) { h += '<p>' + p + '</p>'; });
-    if (C.whatsapp_url) h += '<p><a class="tWa" href="' + esc(C.whatsapp_url) + '" target="_blank" rel="noopener">Chamar o setor acadêmico no WhatsApp</a></p>';
-    h += '</aside></div>';
+    rodape += '</ul></section>';
+    rodape += '<aside class="help" aria-labelledby="tHelpTitle"><div class="hh">' + HELP_ICON + '<h2 id="tHelpTitle">Travou? Peça ajuda, é normal</h2></div>';
+    C.ajuda.forEach(function (p) { rodape += '<p>' + p + '</p>'; });
+    if (C.whatsapp_url) rodape += '<p><a class="tWa" href="' + esc(C.whatsapp_url) + '" target="_blank" rel="noopener">Chamar o setor acadêmico no WhatsApp</a></p>';
+    rodape += '</aside></div>';
 
     h += '<div class="hud" id="tHud"><div class="in"><span class="medal" id="tMedal">0</span><span class="gain" id="tGain" aria-hidden="true"></span>';
     h += '<div class="hudmain"><div class="rank"><small>Sua conquista</small><b id="tRank">Visitante</b></div><div class="xpbar"><i id="tXpFill"></i></div>';
     h += '<div class="xpline"><span id="tXpTxt"></span><span id="tLvTxt"></span></div><p class="certline" id="tCertTxt" aria-live="polite"></p></div></div></div>';
 
-    h += '<div class="trailhead" id="tModulos"><div><h2 class="sec-h" id="tModulosH" tabindex="-1">Seus módulos</h2><p class="hint">Faça na ordem que quiser. A ordem sugerida é de cima para baixo.</p></div>';
-    h += '<div class="tools"><button class="chipbtn" id="tReview" type="button" aria-pressed="false">Ver tudo sem jogar</button>';
+    h += '<div class="trailhead" id="tModulos"><div><h2 class="sec-h" id="tModulosH" tabindex="-1">Seus módulos</h2><p class="hint">Faça na ordem que quiser. A ordem sugerida é de cima para baixo. Já sabe algum assunto? Em cada módulo, toque em <b>Já sei isso</b>. Prefere ver tudo de uma vez? <button type="button" class="linkbtn lede-link" data-open-aula>Assistir à aula completa (sem pontos)</button></p></div>';
+    h += '<div class="tools"><button class="chipbtn" id="tBig" type="button" aria-pressed="false">A+ Letra maior</button><button class="chipbtn" id="tSlow" type="button" aria-pressed="false">Vídeos mais devagar</button><button class="chipbtn" id="tReview" type="button" aria-pressed="false">Ver tudo sem jogar</button>';
     h += '<button class="chipbtn" id="tReset" type="button">Começar de novo</button></div></div>';
     h += '<ol class="map" id="tMap" aria-label="Mapa dos módulos"></ol>';
     // Aula completa: todos os capítulos em sequência, sem pontos (os pontos vêm dos módulos).
@@ -276,6 +313,8 @@ window.Trilha = (function () {
     h += '<div id="tCert" class="tcert"></div><div class="perr" data-cert-erro hidden></div>';
     h += '<p class="hint">Releia qualquer módulo quando quiser. Na dúvida, vale o que está no Manual do Aluno e no Calendário Acadêmico.</p></section>';
 
+    h += rodape;
+    h += '<div data-apps-slot data-apps-variant="compacta" class="t-apps"></div>';
     // O antigo "Dicionário do aluno" virou explicação no próprio texto (public/js/glossario.js).
     h += '</div>';
 
@@ -358,6 +397,12 @@ window.Trilha = (function () {
     // O texto vai num <span>: a caixa é flex (ícone "!" + texto) e links/negritos soltos virariam colunas.
     if (l.tip) h += '<p class="tip"><span>' + l.tip + '</span></p>';
     h += '<div class="extras">';
+    if (i === 0) {
+      h += '<div class="tpratica" data-pratica-box><b>Ativar o seu acesso à faculdade</b>' +
+        '<p>Não precisa fazer agora para concluir este módulo. Faça quando estiver com o celular e um papel à mão.</p>' +
+        '<div class="tpratica-acts"><button type="button" class="chipbtn" data-pratica="agora">Fazer agora</button><button type="button" class="linkbtn" data-pratica="depois">Fazer depois</button></div>' +
+        '<p class="hint" data-pratica-msg hidden>Combinado. Os vídeos ficam aqui neste módulo e na Central de ajuda.</p></div>';
+    }
     // Vídeos antigos do módulo (sem pontos): o "como fazer" mostrando as telas. Com passo_aberto, já vem aberto.
     var passo = l.passo_a_passo || [];
     if (passo.length) {
@@ -398,6 +443,19 @@ window.Trilha = (function () {
         pv.querySelector('source').setAttribute('src', src + '.mp4'); pv.poster = src + '.jpg'; pv.load();
         var pr = pv.play(); if (pr && pr.catch) pr.catch(function () {});
       });
+    });
+    var pratica = sec.querySelector('[data-pratica-box]');
+    if (pratica) pratica.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-pratica]');
+      if (!b) return;
+      var escolha = b.getAttribute('data-pratica');
+      window.Rastreio && window.Rastreio.track('aula_pratica_escolha', { escolha: escolha });
+      if (escolha === 'agora') {
+        var det = sec.querySelector('.passo');
+        if (det) { det.open = true; det.scrollIntoView({ behavior: smooth(), block: 'start' }); }
+      } else {
+        pratica.querySelector('[data-pratica-msg]').hidden = false;
+      }
     });
     var st1 = sec.querySelector('.stuck1');
     if (st1) st1.addEventListener('click', function () {
@@ -618,6 +676,10 @@ window.Trilha = (function () {
       if (!e.target.closest('[data-rever-modulos]')) return;
       $('#tModulos').scrollIntoView({ behavior: smooth() });
       $('#tModulosH').focus({ preventScroll: true });
+    });
+    $('#tComece').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-comece]');
+      if (b) irPeloCartao(b.getAttribute('data-comece'));
     });
     $('#tBig').addEventListener('click', function () { P.big = !P.big; savePrefs(); applyPrefs(); });
     $('#tSlow').addEventListener('click', function () { P.slow = !P.slow; savePrefs(); applyPrefs(); });

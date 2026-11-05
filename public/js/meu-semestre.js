@@ -652,11 +652,32 @@ window.MeuSemestre = (function () {
     if (window.lucide) window.lucide.createIcons();
   }
 
+  // Aviso no topo: quem abre Meu Semestre sem ter feito a Aula Inaugural vê o convite para ela.
+  function avisoAula() {
+    var box = document.getElementById('sm-aula-aviso');
+    if (!box) return Promise.resolve();
+    if (!document.body.classList.contains('trilha-on') || !window.Auth.isAuthenticated()) { box.hidden = true; return Promise.resolve(); }
+    return window.Api.getTrilhaResumo().then(function (r) {
+      var c = (r && r.certificado) || {};
+      var total = (r && r.total) || 0;
+      if (!r || !total || c.emitido || r.concluidos >= total) { box.hidden = true; return; }
+      var horas = c.horas || 4;
+      var novo = !r.comecou && !r.concluidos;
+      var faltam = total - (r.concluidos || 0);
+      box.innerHTML = '<div><strong>' + (novo ? 'Falta a sua Aula Inaugural' : 'Continue a sua Aula Inaugural') + '</strong>' +
+        '<p>' + (novo ? 'São cerca de 30 minutos e vale certificado de ' + horas + ' horas.'
+          : (faltam === 1 ? 'Falta 1 módulo' : 'Faltam ' + faltam + ' módulos') + ' para o certificado de ' + horas + ' horas.') + '</p></div>' +
+        '<button type="button" class="portal-btn portal-btn--primary" data-open-trilha="">' + (novo ? 'Começar a Aula' : 'Continuar') + '</button>';
+      box.hidden = false;
+    }).catch(function () { box.hidden = true; });
+  }
+
   async function refresh() {
     if (!window.Auth.isAuthenticated()) {
       cache = null;
       return;
     }
+    avisoAula();
     try {
       cache = await window.Api.getMeuSemestre();
     } catch (err) {
@@ -712,5 +733,6 @@ window.MeuSemestre = (function () {
   return {
     init: init,
     refresh: refresh,
+    avisoAula: avisoAula,
   };
 })();

@@ -236,3 +236,9 @@
 @media (max-width:640px){.sm-fin-body{padding-left:18px}}
 
 @media (prefers-reduced-motion:reduce){.sm-page *{transition:none!important;animation:none!important}}
+
+/* Convite para a Aula Inaugural no topo de Meu Semestre */
+.sm-aula-aviso{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 20px;margin-bottom:20px;padding:16px 20px;border-radius:14px;background:#fff5d6;border:1px solid #f2d27a;color:#3d2c00}
+.sm-aula-aviso[hidden]{display:none}
+.sm-aula-aviso strong{display:block;font-size:1.05rem}
+.sm-aula-aviso p{margin:2px 0 0}
