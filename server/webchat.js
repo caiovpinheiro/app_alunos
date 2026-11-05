@@ -1,5 +1,7 @@
 'use strict';
 
+const permissoes = require('./permissoes');
+
 // Chat do CRM (webchat) no portal, em teste: só as contas em WEBCHAT_LIBERADO_PARA
 // (RGM ou e-mail, separados por vírgula ou espaço) recebem o script. "*" libera para
 // todos. Vazio = ninguém. O script e a chave vêm só do Environment (WEBCHAT_EMBED_URL e
@@ -17,6 +19,8 @@ function listaLiberada() {
 }
 
 function liberadoPara(aluno) {
+  const manual = permissoes.valor(aluno, 'webchat');
+  if (manual !== undefined) return manual;
   const lista = listaLiberada();
   if (!lista.length) return false;
   if (lista.includes('*')) return true;

@@ -380,6 +380,11 @@ async function ensureSchema(pool) {
     ALTER TABLE csu_alunos
     ADD COLUMN IF NOT EXISTS confirmado_em TIMESTAMPTZ
   `);
+  // Permissões por conta (server/permissoes.js). NULL = regras de sempre; contas teste do admin preenchem.
+  await pool.query(`
+    ALTER TABLE csu_alunos
+    ADD COLUMN IF NOT EXISTS permissoes JSONB
+  `);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS csu_vendas_webhook (
       id SERIAL PRIMARY KEY,
@@ -613,7 +618,8 @@ async function upsertAcessoDerived(pool, { email, rgm, nome, curso, unidade }) {
     const row = existing.rows[0];
     await pool.query(
       `UPDATE csu_alunos
-       SET email = $1, rgm = $2, nome = $3, ativo = TRUE, curso = $5, unidade = $6,
+       SET email = $1, rgm = $2, nome = $3, curso = $5, unidade = $6,
+           ativo = CASE WHEN origem = 'teste' THEN ativo ELSE TRUE END,
            confirmado_em = COALESCE(confirmado_em, now())
        WHERE id = $4`,
       [email, rgm, nome, row.id, curso || null, unidade || null],
@@ -645,7 +651,7 @@ async function findAlunoByIdentifier(pool, identifier) {
   const id = normalizeIdentifier(identifier);
   if (!id) return null;
   const result = await pool.query(
-    `SELECT id, email, rgm, nome, pw_hash, ativo
+    `SELECT id, email, rgm, nome, pw_hash, ativo, origem
      FROM csu_alunos
      WHERE lower(email) = lower($1)
         OR rgm = $1
@@ -717,7 +723,7 @@ async function createSession(pool, alunoId, token) {
 async function getSessionAluno(pool, token) {
   if (!token) return null;
   const result = await pool.query(
-    `SELECT a.id, a.email, a.rgm, a.nome, a.ativo, a.created_at, s.expires_at
+    `SELECT a.id, a.email, a.rgm, a.nome, a.ativo, a.created_at, a.origem, a.permissoes, s.expires_at
      FROM csu_sessoes s
      JOIN csu_alunos a ON a.id = s.aluno_id
      WHERE s.token = $1
@@ -730,7 +736,10 @@ async function getSessionAluno(pool, token) {
     await pool.query('DELETE FROM csu_sessoes WHERE token = $1', [token]);
     return null;
   }
-  return { id: row.id, email: row.email, rgm: row.rgm, nome: row.nome, created_at: row.created_at };
+  return {
+    id: row.id, email: row.email, rgm: row.rgm, nome: row.nome, created_at: row.created_at,
+    origem: row.origem, permissoes: row.permissoes || null,
+  };
 }
 
 async function deleteSession(pool, token) {
@@ -800,6 +809,7 @@ async function deactivateAlunosByRgm(pool, rgms) {
       `UPDATE csu_alunos
        SET ativo = FALSE
        WHERE ativo = TRUE AND rgm = ANY($1::text[])
+         AND origem IS DISTINCT FROM 'teste'
        RETURNING id`,
       [chunk],
     );

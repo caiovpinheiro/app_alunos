@@ -282,6 +282,7 @@
       document.body.classList.toggle('trilha-on', on);
       // Acesso em preparação (conta sem RGM): telas levam à Aula Inaugural; volta ao normal quando o RGM chega.
       document.body.classList.toggle('acesso-preparo', !!(r && r.preparo));
+      aplicarAreas(r && r.areas);
       carregarWebchat(r && r.webchat);
       if (r && (r.webchat || r.rastreio) && window.Rastreio) {
         window.Rastreio.iniciar({ chat: r.webchat, servidor: !!r.rastreio });
@@ -297,6 +298,25 @@
       if (window.Tutoriais) window.Tutoriais.refresh();
       if (on && window.Central && window.UI.screenFromPath(window.location.pathname) === 'tutoriais-page') window.Central.refresh();
     }).catch(function () { /* sem a informação, fica tudo como antes (trilha escondida) */ });
+  }
+
+  // Áreas fechadas para a conta (conta teste do admin): body.sem-<area> esconde menus e cards
+  // (css/styles.css) e as telas dessas áreas voltam ao início.
+  var AREAS = ['meu_semestre', 'avisos', 'tutoriais', 'certificado', 'atendimento'];
+  var TELA_AREA = {
+    'meu-semestre-page': 'meu_semestre', 'avisos-page': 'avisos', 'tutoriais-page': 'tutoriais',
+    'atendimento-page': 'atendimento', 'form-page': 'certificado', 'success-page': 'certificado',
+  };
+  function aplicarAreas(areas) {
+    AREAS.forEach(function (a) {
+      document.body.classList.toggle('sem-' + a, !!(areas && areas[a] === false));
+    });
+    var atual = window.UI.screenFromPath(window.location.pathname);
+    if (telaFechada(atual)) window.showScreen('dashboard-page', { replace: true });
+  }
+  function telaFechada(id) {
+    var area = TELA_AREA[id];
+    return !!(area && document.body.classList.contains('sem-' + area));
   }
 
   // Chat do CRM: só entra na página para quem o servidor liberou (WEBCHAT_LIBERADO_PARA).
@@ -333,6 +353,7 @@
       return;
     }
     document.body.classList.remove('trilha-on', 'acesso-preparo');
+    AREAS.forEach(function (a) { document.body.classList.remove('sem-' + a); });
     recursosCarregados = false;
     if (window.Avisos) window.Avisos.closeDropdown();
     releaseCurrentPdf();
@@ -463,6 +484,7 @@
   window.logout = logout;
   window.showScreen = function (id, options) {
     if (id === 'trilha-page' && recursosCarregados && !document.body.classList.contains('trilha-on')) id = 'dashboard-page';
+    if (telaFechada(id)) id = 'dashboard-page';
     if (id === 'form-page') prefillForm();
     if (window.Avisos) window.Avisos.closeDropdown();
     if (window.Tutoriais) window.Tutoriais.closeModal();

@@ -26,6 +26,8 @@ const acompanhamento = require('./acompanhamento');
 const avaliacoes = require('./avaliacoes');
 const preparo = require('./preparo');
 const dadosAcesso = require('./dadosAcesso');
+const permissoes = require('./permissoes');
+const contas = require('./contas');
 const app = express();
 app.set('trust proxy', 1);
 const PORT = Number(process.env.PORT) || 80;
@@ -324,6 +326,11 @@ async function authMiddleware(req, res, next) {
     }
     req.aluno = aluno;
     req.token = token;
+    // Áreas fechadas para a conta (conta teste do admin, ver server/permissoes.js).
+    const area = permissoes.areaDaRota(req.originalUrl);
+    if (area && !permissoes.permite(aluno, area)) {
+      return res.status(403).json({ success: false, message: 'Esta área não está liberada para a sua conta.' });
+    }
     return next();
   } catch (err) {
     console.error('Falha ao validar sessão:', err.message);
@@ -359,7 +366,9 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ success: false, message: 'Credenciais inválidas.' });
     }
 
-    const derived = matriculados.derivedPassword(aluno.nome);
+    // Conta teste com senha definida no admin: só essa senha vale (a inicial fica desligada).
+    const senhaPropria = aluno.origem === 'teste' && aluno.pw_hash && aluno.pw_hash !== db.DERIVED_PW_MARKER;
+    const derived = senhaPropria ? null : matriculados.derivedPassword(aluno.nome);
     const derivedOk = matriculados.passwordMatches(derived, password);
     const hashOk = await db.verifyPassword(aluno, password);
     if (!derivedOk && !hashOk) {
@@ -682,7 +691,8 @@ app.get('/api/recursos', authMiddleware, async (req, res) => {
     trilha: trilha.liberadaPara(req.aluno),
     webchat: chat,
     rastreio: acompanhamento.liberadoPara(req.aluno),
-    preparo: !req.aluno.rgm,
+    preparo: !req.aluno.rgm && req.aluno.origem !== 'teste',
+    areas: permissoes.areas(req.aluno),
   });
 });
 
@@ -690,7 +700,7 @@ app.get('/api/recursos', authMiddleware, async (req, res) => {
 // a página (public/js/auth.js) recarrega se estiver na versão errada.
 app.get('/api/versao', authMiddleware, (req, res) => {
   const nova = versao.novaPara(req.aluno);
-  versao.gravarCookie(req, res, nova);
+  versao.gravarCookie(req, res, nova, permissoes.valor(req.aluno, 'versao_nova') === false);
   res.set('Cache-Control', 'no-store');
   res.json({ success: true, versao: nova ? 'nova' : 'antiga' });
 });
@@ -1467,7 +1477,7 @@ app.get('/api/admin/versao', requireAdmin, async (req, res) => {
     if (q) {
       const digitos = q.replace(/\D+/g, '');
       const r = await pool.query(
-        `SELECT id, nome, rgm, email, created_at, ultimo_login_em FROM csu_alunos
+        `SELECT id, nome, rgm, email, created_at, ultimo_login_em, permissoes FROM csu_alunos
          WHERE lower(nome) LIKE '%' || $1 || '%' OR lower(email) LIKE '%' || $1 || '%'
             OR ($2 <> '' AND regexp_replace(COALESCE(rgm, ''), '\\D', '', 'g') LIKE '%' || $2 || '%')
          ORDER BY created_at DESC LIMIT 10`,
@@ -1538,6 +1548,7 @@ app.post('/api/admin/acompanhamento/:id/followup', requireAdmin, async (req, res
 avaliacoes.registrarRotas(app, { getPool: () => pool, authMiddleware, requireAdmin });
 // Acesso em preparação (aluno sem RGM): o polo cria a conta e depois informa o RGM.
 preparo.registrar(app, { pool, requireAdmin });
+contas.registrar(app, { pool, requireAdmin });
 // Dados de acesso à faculdade (RGM, curso, e-mail acadêmico): o polo sobe; o aluno consulta.
 dadosAcesso.registrar(app, { pool, authMiddleware, requireAdmin, getMatriculadosPool });
 

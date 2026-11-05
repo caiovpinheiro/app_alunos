@@ -2296,3 +2296,17 @@ body.acesso-preparo .p-quick > a[target="_blank"],
 body.acesso-preparo #dashboard-semestre-body a[target="_blank"] { display: none; }
 @media (min-width: 1100px) { body.acesso-preparo .p-quick { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .ms-empty-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+
+/* Áreas fechadas para a conta (conta teste do admin; classes postas por public/js/app.js). */
+body.sem-meu_semestre [data-nav="meu-semestre-page"],
+body.sem-meu_semestre [data-go="meu-semestre-page"],
+body.sem-meu_semestre section[aria-labelledby="p-h-datas"],
+body.sem-avisos .notif-wrap,
+body.sem-avisos [data-go="avisos-page"],
+body.sem-avisos section[aria-labelledby="p-h-avisos"],
+body.sem-tutoriais [data-nav="tutoriais-page"],
+body.sem-tutoriais [data-go="tutoriais-page"],
+body.sem-tutoriais section[aria-labelledby="p-h-videos"],
+body.sem-certificado .p-aula-strip,
+body.sem-certificado [data-gerar-certificado],
+body.sem-atendimento [data-go="atendimento-page"] { display: none !important; }

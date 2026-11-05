@@ -1,5 +1,7 @@
 'use strict';
 
+const permissoes = require('./permissoes');
+
 // Trilha "EaD Digital para Iniciantes": conteúdo em server/assets/trilha.json,
 // progresso por aluno em csu_trilha_progresso / csu_trilha_tarefas.
 // O gabarito (campo `certa`) e a explicação nunca vão para o navegador antes da resposta.
@@ -117,6 +119,9 @@ function liberadaParaTodos() {
 
 function liberadaPara(aluno) {
   if (!versao.novaPara(aluno)) return false;
+  // Usuário criado no admin: a caixa "Aula Inaugural" decide.
+  const manual = permissoes.valor(aluno, 'aula_inaugural');
+  if (manual !== undefined) return manual;
   const lista = listaLiberada();
   if (lista.includes('*')) return true;
   if (!aluno) return false;

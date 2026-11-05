@@ -36,12 +36,12 @@ async function listar(pool) {
     const r = await pool.query(
       `${base},
          (SELECT COUNT(*)::int FROM csu_trilha_progresso p WHERE p.aluno_id = a.id AND p.concluido_em IS NOT NULL) AS modulos
-       FROM csu_alunos a WHERE a.rgm IS NULL ORDER BY a.created_at DESC LIMIT 500`,
+       FROM csu_alunos a WHERE a.rgm IS NULL AND a.origem IS DISTINCT FROM 'teste' ORDER BY a.created_at DESC LIMIT 500`,
     );
     return r.rows;
   } catch (err) {
     // Sem a tabela da Aula Inaugural ainda: lista sem o progresso.
-    const r = await pool.query(`${base} FROM csu_alunos a WHERE a.rgm IS NULL ORDER BY a.created_at DESC LIMIT 500`);
+    const r = await pool.query(`${base} FROM csu_alunos a WHERE a.rgm IS NULL AND a.origem IS DISTINCT FROM 'teste' ORDER BY a.created_at DESC LIMIT 500`);
     return r.rows.map((row) => ({ ...row, modulos: 0 }));
   }
 }

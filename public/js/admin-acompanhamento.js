@@ -117,7 +117,7 @@ window.AdminAcomp = (function () {
   }
 
   // Versão das telas (VERSAO_NOVA_PARA / VERSAO_NOVA_DESDE): o que o servidor leu e por que cada aluno vê uma ou outra.
-  var MOTIVO = { todos: 'versão nova (liberada para todos)', lista: 'versão nova (está em VERSAO_NOVA_PARA)', data: 'versão nova (conta criada a partir de VERSAO_NOVA_DESDE)' };
+  var MOTIVO = { todos: 'versão nova (liberada para todos)', lista: 'versão nova (está em VERSAO_NOVA_PARA)', data: 'versão nova (conta criada a partir de VERSAO_NOVA_DESDE)', conta: 'versão nova (marcada na conta teste)' };
   function dataHora(d) { return d ? new Date(d).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'; }
   async function conferirVersao(q) {
     var conf = document.getElementById('versao-conf');

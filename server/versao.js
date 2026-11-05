@@ -13,6 +13,8 @@
  * Inaugural e a Central exigem também a conta nesta lista, ver trilha.liberadaPara).
  */
 
+const permissoes = require('./permissoes');
+
 const COOKIE = 'app_versao';
 
 function lista() {
@@ -40,6 +42,10 @@ function desde() {
 // 'data' (criada a partir de VERSAO_NOVA_DESDE) ou null (vê a antiga). O admin mostra isso.
 // RGM na lista vale com ou sem pontuação ("2501234-5" = "25012345").
 function motivo(aluno) {
+  // Usuário criado no admin com "Telas novas" marcado/desmarcado: vale a escolha da conta.
+  const manual = permissoes.valor(aluno, 'versao_nova');
+  if (manual === true) return 'conta';
+  if (manual === false) return null;
   const l = lista();
   if (l.includes('*')) return 'todos';
   if (!aluno) return null;
@@ -74,14 +80,25 @@ function cookieNova(req) {
 }
 
 // Página a entregar para este pedido: todos na nova, ou o cookie gravado no login.
+function cookieAntiga(req) {
+  const header = String(req.headers.cookie || '');
+  return header.split(';').some((par) => par.trim() === COOKIE + '=antiga');
+}
+
+// Página a entregar para este pedido: todos na nova, ou o cookie gravado no login.
+// "antiga" só é gravado para conta do admin com as telas novas desmarcadas (vale mesmo com "*").
 function verNova(req) {
+  if (cookieAntiga(req)) return false;
   return paraTodos() || cookieNova(req);
 }
 
-function gravarCookie(req, res, nova) {
+function gravarCookie(req, res, nova, forcarAntiga) {
   const https = req.secure || String(req.headers['x-forwarded-proto'] || '').split(',')[0].trim() === 'https';
   const fim = 'Path=/; SameSite=Lax; HttpOnly' + (https ? '; Secure' : '');
-  res.append('Set-Cookie', nova ? `${COOKIE}=nova; Max-Age=31536000; ${fim}` : `${COOKIE}=; Max-Age=0; ${fim}`);
+  let valor = `${COOKIE}=; Max-Age=0; ${fim}`;
+  if (nova) valor = `${COOKIE}=nova; Max-Age=31536000; ${fim}`;
+  else if (forcarAntiga) valor = `${COOKIE}=antiga; Max-Age=31536000; ${fim}`;
+  res.append('Set-Cookie', valor);
 }
 
 module.exports = { novaPara, motivo, configuracao, paraTodos, verNova, gravarCookie, desde };

@@ -46,6 +46,7 @@
       <nav class="flex flex-wrap gap-2 mb-6">
         <button type="button" class="admin-tab is-active" data-tab="acompanhamento">Acompanhamento</button>
         <button type="button" class="admin-tab" data-tab="alunos">Alunos</button>
+        <button type="button" class="admin-tab" data-tab="contas">Contas</button>
         <button type="button" class="admin-tab" data-tab="avisos">Avisos</button>
         <button type="button" class="admin-tab" data-tab="tutoriais">Tutoriais</button>
         <button type="button" class="admin-tab" data-tab="contatos">Contatos</button>
@@ -57,6 +58,11 @@
       <!-- Aba Alunos: acessos em preparação (admin-preparo.js); a sessão "dados de acesso" acrescenta a importação aqui. -->
       <div id="tab-alunos" class="admin-panel hidden">
         <div id="admin-alunos-preparo"></div>
+      </div>
+
+      <!-- Aba Contas: tabela das 3 vias (oficial, provisória, teste) e criação de conta teste (admin-contas.js). -->
+      <div id="tab-contas" class="admin-panel hidden">
+        <div id="admin-contas"></div>
       </div>
 
       <div id="tab-acompanhamento" class="admin-panel">
@@ -280,10 +286,11 @@
   </div>
 
   <script src="/js/admin.js?v=27"></script>
-  <script src="/js/admin-acompanhamento.js?v=6"></script>
+  <script src="/js/admin-acompanhamento.js?v=7"></script>
   <script src="/js/admin-aula.js?v=1"></script>
   <script src="/js/admin-avaliacoes.js?v=1"></script>
   <script src="/js/admin-preparo.js?v=1" defer></script>
   <script src="/js/admin-alunos.js?v=2" defer></script>
+  <script src="/js/admin-contas.js?v=1" defer></script>
 </body>
 </html>
