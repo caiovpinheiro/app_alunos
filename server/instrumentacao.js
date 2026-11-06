@@ -95,6 +95,10 @@ async function primeiraEntrada(pool, alunoId) {
   }
 }
 
+// Quem quer saber de cada entrada (ex.: server/regua-fup.js marca app_entrou no negócio do CRM).
+const ouvintes = [];
+function quandoEntrar(fn) { if (typeof fn === 'function') ouvintes.push(fn); }
+
 // Login ou cadastro que deu certo. Não espera: devolve a promessa só para os testes.
 function entrada(pool, { alunoId, origem, primeira, via }) {
   if (!pool || !alunoId) return Promise.resolve();
@@ -103,7 +107,8 @@ function entrada(pool, { alunoId, origem, primeira, via }) {
       'INSERT INTO csu_entradas (aluno_id, origem, primeira, via) VALUES ($1, $2, $3, $4)',
       [alunoId, limparOrigem(origem), primeira === true, ['cadastro', 'link'].includes(via) ? via : 'login'],
     ))
-    .catch(avisar('a entrada'));
+    .catch(avisar('a entrada'))
+    .then(() => Promise.all(ouvintes.map((fn) => Promise.resolve().then(() => fn(pool, { alunoId, primeira, via })).catch(avisar('o aviso de entrada')))));
 }
 
 // Login recusado ou "Esqueci minha senha". alunoId só quando o identificador bate com uma conta.
@@ -136,4 +141,4 @@ function registrarRotas(app, { getPool, findAluno }) {
   });
 }
 
-module.exports = { MOTIVOS, limparOrigem, ensureSchema, garantir, primeiraEntrada, entrada, falha, registrarRotas };
+module.exports = { MOTIVOS, limparOrigem, ensureSchema, garantir, primeiraEntrada, entrada, quandoEntrar, falha, registrarRotas };

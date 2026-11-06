@@ -11,7 +11,8 @@ window.AdminVigia = (function () {
   var ligado = false;
 
   var FONTES = [
-    ['app', 'Banco do app'], ['app_publico', 'App e gerador de link (endereço público)'], ['n8n', 'n8n (execuções)'],
+    ['app', 'Banco do app'], ['app_publico', 'App e gerador de link (endereço público)'],
+    ['email_academico', 'Site para descobrir o e-mail acadêmico'], ['n8n', 'n8n (execuções)'],
     ['crm_templates', 'CRM: templates aprovados'], ['crm_bv', 'CRM: logs do BV'], ['crm_email', 'CRM: logs do email_acad'],
     ['crm_atendimento', 'CRM: atendimento (só tendência)'],
   ];
@@ -23,7 +24,7 @@ window.AdminVigia = (function () {
     ['vendas', 'Vendas (n8n)'], ['n8n_erros', 'Erros no n8n'], ['entradas', 'Entradas no app'], ['primeiras', 'Primeiras entradas'],
     ['falhas_pct', 'Falhas de login (%)'], ['links_pedidos', 'Pedidos de link'], ['link_vazio_pct', 'Link vazio (%)'],
     ['links_usados', 'Links usados'], ['nunca_entraram', 'Nunca entraram'], ['travados', 'Travados na Aula'],
-    ['cert_erros', 'Erros de certificado'], ['bv_failed', 'Passos FAILED no BV'], ['alertas', 'Alertas'],
+    ['cert_erros', 'Erros de certificado'], ['saidas_email', 'Foram ao e-mail acadêmico'], ['bv_failed', 'Passos FAILED no BV'], ['alertas', 'Alertas'],
   ];
   var MAIOR_PIOR = { n8n_erros: 1, falhas_pct: 1, link_vazio_pct: 1, nunca_entraram: 1, travados: 1, cert_erros: 1, bv_failed: 1, alertas: 1 };
 
@@ -66,10 +67,11 @@ window.AdminVigia = (function () {
     var al = (u && u.alertas) || [];
     if (!u) return '<p class="pn-vazio">Ainda não há leitura. Toque em "Ler agora".</p>';
     if (!al.length) return '<p class="pn-vazio">Nada fora do normal na última leitura.</p>';
+    var NIVEL = { critico: ['ruim', 'ruim', 'Crítico'], atencao: ['regular', 'regular', 'Atenção'], info: ['conteudo', 'bom', 'Resultado'] };
     return '<div class="pn-acoes">' + al.map(function (a) {
-      var ruim = a.nivel === 'critico';
-      return '<div class="pn-acao pn-acao--' + (ruim ? 'ruim' : 'regular') + '"><div class="pn-acao-t">' +
-        '<p class="pn-acao-h"><span class="pn-selo pn-selo--' + (ruim ? 'ruim' : 'regular') + '">' + (ruim ? 'Crítico' : 'Atenção') + '</span>' + esc(a.titulo) + '</p>' +
+      var n = NIVEL[a.nivel] || NIVEL.atencao;
+      return '<div class="pn-acao pn-acao--' + n[0] + '"><div class="pn-acao-t">' +
+        '<p class="pn-acao-h"><span class="pn-selo pn-selo--' + n[1] + '">' + n[2] + '</span>' + esc(a.titulo) + '</p>' +
         '<p class="pn-acao-p">' + esc(a.detalhe) + '</p><p class="pn-acao-p"><b>O que fazer:</b> ' + esc(a.acao) + '</p></div></div>';
     }).join('') + '</div>';
   }
@@ -121,6 +123,7 @@ window.AdminVigia = (function () {
       kpi('Travados na Aula', v(a.travados), 'tocaram em "Travei" e não concluíram'),
       kpi('Certificado', v(ev.certificado_gerado), (ev.certificado_erro || 0) + ' erro(s) em ' + h + ' h'),
       kpi('Vídeos', v(ev.video_inicio), (ev.video_fim || 0) + ' concluídos em ' + h + ' h'),
+      kpi('Foram descobrir o e-mail acadêmico', v(ev.saida_email_academico), 'saídas do app para o site em ' + h + ' h'),
     ];
     var n8n = '';
     if (i.n8n) {
@@ -138,6 +141,26 @@ window.AdminVigia = (function () {
         }).join('') + '</tbody></table></div>';
     }
     return '<div class="av-kpis">' + kp.join('') + '</div>' + n8n + crm;
+  }
+
+  // Régua: por código de mensagem (?o=), quem entrou em 24 h; e os testes A/B (códigos terminados em _a, _b...).
+  var ESTADO_TESTE = { vencedor: ['bom', 'Vencedor'], coletando: ['sem_dados', 'Coletando'], empate: ['regular', 'Sem diferença ainda'] };
+  function reguaHtml(u) {
+    var g = u && u.indicadores && u.indicadores.regua;
+    if (!g) return '<p class="pn-vazio">Sem dados da régua nesta leitura.</p>';
+    if (!g.mensagens.length) return '<p class="pn-vazio">Nenhum link da régua com 24 h completas nos últimos ' + g.dias + ' dias. Cada mensagem precisa de um código próprio no link (bv_acesso, fup1_a, fup1_b...).</p>';
+    var linhas = g.mensagens.map(function (m) {
+      return '<tr><td>' + esc(m.origem) + '</td><td class="pn-num"><b>' + m.base + '</b></td><td class="pn-num"><b>' + m.entraram + '</b></td><td class="pn-num"><b>' + esc(v(m.pct, '%')) + '</b>' +
+        '<div class="rs-barra md-barra" aria-hidden="true"><i style="width:' + (m.pct || 0) + '%"></i></div></td></tr>';
+    }).join('');
+    var tab = '<div class="overflow-x-auto"><table class="pn-sits"><thead><tr><th scope="col">Mensagem (código)</th><th scope="col" class="pn-num">Receberam</th><th scope="col" class="pn-num">Entraram em 24 h</th><th scope="col" class="pn-num">Taxa</th></tr></thead><tbody>' + linhas + '</tbody></table></div>';
+    var testes = (g.testes || []).map(function (t) {
+      var e = ESTADO_TESTE[t.estado] || ESTADO_TESTE.coletando;
+      var vs = t.variantes.map(function (x) { return (x.variante === t.vencedor ? '<b>' : '') + esc(x.variante + ' ' + v(x.pct, '%') + ' (' + x.entraram + ' de ' + x.base + ')') + (x.variante === t.vencedor ? '</b>' : ''); }).join(' · ');
+      var nota = t.estado === 'coletando' ? ' Faltam ' + t.faltam + ' contas para decidir.' : t.estado === 'empate' ? ' Amostra completa, mas a diferença ainda pode ser acaso.' : '';
+      return '<p class="pn-sub"><span class="pn-selo pn-selo--' + e[0] + '">' + e[1] + '</span> Teste <b>' + esc(t.teste) + '</b>: ' + vs + '.' + esc(nota) + '</p>';
+    }).join('');
+    return tab + (testes || '<p class="pn-sub">Nenhum teste A/B ativo (códigos terminados em _a, _b...).</p>');
   }
 
   function tendenciaHtml(r) {
@@ -169,6 +192,8 @@ window.AdminVigia = (function () {
     el.innerHTML = avisosTopo(r) +
       sec('alertas', 'Alertas abertos', 'Da última leitura, com a ação sugerida. Janela: últimas ' + h + ' h.', alertasHtml(u)) +
       sec('retrato', 'Retrato', u ? 'Leitura de ' + esc(dataHora(u.lido_em)) + (u.manual ? ' (manual)' : '') + ', janela de ' + esc(hora(u.janela_inicio)) + ' a ' + esc(hora(u.lido_em)) + '.' : '', indicadoresHtml(u)) +
+      sec('regua', 'Régua: o que funciona', 'Por mensagem: contas que receberam o link e ainda não tinham entrado, e quantas entraram em até 24 h por qualquer caminho. Últimos ' +
+        esc(String((u && u.indicadores && u.indicadores.regua && u.indicadores.regua.dias) || 14)) + ' dias.', reguaHtml(u)) +
       sec('tendencia', 'Tendência das últimas 24 h', 'Uma coluna por leitura. Vermelho: piorou em relação à anterior; verde: melhorou.', tendenciaHtml(r)) +
       sec('envio', 'Mensagem para a equipe', 'Uma mensagem por rodada, só com alertas novos ou que voltaram ao normal.', envioHtml(r)) +
       sec('fontes', 'Fontes', '', fontesHtml(u));

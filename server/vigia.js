@@ -49,6 +49,12 @@ const CRM = {
   canal: 'cmtai20yx0090mw019h6uyrqk',
 };
 
+// Ao trocar a BV pela cópia com checagem de acesso, o id da automação e o do passo mudam: estas env apontam.
+function idCrm(nome, padrao) {
+  const v = envValue(nome);
+  return /^[A-Za-z0-9_-]{6,80}$/.test(v) ? v : padrao;
+}
+
 const REGRAS_PADRAO = {
   janela_min: 120,
   n8n_erros_min: 1,         // qualquer erro nos fluxos
@@ -62,6 +68,8 @@ const REGRAS_PADRAO = {
   bv_ignorar_passos: [],    // passos do BV cujo FAILED já é tratado
   matricula_min: 1,         // negócio no passo do template de matrícula
   email_failed_min: 1,
+  regua_dias: 14,           // janela da medida "entrou em 24 h" por mensagem da régua
+  ab_min_amostra: 60,       // contas por variante antes de declarar vencedor
   atraso_min: 150,          // a aba avisa quando passa disso sem leitura
   lembrete_h: 0,            // 0 = não repete alerta que continua igual
 };
@@ -105,6 +113,9 @@ function n8nBase() { return semBarra(envValue('N8N_URL', N8N_PADRAO)); }
 function crmBase() { return semBarra(envValue('CRM_API_URL', CRM_PADRAO)); }
 function appBase() {
   return semBarra(envValue('VIGIA_APP_URL') || envValue('APP_PUBLIC_URL') || 'https://app.cruzeiroead.com.br');
+}
+function descobrirUrl() {
+  return String(envValue('VIGIA_EMAIL_ACADEMICO_URL', 'https://emailacademico.cruzeiroead.com.br/descobrir')).trim();
 }
 const DESTINO_RE = /^[A-Za-z0-9_-]{10,60}$/;
 function destino() {
@@ -153,7 +164,8 @@ async function buscar(fetchImpl, url, { method = 'GET', headers = {}, body, time
     const res = await fetchImpl(url, { method, headers, body, signal: controller.signal, redirect: 'manual' });
     let json = null;
     try { json = await res.json(); } catch (e) { /* sem corpo JSON */ }
-    return { status: res.status, ok: res.ok, json };
+    const location = res.headers && typeof res.headers.get === 'function' ? res.headers.get('location') : null;
+    return { status: res.status, ok: res.ok, json, location };
   } catch (err) {
     return { status: 0, ok: false, json: null, erro: err.name === 'AbortError' ? 'tempo esgotado' : 'sem resposta' };
   } finally {
@@ -302,10 +314,11 @@ async function lerCrm(fetchImpl, desde, agora, L) {
   }
 
   // Logs do BV: falhas na janela e quantos passaram pelo passo do template de matrícula.
-  const bv = await logsAutomacao(fetchImpl, base, headers, CRM.bv, desde);
+  const bvId = idCrm('VIGIA_CRM_BV', CRM.bv);
+  const bv = await logsAutomacao(fetchImpl, base, headers, bvId, desde);
   if (bv.erro) fontes.crm_bv = bv.erro;
   else {
-    const mat = await logsAutomacao(fetchImpl, base, headers, CRM.bv, desde, { stepId: CRM.passoMatricula });
+    const mat = await logsAutomacao(fetchImpl, base, headers, bvId, desde, { stepId: idCrm('VIGIA_CRM_PASSO_MATRICULA', CRM.passoMatricula) });
     dados.bv = agregarLogs(bv.itens, desde, { ignorar: L.bv_ignorar_passos });
     dados.bv.matricula = mat.erro ? null : agregarLogs(mat.itens, desde).total;
     fontes.crm_bv = { estado: 'ok' };
@@ -405,7 +418,10 @@ async function lerApp(pool, desde, totalNiveis) {
                 GROUP BY p.aluno_id
                 HAVING SUM((SELECT COALESCE(SUM(value::int), 0) FROM jsonb_each_text(p.travei))) > 0
                    AND COUNT(p.concluido_em) < $3) t`, [desde, corte, totalNiveis]), [{ n: 0 }]),
-    seguro(q('SELECT nome, COUNT(*)::int AS n FROM csu_eventos WHERE criado_em >= $1 AND nome = ANY($2) GROUP BY 1', [desde, EVENTOS]), []),
+    seguro(q(`SELECT nome, COUNT(*)::int AS n FROM csu_eventos WHERE criado_em >= $1 AND nome = ANY($2) GROUP BY 1
+              UNION ALL
+              SELECT 'saida_email_academico', COUNT(*)::int FROM csu_eventos
+              WHERE criado_em >= $1 AND nome = 'saida_externa' AND dados->>'destino' = 'email_academico'`, [desde, EVENTOS]), []),
     seguro(q('SELECT resultado, COUNT(*)::int AS n FROM csu_link_acesso_pedidos WHERE criado_em >= $1 GROUP BY 1', [desde]), []),
     seguro(q(`SELECT COUNT(*) FILTER (WHERE criado_em >= $1)::int AS gerados, COUNT(*) FILTER (WHERE usado_em >= $1)::int AS usados
               FROM csu_links_acesso`, [desde]), [{}]),
@@ -420,6 +436,7 @@ async function lerApp(pool, desde, totalNiveis) {
   falhas.forEach((r) => { porMotivo[r.motivo] = r.n; if (!MOTIVOS_SEM_TENTATIVA.includes(r.motivo)) totalFalhas += r.n; });
   const ev = {};
   EVENTOS.forEach((n) => { ev[n] = 0; });
+  ev.saida_email_academico = 0;
   eventos.forEach((r) => { ev[r.nome] = r.n; });
   const porResultado = {};
   let pedidosTotal = 0;
@@ -453,7 +470,18 @@ async function lerSaude(fetchImpl) {
   if (g.status === 401 || g.status === 400) gerador = { estado: 'ok' };
   else if (g.status === 503) gerador = { estado: 'desligado', status: 503 };
   else gerador = { estado: 'fora', status: g.status, detalhe: g.erro || `HTTP ${g.status}` };
-  return { url: base, app, gerador };
+  // Site onde o aluno descobre o e-mail acadêmico (passo 1 do módulo 1 e dúvidas da Central). Hoje é um atalho
+  // que redireciona para o SSO da faculdade (sso.cruzeirodosul.edu.br/recover-email). Só o atalho é checado: o
+  // SSO recusa acesso automático (403), então a queda do SSO em si não aparece aqui.
+  const d = await buscar(fetchImpl, descobrirUrl(), { timeoutMs: 8000 });
+  let destinoOk = true;
+  if (d.status >= 300 && d.status < 400) {
+    try { destinoOk = /(^|\.)cruzeirodosul\.edu\.br$/.test(new URL(d.location, descobrirUrl()).hostname); } catch (e) { destinoOk = false; }
+  }
+  const descobrir = d.status >= 200 && d.status < 400 && destinoOk
+    ? { estado: 'ok' }
+    : { estado: 'fora', status: d.status, detalhe: d.erro || (destinoOk ? `HTTP ${d.status}` : 'redireciona para fora da Cruzeiro do Sul') };
+  return { url: base, app, gerador, descobrir: { url: descobrirUrl(), ...descobrir } };
 }
 
 // ---------- regras ----------
@@ -482,6 +510,10 @@ function regras(ind, fontes, L, { inicio, agora }) {
   } else if (saude && saude.gerador.estado === 'fora' && saude.app.estado !== 'fora') {
     add('gerador_fora', 'critico', 'Gerador de link fora do ar', `POST /api/integracoes/link-acesso não respondeu (${saude.gerador.detalhe}).`,
       'Veja os logs do app no EasyPanel; enquanto isso, o BV sai sem o link pessoal.');
+  }
+  if (saude && saude.descobrir && saude.descobrir.estado === 'fora') {
+    add('descobrir_email_fora', 'critico', 'Site do e-mail acadêmico fora do ar', `${saude.descobrir.url} não respondeu (${saude.descobrir.detalhe}).`,
+      'Avise quem cuida do site. Enquanto estiver fora, o calouro não descobre o e-mail acadêmico (passo 1 do módulo 1): oriente pelo WhatsApp a pedir o e-mail ao polo.');
   }
 
   // n8n
@@ -548,6 +580,18 @@ function regras(ind, fontes, L, { inicio, agora }) {
     });
   }
 
+  // Régua: teste A/B com vencedor
+  const rg = ind.regua;
+  if (rg) {
+    rg.testes.filter((t) => t.estado === 'vencedor').forEach((t) => {
+      const v = t.variantes.find((x) => x.variante === t.vencedor);
+      const outras = t.variantes.filter((x) => x !== v).map((x) => `${x.variante} ${pc(x.pct)} (${x.entraram} de ${x.base})`).join(', ');
+      add(`teste:${t.teste}:${t.vencedor}`, 'info', `Teste ${t.teste}: a variante ${t.vencedor} venceu`,
+        `${pc(v.pct)} entraram em 24 h (${v.entraram} de ${v.base}) contra ${outras}.`,
+        `Deixe só a variante ${t.vencedor} (${v.origem}) no rodízio do CRM e comece o próximo teste com outro código.`);
+    });
+  }
+
   // Falhas de login
   const f = ind.app && ind.app.falhas;
   if (f && f.tentativas >= L.login_min_amostra && f.pct > L.falhas_login_pct) {
@@ -601,7 +645,7 @@ function novidades(alertas, conhecidos, agora, lembreteH = 0) {
   return { novos, resolvidos, proximo };
 }
 
-const ICONE = { critico: '🔴', atencao: '🟡' };
+const ICONE = { critico: '🔴', atencao: '🟡', info: '🟢' };
 
 function montarMensagem({ novos, resolvidos = [], titulos = {}, abertos = 0, agora, painel }) {
   const linhas = [`*Vigia do calouro* · ${dataHoraTxt(agora)}`];
@@ -642,10 +686,68 @@ function resumo(ind, alertas) {
     nunca_entraram: app.contas ? app.contas.nunca_entraram : null,
     travados: app.travados != null ? app.travados : null,
     cert_erros: app.eventos ? app.eventos.certificado_erro : null,
+    saidas_email: app.eventos ? app.eventos.saida_email_academico : null,
     bv_failed: crm && crm.bv ? crm.bv.falhas : null,
     alertas: alertas.length,
     criticos: alertas.filter((x) => x.nivel === 'critico').length,
   };
+}
+
+// ---------- régua: o que funciona ----------
+
+// Cada mensagem da régua gera um link com o seu código no ?o= (bv_acesso, fup1_a, fup1_b...). Por código:
+// quantas contas receberam (base: ainda não tinham entrado), quantas entraram em até 24 h por qualquer
+// caminho. Só entra quem já teve as 24 h inteiras. Códigos que terminam em _a, _b, _c são variantes de um
+// teste A/B (prefixo antes do _): o vencedor sai quando bate todas as outras com folga estatística.
+async function lerRegua(pool, agora, L) {
+  const ate = new Date(new Date(agora).getTime() - 24 * 3600000);
+  const desde = new Date(new Date(agora).getTime() - L.regua_dias * 86400000);
+  const linhas = await seguro(pool.query(`
+    WITH envios AS (
+      SELECT DISTINCT ON (l.aluno_id, l.origem) l.aluno_id, l.origem, l.criado_em
+      FROM csu_links_acesso l
+      WHERE l.origem IS NOT NULL AND l.criado_em >= $1 AND l.criado_em <= $2
+      ORDER BY l.aluno_id, l.origem, l.criado_em
+    )
+    SELECT e.origem,
+           COUNT(*) FILTER (WHERE a.primeiro_login_em IS NULL OR a.primeiro_login_em >= e.criado_em)::int AS base,
+           COUNT(*) FILTER (WHERE a.primeiro_login_em >= e.criado_em AND a.primeiro_login_em < e.criado_em + interval '24 hours')::int AS entraram
+    FROM envios e JOIN csu_alunos a ON a.id = e.aluno_id
+    GROUP BY 1 ORDER BY 1`, [desde, ate]).then((r) => r.rows), []);
+  const mensagens = linhas.map((x) => ({ ...x, pct: pct(x.entraram, x.base) }));
+  return { dias: L.regua_dias, mensagens, testes: testesAB(mensagens, L.ab_min_amostra) };
+}
+
+// z de duas proporções (pooled).
+function zDuas(a, b) {
+  const p = (a.entraram + b.entraram) / (a.base + b.base);
+  const se = Math.sqrt(p * (1 - p) * (1 / a.base + 1 / b.base));
+  return se ? (a.entraram / a.base - b.entraram / b.base) / se : 0;
+}
+
+function testesAB(mensagens, minAmostra = REGRAS_PADRAO.ab_min_amostra) {
+  const grupos = {};
+  mensagens.forEach((m) => {
+    const x = /^(.+)_([a-z])$/.exec(m.origem);
+    if (!x) return;
+    (grupos[x[1]] = grupos[x[1]] || []).push({ variante: x[2].toUpperCase(), ...m });
+  });
+  return Object.keys(grupos).filter((k) => grupos[k].length >= 2).map((k) => {
+    const vs = grupos[k].sort((a, b) => a.variante.localeCompare(b.variante));
+    const faltam = vs.reduce((t, v) => t + Math.max(0, minAmostra - v.base), 0);
+    const melhor = vs.filter((v) => v.base).sort((a, b) => b.entraram / b.base - a.entraram / a.base)[0];
+    const corte = vs.length > 2 ? 2.24 : 1.96; // com 3+ variantes, margem mais rígida (Bonferroni)
+    const zs = melhor ? vs.filter((v) => v !== melhor).map((v) => (v.base ? zDuas(melhor, v) : 0)) : [];
+    const venceu = Boolean(melhor) && !faltam && zs.length && zs.every((z) => z >= corte);
+    return {
+      teste: k,
+      variantes: vs.map((v) => ({ variante: v.variante, origem: v.origem, base: v.base, entraram: v.entraram, pct: v.pct })),
+      estado: venceu ? 'vencedor' : faltam ? 'coletando' : 'empate',
+      vencedor: venceu ? melhor.variante : null,
+      faltam,
+      z_min: zs.length ? Math.round(Math.min(...zs) * 100) / 100 : null,
+    };
+  });
 }
 
 // ---------- rodada ----------
@@ -653,14 +755,21 @@ function resumo(ind, alertas) {
 async function coletar(pool, { agora, fetchImpl, L }) {
   const inicio = new Date(new Date(agora).getTime() - L.janela_min * 60000);
   const totalNiveis = (() => { try { return require('./trilha').NIVEIS.length; } catch (e) { return 7; } })();
-  const [app, saude, n8n, crm] = await Promise.all([
+  const [app, saude, n8n, crm, regua] = await Promise.all([
     lerApp(pool, inicio, totalNiveis).then((d) => ({ d, f: { estado: 'ok' } }), (err) => ({ d: null, f: { estado: 'erro', detalhe: err.code || err.message } })),
     lerSaude(fetchImpl),
     lerN8n(fetchImpl, inicio),
     lerCrm(fetchImpl, inicio, agora, L),
+    lerRegua(pool, agora, L).catch((err) => { console.error('Vigia: régua', err.code || '', err.message); return null; }),
   ]);
-  const fontes = { app: app.f, app_publico: { estado: saude.app.estado === 'ok' && saude.gerador.estado === 'ok' ? 'ok' : 'erro' }, n8n: n8n.fonte, ...crm.fontes };
-  const indicadores = { janela_min: L.janela_min, app: app.d, saude, n8n: n8n.dados, crm: crm.dados };
+  const fontes = {
+    app: app.f,
+    app_publico: { estado: saude.app.estado === 'ok' && saude.gerador.estado === 'ok' ? 'ok' : 'erro' },
+    email_academico: saude.descobrir.estado === 'ok' ? { estado: 'ok' } : { estado: 'erro', detalhe: saude.descobrir.detalhe },
+    n8n: n8n.fonte,
+    ...crm.fontes,
+  };
+  const indicadores = { janela_min: L.janela_min, app: app.d, saude, n8n: n8n.dados, crm: crm.dados, regua };
   return { inicio, fontes, indicadores };
 }
 
@@ -832,7 +941,7 @@ function registrarRotas(app, { getPool, requireAdmin }) {
 module.exports = {
   FLUXOS_N8N, CRM, REGRAS_PADRAO,
   ligado, limites, configuracao, slotDe, minutosSP,
-  agregarN8n, agregarLogs, numeros, regras, novidades, montarMensagem, resumo,
+  agregarN8n, agregarLogs, numeros, regras, novidades, montarMensagem, resumo, testesAB, lerRegua,
   ensureSchema, garantir, registrarPedidoLink, lerApp, lerN8n, lerCrm, lerSaude,
   rodar, rodadaAgendada, iniciar, painelAdmin, registrarRotas,
 };

@@ -171,6 +171,37 @@ teste('mensagem: alertas com ação, voltou ao normal e link do painel, sem dado
   assert.ok(!/\d{10,}/.test(m), 'nenhum número de telefone');
 });
 
+// ---------- régua: A/B ----------
+const msg = (origem, base, entraram) => ({ origem, base, entraram, pct: base ? Math.round((entraram / base) * 1000) / 10 : null });
+
+teste('A/B: agrupa por prefixo; códigos sem variante ficam fora', () => {
+  const t = vigia.testesAB([msg('bv_acesso', 300, 120), msg('fup1_a', 10, 2), msg('fup1_b', 12, 5), msg('fup2_a', 50, 10)], 60);
+  assert.deepStrictEqual(t.map((x) => x.teste), ['fup1'], 'bv_acesso não é teste; fup2 tem uma variante só');
+  assert.strictEqual(t[0].estado, 'coletando');
+  assert.strictEqual(t[0].faltam, 50 + 48);
+});
+
+teste('A/B: vencedor só com amostra e diferença significativa', () => {
+  const venceu = vigia.testesAB([msg('fup1_a', 200, 40), msg('fup1_b', 200, 70)], 60)[0];
+  assert.deepStrictEqual([venceu.estado, venceu.vencedor], ['vencedor', 'B']); // 20% x 35%, z ≈ 3,4
+  const empate = vigia.testesAB([msg('fup1_a', 200, 40), msg('fup1_b', 200, 48)], 60)[0];
+  assert.deepStrictEqual([empate.estado, empate.vencedor], ['empate', null]); // 20% x 24%: pode ser acaso
+  // Com 3 variantes, o melhor precisa bater as duas outras com margem mais rígida.
+  const tres = vigia.testesAB([msg('fup1_a', 200, 40), msg('fup1_b', 200, 70), msg('fup1_c', 200, 62)], 60)[0];
+  assert.strictEqual(tres.estado, 'empate', 'B não bate C com folga');
+});
+
+teste('A/B: o vencedor vira alerta verde com a ação', () => {
+  const ind = indBase();
+  ind.regua = { dias: 14, mensagens: [], testes: vigia.testesAB([msg('fup1_a', 200, 40), msg('fup1_b', 200, 70)], 60) };
+  const al = vigia.regras(ind, fontesOk, L, { inicio, agora });
+  assert.deepStrictEqual(ids(al), ['teste:fup1:B']);
+  assert.strictEqual(al[0].nivel, 'info');
+  assert.match(al[0].detalhe, /^35% entraram em 24 h \(70 de 200\) contra A 20% \(40 de 200\)\.$/);
+  assert.match(al[0].acao, /Deixe só a variante B \(fup1_b\)/);
+  assert.match(vigia.montarMensagem({ novos: al, agora }), /🟢 \*Teste fup1: a variante B venceu\*/);
+});
+
 teste('resumo da tendência', () => {
   const r = vigia.resumo(indBase(), [{ nivel: 'critico' }, { nivel: 'atencao' }]);
   assert.deepStrictEqual([r.vendas, r.n8n_erros, r.entradas, r.link_vazio_pct, r.alertas, r.criticos], [6, 0, 20, 0, 2, 1]);

@@ -475,6 +475,14 @@ linkAcesso.registrarRotas(app, {
   ensureSchemaAlunos: () => db.ensureSchema(pool),
 });
 
+// Lembretes de acesso da régua e a tag app_entrou no negócio do CRM (server/regua-fup.js).
+require('./regua-fup').registrarRotas(app, {
+  getPool: () => pool,
+  findAluno: db.findAlunoByIdentifier,
+  ensureSchemaAlunos: () => db.ensureSchema(pool),
+  instrumentacao,
+});
+
 // Criar a senha própria e, no admin, voltar a conta para a senha inicial (server/senha.js).
 senha.registrarRotas(app, {
   getPool: () => pool,

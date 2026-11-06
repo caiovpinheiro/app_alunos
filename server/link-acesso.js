@@ -9,7 +9,10 @@
  * Regras:
  *   - o token tem 32 bytes aleatórios; o banco guarda só o sha256 dele;
  *   - vale uma vez e expira em LINK_ACESSO_DIAS dias (padrão 7);
- *   - um link novo para o mesmo aluno invalida os anteriores ainda não usados;
+ *   - um link novo da venda invalida os anteriores ainda não usados; o link de um lembrete da régua
+ *     (server/regua-fup.js) não invalida, para o botão da mensagem anterior continuar funcionando;
+ *   - quando um link é usado, os outros ainda abertos daquela conta são cancelados;
+ *   - o id do negócio do CRM (negocio), quando vem, fica guardado para o app marcar app_entrou nele;
  *   - quem entra pelo link e ainda não criou a senha própria cai na tela de criar senha
  *     (server/senha.js), se a troca estiver ligada para a conta;
  *   - link usado, vencido ou inválido abre a tela de login normal, com o RGM preenchido quando dá.
@@ -56,26 +59,45 @@ function ensureSchema(pool) {
         cancelado_em TIMESTAMPTZ
       );
       CREATE INDEX IF NOT EXISTS idx_csu_links_acesso_aluno ON csu_links_acesso (aluno_id);
+      ALTER TABLE csu_links_acesso ADD COLUMN IF NOT EXISTS negocio TEXT;
+      CREATE INDEX IF NOT EXISTS idx_csu_links_acesso_em ON csu_links_acesso (criado_em DESC);
     `).catch((err) => { pronto = null; throw err; });
   }
   return pronto;
 }
 
-async function gerar(pool, alunoId, origem) {
+const NEGOCIO_RE = /^[A-Za-z0-9_-]{6,64}$/;
+function limparNegocio(v) {
+  const s = String(v == null ? '' : v).trim();
+  return NEGOCIO_RE.test(s) ? s : null;
+}
+
+// codigo = o que vai depois de /a/ (token e ?o=), para o botão de URL dinâmica do template.
+async function gerar(pool, alunoId, origem, { negocio = null, manterAnteriores = false } = {}) {
   await ensureSchema(pool);
   const token = crypto.randomBytes(32).toString('base64url');
   const expira = new Date(Date.now() + dias() * 86400000);
+  if (!manterAnteriores) {
+    await pool.query(
+      `UPDATE csu_links_acesso SET cancelado_em = now()
+       WHERE aluno_id = $1 AND usado_em IS NULL AND cancelado_em IS NULL`,
+      [alunoId],
+    );
+  }
   await pool.query(
-    `UPDATE csu_links_acesso SET cancelado_em = now()
-     WHERE aluno_id = $1 AND usado_em IS NULL AND cancelado_em IS NULL`,
-    [alunoId],
-  );
-  await pool.query(
-    'INSERT INTO csu_links_acesso (token_hash, aluno_id, origem, expira_em) VALUES ($1, $2, $3, $4)',
-    [sha(token), alunoId, origem || null, expira],
+    'INSERT INTO csu_links_acesso (token_hash, aluno_id, origem, expira_em, negocio) VALUES ($1, $2, $3, $4, $5)',
+    [sha(token), alunoId, origem || null, expira, limparNegocio(negocio)],
   );
   const o = origem ? `?o=${encodeURIComponent(origem)}` : '';
-  return { url: `${base()}/a/${token}${o}`, expira_em: expira.toISOString() };
+  return { url: `${base()}/a/${token}${o}`, codigo: `${token}${o}`, expira_em: expira.toISOString() };
+}
+
+// Último negócio do CRM conhecido para a conta (vem do n8n ou do lembrete da régua).
+async function negocioDe(pool, alunoId) {
+  await ensureSchema(pool);
+  const r = await pool.query(
+    'SELECT negocio FROM csu_links_acesso WHERE aluno_id = $1 AND negocio IS NOT NULL ORDER BY criado_em DESC LIMIT 1', [alunoId]);
+  return r.rows[0] ? r.rows[0].negocio : null;
 }
 
 // Consome o token. Devolve { aluno } ou { erro: 'link_invalido'|'link_usado'|'link_expirado', aluno? }.
@@ -105,6 +127,12 @@ async function consumir(pool, token) {
   );
   const aluno = a.rows[0];
   if (!aluno || !aluno.ativo) return { erro: 'link_invalido' };
+  // Entrou: os outros links ainda abertos (de lembretes anteriores) não servem mais.
+  await pool.query(
+    `UPDATE csu_links_acesso SET cancelado_em = now()
+     WHERE aluno_id = $1 AND token_hash <> $2 AND usado_em IS NULL AND cancelado_em IS NULL`,
+    [alunoId, sha(token)],
+  );
   return { aluno };
 }
 
@@ -130,7 +158,7 @@ function registrarRotas(app, { getPool, findAluno, createSession, instrumentacao
         vigia.registrarPedidoLink(pool, 'conta_nao_encontrada', origem);
         return res.status(404).json({ success: false, motivo: 'conta_nao_encontrada', message: 'Nenhuma conta ativa com esse RGM.' });
       }
-      const r = await gerar(pool, aluno.id, origem);
+      const r = await gerar(pool, aluno.id, origem, { negocio: req.body && req.body.negocio });
       vigia.registrarPedidoLink(pool, 'ok', origem);
       return res.json({ success: true, url: r.url, expira_em: r.expira_em });
     } catch (err) {
@@ -176,4 +204,4 @@ function registrarRotas(app, { getPool, findAluno, createSession, instrumentacao
   });
 }
 
-module.exports = { gerar, consumir, ensureSchema, registrarRotas, TOKEN_RE };
+module.exports = { gerar, consumir, ensureSchema, registrarRotas, negocioDe, limparNegocio, segredoOk, TOKEN_RE };
