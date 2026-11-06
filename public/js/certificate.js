@@ -114,14 +114,16 @@
   }
 
   /**
-   * @param {object} data { nome, rgm, unidade, dataAulaISO, emissaoISO, horas?, evento? }
+   * @param {object} data { nome, rgm, unidade?, dataAulaISO, emissaoISO, horas?, evento? }
+   *   unidade vazia: o certificado sai sem a linha do polo (o polo chega depois do relatório de matriculados
+   *   e o certificado é completado; nada no PDF diz algo que ainda não se sabe).
    * @param {object} assets { backgroundBytes: Uint8Array (JPG do modelo), fontBytes: Uint8Array (Montserrat Regular),
    *                          boldBytes?: Uint8Array (Montserrat Bold, para o nome e os valores),
    *                          assinaturaBytes?: Uint8Array (PNG transparente da assinatura) }
    * @returns {Promise<Uint8Array>} bytes do PDF final
    */
   async function generateCertificate(data, assets) {
-    if (!data || !data.nome || !data.rgm || !data.unidade || !data.dataAulaISO) {
+    if (!data || !data.nome || !data.rgm || !data.dataAulaISO) {
       throw new Error('Dados insuficientes para gerar o certificado.');
     }
     var bg = assets && (assets.backgroundBytes || assets.templateBytes);
@@ -169,10 +171,12 @@
     var horas = Number(data.horas) || 4;
     desenhar(page, (horas < 10 ? '0' : '') + horas + ' HORAS', px(LAYOUT.horas.x), LAYOUT.horas.baseline, LAYOUT.horas.size, fonts, MARINHO, LAYOUT.horas.tracking, true);
 
-    // Polo, sobre a linha de baixo.
+    // Polo, sobre a linha de baixo. Sem polo ainda: a linha fica em branco (nada de "polo não informado").
     var polo = textoPolo(data.unidade);
-    var sizePolo = tamanhoQueCabe(polo, fontB, LAYOUT.polo, largura);
-    desenhar(page, polo, x, LAYOUT.polo.baseline, sizePolo, fonts, MARINHO, LAYOUT.polo.tracking, true);
+    if (polo) {
+      var sizePolo = tamanhoQueCabe(polo, fontB, LAYOUT.polo, largura);
+      desenhar(page, polo, x, LAYOUT.polo.baseline, sizePolo, fonts, MARINHO, LAYOUT.polo.tracking, true);
+    }
 
     // Assinatura (PNG com fundo transparente), sobre a linha acima do polo.
     if (assets.assinaturaBytes) {

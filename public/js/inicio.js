@@ -9,8 +9,8 @@
    A) não começou   → Começar a aula
    B) em andamento  → Continuar o módulo N (módulos feitos + pontos/meta)
    C) liberado      → Emitir certificado (7 módulos + meta de pontos; a regra é do servidor)
-      C') sem curso/polo da matrícula ainda (certificado.sem_curso_polo) → "quase lá", tentar de novo
-   D) já emitido    → Rever a Aula Inaugural
+   D) já emitido    → Baixar o certificado. Saiu sem o polo (certificado.sem_polo): avisa que ele é completado
+      em até 1 dia útil; o polo chegou depois do último download (certificado.polo_completado): "baixe de novo".
 
    Acesso em preparação (body.acesso-preparo, conta sem RGM): o banner diz que o acesso está sendo
    preparado e leva à Aula Inaugural; com os 7 módulos feitos, o certificado espera o RGM chegar.
@@ -146,9 +146,13 @@ window.Inicio = (function () {
     if (c.emitido) {
       card.classList.add('is-done');
       painel(selo, horas, 'Certificado<br><b>emitido</b>');
+      // Saiu sem o polo: diz que ele chega sozinho. O polo chegou depois do último download: pede para baixar de novo.
+      var recado = c.polo_completado ? 'O nome do seu polo já entrou no certificado. Baixe de novo para ter a versão completa.'
+        : c.sem_polo ? 'Seu certificado saiu sem o nome do polo por enquanto. Ele é completado automaticamente em até 1 dia útil: baixe de novo depois.'
+          : 'Baixe de novo quando precisar. ' + (c.liberado ? 'Pode rever qualquer módulo quando quiser.' : 'O seu progresso continua salvo.');
       txt.innerHTML = '<span class="ai-k">Aula Inaugural concluída</span><h2 id="home-aula-h">Certificado emitido em ' + esc(new Date(c.emitido_em).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit' })) + '</h2>' +
-        '<p>Baixe de novo quando precisar. ' + (c.liberado ? 'Pode rever qualquer módulo quando quiser.' : 'O seu progresso continua salvo.') + '</p>' + progresso(r, meta);
-      acts.innerHTML = '<button type="button" class="portal-btn portal-btn--primary" data-gerar-certificado><span data-cert-txt>Baixar o certificado</span>' + seta + '</button>' +
+        '<p>' + recado + '</p>' + progresso(r, meta);
+      acts.innerHTML = '<button type="button" class="portal-btn portal-btn--primary" data-gerar-certificado><span data-cert-txt>' + (c.polo_completado ? 'Baixar a versão completa' : 'Baixar o certificado') + '</span>' + seta + '</button>' +
         '<button type="button" class="portal-link" data-open-trilha="">Rever a Aula Inaugural</button>';
     } else if (c.liberado && preparo()) {
       // Sem RGM o certificado não sai: o servidor responde "sem_rgm". Mostra isso antes do clique.
@@ -157,14 +161,6 @@ window.Inicio = (function () {
       txt.innerHTML = '<span class="ai-k">Aula Inaugural concluída</span><h2 id="home-aula-h">Parabéns! Você concluiu a Aula Inaugural</h2>' +
         '<p>Seu certificado de ' + horas + ' horas sai assim que o seu RGM chegar: o polo já está providenciando.</p>' + progresso(r, meta);
       acts.innerHTML = '<button type="button" class="portal-btn portal-btn--ghost" data-open-trilha="">Rever os módulos' + seta + '</button>';
-    } else if (c.liberado && c.sem_curso_polo) {
-      // Curso e polo da matrícula ainda não chegaram: o servidor responde "sem_curso_polo". Não promete "liberado".
-      card.classList.add('is-ok');
-      painel(selo, horas, 'Certificado<br><b>quase lá</b>');
-      txt.innerHTML = '<span class="ai-k">Aula Inaugural concluída</span><h2 id="home-aula-h">Parabéns! Você concluiu a Aula Inaugural</h2>' +
-        '<p>Seu certificado de ' + horas + ' horas sai assim que o curso e o polo da sua matrícula chegarem ao app, em até 1 dia útil. Seu progresso está salvo.</p>' + progresso(r, meta);
-      acts.innerHTML = '<button type="button" class="portal-btn portal-btn--ghost" data-gerar-certificado><span data-cert-txt>Tentar emitir agora</span>' + seta + '</button>' +
-        '<button type="button" class="portal-link" data-open-trilha="">Rever os módulos</button>';
     } else if (c.liberado) {
       card.classList.add('is-ok');
       painel(selo, horas, 'Certificado<br><b>liberado!</b>');

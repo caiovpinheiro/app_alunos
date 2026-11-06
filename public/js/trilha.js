@@ -18,6 +18,7 @@ window.Trilha = (function () {
   var peek = {};           // níveis abertos por link (tutoriais, Meu Semestre) mesmo sem terminar o anterior
   var alvo = null;         // nível (0-based) para rolar quando a trilha terminar de montar
   var emitido = false;     // certificado já emitido (vem de /api/trilha/resumo)
+  var semPolo = false;     // emitido sem o nome do polo (completado depois do sync)
   var querAulaCompleta = false; // pedido de "Assistir à aula completa" antes da tela montar
   var cartaoVisto = null;  // estado do cartão "Comece por aqui" já registrado nesta montagem (aula_cartao_exibido)
 
@@ -153,8 +154,9 @@ window.Trilha = (function () {
       box.className = 'tcert tcert-ok';
       var ck = '<span class="tc-ck">' + CHECK + '</span>';
       var sub = !emitido ? 'Você concluiu todos os módulos. Seu certificado está liberado.'
-        : ok ? 'Você concluiu todos os módulos e já emitiu o seu certificado. Pode gerar o PDF de novo quando quiser.'
-          : 'Você já emitiu o seu certificado. Pode gerar o PDF de novo quando quiser.';
+        : semPolo ? 'Seu certificado saiu sem o nome do polo por enquanto. Ele é completado automaticamente em até 1 dia útil: gere o PDF de novo depois.'
+          : ok ? 'Você concluiu todos os módulos e já emitiu o seu certificado. Pode gerar o PDF de novo quando quiser.'
+            : 'Você já emitiu o seu certificado. Pode gerar o PDF de novo quando quiser.';
       box.innerHTML =
         '<div class="tc-in"><div class="tc-art"><span class="tc-medal-wrap">' + MEDAL + '</span><p class="tc-hrs">Certificado de <b>' + horas() + ' horas</b></p></div>' +
         '<div class="tc-body"><div class="tc-top"><span class="tc-k">Aula Inaugural concluída</span><span class="tc-badge">' + ck + (emitido ? 'Emitido' : 'Concluído') + '</span></div>' +
@@ -787,6 +789,7 @@ window.Trilha = (function () {
       build();
       window.Api.getTrilhaResumo().then(function (r) {
         emitido = !!(r && r.certificado && r.certificado.emitido);
+        semPolo = !!(r && r.certificado && r.certificado.sem_polo);
         if (built) { certStatus(); todoCount(); }
       }).catch(function () { /* sem o resumo, vale a regra de pontos */ });
     }).catch(function (err) {

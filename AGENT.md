@@ -25,6 +25,25 @@
 - Até a publicação, Medição mostra só a retenção (já há `csu_acessos`); resultado prático, saídas, origem e falhas começam vazios e dizem desde quando medem. A origem só aparece quando a régua e as campanhas mandarem o link com `?o=`.
 - Teste sem banco: `node tools/test-instrumentacao.js`. Dados de exemplo no banco local: `node tools/seed-medicao.js`.
 
+### 2026-11-06 - Certificado da Aula Inaugural no mesmo dia
+
+**Decisão**
+- O certificado sai quando o aluno tem RGM e concluiu a Aula, mesmo sem curso e polo. Curso e polo vêm, nesta ordem, do relatório de matriculados (consulta na hora), da conta (`csu_alunos`) e do que o polo sobe no admin (`csu_dados_acesso`, que ganhou a coluna `unidade` e a coluna Polo na importação, validada pela lista de `server/unidades.js`). Regras em `server/certificado.js`.
+- `csu_certificados.curso` e `unidade` aceitam NULL (migração em `db.ensureSchema`), com `completado_em` e `baixado_em`. Sem polo, o PDF não imprime a linha do polo (nenhum texto como "não informado"). A tela de sucesso e o card do Início avisam: "Seu certificado saiu sem o nome do polo por enquanto. Ele é completado automaticamente em até 1 dia útil: baixe de novo depois." Quando o polo chega, o card pede "Baixar a versão completa".
+- O fim do sync de matriculados (`completarCertificados` em `server/sync-acessos.js`) completa curso e polo dos certificados com NULL, a partir da conta e de `csu_dados_acesso`.
+- Um certificado por aluno: baixar de novo reaproveita o registro mais antigo (mesmo `certificate_id`, mesma data e mesmo "Emitido em"); a linha do aluno fica travada durante a gravação, então cliques simultâneos não duplicam. Linhas repetidas antigas ficam no banco.
+- A data impressa é o dia (em Brasília) em que o último módulo foi concluído. Certificados já emitidos mantêm a data gravada.
+- Avisos e atendimento leem curso e polo da conta, com o último certificado só como alternativa.
+- `upsertAcessoDerived` não apaga curso e polo com NULL (COALESCE), e o RGM do cadastro é gravado só com dígitos.
+- Quem ficou para trás: `node tools/certificados-pendentes.js` (ou `GET /api/admin/certificados/pendentes`, `?concluiram=1`, `?formato=csv`) lista quem teve `certificado_erro`, não tem certificado e já tem curso e polo. O aviso ao aluno dentro do app é o próprio card do Início, que passa a mostrar "Emitir certificado"; `csu_avisos` só segmenta por todos, polo ou curso, então não foi usado para aviso individual.
+- Publicação: este trabalho ficou em commits no branch da worktree `certificado-dia-zero`, **sem push**. O usuário pediu para aprovar antes de publicar; o push em `main` só depois dessa aprovação.
+
+**Pendente de decisão de negócio**
+- O acadêmico precisa aceitar o PDF provisório sem a linha do polo até o relatório chegar. Alternativa: pedir o polo ao aluno no cadastro, com lista fechada.
+
+**Impacto**
+- Teste: `npm run test:certificado` (`tools/test-certificado.js`). A parte do PDF roda sem banco; o fluxo cria um Postgres local temporário com `createdb` (só `localhost` ou socket) e o apaga no fim. Nunca usa o `.env`.
+
 ### 2026-11-05 - Aula Inaugural: chegar mais rápido ao primeiro módulo
 
 **Decisão**

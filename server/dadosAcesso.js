@@ -1,16 +1,17 @@
 'use strict';
 
-// Dados de acesso do aluno à faculdade (portal/AVA/Duda): RGM, curso e e-mail acadêmico.
-// O polo sobe curso + RGM + e-mail acadêmico (opcional) pelo admin (aba "Alunos"), um a um
-// ou em planilha. Fica numa tabela própria, por RGM (só dígitos), porque o sync de matriculados
+// Dados de acesso do aluno à faculdade (portal/AVA/Duda): RGM, curso, polo e e-mail acadêmico.
+// O polo sobe curso + polo + RGM + e-mail acadêmico (opcional) pelo admin (aba "Alunos"), um a um
+// ou em planilha. Curso e polo daqui completam o certificado da Aula Inaugural no mesmo dia,
+// antes de o relatório de matriculados chegar (server/certificado.js). Fica numa tabela própria, por RGM (só dígitos), porque o sync de matriculados
 // regrava csu_alunos.curso; assim o que o polo sobe não é sobrescrito, e quem ainda não entrou
 // no app recebe os dados quando entrar.
 //
 // Contrato:
 //   GET  /api/meu-acesso (aluno)             -> {success, preparo, rgm, curso, email_academico, senha_inicio}
-//   GET  /api/admin/dados-acesso?busca=      -> {success, total, itens:[{rgm,nome,tem_acesso,curso,curso_app,email_academico,atualizado_em}]}
-//   PUT  /api/admin/dados-acesso/:rgm        {curso, email_academico} -> {success, item}   (vazio limpa; os dois vazios apaga)
-//   POST /api/admin/dados-acesso/importar    {linhas:[{n,rgm,curso,email_academico}]} (até 200 por envio)
+//   GET  /api/admin/dados-acesso?busca=      -> {success, total, polos, itens:[{rgm,nome,tem_acesso,curso,curso_app,unidade,unidade_app,email_academico,atualizado_em}]}
+//   PUT  /api/admin/dados-acesso/:rgm        {curso, unidade, email_academico} -> {success, item}   (vazio limpa; tudo vazio apaga)
+//   POST /api/admin/dados-acesso/importar    {linhas:[{n,rgm,curso,unidade,email_academico}]} (até 200 por envio)
 //        -> {success, salvos, com_acesso, sem_acesso, erros:[{n,rgm,motivo}]}   (célula vazia NÃO apaga o que já existe)
 //
 // Primeira senha do portal/Duda (regra da faculdade, confirmada em 20/10): 3 primeiras letras do nome
@@ -18,6 +19,8 @@
 // + "@" + 3 primeiros números do RGM + 4 primeiros números do CPF. O Duda NÃO mostra essa senha.
 // O app não tem CPF: o servidor devolve só o começo (senha_inicio, ex.: "Ana@512"), calculado na hora,
 // sem guardar nem logar; o aluno digita os 4 números do CPF na tela e o navegador junta (o CPF não sai do aparelho).
+
+const { UNIDADES } = require('./unidades');
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const EMAIL_ACADEMICO_RE = /@cs\.(cruzeirodosul|unicid)\.edu\.br$/i;
@@ -37,7 +40,8 @@ function ensureSchema(pool) {
         atualizado_em TIMESTAMPTZ NOT NULL DEFAULT now(),
         atualizado_por TEXT
       )
-    `).catch((err) => { schemaPronto = null; throw err; });
+    `).then(() => pool.query('ALTER TABLE csu_dados_acesso ADD COLUMN IF NOT EXISTS unidade TEXT'))
+      .catch((err) => { schemaPronto = null; throw err; });
   }
   return schemaPronto;
 }
@@ -50,15 +54,41 @@ function soDigitos(v) {
   return String(v ?? '').replace(/\D+/g, '');
 }
 
+function semAcento(t) {
+  return String(t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+// Polo digitado -> nome oficial da lista (vai impresso no certificado). Aceita sem acento, com "Polo " na frente
+// e um pedaço do nome quando só um polo tem ("Mituzi" vale; "Taboão da Serra" é de dois). '' = vazio; null = não reconhecido.
+function poloOficial(valor) {
+  const v = semAcento(valor).replace(/^polo\s+/, '');
+  if (!v) return '';
+  const exato = UNIDADES.find((u) => semAcento(u) === v);
+  if (exato) return exato;
+  const parecidos = UNIDADES.filter((u) => semAcento(u).includes(v) && v.length >= 4);
+  return parecidos.length === 1 ? parecidos[0] : null;
+}
+
 // Valida uma linha (admin). Devolve {ok, motivo, dados}.
 function validarLinha(raw) {
   const rgm = soDigitos(raw && raw.rgm);
   const curso = texto(raw && raw.curso, 160);
+  const unidade = poloOficial(raw && raw.unidade);
   const email = texto(raw && raw.email_academico, 160).toLowerCase();
   if (!rgm) return { ok: false, motivo: 'RGM vazio.' };
   if (rgm.length < 4 || rgm.length > 15) return { ok: false, motivo: 'RGM deve ter de 4 a 15 números.' };
+  if (unidade === null) return { ok: false, motivo: `Polo não reconhecido: "${texto(raw.unidade, 60)}". Use um destes: ${UNIDADES.join(', ')}.` };
   if (email && !EMAIL_RE.test(email)) return { ok: false, motivo: 'E-mail acadêmico inválido.' };
-  return { ok: true, dados: { rgm, curso, email_academico: email } };
+  return { ok: true, dados: { rgm, curso, unidade, email_academico: email } };
+}
+
+// Curso e polo que o polo informou para este RGM (para o certificado). null se não há linha.
+async function doRgm(pool, rgm) {
+  const d = soDigitos(rgm);
+  if (!d) return null;
+  await ensureSchema(pool);
+  const r = await pool.query('SELECT curso, unidade FROM csu_dados_acesso WHERE rgm = $1', [d]);
+  return r.rows[0] || null;
 }
 
 async function emailDoRelatorio(getMatriculadosPool, rgm) {
@@ -121,12 +151,12 @@ async function buscar(pool, busca) {
     where = 'COALESCE(d.rgm, a.rgm_d) LIKE $1';
   } else if (termo) {
     params.push(`%${termo}%`);
-    where = '(a.nome ILIKE $1 OR d.email_academico ILIKE $1 OR d.curso ILIKE $1)';
+    where = '(a.nome ILIKE $1 OR d.email_academico ILIKE $1 OR d.curso ILIKE $1 OR d.unidade ILIKE $1)';
   }
   const r = await pool.query(
     `SELECT COALESCE(d.rgm, a.rgm_d) AS rgm, a.nome, (a.id IS NOT NULL) AS tem_acesso,
-            d.curso, a.curso AS curso_app, d.email_academico, d.atualizado_em
-       FROM (SELECT id, nome, curso, regexp_replace(rgm, '\\D', '', 'g') AS rgm_d
+            d.curso, a.curso AS curso_app, d.unidade, a.unidade AS unidade_app, d.email_academico, d.atualizado_em
+       FROM (SELECT id, nome, curso, unidade, regexp_replace(rgm, '\\D', '', 'g') AS rgm_d
                FROM csu_alunos WHERE rgm IS NOT NULL) a
        FULL OUTER JOIN csu_dados_acesso d ON d.rgm = a.rgm_d
       WHERE ${where}
@@ -135,7 +165,7 @@ async function buscar(pool, busca) {
     params,
   );
   const total = await pool.query('SELECT COUNT(*)::int AS n FROM csu_dados_acesso');
-  return { total: total.rows[0].n, itens: r.rows };
+  return { total: total.rows[0].n, polos: UNIDADES, itens: r.rows };
 }
 
 async function comAcesso(pool, rgms) {
@@ -161,14 +191,15 @@ async function importar(pool, linhas, quem) {
   for (const d of validas) {
     // Célula vazia não apaga o que já existe.
     await pool.query(
-      `INSERT INTO csu_dados_acesso (rgm, curso, email_academico, atualizado_por)
-       VALUES ($1, NULLIF($2, ''), NULLIF($3, ''), $4)
+      `INSERT INTO csu_dados_acesso (rgm, curso, unidade, email_academico, atualizado_por)
+       VALUES ($1, NULLIF($2, ''), NULLIF($3, ''), NULLIF($4, ''), $5)
        ON CONFLICT (rgm) DO UPDATE SET
          curso = COALESCE(NULLIF(EXCLUDED.curso, ''), csu_dados_acesso.curso),
+         unidade = COALESCE(NULLIF(EXCLUDED.unidade, ''), csu_dados_acesso.unidade),
          email_academico = COALESCE(NULLIF(EXCLUDED.email_academico, ''), csu_dados_acesso.email_academico),
          atualizado_em = now(),
          atualizado_por = EXCLUDED.atualizado_por`,
-      [d.rgm, d.curso, d.email_academico, quem],
+      [d.rgm, d.curso, d.unidade, d.email_academico, quem],
     );
   }
   const existentes = await comAcesso(pool, validas.map((d) => d.rgm));
@@ -215,15 +246,16 @@ function registrar(app, { pool, authMiddleware, requireAdmin, getMatriculadosPoo
     const d = v.dados;
     try {
       await ensureSchema(pool);
-      if (!d.curso && !d.email_academico) {
+      if (!d.curso && !d.unidade && !d.email_academico) {
         await pool.query('DELETE FROM csu_dados_acesso WHERE rgm = $1', [d.rgm]);
       } else {
         await pool.query(
-          `INSERT INTO csu_dados_acesso (rgm, curso, email_academico, atualizado_por)
-           VALUES ($1, NULLIF($2, ''), NULLIF($3, ''), $4)
-           ON CONFLICT (rgm) DO UPDATE SET curso = EXCLUDED.curso, email_academico = EXCLUDED.email_academico,
+          `INSERT INTO csu_dados_acesso (rgm, curso, unidade, email_academico, atualizado_por)
+           VALUES ($1, NULLIF($2, ''), NULLIF($3, ''), NULLIF($4, ''), $5)
+           ON CONFLICT (rgm) DO UPDATE SET curso = EXCLUDED.curso, unidade = EXCLUDED.unidade,
+             email_academico = EXCLUDED.email_academico,
              atualizado_em = now(), atualizado_por = EXCLUDED.atualizado_por`,
-          [d.rgm, d.curso, d.email_academico, (req.admin && req.admin.email) || null],
+          [d.rgm, d.curso, d.unidade, d.email_academico, (req.admin && req.admin.email) || null],
         );
       }
       cacheRelatorio.delete(d.rgm);
@@ -256,4 +288,4 @@ function registrar(app, { pool, authMiddleware, requireAdmin, getMatriculadosPoo
   });
 }
 
-module.exports = { registrar, validarLinha, senhaInicio };
+module.exports = { registrar, validarLinha, senhaInicio, poloOficial, doRgm, ensureSchema };

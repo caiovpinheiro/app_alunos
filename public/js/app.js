@@ -185,8 +185,8 @@
       currentPdf.blobUrl = URL.createObjectURL(blob);
       currentPdf.fileName = 'Certificado_Aula_Inaugural_' + sanitizeFileName(confirmation.nome) + '.pdf';
 
-      UI.showPreview(currentPdf.blobUrl, confirmation.certificate_id);
-      window.Rastreio && window.Rastreio.track('certificado_gerado', { protocolo: confirmation.certificate_id, origem: opts.origem || 'painel' });
+      UI.showPreview(currentPdf.blobUrl, confirmation.certificate_id, confirmation.aviso);
+      window.Rastreio && window.Rastreio.track('certificado_gerado', { protocolo: confirmation.certificate_id, origem: opts.origem || 'painel', sem_polo: !!confirmation.polo_pendente });
       if (window.Trilha && document.body.classList.contains('trilha-on')) window.Trilha.refreshDashboard();
       window.showScreen('success-page');
     } catch (err) {
@@ -196,8 +196,8 @@
         UI.showLoginError('Sua sessão expirou. Entre novamente.');
       } else {
         window.Rastreio && window.Rastreio.track('certificado_erro', { mensagem: err.message || GENERIC_ERROR, origem: opts.origem || 'painel' }, { importante: true });
-        // Esperando RGM, curso ou polo: o card do Início passa a mostrar esse estado.
-        if ((err.codigo === 'sem_rgm' || err.codigo === 'sem_curso_polo') && window.Trilha && document.body.classList.contains('trilha-on')) {
+        // Esperando o RGM: o card do Início passa a mostrar esse estado.
+        if (err.codigo === 'sem_rgm' && window.Trilha && document.body.classList.contains('trilha-on')) {
           window.Trilha.refreshDashboard();
         }
         if (erroEl) mostrarErroCert(erroEl, err.message || GENERIC_ERROR);

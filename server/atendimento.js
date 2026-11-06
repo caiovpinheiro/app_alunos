@@ -37,28 +37,28 @@ function pickPhone(rowValue, fallback) {
 }
 
 async function getAlunoPerfil(pool, alunoId) {
+  // Curso e polo da conta (o sync de matriculados preenche); o último certificado só como alternativa.
   const aluno = await pool.query(
-    `SELECT id, email, rgm, nome FROM csu_alunos WHERE id = $1 LIMIT 1`,
+    `SELECT a.id, a.email, a.rgm, a.nome,
+            COALESCE(NULLIF(btrim(a.curso), ''), c.curso) AS curso,
+            COALESCE(NULLIF(btrim(a.unidade), ''), c.unidade) AS unidade
+     FROM csu_alunos a
+     LEFT JOIN LATERAL (
+       SELECT curso, unidade FROM csu_certificados
+       WHERE aluno_id = a.id ORDER BY created_at DESC LIMIT 1
+     ) c ON TRUE
+     WHERE a.id = $1 LIMIT 1`,
     [alunoId],
   );
   const row = aluno.rows[0];
   if (!row) return null;
-  const cert = await pool.query(
-    `SELECT curso, unidade
-     FROM csu_certificados
-     WHERE aluno_id = $1
-     ORDER BY created_at DESC
-     LIMIT 1`,
-    [alunoId],
-  );
-  const last = cert.rows[0];
   return {
     id: row.id,
     email: row.email,
     rgm: row.rgm,
     nome: row.nome,
-    curso: last ? String(last.curso || '').trim() || null : null,
-    polo: last ? String(last.unidade || '').trim() || null : null,
+    curso: String(row.curso || '').trim() || null,
+    polo: String(row.unidade || '').trim() || null,
   };
 }
 

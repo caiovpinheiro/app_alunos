@@ -1,5 +1,6 @@
-/* Admin · Dados de acesso à faculdade (aba "Alunos"): o polo sobe curso + RGM + e-mail acadêmico
+/* Admin · Dados de acesso à faculdade (aba "Alunos"): o polo sobe curso + polo + RGM + e-mail acadêmico
    (opcional), colando do Excel / CSV ou um a um, e busca/corrige por RGM, nome ou e-mail.
+   Curso e polo daqui completam o certificado da Aula Inaugural no mesmo dia (server/certificado.js).
    Cria o próprio bloco antes de #admin-alunos-preparo; rotas em server/dadosAcesso.js. */
 window.AdminAlunos = (function () {
   'use strict';
@@ -10,6 +11,9 @@ window.AdminAlunos = (function () {
   var root = null;
   var linhasOk = [];
   var timerBusca = null;
+  // Lista oficial de polos (vem do servidor na busca; é o nome que sai no certificado).
+  var polos = ['Barra Funda', 'Taboão da Serra - Jd. Mituzi', 'Taboão da Serra - Centro', 'Campinas - Jd. Cristina', 'Itapira', 'Capivari',
+    'Sapopemba (Vila Ema)', 'Freguesia do Ó', 'Morumbi', 'Vila Prudente', 'Ibirapuera', 'Santana'];
 
   function esc(t) {
     return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -49,36 +53,51 @@ window.AdminAlunos = (function () {
 
   function semAcento(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
 
+  // Mesmo critério do servidor (poloOficial em server/dadosAcesso.js): '' vazio, null não reconhecido.
+  function poloDe(valor) {
+    var v = semAcento(valor).replace(/\s+/g, ' ').trim().replace(/^polo\s+/, '');
+    if (!v) return '';
+    var exato = polos.filter(function (p) { return semAcento(p) === v; })[0];
+    if (exato) return exato;
+    var parecidos = v.length >= 4 ? polos.filter(function (p) { return semAcento(p).indexOf(v) !== -1; }) : [];
+    return parecidos.length === 1 ? parecidos[0] : null;
+  }
+
   // Cabeçalho opcional. Com cabeçalho: colunas pelo nome. Sem: cada célula pelo jeito
-  // (tem @ = e-mail; só números = RGM; o resto = curso), em qualquer ordem.
+  // (tem @ = e-mail; só números = RGM; nome de um polo = polo; o resto = curso), em qualquer ordem.
   function interpretar(texto) {
     var sep = separador(texto);
     var brutas = texto.split(/\r?\n/).map(function (l, i) { return { n: i + 1, c: celulas(l, sep) }; })
       .filter(function (x) { return x.c.some(Boolean); });
     if (!brutas.length) return [];
     var cab = brutas[0].c.map(semAcento);
-    var idx = { rgm: -1, curso: -1, email: -1 };
+    var idx = { rgm: -1, curso: -1, email: -1, polo: -1 };
     cab.forEach(function (h, i) {
       if (/rgm|matricula/.test(h) && idx.rgm < 0) idx.rgm = i;
       else if (/mail/.test(h) && idx.email < 0) idx.email = i;
       else if (/curso/.test(h) && idx.curso < 0) idx.curso = i;
+      else if (/polo|unidade/.test(h) && idx.polo < 0) idx.polo = i;
     });
     var temCab = idx.rgm >= 0;
     if (temCab) brutas.shift();
     return brutas.map(function (x) {
-      var l = { n: x.n, rgm: '', curso: '', email_academico: '' };
+      var l = { n: x.n, rgm: '', curso: '', unidade: '', email_academico: '' };
       if (temCab) {
         l.rgm = x.c[idx.rgm] || '';
         l.curso = idx.curso >= 0 ? (x.c[idx.curso] || '') : '';
+        l.unidade = idx.polo >= 0 ? (x.c[idx.polo] || '') : '';
         l.email_academico = idx.email >= 0 ? (x.c[idx.email] || '') : '';
       } else {
         x.c.forEach(function (v) {
           if (!v) return;
           if (v.indexOf('@') !== -1 && !l.email_academico) l.email_academico = v;
           else if (/^[\d.\-\s]+$/.test(v) && !l.rgm) l.rgm = v;
+          else if (!l.unidade && poloDe(v)) l.unidade = v;
           else if (!l.curso) l.curso = v;
         });
       }
+      var p = poloDe(l.unidade);
+      if (p) l.unidade = p;
       return l;
     });
   }
@@ -88,6 +107,7 @@ window.AdminAlunos = (function () {
     var email = String(l.email_academico || '').trim().toLowerCase();
     if (!rgm) return 'RGM vazio.';
     if (rgm.length < 4 || rgm.length > 15) return 'RGM deve ter de 4 a 15 números.';
+    if (l.unidade && poloDe(l.unidade) === null) return 'Polo não reconhecido: "' + l.unidade + '".';
     if (email && !EMAIL_RE.test(email)) return 'E-mail acadêmico inválido.';
     return '';
   }
@@ -97,10 +117,10 @@ window.AdminAlunos = (function () {
     return (
       '<section class="bg-white border rounded-xl p-4 sm:p-5 mb-6" aria-labelledby="dac-h">' +
         '<h2 id="dac-h" class="text-xl font-bold">Dados de acesso à faculdade</h2>' +
-        '<p class="text-sm text-gray-500 mt-1 mb-4">Curso, RGM e e-mail acadêmico (opcional) de cada aluno. O aluno vê os próprios dados no Início, no módulo 1 da Aula Inaugural e na Central de ajuda, para fazer o primeiro acesso ao Duda e ao portal. Quem ainda não entrou no app recebe os dados quando entrar.</p>' +
+        '<p class="text-sm text-gray-500 mt-1 mb-4">Curso, polo, RGM e e-mail acadêmico (opcional) de cada aluno. O aluno vê os próprios dados no Início, no módulo 1 da Aula Inaugural e na Central de ajuda, para fazer o primeiro acesso ao Duda e ao portal. Quem ainda não entrou no app recebe os dados quando entrar. Curso e polo daqui completam o certificado da Aula Inaugural no mesmo dia, sem esperar o relatório de matriculados.</p>' +
         '<h3 class="font-bold mb-1">Importar planilha</h3>' +
-        '<p class="text-xs text-gray-500 mb-2">Cole as colunas do Excel ou escolha um .csv. Colunas: <b>RGM</b> (obrigatório), <b>Curso</b> e <b>E-mail acadêmico</b>, em qualquer ordem, com ou sem cabeçalho. Célula vazia não apaga o que já está salvo.</p>' +
-        '<textarea id="dac-texto" rows="5" class="' + INPUT + ' font-mono" placeholder="RGM;Curso;E-mail acadêmico&#10;12345678;Pedagogia;ana.souza@cs.cruzeirodosul.edu.br&#10;23456789;Administração;" aria-label="Linhas da planilha"></textarea>' +
+        '<p class="text-xs text-gray-500 mb-2">Cole as colunas do Excel ou escolha um .csv. Colunas: <b>RGM</b> (obrigatório), <b>Curso</b>, <b>Polo</b> e <b>E-mail acadêmico</b>, em qualquer ordem, com ou sem cabeçalho. O polo precisa ser um dos polos da lista (sem acento também vale). Célula vazia não apaga o que já está salvo.</p>' +
+        '<textarea id="dac-texto" rows="5" class="' + INPUT + ' font-mono" placeholder="RGM;Curso;Polo;E-mail acadêmico&#10;12345678;Pedagogia;Barra Funda;ana.souza@cs.cruzeirodosul.edu.br&#10;23456789;Administração;Itapira;" aria-label="Linhas da planilha"></textarea>' +
         '<div class="flex flex-wrap items-center gap-3 mt-2">' +
           '<label class="text-sm font-semibold text-blue-700 underline cursor-pointer">Escolher arquivo .csv<input id="dac-arquivo" type="file" accept=".csv,.txt,text/csv,text/plain" class="sr-only"></label>' +
           '<button type="button" id="dac-conferir" class="border border-gray-300 text-sm font-semibold px-4 py-2 rounded-lg">Conferir</button>' +
@@ -126,6 +146,7 @@ window.AdminAlunos = (function () {
     var box = root.querySelector('#dac-previa');
     var amostra = linhasOk.slice(0, 15).map(function (l) {
       return '<tr class="border-t"><td class="py-1 pr-3">' + esc(l.rgm) + '</td><td class="py-1 pr-3">' + (esc(l.curso) || '<span class="text-gray-400">—</span>') +
+        '</td><td class="py-1 pr-3">' + (esc(l.unidade) || '<span class="text-gray-400">—</span>') +
         '</td><td class="py-1 break-all">' + (esc(l.email_academico) || '<span class="text-gray-400">—</span>') + '</td></tr>';
     }).join('');
     box.innerHTML =
@@ -134,7 +155,7 @@ window.AdminAlunos = (function () {
       (erros.length ? '<ul class="text-xs text-red-700 mt-1 list-disc pl-5">' + erros.slice(0, 20).map(function (e) {
         return '<li>Linha ' + e.n + (e.rgm ? ' (RGM ' + esc(e.rgm) + ')' : '') + ': ' + esc(e.motivo) + '</li>';
       }).join('') + (erros.length > 20 ? '<li>e mais ' + (erros.length - 20) + '…</li>' : '') + '</ul>' : '') +
-      (amostra ? '<div class="overflow-x-auto mt-2"><table class="text-xs w-full"><thead><tr class="text-left text-gray-500"><th class="pr-3">RGM</th><th class="pr-3">Curso</th><th>E-mail acadêmico</th></tr></thead><tbody>' + amostra + '</tbody></table>' +
+      (amostra ? '<div class="overflow-x-auto mt-2"><table class="text-xs w-full"><thead><tr class="text-left text-gray-500"><th class="pr-3">RGM</th><th class="pr-3">Curso</th><th class="pr-3">Polo</th><th>E-mail acadêmico</th></tr></thead><tbody>' + amostra + '</tbody></table>' +
         (linhasOk.length > 15 ? '<p class="text-xs text-gray-500 mt-1">Mostrando 15 de ' + linhasOk.length + '.</p>' : '') + '</div>' : '');
     var salvar = root.querySelector('#dac-salvar');
     salvar.classList.toggle('hidden', !linhasOk.length);
@@ -185,14 +206,19 @@ window.AdminAlunos = (function () {
 
   function item(a) {
     var cursoApp = a.curso_app && a.curso_app !== a.curso ? '<span class="text-gray-400"> (relatório: ' + esc(a.curso_app) + ')</span>' : '';
+    var poloApp = a.unidade_app && a.unidade_app !== a.unidade ? '<span class="text-gray-400"> (relatório: ' + esc(a.unidade_app) + ')</span>' : '';
+    var opcoes = '<option value="">—</option>' + polos.map(function (p) {
+      return '<option' + (p === a.unidade ? ' selected' : '') + '>' + esc(p) + '</option>';
+    }).join('');
     return (
       '<article class="border rounded-xl p-3 text-sm" data-dac-rgm="' + esc(a.rgm) + '">' +
         '<div class="flex flex-wrap justify-between gap-2"><div class="min-w-0">' +
           '<b>RGM ' + esc(a.rgm) + '</b>' + (a.nome ? ' · ' + esc(a.nome) : '') +
           '<p class="text-xs ' + (a.tem_acesso ? 'text-gray-500' : 'text-amber-700') + '">' + (a.tem_acesso ? 'Usa o app' : 'Ainda não entrou no app') + '</p>' +
         '</div></div>' +
-        '<form class="grid gap-2 sm:grid-cols-[1fr_1.4fr_auto] items-end mt-2" data-dac-form novalidate>' +
+        '<form class="grid gap-2 sm:grid-cols-[1fr_1fr_1.4fr_auto] items-end mt-2" data-dac-form novalidate>' +
           '<label class="text-xs font-medium text-gray-700">Curso' + cursoApp + '<input class="' + INPUT + ' mt-1" data-f="curso" value="' + esc(a.curso || '') + '" autocomplete="off"></label>' +
+          '<label class="text-xs font-medium text-gray-700">Polo' + poloApp + '<select class="' + INPUT + ' mt-1 bg-white" data-f="unidade">' + opcoes + '</select></label>' +
           '<label class="text-xs font-medium text-gray-700">E-mail acadêmico<input type="email" class="' + INPUT + ' mt-1" data-f="email_academico" value="' + esc(a.email_academico || '') + '" autocomplete="off"></label>' +
           '<button type="submit" class="bg-cruzeiro text-white text-xs font-semibold px-3 py-2 rounded-lg">Salvar</button>' +
         '</form>' +
@@ -212,6 +238,7 @@ window.AdminAlunos = (function () {
     var lista = root.querySelector('#dac-lista');
     try {
       var r = await api('GET', '/api/admin/dados-acesso' + (termo ? '?busca=' + encodeURIComponent(termo) : ''));
+      if (Array.isArray(r.polos) && r.polos.length) polos = r.polos;
       totalTxt(r.total, termo);
       lista.innerHTML = r.itens.length ? r.itens.map(item).join('')
         : '<p class="text-sm text-gray-500">' + (termo ? 'Nada encontrado. Para um RGM novo, use a importação acima (pode ser uma linha só).' : 'Nenhum dado enviado ainda.') + '</p>';
@@ -223,13 +250,17 @@ window.AdminAlunos = (function () {
   async function salvarUm(form) {
     var card = form.closest('[data-dac-rgm]');
     var st = card.querySelector('[data-dac-st]');
-    var body = { curso: form.querySelector('[data-f="curso"]').value, email_academico: form.querySelector('[data-f="email_academico"]').value };
+    var body = {
+      curso: form.querySelector('[data-f="curso"]').value,
+      unidade: form.querySelector('[data-f="unidade"]').value,
+      email_academico: form.querySelector('[data-f="email_academico"]').value,
+    };
     var m = validar({ rgm: card.dataset.dacRgm, email_academico: body.email_academico });
     if (m) { st.className = 'text-xs mt-1 text-red-600'; st.textContent = m; return; }
     try {
       await api('PUT', '/api/admin/dados-acesso/' + encodeURIComponent(card.dataset.dacRgm), body);
       st.className = 'text-xs mt-1 text-green-700';
-      st.textContent = body.curso.trim() || body.email_academico.trim() ? 'Salvo.' : 'Dados apagados.';
+      st.textContent = body.curso.trim() || body.unidade || body.email_academico.trim() ? 'Salvo.' : 'Dados apagados.';
       var termo = root.querySelector('#dac-busca').value.trim();
       api('GET', '/api/admin/dados-acesso' + (termo ? '?busca=' + encodeURIComponent(termo) : ''))
         .then(function (r) { totalTxt(r.total, termo); }).catch(function () { /* o total atualiza na próxima busca */ });

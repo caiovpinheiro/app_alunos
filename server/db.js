@@ -352,6 +352,24 @@ async function ensureSchema(pool) {
       await pool.query(`UPDATE csu_alunos SET rgm = NULL WHERE rgm IS NOT NULL AND btrim(rgm) = ''`);
     }
   }
+  // Certificado no mesmo dia (server/certificado.js): sai sem curso e polo e é completado depois do sync.
+  // completado_em = quando o polo chegou; baixado_em = último download (o Início avisa "baixe de novo").
+  const certCols = await pool.query(
+    `SELECT column_name, is_nullable FROM information_schema.columns
+     WHERE table_schema = current_schema() AND table_name = 'csu_certificados'`,
+  );
+  const certCol = new Map(certCols.rows.map((c) => [c.column_name, c.is_nullable]));
+  for (const col of ['curso', 'unidade']) {
+    if (certCol.get(col) === 'NO') await pool.query(`ALTER TABLE csu_certificados ALTER COLUMN ${col} DROP NOT NULL`);
+  }
+  if (!certCol.has('completado_em') || !certCol.has('baixado_em')) {
+    await pool.query(`
+      ALTER TABLE csu_certificados
+        ADD COLUMN IF NOT EXISTS completado_em TIMESTAMPTZ,
+        ADD COLUMN IF NOT EXISTS baixado_em TIMESTAMPTZ
+    `);
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_csu_certificados_aluno ON csu_certificados (aluno_id, created_at)');
+  }
   await pool.query(`
     CREATE TABLE IF NOT EXISTS csu_materias_alunos (
       rgm TEXT PRIMARY KEY,

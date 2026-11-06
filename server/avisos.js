@@ -12,13 +12,17 @@ function todayPartsSaoPaulo(date = new Date()) {
   return { iso, day: Number(get('day')) };
 }
 
+// Curso e polo do aluno: da conta (o sync de matriculados preenche); o último certificado só como alternativa.
 async function getAlunoAlvo(pool, alunoId) {
   const result = await pool.query(
-    `SELECT curso, unidade
-     FROM csu_certificados
-     WHERE aluno_id = $1
-     ORDER BY created_at DESC
-     LIMIT 1`,
+    `SELECT COALESCE(NULLIF(btrim(a.curso), ''), c.curso) AS curso,
+            COALESCE(NULLIF(btrim(a.unidade), ''), c.unidade) AS unidade
+     FROM csu_alunos a
+     LEFT JOIN LATERAL (
+       SELECT curso, unidade FROM csu_certificados
+       WHERE aluno_id = a.id ORDER BY created_at DESC LIMIT 1
+     ) c ON TRUE
+     WHERE a.id = $1`,
     [alunoId],
   );
   const row = result.rows[0];

@@ -34,6 +34,7 @@ const instrumentacao = require('./instrumentacao');
 const medicao = require('./medicao');
 const preparo = require('./preparo');
 const dadosAcesso = require('./dadosAcesso');
+const certificado = require('./certificado');
 const simulado = require('./simulado');
 const app = express();
 app.set('trust proxy', 1);
@@ -518,109 +519,60 @@ app.get('/api/cursos', authMiddleware, async (req, res) => {
   }
 });
 
+// Certificado da Aula Inaugural: sai no mesmo dia, mesmo sem curso e polo (completados depois do sync).
+// Um por aluno: baixar de novo reaproveita o registro. Regras em server/certificado.js.
 app.post('/api/certificates', authMiddleware, async (req, res) => {
   try {
     await db.ensureSchema(pool);
-    const aluno = await db.getAlunoForCertificate(pool, req.aluno.id);
-    if (!aluno || !aluno.ativo) {
-      return res.status(401).json({ success: false, message: 'Sessão inválida ou expirada.' });
-    }
-
-    // Aula Inaugural como programa: com a trilha liberada, o certificado de 4 horas exige os
-    // 7 módulos concluídos e a meta de pontos. Quem já emitiu antes continua podendo emitir.
-    if (trilha.liberadaPara(req.aluno)) {
-      const ja = await certificadoEmitido(aluno.id);
-      if (!ja.emitido) {
+    const sourcePool = getMatriculadosPool();
+    const out = await certificado.emitir(pool, req.aluno.id, {
+      totalModulos: trilha.NIVEIS.length,
+      buscarMatricula: sourcePool ? async (aluno) => {
+        let m = aluno.rgm ? await matriculados.findByIdentifier(sourcePool, aluno.rgm) : null;
+        if (!m && aluno.email) m = await matriculados.findByIdentifier(sourcePool, aluno.email);
+        return m;
+      } : null,
+      // Aula Inaugural como programa: com a trilha liberada, a 1ª emissão exige os 7 módulos e a meta de pontos.
+      exigirAula: trilha.liberadaPara(req.aluno) ? async (alunoId) => {
         await ensureTrilha();
-        const st = trilha.statusCertificado(await trilha.getProgresso(pool, aluno.id));
-        if (!st.liberado) {
-          // Cada módulo vale 10 pontos: o que falta em módulos é o que falta em pontos.
-          const falta = `${st.faltam_modulos === 1 ? 'Falta 1 módulo' : `Faltam ${st.faltam_modulos} módulos`} (${st.faltam_pontos} pontos)`;
-          return res.status(422).json({
+        const st = trilha.statusCertificado(await trilha.getProgresso(pool, alunoId));
+        if (st.liberado) return null;
+        // Cada módulo vale 10 pontos: o que falta em módulos é o que falta em pontos.
+        const falta = `${st.faltam_modulos === 1 ? 'Falta 1 módulo' : `Faltam ${st.faltam_modulos} módulos`} (${st.faltam_pontos} pontos)`;
+        return {
+          status: 422,
+          body: {
             success: false,
             codigo: 'aula_incompleta',
             certificado: st,
             message: `Para emitir o certificado de ${st.horas} horas, conclua os ${st.total} módulos da Aula Inaugural (${st.meta} pontos). ${falta}.`,
-          });
-        }
-      }
-    }
-
-    // Acesso em preparação: o certificado leva o RGM, então espera ele chegar (o progresso fica salvo).
-    if (!aluno.rgm) {
-      return res.status(422).json({
-        success: false,
-        codigo: 'sem_rgm',
-        message: 'Você concluiu a Aula Inaugural! O certificado sai assim que o seu RGM chegar: o polo já está providenciando. Seu progresso fica salvo.',
-      });
-    }
-
-    let curso = matriculados.formatCurso(aluno.curso);
-    let unidade = matriculados.formatPolo(aluno.unidade);
-    const sourcePool = getMatriculadosPool();
-    if (sourcePool) {
-      try {
-        let matriculado = aluno.rgm
-          ? await matriculados.findByIdentifier(sourcePool, aluno.rgm)
-          : null;
-        if (!matriculado && aluno.email) {
-          matriculado = await matriculados.findByIdentifier(sourcePool, aluno.email);
-        }
-        if (matriculado) {
-          curso = matriculado.curso || curso;
-          unidade = matriculado.unidade || unidade;
-          if (curso && unidade) {
-            await db.upsertAcessoDerived(pool, {
-              email: aluno.email,
-              rgm: aluno.rgm,
-              nome: aluno.nome,
-              curso,
-              unidade,
-            });
-          }
-        }
-      } catch (lookupErr) {
-        console.error('Falha ao buscar matrícula para certificado:', lookupErr.message);
-      }
-    }
-
-    if (!curso || !unidade) {
-      return res.status(422).json({
-        success: false,
-        codigo: 'sem_curso_polo',
-        message: 'Você concluiu a Aula Inaugural! O certificado sai assim que o curso e o polo da sua matrícula chegarem ao app, o que costuma levar até 1 dia útil. Seu progresso fica salvo: volte aqui amanhã para emitir.',
-      });
-  }
-
-  const createdAt = nowInSaoPaulo();
-    const dataAula = createdAt.slice(0, 10);
-  const certificateId = `CSU-${createdAt.slice(0, 4)}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
-
-    await db.insertCertificate(pool, aluno.id, {
-      certificate_id: certificateId,
-      created_at: createdAt,
-      email: aluno.email,
-      nome: aluno.nome,
-      rgm: aluno.rgm,
-      data_aula_inaugural: dataAula,
-      curso,
-      unidade,
+          },
+        };
+      } : null,
     });
-
-    return res.json({
-      success: true,
-      certificate_id: certificateId,
-      created_at: createdAt,
-      nome: aluno.nome,
-      email: aluno.email,
-      rgm: aluno.rgm,
-      curso,
-      unidade,
-      data_aula_inaugural: dataAula,
-    });
+    return res.status(out.status).json(out.body);
   } catch (err) {
     console.error('Falha ao registrar emissão:', err.message);
     return res.status(500).json({ success: false, message: 'Não foi possível gerar o certificado.' });
+  }
+});
+
+// Quem teve erro ao emitir o certificado, ainda não tem certificado e já tem curso e polo (para o atendimento avisar).
+// ?concluiram=1 inclui quem concluiu a Aula e nunca tentou; ?formato=csv baixa em planilha.
+app.get('/api/admin/certificados/pendentes', requireAdmin, async (req, res) => {
+  if (!pool) return unavailable(res);
+  try {
+    await db.ensureSchema(pool);
+    const lista = await certificado.pendentesDeAviso(pool, { concluiram: req.query.concluiram === '1', totalModulos: trilha.NIVEIS.length });
+    if (req.query.formato === 'csv') {
+      res.set('Content-Type', 'text/csv; charset=utf-8');
+      res.set('Content-Disposition', 'attachment; filename="certificados-pendentes.csv"');
+      return res.send(`\ufeff${certificado.paraCsv(lista)}`);
+    }
+    return res.json({ success: true, total: lista.length, alunos: lista });
+  } catch (err) {
+    console.error('Falha ao listar certificados pendentes:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível listar.' });
   }
 });
 
@@ -851,28 +803,6 @@ async function trilhaAction(req, res, fn) {
   }
 }
 
-// Já emitiu o certificado da Aula Inaugural? (quem emitiu antes da regra de pontos continua valendo)
-async function certificadoEmitido(alunoId) {
-  try {
-    const r = await pool.query('SELECT created_at FROM csu_certificados WHERE aluno_id = $1 ORDER BY created_at ASC LIMIT 1', [alunoId]);
-    return { emitido: Boolean(r.rows[0]), emitido_em: r.rows[0] ? r.rows[0].created_at : null };
-  } catch (err) {
-    return { emitido: false, emitido_em: null };
-  }
-}
-
-// Curso ou polo ainda não chegaram para esta conta (com RGM)? O card do Início mostra "esperando curso e polo".
-async function semCursoPolo(aluno) {
-  if (!aluno || !aluno.rgm) return false;
-  try {
-    const r = await pool.query('SELECT curso, unidade FROM csu_alunos WHERE id = $1', [aluno.id]);
-    const row = r.rows[0] || {};
-    return !(String(row.curso || '').trim() && String(row.unidade || '').trim());
-  } catch (err) {
-    return false;
-  }
-}
-
 // Mesma fonte, para o painel admin: { [aluno_id]: data da 1ª emissão } de todos os alunos.
 async function certificadosEmitidos() {
   try {
@@ -898,7 +828,7 @@ app.get('/api/trilha/resumo', authMiddleware, async (req, res) => {
       maximo: trilha.MAX_PONTOS,
       atual: atual === -1 ? null : { nivel: atual + 1, titulo: trilha.NIVEIS[atual].t },
       comecou: p.niveis.some((n) => n.video_ok || n.pulou_video || n.partes_vistas.length || Object.keys(n.respostas).length),
-      certificado: { ...trilha.statusCertificado(p), ...(await certificadoEmitido(req.aluno.id)), sem_curso_polo: await semCursoPolo(req.aluno) },
+      certificado: { ...trilha.statusCertificado(p), ...(await certificado.estado(pool, req.aluno.id)) },
     });
   } catch (err) {
     console.error('Falha no resumo da trilha:', err.message);

@@ -16,6 +16,23 @@ const MOTIVOS_FORA = {
   erro: 'Erro ao criar a conta',
 };
 
+// Fim do sync: certificados que saíram sem curso ou polo ganham o que a conta já tem. Nunca derruba o sync.
+async function completarCertificados(destPool) {
+  try {
+    // eslint-disable-next-line global-require
+    const certificado = require('./certificado');
+    const completados = await certificado.completarPendentes(destPool);
+    const pendentes = (await certificado.pendentesDeAviso(destPool)).length;
+    if (completados || pendentes) {
+      console.log('Certificados:', `completados=${completados}`, `erro_sem_certificado_com_polo=${pendentes}`);
+    }
+    return { completados, pendentes };
+  } catch (err) {
+    console.error('Falha ao completar certificados:', err.message);
+    return { completados: 0, pendentes: null };
+  }
+}
+
 function intervaloSyncMin() {
   return Math.max(5, Number(process.env.ACESSOS_SYNC_INTERVAL_MIN || 30));
 }
@@ -202,8 +219,11 @@ async function syncFromMatriculados(destPool, { force = false } = {}) {
       && appliedWork > 0
     ) {
       await db.registrarVerificacaoSync(destPool, null);
+      // O polo pode ter subido curso e polo no admin desde a última volta: completa mesmo sem relatório novo.
+      const cert = await completarCertificados(destPool);
       return {
         skippedRun: true,
+        certificados_completados: cert.completados,
         snapshot_id: payload.snapshot_id,
         total: payload.alunos.length,
         created: 0,
@@ -257,11 +277,14 @@ async function syncFromMatriculados(destPool, { force = false } = {}) {
       `mais_de_um_curso=${payload.mais_de_um_curso}`,
       `snapshot=${payload.file_name}`,
     );
+    const cert = await completarCertificados(destPool);
     return {
       skippedRun: false,
       snapshot_id: payload.snapshot_id,
       file_name: payload.file_name,
       revoked,
+      certificados_completados: cert.completados,
+      certificados_pendentes_aviso: cert.pendentes,
       ...result,
     };
   } finally {
@@ -298,6 +321,7 @@ function resumoBase(estado, { configurada = true, agora = Date.now(), intervaloM
 }
 
 module.exports = {
+  completarCertificados,
   intervaloSyncMin,
   resumoBase,
   loadLatestEmCurso,

@@ -325,10 +325,16 @@ window.UI = (function () {
     document.getElementById('form-alert').classList.add('hidden');
   }
 
-  function showPreview(blobUrl, protocolo) {
+  // aviso: recado do servidor sobre o certificado (ex.: saiu sem o polo por enquanto). Vazio esconde.
+  function showPreview(blobUrl, protocolo, aviso) {
     document.getElementById('preview-frame').src = blobUrl;
     if (protocolo) {
       document.getElementById('cert-protocol').textContent = 'Protocolo: ' + protocolo;
+    }
+    var box = document.getElementById('cert-aviso');
+    if (box) {
+      box.textContent = aviso || '';
+      box.classList.toggle('hidden', !aviso);
     }
   }
 
