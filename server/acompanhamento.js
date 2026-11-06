@@ -281,7 +281,8 @@ function mensagem(modelo, r) {
     data_primeiro_acesso: dataBr(r.primeiro_acesso),
     dias_sem_acesso: r.dias_sem_acesso == null ? '' : r.dias_sem_acesso,
     email: r.email || 'o seu e-mail',
-    senha_inicial: senhaInicial(r.nome) || 'a senha que o polo te passou',
+    // Quem já criou a senha própria (server/senha.js) não entra mais com a inicial.
+    senha_inicial: r.senha_trocada_em ? 'a senha que você criou' : (senhaInicial(r.nome) || 'a senha que o polo te passou'),
     link: linkPortal(),
   };
   return String(modelo || '').replace(/\{(\w+)\}/g, (m, k) => (k in valores ? String(valores[k]) : m));
@@ -344,7 +345,7 @@ async function listar(pool, opts) {
      fu AS (
        SELECT DISTINCT ON (aluno_id) aluno_id, criado_em AS followup_em, motivo AS followup_motivo
        FROM csu_followups ORDER BY aluno_id, criado_em DESC)
-     SELECT a.id, a.nome, a.rgm, a.email, a.curso, a.unidade, a.created_at,
+     SELECT a.id, a.nome, a.rgm, a.email, a.curso, a.unidade, a.created_at, a.senha_trocada_em,
        COALESCE(ac.acessos,0) AS acessos, COALESCE(ac.segundos,0) AS segundos, COALESCE(ac.cliques,0) AS cliques, COALESCE(ac.telas,0) AS telas,
        GREATEST(COALESCE(tot.acessos_total,0), COALESCE(lg.logins,0), COALESCE(a.logins,0)) AS acessos_total,
        LEAST(tot.primeiro, lg.primeiro, a.primeiro_login_em) AS primeiro_acesso,

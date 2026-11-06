@@ -285,12 +285,42 @@ window.AdminAcomp = (function () {
             return '<li class="border rounded-lg px-3 py-2">' + esc(quando(f.criado_em)) + ' · ' + esc(f.canal) + (f.motivo ? ' · ' + esc(f.motivo) : '') + (f.nota ? ' · ' + esc(f.nota) : '') + '</li>';
           }).join('') + '</ul>'
         : '<p class="text-gray-500 mb-4">Nenhum contato registrado.</p>';
+      // Senha (server/senha.js): o atendimento volta a conta para a senha inicial quando o aluno esquece a dele.
+      var senhaInfo = a && a.senha_trocada_em
+        ? 'Criou a senha própria em ' + esc(quando(a.senha_trocada_em)) + '. A senha inicial não entra mais.'
+        : 'Ainda entra com a senha inicial (primeiro nome + 123@).';
+      var senhaBloco =
+        '<div class="border rounded-lg px-3 py-2 mb-4 flex flex-wrap items-center gap-3">' +
+          '<span class="flex-1 min-w-0">' + senhaInfo + '</span>' +
+          (a && a.senha_trocada_em ? '<button type="button" class="bg-white border font-semibold px-3 py-2 rounded-lg" data-acomp-senha="' + id + '">Voltar para a senha inicial</button>' : '') +
+          '<span class="text-sm text-gray-600 w-full hidden" data-acomp-senha-msg></span>' +
+        '</div>';
       body.innerHTML =
+        '<h4 class="font-bold mb-2">Senha</h4>' + senhaBloco +
         '<h4 class="font-bold mb-2">Acessos (últimos 30)</h4>' + acessos +
         '<h4 class="font-bold mb-2">Contatos feitos</h4>' + contatos +
         '<h4 class="font-bold mb-2">O que fez (mais recente primeiro)</h4>' + eventos;
     } catch (err) {
       body.innerHTML = '<p class="text-red-600">' + esc(err.message || 'Não foi possível carregar.') + '</p>';
+    }
+  }
+
+  async function voltarSenhaInicial(btn) {
+    var id = btn.getAttribute('data-acomp-senha');
+    var msg = btn.parentNode.querySelector('[data-acomp-senha-msg]');
+    if (!window.confirm('Voltar a conta para a senha inicial? O aluno sai de todos os aparelhos e cria uma senha nova no próximo login.')) return;
+    btn.disabled = true;
+    try {
+      var r = await C().request('/api/admin/alunos/' + encodeURIComponent(id) + '/senha-inicial', { method: 'POST' });
+      var a = aluno(id);
+      if (a) a.senha_trocada_em = null;
+      msg.textContent = 'Pronto. Passe ao aluno a senha inicial (' + (r.senha_inicial || 'primeiro nome + 123@') + '). No próximo login ele cria outra.';
+      msg.classList.remove('hidden');
+      btn.remove();
+    } catch (err) {
+      msg.textContent = err.message || 'Não foi possível voltar a senha inicial.';
+      msg.classList.remove('hidden');
+      btn.disabled = false;
     }
   }
 
@@ -444,6 +474,8 @@ window.AdminAcomp = (function () {
       }
       var pc = e.target.closest('[data-acomp-percurso]');
       if (pc) percurso(pc.getAttribute('data-acomp-percurso'));
+      var sb = e.target.closest('[data-acomp-senha]');
+      if (sb) voltarSenhaInicial(sb);
     });
     // O admin.js pode ter aberto esta aba antes deste arquivo carregar.
     var painel = document.getElementById('tab-acompanhamento');

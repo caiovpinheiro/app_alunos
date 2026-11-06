@@ -312,6 +312,17 @@ async function ensureSchema(pool) {
     ALTER TABLE csu_alunos
     ADD COLUMN IF NOT EXISTS unidade TEXT
   `);
+  // Senha própria (server/senha.js). Preenchida quando o aluno cria a senha dele; a partir daí a senha
+  // inicial (primeiro nome + 123@) deixa de entrar. A sessão aberta com a senha inicial fica presa à
+  // tela de criar senha até ele trocar.
+  await pool.query(`
+    ALTER TABLE csu_alunos
+    ADD COLUMN IF NOT EXISTS senha_trocada_em TIMESTAMPTZ
+  `);
+  await pool.query(`
+    ALTER TABLE csu_sessoes
+    ADD COLUMN IF NOT EXISTS troca_senha BOOLEAN NOT NULL DEFAULT FALSE
+  `);
   // Primeiro e último login (acompanhamento e funil por coorte). csu_sessoes não serve para isso:
   // a sessão é apagada quando expira ou o aluno sai. Na primeira vez, preenche com o histórico que existe.
   const temLogin = await pool.query(
@@ -523,7 +534,7 @@ async function findAlunoByIdentifier(pool, identifier) {
   const id = normalizeIdentifier(identifier);
   if (!id) return null;
   const result = await pool.query(
-    `SELECT id, email, rgm, nome, pw_hash, ativo
+    `SELECT id, email, rgm, nome, pw_hash, ativo, created_at, senha_trocada_em
      FROM csu_alunos
      WHERE lower(email) = lower($1)
         OR rgm = $1
@@ -546,11 +557,12 @@ async function verifyPassword(aluno, password) {
   }
 }
 
-async function createSession(pool, alunoId, token) {
+// trocaSenha: sessão aberta com a senha inicial; só serve para criar a senha própria (server/senha.js).
+async function createSession(pool, alunoId, token, { trocaSenha = false } = {}) {
   const expiresAt = new Date(Date.now() + TOKEN_TTL_MS);
   await pool.query(
-    'INSERT INTO csu_sessoes (token, aluno_id, expires_at) VALUES ($1, $2, $3)',
-    [token, alunoId, expiresAt],
+    'INSERT INTO csu_sessoes (token, aluno_id, expires_at, troca_senha) VALUES ($1, $2, $3, $4)',
+    [token, alunoId, expiresAt, Boolean(trocaSenha)],
   );
   // Login e primeiro acesso passam por aqui. Falhar ao registrar nunca impede a entrada.
   try {
@@ -569,7 +581,7 @@ async function createSession(pool, alunoId, token) {
 async function getSessionAluno(pool, token) {
   if (!token) return null;
   const result = await pool.query(
-    `SELECT a.id, a.email, a.rgm, a.nome, a.ativo, a.created_at, s.expires_at
+    `SELECT a.id, a.email, a.rgm, a.nome, a.ativo, a.created_at, s.expires_at, s.troca_senha
      FROM csu_sessoes s
      JOIN csu_alunos a ON a.id = s.aluno_id
      WHERE s.token = $1
@@ -582,7 +594,7 @@ async function getSessionAluno(pool, token) {
     await pool.query('DELETE FROM csu_sessoes WHERE token = $1', [token]);
     return null;
   }
-  return { id: row.id, email: row.email, rgm: row.rgm, nome: row.nome, created_at: row.created_at };
+  return { id: row.id, email: row.email, rgm: row.rgm, nome: row.nome, created_at: row.created_at, troca_senha: row.troca_senha === true };
 }
 
 async function deleteSession(pool, token) {

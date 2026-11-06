@@ -87,11 +87,14 @@
       document.getElementById('login-form').reset();
       var afterLogin = window.UI.takeReturnPath();
       var nextScreen = afterLogin ? window.UI.screenFromPath(afterLogin) : 'dashboard-page';
-      if (nextScreen === 'login-page' || nextScreen === 'first-access-page') nextScreen = 'dashboard-page';
-      window.showScreen(nextScreen, { replace: true });
-      window.Avisos.refresh();
-      if (window.MeuSemestre) window.MeuSemestre.refresh();
-      carregarRecursos().then(function () { if (nextScreen === 'dashboard-page') irParaAulaSeNaoComecou(); });
+      if (nextScreen === 'login-page' || nextScreen === 'first-access-page' || nextScreen === 'senha-page') nextScreen = 'dashboard-page';
+      if (res.troca_senha) {
+        // Entrou com a senha inicial: cria a senha própria antes de qualquer outra tela (server/senha.js).
+        telaDepoisDaSenha = nextScreen;
+        abrirCriarSenha(identifier);
+        return;
+      }
+      entrarNoPortal(nextScreen);
     } catch (err) {
       UI.showLoginError(err.status === 401
         ? 'RGM ou senha incorretos. A senha inicial é o seu primeiro nome com a inicial maiúscula + 123@. Se já trocou a senha e não lembra, use "Esqueci minha senha".'
@@ -99,6 +102,84 @@
     } finally {
       UI.setLoginLoading(false);
     }
+  }
+
+  var telaDepoisDaSenha = 'dashboard-page';
+
+  function entrarNoPortal(nextScreen) {
+    window.showScreen(nextScreen, { replace: true });
+    window.Avisos.refresh();
+    if (window.MeuSemestre) window.MeuSemestre.refresh();
+    carregarRecursos().then(function () { if (nextScreen === 'dashboard-page') irParaAulaSeNaoComecou(); });
+  }
+
+  function abrirCriarSenha(usuario) {
+    window.Auth.marcarCriarSenha(true);
+    var campo = document.getElementById('f_senha_usuario');
+    if (campo) campo.value = usuario || (window.Auth.getUser().rgm || '');
+    window.showScreen('senha-page', { replace: true });
+    window.Rastreio && window.Rastreio.track('criar_senha_vista', {});
+    setTimeout(function () {
+      var nova = document.getElementById('f_senha_nova');
+      if (nova) nova.focus();
+    }, 50);
+  }
+
+  function setSenhaLoading(loading) {
+    var btn = document.getElementById('btn-senha');
+    if (!btn) return;
+    btn.disabled = loading;
+    btn.classList.toggle('is-loading', loading);
+    var label = btn.querySelector('.btn-plastic-label');
+    if (label) label.textContent = loading ? 'Salvando...' : 'Salvar e continuar';
+  }
+
+  async function handleCriarSenha(event) {
+    event.preventDefault();
+    var erro = document.getElementById('senha-error');
+    erro.classList.add('hidden');
+    ['err_senha_password', 'err_senha_confirmPassword'].forEach(function (id) {
+      document.getElementById(id).classList.add('hidden');
+    });
+    var nova = document.getElementById('f_senha_nova').value;
+    var confirma = document.getElementById('f_senha_confirma').value;
+    var local = {};
+    if (nova.length < 8) local.password = 'Use pelo menos 8 caracteres.';
+    else if (nova !== confirma) local.confirmPassword = 'As senhas não são iguais.';
+    if (local.password || local.confirmPassword) {
+      mostrarErrosSenha(local);
+      return;
+    }
+    setSenhaLoading(true);
+    try {
+      await window.Api.criarSenha(nova, confirma);
+      window.Auth.marcarCriarSenha(false);
+      document.getElementById('senha-form').reset();
+      window.Rastreio && window.Rastreio.track('criar_senha_concluida', {});
+      window.UI.showDashboardNotice && window.UI.showDashboardNotice('Senha criada. Da próxima vez, entre com ela.');
+      entrarNoPortal(telaDepoisDaSenha || 'dashboard-page');
+    } catch (err) {
+      if (err.status === 401) { logout(); return; }
+      if (err.details) mostrarErrosSenha(err.details);
+      else {
+        erro.textContent = err.message || 'Não foi possível salvar a senha. Tente de novo.';
+        erro.classList.remove('hidden');
+      }
+    } finally {
+      setSenhaLoading(false);
+    }
+  }
+
+  function mostrarErrosSenha(errors) {
+    Object.keys(errors).forEach(function (campo) {
+      var el = document.getElementById('err_senha_' + campo);
+      if (!el) return;
+      el.textContent = errors[campo];
+      el.classList.remove('hidden');
+    });
+    var primeiro = errors.password ? 'f_senha_nova' : 'f_senha_confirma';
+    var input = document.getElementById(primeiro);
+    if (input) input.focus();
   }
 
   async function handleRegister(event) {
@@ -492,6 +573,9 @@
     }
     document.getElementById('login-form').addEventListener('submit', handleLogin);
     document.getElementById('register-form').addEventListener('submit', handleRegister);
+    document.getElementById('senha-form').addEventListener('submit', handleCriarSenha);
+    // Uma chamada barrada pelo servidor (sessão aberta com a senha inicial) leva à tela de criar senha.
+    window.addEventListener('csu:criar-senha', function () { abrirCriarSenha(); });
     document.getElementById('cert-form').addEventListener('submit', handleGenerate);
     window.CursoAutocomplete.init();
     window.Avisos.init();
@@ -504,7 +588,10 @@
     window.Atendimento.init();
     if (window.MeuSemestre) window.MeuSemestre.init();
 
-    if (window.Auth.isAuthenticated()) {
+    if (window.Auth.isAuthenticated() && window.Auth.precisaCriarSenha()) {
+      window.UI.setUserName(window.Auth.getUserName());
+      abrirCriarSenha();
+    } else if (window.Auth.isAuthenticated()) {
       carregarRecursos();
       window.UI.setUserName(window.Auth.getUserName());
       var startScreen = window.UI.screenFromPath(window.location.pathname);
@@ -522,6 +609,12 @@
   window.printCert = printCert;
   window.logout = logout;
   window.showScreen = function (id, options) {
+    // Sem a senha própria criada, nenhuma outra tela carrega dados (o servidor responderia 403).
+    if (window.Auth.isAuthenticated() && window.Auth.precisaCriarSenha()) {
+      window.UI.showScreen('senha-page', options);
+      rastreiaTela('senha-page');
+      return;
+    }
     if (id === 'trilha-page' && recursosCarregados && !document.body.classList.contains('trilha-on')) id = 'dashboard-page';
     if (id === 'form-page') prefillForm();
     if (window.Avisos) window.Avisos.closeDropdown();

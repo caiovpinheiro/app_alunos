@@ -36,6 +36,7 @@ const preparo = require('./preparo');
 const dadosAcesso = require('./dadosAcesso');
 const certificado = require('./certificado');
 const simulado = require('./simulado');
+const senha = require('./senha');
 const app = express();
 app.set('trust proxy', 1);
 const PORT = Number(process.env.PORT) || 80;
@@ -301,6 +302,8 @@ async function authMiddleware(req, res, next) {
     }
     req.aluno = aluno;
     req.token = token;
+    // Entrou com a senha inicial: até criar a senha própria, só a tela de criar senha (server/senha.js).
+    if (senha.bloquear(req, res)) return undefined;
     return next();
   } catch (err) {
     console.error('Falha ao validar sessão:', err.message);
@@ -341,18 +344,22 @@ app.post('/api/auth/login', async (req, res) => {
     const derived = matriculados.derivedPassword(aluno.nome);
     const derivedOk = matriculados.passwordMatches(derived, password);
     const hashOk = await db.verifyPassword(aluno, password);
-    if (!derivedOk && !hashOk) {
+    // Senha própria (server/senha.js): depois de criada, a senha inicial não entra mais.
+    const decisao = senha.avaliarLogin(aluno, { derivedOk, hashOk });
+    if (!decisao.ok) {
       instrumentacao.falha(pool, { alunoId: aluno.id, motivo: 'senha_incorreta', origem });
       return res.status(401).json({ success: false, message: 'Credenciais inválidas.' });
     }
+    if (decisao.marcarPropria) await senha.marcarPropria(pool, aluno.id);
 
     const token = crypto.randomBytes(32).toString('hex');
     const primeira = await instrumentacao.primeiraEntrada(pool, aluno.id);
-    await db.createSession(pool, aluno.id, token);
+    await db.createSession(pool, aluno.id, token, { trocaSenha: decisao.trocaSenha });
     instrumentacao.entrada(pool, { alunoId: aluno.id, origem, primeira, via: 'login' });
     return res.json({
       success: true,
       token,
+      troca_senha: decisao.trocaSenha,
       user: { name: aluno.nome, email: aluno.email, rgm: aluno.rgm },
     });
   } catch (err) {
@@ -389,6 +396,11 @@ app.post('/api/auth/register', async (req, res) => {
   else if (!rgm) errors.rgm = 'Digite os números do seu RGM.';
   if (password.length < 6) errors.password = 'A senha deve ter no mínimo 6 caracteres.';
   if (password !== confirm) errors.confirmPassword = 'As senhas não coincidem.';
+  // Com a senha própria ligada (server/senha.js), o cadastro já cria uma senha forte e a senha inicial não entra.
+  const senhaPropria = senha.ativaPara({ email, rgm, nome, created_at: new Date() });
+  if (senhaPropria && !errors.password && !errors.confirmPassword) {
+    Object.assign(errors, senha.validarNova({ nome, rgm }, password, confirm));
+  }
 
   if (Object.keys(errors).length) {
     return res.status(422).json({ success: false, message: 'Dados inválidos.', errors });
@@ -420,6 +432,7 @@ app.post('/api/auth/register', async (req, res) => {
 
   try {
     const aluno = await db.createAluno(pool, { email, nome, rgm, password });
+    if (senhaPropria) await senha.marcarPropria(pool, aluno.id);
     if (matriculado && matriculado.curso && matriculado.unidade) {
       try {
         await db.upsertAcessoDerived(pool, { email, rgm, nome, curso: matriculado.curso, unidade: matriculado.unidade });
@@ -450,6 +463,17 @@ app.post('/api/auth/register', async (req, res) => {
 
 // "Esqueci minha senha" na tela de login (server/instrumentacao.js).
 instrumentacao.registrarRotas(app, { getPool: () => pool, findAluno: db.findAlunoByIdentifier });
+
+// Criar a senha própria e, no admin, voltar a conta para a senha inicial (server/senha.js).
+senha.registrarRotas(app, {
+  getPool: () => pool,
+  authMiddleware,
+  requireAdmin,
+  registrarEvento: (alunoId, nome, dados) => {
+    pool.query(`INSERT INTO csu_eventos (aluno_id, nome, tela, dados) VALUES ($1, $2, '/criar-senha', $3::jsonb)`, [alunoId, nome, JSON.stringify(dados || {})])
+      .catch(() => { /* acompanhamento desligado neste ambiente */ });
+  },
+});
 
 app.post('/api/auth/logout', authMiddleware, async (req, res) => {
   try {
@@ -1939,6 +1963,7 @@ app.use(express.static(PUBLIC_DIR));
 const STUDENT_PAGES = [
   '/login',
   '/primeiro-acesso',
+  '/criar-senha',
   '/inicio',
   '/meu-semestre',
   '/avisos',

@@ -13,6 +13,12 @@ window.Api = (function () {
     var body = null;
     try { body = await res.json(); } catch (e) { /* resposta sem corpo JSON */ }
 
+    // Sessão aberta com a senha inicial (server/senha.js): qualquer chamada barrada leva à tela de criar senha.
+    if (res.status === 403 && body && body.codigo === 'troca_senha' && window.Auth) {
+      window.Auth.marcarCriarSenha(true);
+      try { window.dispatchEvent(new CustomEvent('csu:criar-senha')); } catch (e) { /* navegador antigo */ }
+    }
+
     if (!res.ok) {
       var err = new Error((body && body.message) || 'Falha na comunicação com o servidor.');
       err.status = res.status;
@@ -72,6 +78,14 @@ window.Api = (function () {
       if (navigator.sendBeacon && navigator.sendBeacon('/api/auth/esqueci', new Blob([corpo], { type: 'application/json' }))) return;
     } catch (e) { /* cai no fetch */ }
     try { fetch('/api/auth/esqueci', { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: corpo }).catch(function () {}); } catch (e) { /* ok */ }
+  }
+
+  async function criarSenha(password, confirmPassword) {
+    return request('/api/auth/trocar-senha', {
+      method: 'POST',
+      headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+      body: JSON.stringify({ password: password, confirmPassword: confirmPassword }),
+    });
   }
 
   async function logout() {
@@ -231,6 +245,7 @@ window.Api = (function () {
     login: login,
     register: register,
     esqueciSenha: esqueciSenha,
+    criarSenha: criarSenha,
     logout: logout,
     emitCertificate: emitCertificate,
     searchCursos: searchCursos,

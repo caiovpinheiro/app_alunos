@@ -13,11 +13,12 @@ window.UI = (function () {
     });
   }, true);
 
-  var SCREENS = ['login-page', 'first-access-page', 'dashboard-page', 'meu-semestre-page', 'avisos-page', 'tutoriais-page', 'trilha-page', 'atendimento-page', 'form-page', 'success-page'];
+  var SCREENS = ['login-page', 'first-access-page', 'senha-page', 'dashboard-page', 'meu-semestre-page', 'avisos-page', 'tutoriais-page', 'trilha-page', 'atendimento-page', 'form-page', 'success-page'];
   var PUBLIC_SCREENS = ['login-page', 'first-access-page'];
   var PATHS = {
     'login-page': '/login',
     'first-access-page': '/primeiro-acesso',
+    'senha-page': '/criar-senha',
     'dashboard-page': '/inicio',
     'meu-semestre-page': '/meu-semestre',
     'avisos-page': '/avisos',
@@ -30,6 +31,7 @@ window.UI = (function () {
   var TITLES = {
     'login-page': 'Entrar',
     'first-access-page': 'Primeiro acesso',
+    'senha-page': 'Criar senha',
     'dashboard-page': 'Início',
     'meu-semestre-page': 'Meu Semestre',
     'avisos-page': 'Avisos',
@@ -102,6 +104,9 @@ window.UI = (function () {
     if (window.Auth.isAuthenticated() && PUBLIC_SCREENS.indexOf(screenId) !== -1) {
       screenId = 'dashboard-page';
     }
+    // Entrou com a senha inicial: só a tela de criar senha até ele criar (server/senha.js).
+    if (window.Auth.isAuthenticated() && window.Auth.precisaCriarSenha()) screenId = 'senha-page';
+    else if (screenId === 'senha-page') screenId = window.Auth.isAuthenticated() ? 'dashboard-page' : 'login-page';
 
     var previous = null;
     SCREENS.forEach(function (id) {
@@ -119,7 +124,7 @@ window.UI = (function () {
     el.classList.remove('hidden');
     el.removeAttribute('aria-hidden');
     el.inert = false;
-    if (previous === 'login-page' || previous === 'first-access-page') {
+    if (previous === 'login-page' || previous === 'first-access-page' || previous === 'senha-page') {
       el.classList.add('from-auth');
     }
     // reinicia a animação de entrada a cada troca de tela

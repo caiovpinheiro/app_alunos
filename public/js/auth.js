@@ -4,6 +4,7 @@ window.Auth = (function () {
 
   var TOKEN_KEY = 'csu_token';
   var USER_KEY = 'csu_user';
+  var SENHA_KEY = 'csu_criar_senha';
 
   function getToken() {
     return sessionStorage.getItem(TOKEN_KEY);
@@ -11,6 +12,7 @@ window.Auth = (function () {
 
   function setSession(token, user) {
     sessionStorage.setItem(TOKEN_KEY, token);
+    sessionStorage.removeItem(SENHA_KEY);
     sessionStorage.setItem(USER_KEY, JSON.stringify({
       name: (user && user.name) || 'Aluno',
       email: (user && user.email) || '',
@@ -62,6 +64,19 @@ window.Auth = (function () {
   function clear() {
     sessionStorage.removeItem(TOKEN_KEY);
     sessionStorage.removeItem(USER_KEY);
+    sessionStorage.removeItem(SENHA_KEY);
+  }
+
+  // Sessão aberta com a senha inicial: o servidor só libera criar a senha própria (server/senha.js).
+  function marcarCriarSenha(pendente) {
+    try {
+      if (pendente) sessionStorage.setItem(SENHA_KEY, '1');
+      else sessionStorage.removeItem(SENHA_KEY);
+    } catch (e) { /* sem storage: o servidor segue barrando com 403 */ }
+  }
+
+  function precisaCriarSenha() {
+    try { return sessionStorage.getItem(SENHA_KEY) === '1'; } catch (e) { return false; }
   }
 
   function isAuthenticated() {
@@ -75,5 +90,7 @@ window.Auth = (function () {
     setSession: setSession,
     clear: clear,
     isAuthenticated: isAuthenticated,
+    marcarCriarSenha: marcarCriarSenha,
+    precisaCriarSenha: precisaCriarSenha,
   };
 })();
