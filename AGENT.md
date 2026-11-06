@@ -25,7 +25,7 @@
 **Impacto**
 - Só front: `index.html`, `styles.css`, `ds.css`, `trilha.css`, `glossario.css`, `trilha.js`, `app.js` (e os `?v=` em `index.html`, `simulado.html` e `admin.html`). Sem rota, evento, pontuação ou regra de conclusão nova.
 - O redesenho do cabeçalho em `claude/navegacao-suave` (5d363e5) apaga o bloco do cabeçalho em `ds.css` que este ajuste mudou e troca `.trilha .hud{top}` e os `scroll-margin-top` por `--cab-h`: ao juntar, ficar com os 44 px que aquele branch já tem e trocar `--trilha-topo` por `--cab-h` (ou manter a medida do `trilha.js`).
-- Publicação: commits no branch da worktree; vai para `main` só com a aprovação do usuário.
+- Publicação: feito em commit num branch de worktree e enviado para `main` depois que o usuário viu localmente e aprovou (06/11/2026).
 
 ### 2026-11-06 - Instrumentação: "Conseguiu fazer?", saídas, entrada e aba Medição
 
