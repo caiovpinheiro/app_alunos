@@ -11,7 +11,8 @@ window.AdminVigia = (function () {
   var ligado = false;
 
   var FONTES = [
-    ['app', 'Banco do app'], ['app_publico', 'App e gerador de link (endereço público)'], ['n8n', 'n8n (execuções)'],
+    ['app', 'Banco do app'], ['app_publico', 'App e gerador de link (endereço público)'],
+    ['email_academico', 'Site para descobrir o e-mail acadêmico'], ['n8n', 'n8n (execuções)'],
     ['crm_templates', 'CRM: templates aprovados'], ['crm_bv', 'CRM: logs do BV'], ['crm_email', 'CRM: logs do email_acad'],
     ['crm_atendimento', 'CRM: atendimento (só tendência)'],
   ];
@@ -23,7 +24,7 @@ window.AdminVigia = (function () {
     ['vendas', 'Vendas (n8n)'], ['n8n_erros', 'Erros no n8n'], ['entradas', 'Entradas no app'], ['primeiras', 'Primeiras entradas'],
     ['falhas_pct', 'Falhas de login (%)'], ['links_pedidos', 'Pedidos de link'], ['link_vazio_pct', 'Link vazio (%)'],
     ['links_usados', 'Links usados'], ['nunca_entraram', 'Nunca entraram'], ['travados', 'Travados na Aula'],
-    ['cert_erros', 'Erros de certificado'], ['bv_failed', 'Passos FAILED no BV'], ['alertas', 'Alertas'],
+    ['cert_erros', 'Erros de certificado'], ['saidas_email', 'Foram ao e-mail acadêmico'], ['bv_failed', 'Passos FAILED no BV'], ['alertas', 'Alertas'],
   ];
   var MAIOR_PIOR = { n8n_erros: 1, falhas_pct: 1, link_vazio_pct: 1, nunca_entraram: 1, travados: 1, cert_erros: 1, bv_failed: 1, alertas: 1 };
 
@@ -122,6 +123,7 @@ window.AdminVigia = (function () {
       kpi('Travados na Aula', v(a.travados), 'tocaram em "Travei" e não concluíram'),
       kpi('Certificado', v(ev.certificado_gerado), (ev.certificado_erro || 0) + ' erro(s) em ' + h + ' h'),
       kpi('Vídeos', v(ev.video_inicio), (ev.video_fim || 0) + ' concluídos em ' + h + ' h'),
+      kpi('Foram descobrir o e-mail acadêmico', v(ev.saida_email_academico), 'saídas do app para o site em ' + h + ' h'),
     ];
     var n8n = '';
     if (i.n8n) {

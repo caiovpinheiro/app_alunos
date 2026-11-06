@@ -106,6 +106,14 @@ não interromper a régua (no CRM, webhook com erro para o fluxo daquele aluno).
 Sem `negocio` no pedido da venda, a tag só é marcada quando um lembrete confere (passo 3). Por isso o item do
 n8n vem primeiro.
 
+## Depois de entrar: o e-mail acadêmico
+
+O primeiro passo na faculdade é descobrir o e-mail acadêmico no atalho
+`https://emailacademico.cruzeiroead.com.br/descobrir` (redireciona para o SSO da Cruzeiro do Sul). O app já leva
+o aluno até lá no módulo 1 da Aula Inaugural e na Central, e conta cada saída para o site. O vigia mostra quantos
+foram ao site a cada 2 h e alerta se o atalho cair ou passar a apontar para fora da Cruzeiro do Sul. O link do
+atalho não entra nas mensagens de acesso: um segundo link ali disputa o toque com "Entrar no app".
+
 ## Onde ver o resultado
 
 Admin › Vigia › "Régua: o que funciona": por código, receberam, entraram em 24 h e a taxa; e o estado de cada

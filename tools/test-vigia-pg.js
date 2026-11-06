@@ -22,6 +22,7 @@ Object.assign(process.env, {
   CRM_API_TOKEN: 'token-falso-crm', CRM_API_URL: 'http://crm.falso',
   VIGIA_APP_URL: 'http://app.falso', VIGIA_TEMPLATES_CHAVE: 'bv_boas_vindas,bv_acesso_link',
   VIGIA_ALERTA_PARA: 'cmconversaequipe0001', VIGIA_LIGADO: 'true', VIGIA_LIMITES: '',
+  VIGIA_EMAIL_ACADEMICO_URL: 'http://email.falso/descobrir',
 });
 
 const db = require('../server/db');
@@ -42,6 +43,12 @@ async function fetchFalso(href, opts = {}) {
   const x = new URL(href);
   const agora = relogio;
   const iso = (min) => new Date(agora - min * 60000).toISOString();
+  if (x.host === 'email.falso') {
+    if (cenario.emailFora) return resposta(502, null);
+    const r = resposta(302, null);
+    r.headers = new Map([['location', cenario.emailDestino || 'https://sso.cruzeirodosul.edu.br/recover-email?empresa=cruzeiro']]);
+    return r;
+  }
   if (x.host === 'app.falso') {
     if (x.pathname === '/health') return resposta(200, { ok: true });
     if (x.pathname === '/api/integracoes/link-acesso') return resposta(401, { success: false });
@@ -102,6 +109,7 @@ async function semear(pool) {
   for (const motivo of ['senha_incorreta', 'senha_incorreta', 'esqueci_senha']) await instrumentacao.falha(pool, { motivo, origem: 'bv' });
   await pool.query(`INSERT INTO csu_trilha_progresso (aluno_id, nivel, travei) VALUES ($1, 1, '{"p1": 2}'), ($2, 1, '{}')`, [ids[0], ids[1]]);
   await pool.query(`INSERT INTO csu_eventos (aluno_id, nome) VALUES ($1, 'certificado_erro'), ($1, 'video_inicio'), ($2, 'video_inicio'), ($2, 'video_fim')`, [ids[0], ids[1]]);
+  await pool.query(`INSERT INTO csu_eventos (aluno_id, nome, dados) VALUES ($1, 'saida_externa', '{"destino":"email_academico"}'), ($2, 'saida_externa', '{"destino":"ava"}')`, [ids[0], ids[1]]);
   for (const r of ['ok', 'ok', 'ok', 'conta_nao_encontrada']) await vigia.registrarPedidoLink(pool, r, 'bv_acesso');
   await linkAcesso.gerar(pool, ids[2], 'bv_acesso');
   return ids;
@@ -132,6 +140,8 @@ teste('retrato com os números do app, do n8n e do CRM', async () => {
   assert.strictEqual(a.contas.nunca_entraram, 3);
   assert.strictEqual(a.travados, 1);
   assert.deepStrictEqual([a.eventos.certificado_erro, a.eventos.video_inicio, a.eventos.video_fim], [1, 2, 1]);
+  assert.strictEqual(a.eventos.saida_email_academico, 1, 'só a saída para o e-mail acadêmico');
+  assert.deepStrictEqual(r.fontes.email_academico, { estado: 'ok' });
   assert.deepStrictEqual([a.links.pedidos, a.links.falhas, a.links.vazio_pct, a.links.gerados], [4, 1, 25, 1]);
   assert.strictEqual(r.indicadores.n8n.vendas, 3);
   assert.strictEqual(r.indicadores.n8n.fluxos.find((f) => f.id === 'bxPxERzvVyriO8qr').erro, 1);
@@ -234,6 +244,26 @@ teste('aba: último retrato, tendência de 24 h e aviso de atraso', async () => 
   const q = await vigia.painelAdmin(pool);
   assert.strictEqual(q.atrasado, false);
   assert.strictEqual(q.minutos_sem_leitura, 20);
+});
+
+teste('site do e-mail acadêmico fora do ar vira alerta crítico', async () => {
+  cenario.emailFora = true;
+  relogio = Date.now();
+  try {
+    const r = await vigia.rodar(pool, { slot: null, fetchImpl: fetchFalso });
+    const al = r.alertas.find((x) => x.id === 'descobrir_email_fora');
+    assert.ok(al, 'alerta do site');
+    assert.strictEqual(al.nivel, 'critico');
+    assert.match(al.detalhe, /email\.falso\/descobrir não respondeu \(HTTP 502\)/);
+    assert.strictEqual(r.fontes.email_academico.estado, 'erro');
+    cenario.emailFora = false;
+    cenario.emailDestino = 'https://dominio-estacionado.example/';
+    const r2 = await vigia.rodar(pool, { slot: null, fetchImpl: fetchFalso });
+    assert.match(r2.alertas.find((x) => x.id === 'descobrir_email_fora').detalhe, /redireciona para fora da Cruzeiro do Sul/);
+  } finally {
+    cenario.emailFora = false;
+    cenario.emailDestino = null;
+  }
 });
 
 teste('sem as chaves: n8n e CRM desligados, nada enviado', async () => {
