@@ -39,7 +39,7 @@
 - Publicação: este trabalho ficou em commits no branch da worktree `certificado-dia-zero`, **sem push**. O usuário pediu para aprovar antes de publicar; o push em `main` só depois dessa aprovação.
 
 **Pendente de decisão de negócio**
-- O acadêmico precisa aceitar o PDF provisório sem a linha do polo até o relatório chegar. Alternativa: pedir o polo ao aluno no cadastro, com lista fechada.
+- O acadêmico precisa aceitar o PDF provisório sem a linha do polo até o relatório chegar. Decidido em 06/11: o polo **não** é pedido ao aluno; ele vem pelo RGM (relatório de matriculados) ou da planilha do polo.
 
 **Impacto**
 - Teste: `npm run test:certificado` (`tools/test-certificado.js`). A parte do PDF roda sem banco; o fluxo cria um Postgres local temporário com `createdb` (só `localhost` ou socket) e o apaga no fim. Nunca usa o `.env`.

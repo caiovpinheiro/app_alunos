@@ -162,7 +162,7 @@ Regra de leitura: comparar coortes por semana de criação da conta, nunca o tot
 - **Categoria dos templates na Meta:** mensagem de acesso é utilidade, não marketing. A recategorização depende da Meta e pode exigir reescrever o texto.
 - **Opt-out:** o CRM não tem. Modelar com tag até a Onda 2.4.
 - **Rastreio ligado para todos:** a política de privacidade precisa citar o acompanhamento e o envio de contexto ao CRM.
-- **Certificado sem polo:** o acadêmico precisa aceitar um PDF sem a linha do polo até o relatório chegar (1.1). Alternativa: pedir o polo ao aluno no cadastro, com lista fechada.
+- **Certificado sem polo:** o acadêmico precisa aceitar um PDF sem a linha do polo até o relatório chegar (1.1). O polo não é pedido ao aluno (decidido em 06/11): vem pelo RGM ou da planilha do polo.
 - **Dados do relatório:** 752 pessoas com mais de um curso e 20 fora da base. O sync escolhe por e-mail; vale uma regra explícita para quem tem dois cursos.
 
 ## 7. Como executar
