@@ -36,7 +36,7 @@
 - Avisos e atendimento leem curso e polo da conta, com o último certificado só como alternativa.
 - `upsertAcessoDerived` não apaga curso e polo com NULL (COALESCE), e o RGM do cadastro é gravado só com dígitos.
 - Quem ficou para trás: `node tools/certificados-pendentes.js` (ou `GET /api/admin/certificados/pendentes`, `?concluiram=1`, `?formato=csv`) lista quem teve `certificado_erro`, não tem certificado e já tem curso e polo. O aviso ao aluno dentro do app é o próprio card do Início, que passa a mostrar "Emitir certificado"; `csu_avisos` só segmenta por todos, polo ou curso, então não foi usado para aviso individual.
-- Publicação: este trabalho ficou em commits no branch da worktree `certificado-dia-zero`, **sem push**. O usuário pediu para aprovar antes de publicar; o push em `main` só depois dessa aprovação.
+- Publicação: feito em commits num branch de worktree e só enviado para `main` depois da aprovação do usuário (06/11/2026), como ele pediu para esta frente.
 
 **Pendente de decisão de negócio**
 - O acadêmico precisa aceitar o PDF provisório sem a linha do polo até o relatório chegar. Decidido em 06/11: o polo **não** é pedido ao aluno; ele vem pelo RGM (relatório de matriculados) ou da planilha do polo.
