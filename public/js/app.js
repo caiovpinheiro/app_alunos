@@ -144,6 +144,17 @@
     return mapped;
   }
 
+  // Caixa de erro do certificado: algumas usam a classe .hidden, a da Aula usa o atributo hidden. Mexe nos dois.
+  function mostrarErroCert(el, msg) {
+    el.textContent = msg;
+    el.hidden = false;
+    el.classList.remove('hidden');
+  }
+  function esconderErroCert(el) {
+    el.hidden = true;
+    el.classList.add('hidden');
+  }
+
   // Emite o certificado direto (sem formulário). opts.btn = botão que mostra "Gerando..." (padrão:
   // #btn-gerar-certificado do Início sem trilha); opts.erro = caixa onde aparece o erro.
   async function generateCertificateNow(opts) {
@@ -153,7 +164,7 @@
     var erroEl = opts.erro || null;
     var txtEl = btn && btn.querySelector('[data-cert-txt]');
     var txtOriginal = txtEl ? txtEl.textContent : '';
-    if (erroEl) erroEl.classList.add('hidden'); else UI.hideDashboardCertError();
+    if (erroEl) esconderErroCert(erroEl); else UI.hideDashboardCertError();
     if (btn) { btn.disabled = true; btn.classList.add('is-loading'); if (txtEl) txtEl.textContent = 'Gerando certificado...'; }
     else UI.setDashboardCertLoading(true);
     try {
@@ -185,7 +196,11 @@
         UI.showLoginError('Sua sessão expirou. Entre novamente.');
       } else {
         window.Rastreio && window.Rastreio.track('certificado_erro', { mensagem: err.message || GENERIC_ERROR, origem: opts.origem || 'painel' }, { importante: true });
-        if (erroEl) { erroEl.textContent = err.message || GENERIC_ERROR; erroEl.classList.remove('hidden'); }
+        // Esperando RGM, curso ou polo: o card do Início passa a mostrar esse estado.
+        if ((err.codigo === 'sem_rgm' || err.codigo === 'sem_curso_polo') && window.Trilha && document.body.classList.contains('trilha-on')) {
+          window.Trilha.refreshDashboard();
+        }
+        if (erroEl) mostrarErroCert(erroEl, err.message || GENERIC_ERROR);
         else UI.showDashboardCertError(err.message || GENERIC_ERROR);
         // Erro técnico (não a regra "faltam módulos", que vem como 422): oferece falar com a equipe.
         var ancoraErro = erroEl || document.getElementById('dashboard-cert-error') || document.getElementById('home-aula-erro');

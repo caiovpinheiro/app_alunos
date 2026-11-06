@@ -375,14 +375,17 @@ app.post('/api/auth/register', async (req, res) => {
 
   const email = normalizeSpaces(req.body?.email);
   const nome = normalizeSpaces(req.body?.nome);
-  const rgm = normalizeSpaces(req.body?.rgm);
+  // RGM só com dígitos, como o sync de matriculados grava e compara ("123.456-7" vira "1234567").
+  const rgmDigitado = normalizeSpaces(req.body?.rgm);
+  const rgm = rgmDigitado.replace(/\D+/g, '');
   const password = String(req.body?.password ?? '');
   const confirm = String(req.body?.confirmPassword ?? '');
   const errors = {};
 
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) errors.email = 'Insira um e-mail válido.';
   if (!nome) errors.nome = 'O nome completo é obrigatório.';
-  if (!rgm) errors.rgm = 'O RGM é obrigatório.';
+  if (!rgmDigitado) errors.rgm = 'O RGM é obrigatório.';
+  else if (!rgm) errors.rgm = 'Digite os números do seu RGM.';
   if (password.length < 6) errors.password = 'A senha deve ter no mínimo 6 caracteres.';
   if (password !== confirm) errors.confirmPassword = 'As senhas não coincidem.';
 
@@ -584,7 +587,8 @@ app.post('/api/certificates', authMiddleware, async (req, res) => {
     if (!curso || !unidade) {
       return res.status(422).json({
         success: false,
-        message: 'Ainda não encontramos o curso e o polo da sua matrícula, então o certificado não pode ser emitido agora. O cadastro costuma ser atualizado em até 1 dia útil: tente de novo amanhã ou chame o acadêmico.',
+        codigo: 'sem_curso_polo',
+        message: 'Você concluiu a Aula Inaugural! O certificado sai assim que o curso e o polo da sua matrícula chegarem ao app, o que costuma levar até 1 dia útil. Seu progresso fica salvo: volte aqui amanhã para emitir.',
       });
   }
 
@@ -857,6 +861,18 @@ async function certificadoEmitido(alunoId) {
   }
 }
 
+// Curso ou polo ainda não chegaram para esta conta (com RGM)? O card do Início mostra "esperando curso e polo".
+async function semCursoPolo(aluno) {
+  if (!aluno || !aluno.rgm) return false;
+  try {
+    const r = await pool.query('SELECT curso, unidade FROM csu_alunos WHERE id = $1', [aluno.id]);
+    const row = r.rows[0] || {};
+    return !(String(row.curso || '').trim() && String(row.unidade || '').trim());
+  } catch (err) {
+    return false;
+  }
+}
+
 // Mesma fonte, para o painel admin: { [aluno_id]: data da 1ª emissão } de todos os alunos.
 async function certificadosEmitidos() {
   try {
@@ -882,7 +898,7 @@ app.get('/api/trilha/resumo', authMiddleware, async (req, res) => {
       maximo: trilha.MAX_PONTOS,
       atual: atual === -1 ? null : { nivel: atual + 1, titulo: trilha.NIVEIS[atual].t },
       comecou: p.niveis.some((n) => n.video_ok || n.pulou_video || n.partes_vistas.length || Object.keys(n.respostas).length),
-      certificado: { ...trilha.statusCertificado(p), ...(await certificadoEmitido(req.aluno.id)) },
+      certificado: { ...trilha.statusCertificado(p), ...(await certificadoEmitido(req.aluno.id)), sem_curso_polo: await semCursoPolo(req.aluno) },
     });
   } catch (err) {
     console.error('Falha no resumo da trilha:', err.message);

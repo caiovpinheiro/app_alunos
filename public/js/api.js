@@ -17,6 +17,7 @@ window.Api = (function () {
       var err = new Error((body && body.message) || 'Falha na comunicação com o servidor.');
       err.status = res.status;
       err.details = body && body.errors;
+      err.codigo = body && body.codigo;
       throw err;
     }
     return body;

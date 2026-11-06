@@ -9,6 +9,7 @@
    A) não começou   → Começar a aula
    B) em andamento  → Continuar o módulo N (módulos feitos + pontos/meta)
    C) liberado      → Emitir certificado (7 módulos + meta de pontos; a regra é do servidor)
+      C') sem curso/polo da matrícula ainda (certificado.sem_curso_polo) → "quase lá", tentar de novo
    D) já emitido    → Rever a Aula Inaugural
 
    Acesso em preparação (body.acesso-preparo, conta sem RGM): o banner diz que o acesso está sendo
@@ -156,6 +157,14 @@ window.Inicio = (function () {
       txt.innerHTML = '<span class="ai-k">Aula Inaugural concluída</span><h2 id="home-aula-h">Parabéns! Você concluiu a Aula Inaugural</h2>' +
         '<p>Seu certificado de ' + horas + ' horas sai assim que o seu RGM chegar: o polo já está providenciando.</p>' + progresso(r, meta);
       acts.innerHTML = '<button type="button" class="portal-btn portal-btn--ghost" data-open-trilha="">Rever os módulos' + seta + '</button>';
+    } else if (c.liberado && c.sem_curso_polo) {
+      // Curso e polo da matrícula ainda não chegaram: o servidor responde "sem_curso_polo". Não promete "liberado".
+      card.classList.add('is-ok');
+      painel(selo, horas, 'Certificado<br><b>quase lá</b>');
+      txt.innerHTML = '<span class="ai-k">Aula Inaugural concluída</span><h2 id="home-aula-h">Parabéns! Você concluiu a Aula Inaugural</h2>' +
+        '<p>Seu certificado de ' + horas + ' horas sai assim que o curso e o polo da sua matrícula chegarem ao app, em até 1 dia útil. Seu progresso está salvo.</p>' + progresso(r, meta);
+      acts.innerHTML = '<button type="button" class="portal-btn portal-btn--ghost" data-gerar-certificado><span data-cert-txt>Tentar emitir agora</span>' + seta + '</button>' +
+        '<button type="button" class="portal-link" data-open-trilha="">Rever os módulos</button>';
     } else if (c.liberado) {
       card.classList.add('is-ok');
       painel(selo, horas, 'Certificado<br><b>liberado!</b>');

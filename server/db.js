@@ -458,6 +458,7 @@ async function upsertAlunoFromMatricula(pool, { email, rgm, nome, password }) {
   return inserted.rows[0];
 }
 
+// Curso e polo vazios não apagam o que a conta já tem (o sync de acessos e o preparo mandam só nome, e-mail e RGM).
 async function upsertAcessoDerived(pool, { email, rgm, nome, curso, unidade }) {
   const existing = await pool.query(
     `SELECT id, email, rgm, nome, pw_hash, ativo
@@ -472,7 +473,8 @@ async function upsertAcessoDerived(pool, { email, rgm, nome, curso, unidade }) {
     const row = existing.rows[0];
     await pool.query(
       `UPDATE csu_alunos
-       SET email = $1, rgm = $2, nome = $3, ativo = TRUE, curso = $5, unidade = $6
+       SET email = $1, rgm = $2, nome = $3, ativo = TRUE,
+           curso = COALESCE($5, curso), unidade = COALESCE($6, unidade)
        WHERE id = $4`,
       [email, rgm, nome, row.id, curso || null, unidade || null],
     );
@@ -578,13 +580,15 @@ async function createAluno(pool, data) {
   const existing = await pool.query(
     `SELECT email, rgm FROM csu_alunos
      WHERE lower(email) = lower($1) OR rgm = $2
+        OR ($2 <> '' AND regexp_replace(rgm, '\\D', '', 'g') = regexp_replace($2, '\\D', '', 'g'))
      LIMIT 1`,
     [email, rgm],
   );
   if (existing.rows[0]) {
     const err = new Error('Aluno já cadastrado.');
     err.code = 'DUPLICATE';
-    err.field = existing.rows[0].rgm === rgm ? 'rgm' : 'email';
+    const soDigitos = (v) => String(v || '').replace(/\D+/g, '');
+    err.field = existing.rows[0].rgm && soDigitos(existing.rows[0].rgm) === soDigitos(rgm) ? 'rgm' : 'email';
     throw err;
   }
 

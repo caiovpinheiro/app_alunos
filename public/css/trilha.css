@@ -387,6 +387,8 @@
   .trilha .tc-btn{gap:12px;padding:8px 26px;font-size:1.1rem}
 }
 .trilha .tfinal .hint{margin-top:12px}
+.trilha .tfinal .perr{margin:12px 0 0;padding:12px 14px;border-radius:var(--r-sm);background:var(--warn-bg);color:var(--warn-fg);border:1px solid var(--warn-line)}
+.trilha .tfinal .perr[hidden]{display:none}
 .trilha .passo .player video{width:100%;display:block;border-radius:12px;background:#000;aspect-ratio:16/9}
 .trilha .passo .parts{margin-bottom:10px}
 /* Coluna do resumo enxuta: tópicos curtos, regra em destaque e o resto em caixas fechadas. */

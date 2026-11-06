@@ -316,7 +316,7 @@ window.Trilha = (function () {
     h += '<div id="tLevels" class="levels"></div>';
     h += '<section class="level tcaps-sec tfinal" id="tFinal" data-cert-area aria-labelledby="tFinalH"><div class="lvhead"><span class="lvbadge" aria-hidden="true">★</span><div class="tt"><div class="lvmeta"><span class="lvnum">Encerramento</span></div><h2 id="tFinalH">Encerramento e certificado</h2></div></div>';
     if (C.encerramento && C.encerramento.length) h += capsPlayer(C.encerramento, 'tEn');
-    h += '<div id="tCert" class="tcert"></div><div class="perr" data-cert-erro hidden></div>';
+    h += '<div id="tCert" class="tcert"></div><div class="perr" data-cert-erro role="alert" hidden></div>';
     h += '<p class="hint">Releia qualquer módulo quando quiser. Na dúvida, vale o que está no Manual do Aluno e no Calendário Acadêmico.</p></section>';
 
     h += rodape;
