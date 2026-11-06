@@ -18,6 +18,7 @@
 const crypto = require('crypto');
 const { envValue } = require('./env');
 const senha = require('./senha');
+const vigia = require('./vigia'); // conta o resultado de cada pedido (link saindo vazio)
 
 const TOKEN_RE = /^[A-Za-z0-9_-]{40,60}$/;
 
@@ -117,15 +118,23 @@ function registrarRotas(app, { getPool, findAluno, createSession, instrumentacao
     }
     if (!pool) return res.status(503).json({ success: false, message: 'Serviço de dados indisponível.' });
     const rgm = String((req.body && req.body.rgm) || '').replace(/\D+/g, '');
-    if (!rgm) return res.status(400).json({ success: false, message: 'Informe o RGM.' });
+    const origem = instrumentacao.limparOrigem(req.body && req.body.origem) || 'link';
+    if (!rgm) {
+      vigia.registrarPedidoLink(pool, 'sem_rgm', origem);
+      return res.status(400).json({ success: false, message: 'Informe o RGM.' });
+    }
     try {
       if (ensureSchemaAlunos) await ensureSchemaAlunos();
       const aluno = await findAluno(pool, rgm);
-      if (!aluno || !aluno.ativo) return res.status(404).json({ success: false, motivo: 'conta_nao_encontrada', message: 'Nenhuma conta ativa com esse RGM.' });
-      const origem = instrumentacao.limparOrigem(req.body && req.body.origem) || 'link';
+      if (!aluno || !aluno.ativo) {
+        vigia.registrarPedidoLink(pool, 'conta_nao_encontrada', origem);
+        return res.status(404).json({ success: false, motivo: 'conta_nao_encontrada', message: 'Nenhuma conta ativa com esse RGM.' });
+      }
       const r = await gerar(pool, aluno.id, origem);
+      vigia.registrarPedidoLink(pool, 'ok', origem);
       return res.json({ success: true, url: r.url, expira_em: r.expira_em });
     } catch (err) {
+      vigia.registrarPedidoLink(pool, 'erro', origem);
       console.error('Falha ao gerar link de acesso:', err.message);
       return res.status(500).json({ success: false, message: 'Não foi possível gerar o link.' });
     }

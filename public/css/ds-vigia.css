@@ -1,0 +1,14 @@
+/* Admin › Vigia (admin-vigia.js). Reaproveita .pn-*, .av-*, .md-* e os tokens de ds.css; aqui só o que é novo. */
+#vigia-corpo > * + *{margin-top:16px}
+#vigia-corpo .av-kpis + .overflow-x-auto,
+#vigia-corpo .overflow-x-auto + .overflow-x-auto{margin-top:16px}
+.vg-msg{margin:8px 0 0;padding:12px 14px;border-radius:var(--ds-r-sm);background:var(--ds-surface-2);color:var(--ds-ink);
+  font:14px/1.5 var(--ds-font);white-space:pre-wrap;word-break:break-word;max-width:640px}
+#admin-app .vg-tend tbody th{min-width:170px;text-align:left;font-weight:600}
+/* Com muitas leituras a tabela rola para o lado: o nome do indicador fica parado. */
+#admin-app .vg-tend tbody th,#admin-app .vg-tend thead th:first-child{position:sticky;left:0;z-index:1;background:var(--ds-surface,#fff)}
+@media (max-width:700px){#admin-app .vg-tend tbody th{min-width:130px}}
+#admin-app .vg-tend td,#admin-app .vg-tend thead th{white-space:nowrap}
+#admin-app .vg-tend .vg-pior{color:var(--f-ruim);font-weight:700}
+#admin-app .vg-tend .vg-melhor{color:var(--f-bom);font-weight:700}
+#admin-app .vg-tend .md-nota{display:block;font-weight:400}
