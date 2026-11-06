@@ -35,63 +35,58 @@ o lembrete precisa dizer, então viram as variantes do teste:
 Testes de texto novos ficam para depois, sempre nesse padrão (aviso da conta + resposta rápida). O
 `acesso_lembrete1_a` recusado continua no CRM com status REJECTED; não atrapalha nada.
 
-## Sequência
-
-O rodízio sorteia uma vez, no começo; cada pessoa recebe sempre a mesma variante nos três lembretes.
+## Sequência (como está montada)
 
 | Quando | Para quem | Variante A | Variante B |
 |---|---|---|---|
-| Venda (já existe) | todos | BV com o link pessoal (`bv_acesso`) | igual |
-| +3 h, só entre 8h e 21h | sem `app_entrou` | `bv_app2`, código `fup1_a` | `bv_app1`, código `fup1_b` |
-| +24 h | sem `app_entrou` | `bv_app2`, código `fup2_a` | `bv_app1`, código `fup2_b` |
-| +72 h | sem `app_entrou` | `bv_app2`, código `fup3_a` + tarefa para o Acolhimento ligar | `bv_app1`, código `fup3_b` + tarefa |
-| a qualquer momento | entrou | a régua para (condição da tag) | igual |
+| Venda | todos | BV: `bv_app2` com o link pessoal no "Quero meu acesso" (`bv_acesso`) | igual |
+| +24 h sem resposta | sem `app_entrou` | lembrete `bv_app2`, link `fup1_a` | lembrete `bv_app1` (com o nome), link `fup1_b` |
+| +48 h sem resposta | sem `app_entrou` | n8n `acad_sem_interacao` (como antes) | igual |
+| a qualquer momento | entrou | a régua encerra na próxima checagem | igual |
 
-O vigia compara `fup1_a` com `fup1_b`, `fup2_a` com `fup2_b` e assim por diante. Declara o vencedor quando cada
+O rodízio sorteia uma vez por negócio. O vigia compara `fup1_a` com `fup1_b` e declara o vencedor quando cada
 variante tem 60 contas e a diferença passa da margem (z ≥ 1,96). Antes disso mostra "Coletando" ou "Sem
-diferença ainda". Não mude o rodízio no meio do teste: para testar outra coisa, use outros códigos.
+diferença ainda". Não mude o rodízio no meio do teste: para testar outra coisa (horário, um lembrete em +3 h),
+use outros códigos.
 
-## Mensagem depois do toque em "Quero meu acesso"
+O toque em "Quero meu acesso" já é tratado pela BV: ela confere `link_acesso` e manda o link pessoal numa
+mensagem comum (vale dentro da janela de 24 h aberta pelo toque). Depois do webhook do lembrete, esse campo já
+traz o link com o código da variante.
 
-Mensagem comum (não é template; vale dentro da janela de 24 h aberta pelo toque):
+## O que está montado no CRM (06/11/2026)
 
-> Aqui está o seu link de entrada no App do Aluno:
-> {{link_acesso}}
-> Ele abre a sua área sem pedir senha, vale por 7 dias e funciona uma vez. Se não abrir, responda esta mensagem.
+A "BV - Calouros" já fazia o lembrete: manda `bv_app2`, espera 24 h sem resposta, manda `bv_app2` de novo e,
+sem resposta em mais 24 h, chama o n8n `acad_sem_interacao`. O toque em "Quero meu acesso" já manda o link
+pessoal (`{{dealCustomFields.link_acesso}}`). Uma automação paralela duplicaria os lembretes, então foi criada
+uma **cópia desligada**: **"BV - Calouros (com checagem de acesso)"** (`cmw5mcpv203h1ny01585i08vv`).
 
-`{{link_acesso}}` é o campo do negócio que o webhook do lembrete acabou de gravar.
+- 60 dos 62 passos são idênticos aos da BV (ids com o prefixo `bvc-`). Mesmo gatilho.
+- `bv_app2` sem resposta em 24 h → `fup-checa-24h` (webhook) → `fup-recarrega-24h` → `fup-entrou-24h`:
+  tem `app_entrou`? encerra : rodízio `fup-rodizio-1`
+  - A: webhook `origem: fup1_a` → o lembrete `bv_app2` de sempre
+  - B: webhook `origem: fup1_b` → `bv_app1` com `{{contact.name|first_name}}` (mesmos botões)
+- Lembrete A ou B sem resposta em 24 h → `fup-checa-48h` → `fup-recarrega-48h` → `fup-entrou-48h`:
+  tem `app_entrou`? encerra : n8n `acad_sem_interacao` (como antes).
 
-## Passos na automação do CRM
+O passo "remover tag `app_recarregar_tags`" não remove nada (a tag não existe): ele só existe porque o CRM
+recarrega as tags do negócio depois de remover tag, e não depois de webhook. Sem ele, a condição veria as tags
+de antes da checagem.
 
-Uma automação nova, "Lembretes de acesso", com o mesmo gatilho da BV (negócio criado na etapa Acolhimento do
-funil ACADÊMICO). Todos os webhooks: `POST https://app.cruzeiroead.com.br/api/integracoes/regua-fup`, JSON
-com `"segredo"` (o mesmo de `LINK_ACESSO_SEGREDO`), `"negocio": "{{deal.id}}"` e `"rgm": "{{campo RGM do negócio}}"`.
+Webhooks `fup-*`: `POST https://app.cruzeiroead.com.br/api/integracoes/regua-fup` com
+`{"segredo": "COLE_O_SEGREDO_AQUI", "negocio": "{{deal.id}}", "rgm": "{{dealCustomFields.rgm}}"}` (e `origem`
+nos dois do rodízio). **O segredo precisa ser colado** (o mesmo de `LINK_ACESSO_SEGREDO`) nos 4 webhooks:
+`fup-checa-24h`, `fup-link-1a`, `fup-link-1b`, `fup-checa-48h`. Com o texto de exemplo o app responde 401, e no
+CRM webhook com erro para o fluxo daquele aluno.
 
-```
-1  delay 3 h
-2  business_hours 8h–21h (fora disso, espera abrir)
-3  webhook {segredo, negocio, rgm}                   ← confere e marca app_entrou se já entrou
-4  condition: negócio tem tag app_entrou → finish
-5  round_robin  A | B
+### Para ligar (nesta ordem)
 
-Caminho A (repita em B trocando bv_app2 → bv_app1 e _a → _b):
-6  webhook {…, "origem": "fup1_a"}                   ← gera o link e grava em link_acesso
-7  template bv_app2
-8  wait_for_reply (até 24 h): resposta "Quero meu acesso" → mensagem do link (seção acima)
-9  delay até completar 24 h desde a venda
-10 webhook {segredo, negocio, rgm} → condition tag app_entrou → finish
-11 webhook {…, "origem": "fup2_a"} → template bv_app2 → wait_for_reply → mensagem do link
-12 delay até 72 h
-13 webhook {segredo, negocio, rgm} → condition tag app_entrou → finish
-14 webhook {…, "origem": "fup3_a"} → template bv_app2 → wait_for_reply → mensagem do link
-15 create_activity para o responsável do Acolhimento: "Não entrou no app em 3 dias: ligar"
-```
+1. Publicar o app com os PRs #7 e #8 e conferir que `/api/integracoes/regua-fup` responde.
+2. Colar o segredo nos 4 webhooks `fup-*` da cópia.
+3. No EasyPanel: `VIGIA_CRM_BV=cmw5mcpv203h1ny01585i08vv` e
+   `VIGIA_CRM_PASSO_MATRICULA=bvc-b9e9f48a-1656-43a9-b5b1-9196168cbec3` (o vigia passa a ler a cópia).
+4. Desligar a "BV - Calouros" e ligar a cópia na mesma hora. Para voltar atrás: o inverso.
 
-Antes de ligar, confira no CRM que o toque em "Quero meu acesso" de um lembrete não é tratado também pela BV
-(as duas usam o mesmo botão), para a pessoa não receber o link e as credenciais ao mesmo tempo.
-
-O webhook só devolve erro com segredo errado: conta não encontrada, CRM fora ou banco fora respondem 200, para
-não interromper a régua (no CRM, webhook com erro para o fluxo daquele aluno).
+Quem já está no meio da BV antiga termina nela; só negócios novos entram na cópia.
 
 ## O que configurar
 

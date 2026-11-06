@@ -49,6 +49,12 @@ const CRM = {
   canal: 'cmtai20yx0090mw019h6uyrqk',
 };
 
+// Ao trocar a BV pela cópia com checagem de acesso, o id da automação e o do passo mudam: estas env apontam.
+function idCrm(nome, padrao) {
+  const v = envValue(nome);
+  return /^[A-Za-z0-9_-]{6,80}$/.test(v) ? v : padrao;
+}
+
 const REGRAS_PADRAO = {
   janela_min: 120,
   n8n_erros_min: 1,         // qualquer erro nos fluxos
@@ -308,10 +314,11 @@ async function lerCrm(fetchImpl, desde, agora, L) {
   }
 
   // Logs do BV: falhas na janela e quantos passaram pelo passo do template de matrícula.
-  const bv = await logsAutomacao(fetchImpl, base, headers, CRM.bv, desde);
+  const bvId = idCrm('VIGIA_CRM_BV', CRM.bv);
+  const bv = await logsAutomacao(fetchImpl, base, headers, bvId, desde);
   if (bv.erro) fontes.crm_bv = bv.erro;
   else {
-    const mat = await logsAutomacao(fetchImpl, base, headers, CRM.bv, desde, { stepId: CRM.passoMatricula });
+    const mat = await logsAutomacao(fetchImpl, base, headers, bvId, desde, { stepId: idCrm('VIGIA_CRM_PASSO_MATRICULA', CRM.passoMatricula) });
     dados.bv = agregarLogs(bv.itens, desde, { ignorar: L.bv_ignorar_passos });
     dados.bv.matricula = mat.erro ? null : agregarLogs(mat.itens, desde).total;
     fontes.crm_bv = { estado: 'ok' };
