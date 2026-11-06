@@ -37,6 +37,7 @@ const dadosAcesso = require('./dadosAcesso');
 const certificado = require('./certificado');
 const simulado = require('./simulado');
 const senha = require('./senha');
+const linkAcesso = require('./link-acesso');
 const app = express();
 app.set('trust proxy', 1);
 const PORT = Number(process.env.PORT) || 80;
@@ -463,6 +464,15 @@ app.post('/api/auth/register', async (req, res) => {
 
 // "Esqueci minha senha" na tela de login (server/instrumentacao.js).
 instrumentacao.registrarRotas(app, { getPool: () => pool, findAluno: db.findAlunoByIdentifier });
+
+// Link de acesso (link mágico) gerado pelo n8n/CRM e a entrada por ele (server/link-acesso.js).
+linkAcesso.registrarRotas(app, {
+  getPool: () => pool,
+  findAluno: db.findAlunoByIdentifier,
+  createSession: db.createSession,
+  instrumentacao,
+  ensureSchemaAlunos: () => db.ensureSchema(pool),
+});
 
 // Criar a senha própria e, no admin, voltar a conta para a senha inicial (server/senha.js).
 senha.registrarRotas(app, {
@@ -1974,6 +1984,17 @@ const STUDENT_PAGES = [
   '/sucesso',
 ];
 app.get(STUDENT_PAGES, enviarIndex);
+// Link de acesso: sempre as telas novas (a antiga não sabe entrar por link). O token sai da barra
+// de endereço assim que a página abre (public/js/app.js).
+app.get('/a/:token', (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.set('Referrer-Policy', 'no-referrer');
+  res.sendFile('index.html', { root: PUBLIC_DIR });
+});
+// Página aberta, sem login: como funciona o curso e a Aula Inaugural (link do botão "Sobre o Curso" da régua).
+app.get(['/como-funciona', '/como-funciona.html'], (req, res) => {
+  res.sendFile('como-funciona.html', { root: PUBLIC_DIR });
+});
 
 // Grupo de estudo do curso (GRUPO_ESTUDO_ATIVA_PARA): rotas próprias em server/grupo-estudo.js.
 require('./grupo-estudo').montar(app, { pool, authMiddleware, requireAdmin, ensureAcompanhamento, enviarIndex });

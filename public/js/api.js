@@ -24,6 +24,7 @@ window.Api = (function () {
       err.status = res.status;
       err.details = body && body.errors;
       err.codigo = body && body.codigo;
+      err.rgm = body && body.rgm;
       throw err;
     }
     return body;
@@ -55,6 +56,17 @@ window.Api = (function () {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ identifier: identifier, password: password, origem: origem() }),
+    });
+    esquecerOrigem();
+    return r;
+  }
+
+  // Link de acesso (/a/<token>, server/link-acesso.js): entra sem digitar RGM e senha.
+  async function entrarPorLink(token) {
+    var r = await request('/api/auth/link', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: token, origem: origem() }),
     });
     esquecerOrigem();
     return r;
@@ -243,6 +255,7 @@ window.Api = (function () {
     getMinhasAvaliacoes: getMinhasAvaliacoes,
     getTotaisAvaliacoes: getTotaisAvaliacoes,
     login: login,
+    entrarPorLink: entrarPorLink,
     register: register,
     esqueciSenha: esqueciSenha,
     criarSenha: criarSenha,

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Como funciona o seu curso | Cruzeiro do Sul Virtual</title>
+<meta name="description" content="Veja em 1 minuto e meio como funciona a graduação a distância e assista à Aula Inaugural, que vale certificado de 4 horas.">
+<meta property="og:title" content="Como funciona o seu curso a distância">
+<meta property="og:description" content="Assista ao vídeo e depois à Aula Inaugural: 7 módulos curtos e certificado de 4 horas.">
+<meta property="og:image" content="/trilha-midia/aula/cap_01.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+<style>
+/* Página aberta (sem login) do botão "Sobre o Curso" da régua. Mesmas cores da Aula Inaugural (trilha.css). */
+:root{--bg:#eef4fb;--surface:#fff;--fg:#0b1f38;--muted:#45566e;--line:#d3dfee;--accent:#0a4fa6;--accent-soft:#e3edfc;
+  --solid:#00356b;--hero-2:#0b56b0;--xp:#ffc72c;--xp-2:#f59a00;--on-xp:#2b1d00;
+  --display:"Poppins","Segoe UI",system-ui,sans-serif;--body:"Atkinson Hyperlegible Next","Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+  --r:20px;--shadow:0 1px 2px rgba(0,40,90,.06),0 12px 30px -18px rgba(0,40,90,.3)}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 17px/1.55 var(--body)}
+a{color:var(--accent)}
+.wrap{max-width:760px;margin:0 auto;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 48px max(16px,env(safe-area-inset-left))}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0 20px}
+header img{height:36px;width:auto}
+header a{font-weight:700;text-decoration:none;min-height:44px;display:inline-flex;align-items:center;padding:0 4px}
+.hero{background:linear-gradient(135deg,var(--solid),var(--hero-2));color:#fff;border-radius:var(--r);padding:24px 20px 20px;box-shadow:var(--shadow)}
+.tag{display:inline-block;font:700 13px/1 var(--body);letter-spacing:.06em;text-transform:uppercase;background:var(--xp);color:var(--on-xp);padding:7px 10px;border-radius:999px}
+h1{font:700 clamp(1.6rem,5.5vw,2.2rem)/1.15 var(--display);margin:12px 0 8px;text-wrap:balance}
+.hero p{margin:0 0 16px;color:#d4e3f7;max-width:60ch}
+.player{position:relative;border-radius:14px;overflow:hidden;background:#061427;aspect-ratio:16/9}
+.player video{width:100%;height:100%;display:block;background:#061427}
+.cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 22px;border-radius:999px;font:700 1rem/1 var(--body);text-decoration:none}
+.btn-main{background:var(--xp);color:var(--on-xp);box-shadow:0 5px 0 var(--xp-2)}
+.btn-ghost{background:transparent;color:#fff;border:2px solid rgba(255,255,255,.5)}
+.btn:focus-visible{outline:3px solid #fff;outline-offset:3px}
+section{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px 20px;margin-top:16px;box-shadow:var(--shadow)}
+h2{font:700 1.3rem/1.25 var(--display);margin:0 0 12px}
+ol.passos{list-style:none;margin:0;padding:0;display:grid;gap:14px;counter-reset:p}
+ol.passos li{counter-increment:p;display:grid;grid-template-columns:40px 1fr;gap:12px;align-items:start}
+ol.passos li::before{content:counter(p);width:40px;height:40px;border-radius:12px;background:var(--accent-soft);color:var(--accent);font:700 1.1rem/40px var(--display);text-align:center}
+ol.passos b{display:block}
+ol.passos span{color:var(--muted)}
+ul.caps{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+ul.caps li{display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px}
+ul.caps b{font-weight:700}
+ul.caps small{grid-column:1/-1;color:var(--muted);font-size:.95rem}
+ul.caps time{color:var(--muted);font-variant-numeric:tabular-nums;font-size:.95rem}
+.nota{color:var(--muted);font-size:.95rem;margin:12px 0 0}
+.final{text-align:center}
+.final .btn-main{margin-top:6px}
+@media (min-width:720px){.hero{padding:32px}.wrap{padding-top:24px}section{padding:26px 28px}}
+@media (prefers-reduced-motion:no-preference){.btn{transition:transform .15s}.btn:active{transform:translateY(2px)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="/assets/logo-csv.webp" alt="Cruzeiro do Sul Virtual, Educação a distância" width="666" height="168">
+    <a href="/login" data-com-origem>Entrar</a>
+  </header>
+
+  <div class="hero">
+    <span class="tag">1 min e 30 s</span>
+    <h1>Como funciona o seu curso a distância</h1>
+    <p>Você estuda no seu ritmo, com prazos para cada matéria. Veja como é o mês de estudo e depois faça a Aula Inaugural, que vale certificado de 4 horas.</p>
+    <div class="player">
+      <video controls playsinline preload="metadata" poster="/trilha-midia/aula/cap_01.jpg" aria-label="Vídeo: como funciona o EaD">
+        <source src="/trilha-midia/aula/cap_01.mp4" type="video/mp4">
+      </video>
+    </div>
+    <div class="cta">
+      <a class="btn btn-main" href="/trilha" data-com-origem>Assistir à Aula Inaugural</a>
+      <a class="btn btn-ghost" href="#aula">O que tem na aula</a>
+    </div>
+  </div>
+
+  <section aria-labelledby="passos">
+    <h2 id="passos">Seus primeiros passos</h2>
+    <ol class="passos">
+      <li><div><b>Entre no portal do aluno</b><span>Seus dados de acesso chegam pelo WhatsApp oficial do Atendimento ao Aluno. No primeiro acesso, você cria uma senha só sua.</span></div></li>
+      <li><div><b>Faça a Aula Inaugural</b><span>São 7 módulos curtos. Quem prefere ver tudo de uma vez assiste à aula completa e vai direto às perguntas. Ao concluir, você emite o certificado de 4 horas de atividade complementar.</span></div></li>
+      <li><div><b>Ative o acesso à faculdade</b><span>O módulo 1 mostra o passo a passo do app Duda, do e-mail acadêmico e do AVA, onde ficam as suas aulas.</span></div></li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="aula" id="aula">
+    <h2>O que tem na Aula Inaugural</h2>
+    <ul class="caps">
+      <li><b>Primeiro acesso</b><time>0:59</time><small>O app Duda, o e-mail acadêmico e a sua senha.</small></li>
+      <li><b>Área do Aluno</b><time>0:56</time><small>Onde fica cada coisa no portal do aluno.</small></li>
+      <li><b>Seu mês de estudo</b><time>0:59</time><small>Como funciona o mês: unidades, videoaulas e atividades.</small></li>
+      <li><b>Provas e notas</b><time>2:08</time><small>A2, A1 e Avaliação Final: como você é aprovado.</small></li>
+      <li><b>Pagamentos e rematrícula</b><time>2:04</time><small>Vencimento, descontos, como pagar com segurança e como renovar a matrícula.</small></li>
+      <li><b>Horas complementares</b><time>0:47</time><small>O que são e como enviar.</small></li>
+      <li><b>Rumo à formatura</b><time>1:01</time><small>Matérias, horas, documentos, estágio e ENADE.</small></li>
+    </ul>
+    <p class="nota">Vale o que está no Manual do Aluno e no Calendário Acadêmico do seu curso.</p>
+  </section>
+
+  <section class="final" aria-labelledby="fim">
+    <h2 id="fim">Pronto para começar?</h2>
+    <a class="btn btn-main" href="/trilha" data-com-origem>Entrar e assistir à Aula Inaugural</a>
+    <p class="nota">Ainda não recebeu seus dados de acesso? Responda a mensagem no WhatsApp do Atendimento ao Aluno.</p>
+  </section>
+</div>
+<script>
+// Leva a origem do link (?o=bv_curso) para o login, onde o app grava de onde o aluno veio (server/instrumentacao.js).
+(function () {
+  try {
+    var o = new URLSearchParams(location.search).get('o');
+    if (!o || !/^[a-z0-9_-]{1,24}$/i.test(o)) return;
+    document.querySelectorAll('[data-com-origem]').forEach(function (a) {
+      a.setAttribute('href', a.getAttribute('href') + '?o=' + encodeURIComponent(o.toLowerCase()));
+    });
+  } catch (e) { /* sem origem */ }
+})();
+</script>
+</body>
+</html>

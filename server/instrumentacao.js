@@ -22,6 +22,9 @@ const MOTIVOS = {
   senha_incorreta: 'Senha incorreta',
   erro_interno: 'Erro no servidor',
   esqueci_senha: 'Tocou em "Esqueci minha senha"',
+  link_invalido: 'Link de acesso inválido',
+  link_usado: 'Link de acesso já usado',
+  link_expirado: 'Link de acesso expirado',
 };
 
 // ?o=bv, ?o=reenvio, ?o=polo... Minúsculas, até 24 caracteres; o resto vira "sem origem".
@@ -98,7 +101,7 @@ function entrada(pool, { alunoId, origem, primeira, via }) {
   return garantir(pool)
     .then(() => pool.query(
       'INSERT INTO csu_entradas (aluno_id, origem, primeira, via) VALUES ($1, $2, $3, $4)',
-      [alunoId, limparOrigem(origem), primeira === true, via === 'cadastro' ? 'cadastro' : 'login'],
+      [alunoId, limparOrigem(origem), primeira === true, ['cadastro', 'link'].includes(via) ? via : 'login'],
     ))
     .catch(avisar('a entrada'));
 }

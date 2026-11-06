@@ -106,6 +106,45 @@
 
   var telaDepoisDaSenha = 'dashboard-page';
 
+  // Link de acesso (/a/<token>): lê o token e já tira da barra de endereço, antes de qualquer
+  // rastreio ou navegação registrar o caminho. A origem (?o=) foi guardada pelo api.js ao carregar.
+  function tokenDoLink() {
+    var m = /^\/a\/([A-Za-z0-9_-]{40,60})\/?$/.exec(window.location.pathname);
+    if (!m) return null;
+    try { window.history.replaceState(null, '', '/inicio'); } catch (e) { /* segue */ }
+    return m[1];
+  }
+
+  async function entrarPeloLink(token) {
+    var UI = window.UI;
+    if (window.Auth.isAuthenticated()) {
+      // Já tinha sessão nesta aba: troca pela do link (o link é de quem o recebeu).
+      window.Auth.clear();
+    }
+    UI.showScreen('login-page', { replace: true });
+    UI.setLoginLoading(true);
+    try {
+      var res = await window.Api.entrarPorLink(token);
+      window.Auth.setSession(res.token, res.user);
+      UI.setUserName(window.Auth.getUserName());
+      if (res.troca_senha) {
+        telaDepoisDaSenha = 'dashboard-page';
+        abrirCriarSenha(res.user && res.user.rgm);
+        return;
+      }
+      entrarNoPortal('dashboard-page');
+    } catch (err) {
+      if (err.status === 401) {
+        var campo = document.getElementById('f_login_identifier');
+        if (campo && err.rgm) campo.value = err.rgm;
+      }
+      UI.showLoginError(err.message || 'Não foi possível entrar pelo link. Entre com o seu RGM e a sua senha.');
+      window.showScreen('login-page', { replace: true });
+    } finally {
+      UI.setLoginLoading(false);
+    }
+  }
+
   function entrarNoPortal(nextScreen) {
     window.showScreen(nextScreen, { replace: true });
     window.Avisos.refresh();
@@ -588,7 +627,10 @@
     window.Atendimento.init();
     if (window.MeuSemestre) window.MeuSemestre.init();
 
-    if (window.Auth.isAuthenticated() && window.Auth.precisaCriarSenha()) {
+    var linkToken = tokenDoLink();
+    if (linkToken) {
+      entrarPeloLink(linkToken);
+    } else if (window.Auth.isAuthenticated() && window.Auth.precisaCriarSenha()) {
       window.UI.setUserName(window.Auth.getUserName());
       abrirCriarSenha();
     } else if (window.Auth.isAuthenticated()) {
