@@ -134,12 +134,18 @@
       }
       entrarNoPortal('dashboard-page');
     } catch (err) {
+      var comRgm = false;
       if (err.status === 401) {
         var campo = document.getElementById('f_login_identifier');
-        if (campo && err.rgm) campo.value = err.rgm;
+        if (campo && err.rgm) { campo.value = err.rgm; comRgm = true; }
       }
       UI.showLoginError(err.message || 'Não foi possível entrar pelo link. Entre com o seu RGM e a sua senha.');
       window.showScreen('login-page', { replace: true });
+      // Com o RGM já preenchido, falta só a senha: o cursor vai direto para ela.
+      if (comRgm) {
+        var senha = document.getElementById('f_login_password');
+        if (senha) setTimeout(function () { try { senha.focus(); } catch (e) { /* segue */ } }, 0);
+      }
     } finally {
       UI.setLoginLoading(false);
     }

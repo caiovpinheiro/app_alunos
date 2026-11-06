@@ -8,8 +8,11 @@
  *
  * Regras:
  *   - o token tem 32 bytes aleatórios; o banco guarda só o sha256 dele;
- *   - vale uma vez e expira em LINK_ACESSO_DIAS dias (padrão 7);
- *   - um link novo para o mesmo aluno invalida os anteriores ainda não usados;
+ *   - vale para um aparelho e expira em LINK_ACESSO_DIAS dias (padrão 7). Na primeira entrada o
+ *     aparelho recebe um cookie (csu_link, só o sha256 vai para o banco); tocar de novo no link
+ *     no mesmo aparelho entra de novo (o aluno volta à mensagem do WhatsApp, e cada toque abre uma
+ *     aba nova, sem a sessão anterior). Em outro aparelho o link conta como já usado;
+ *   - um link novo para o mesmo aluno invalida os anteriores;
  *   - quem entra pelo link e ainda não criou a senha própria cai na tela de criar senha
  *     (server/senha.js), se a troca estiver ligada para a conta;
  *   - link usado, vencido ou inválido abre a tela de login normal, com o RGM preenchido quando dá.
@@ -55,6 +58,8 @@ function ensureSchema(pool) {
         cancelado_em TIMESTAMPTZ
       );
       CREATE INDEX IF NOT EXISTS idx_csu_links_acesso_aluno ON csu_links_acesso (aluno_id);
+      ALTER TABLE csu_links_acesso ADD COLUMN IF NOT EXISTS aparelho_hash TEXT;
+      ALTER TABLE csu_links_acesso ADD COLUMN IF NOT EXISTS reusos INTEGER NOT NULL DEFAULT 0;
     `).catch((err) => { pronto = null; throw err; });
   }
   return pronto;
@@ -65,8 +70,9 @@ async function gerar(pool, alunoId, origem) {
   const token = crypto.randomBytes(32).toString('base64url');
   const expira = new Date(Date.now() + dias() * 86400000);
   await pool.query(
+    // Cancela também os já usados: o link antigo deixa de entrar até no aparelho que o usou.
     `UPDATE csu_links_acesso SET cancelado_em = now()
-     WHERE aluno_id = $1 AND usado_em IS NULL AND cancelado_em IS NULL`,
+     WHERE aluno_id = $1 AND cancelado_em IS NULL`,
     [alunoId],
   );
   await pool.query(
@@ -77,17 +83,37 @@ async function gerar(pool, alunoId, origem) {
   return { url: `${base()}/a/${token}${o}`, expira_em: expira.toISOString() };
 }
 
-// Consome o token. Devolve { aluno } ou { erro: 'link_invalido'|'link_usado'|'link_expirado', aluno? }.
-async function consumir(pool, token) {
+// Teto de entradas repetidas pelo mesmo link no mesmo aparelho (contra uso indevido do cookie).
+const MAX_REUSOS = 30;
+const APARELHO_RE = /^[A-Za-z0-9_-]{40,60}$/;
+
+// Consome o token. `aparelho` é o valor do cookie csu_link (ou nada).
+// Devolve { aluno, aparelho?, reuso? } ou { erro: 'link_invalido'|'link_usado'|'link_expirado', rgm? }.
+// `aparelho` só volta na primeira entrada: é o valor novo que a rota grava no cookie.
+async function consumir(pool, token, aparelho) {
   if (!TOKEN_RE.test(String(token || ''))) return { erro: 'link_invalido' };
   await ensureSchema(pool);
+  const novoAparelho = crypto.randomBytes(32).toString('base64url');
   const r = await pool.query(
-    `UPDATE csu_links_acesso SET usado_em = now()
+    `UPDATE csu_links_acesso SET usado_em = now(), aparelho_hash = $2
      WHERE token_hash = $1 AND usado_em IS NULL AND cancelado_em IS NULL AND expira_em > now()
      RETURNING aluno_id`,
-    [sha(token)],
+    [sha(token), sha(novoAparelho)],
   );
-  const alunoId = r.rows[0] ? r.rows[0].aluno_id : null;
+  let alunoId = r.rows[0] ? r.rows[0].aluno_id : null;
+  let reuso = false;
+  // Já usado: entra de novo só no mesmo aparelho, enquanto o link vale e não foi trocado por outro.
+  if (!alunoId && APARELHO_RE.test(String(aparelho || ''))) {
+    const r2 = await pool.query(
+      `UPDATE csu_links_acesso SET reusos = reusos + 1
+       WHERE token_hash = $1 AND usado_em IS NOT NULL AND cancelado_em IS NULL AND expira_em > now()
+         AND aparelho_hash = $2 AND reusos < $3
+       RETURNING aluno_id`,
+      [sha(token), sha(aparelho), MAX_REUSOS],
+    );
+    alunoId = r2.rows[0] ? r2.rows[0].aluno_id : null;
+    reuso = Boolean(alunoId);
+  }
   if (!alunoId) {
     const x = await pool.query(
       `SELECT l.usado_em, l.cancelado_em, l.expira_em, a.rgm
@@ -96,7 +122,10 @@ async function consumir(pool, token) {
     );
     const row = x.rows[0];
     if (!row) return { erro: 'link_invalido' };
-    return { erro: row.usado_em || row.cancelado_em ? 'link_usado' : 'link_expirado', rgm: row.rgm };
+    // Trocado por um link novo conta como usado; vencido vale mais que usado (o aluno precisa de outro).
+    const venceu = new Date(row.expira_em).getTime() <= Date.now();
+    const erro = row.cancelado_em ? 'link_usado' : venceu ? 'link_expirado' : 'link_usado';
+    return { erro, rgm: row.rgm };
   }
   const a = await pool.query(
     'SELECT id, email, rgm, nome, ativo, created_at, senha_trocada_em FROM csu_alunos WHERE id = $1',
@@ -104,7 +133,22 @@ async function consumir(pool, token) {
   );
   const aluno = a.rows[0];
   if (!aluno || !aluno.ativo) return { erro: 'link_invalido' };
-  return { aluno };
+  return reuso ? { aluno, reuso: true } : { aluno, aparelho: novoAparelho };
+}
+
+const COOKIE = 'csu_link';
+const COOKIE_PATH = '/api/auth/link';
+
+function aparelhoDoPedido(req) {
+  const par = String(req.headers.cookie || '').split(';').map((x) => x.trim()).find((x) => x.startsWith(COOKIE + '='));
+  return par ? par.slice(COOKIE.length + 1) : null;
+}
+
+// Só a rota do link lê o cookie (Path), e o JavaScript da página não enxerga (HttpOnly).
+function gravarAparelho(req, res, valor) {
+  const https = req.secure || String(req.headers['x-forwarded-proto'] || '').split(',')[0].trim() === 'https';
+  const maxAge = dias() * 86400;
+  res.append('Set-Cookie', `${COOKIE}=${valor}; Max-Age=${maxAge}; Path=${COOKIE_PATH}; SameSite=Lax; HttpOnly${https ? '; Secure' : ''}`);
 }
 
 function registrarRotas(app, { getPool, findAluno, createSession, instrumentacao, ensureSchemaAlunos }) {
@@ -138,11 +182,11 @@ function registrarRotas(app, { getPool, findAluno, createSession, instrumentacao
     const origem = instrumentacao.limparOrigem(req.body && req.body.origem);
     try {
       if (ensureSchemaAlunos) await ensureSchemaAlunos();
-      const r = await consumir(pool, req.body && req.body.token);
+      const r = await consumir(pool, req.body && req.body.token, aparelhoDoPedido(req));
       if (r.erro) {
         instrumentacao.falha(pool, { motivo: r.erro, origem });
         const msg = r.erro === 'link_usado'
-          ? 'Este link já foi usado. Entre com o seu RGM e a sua senha.'
+          ? 'Este link já foi usado em outro aparelho. Entre com o seu RGM e a sua senha.'
           : r.erro === 'link_expirado'
             ? 'Este link venceu. Entre com o seu RGM e a sua senha.'
             : 'Link de acesso inválido. Entre com o seu RGM e a sua senha.';
@@ -153,7 +197,9 @@ function registrarRotas(app, { getPool, findAluno, createSession, instrumentacao
       const token = crypto.randomBytes(32).toString('hex');
       const primeira = await instrumentacao.primeiraEntrada(pool, aluno.id);
       await createSession(pool, aluno.id, token, { trocaSenha });
-      instrumentacao.entrada(pool, { alunoId: aluno.id, origem, primeira, via: 'link' });
+      if (r.aparelho) gravarAparelho(req, res, r.aparelho);
+      res.set('Cache-Control', 'no-store');
+      instrumentacao.entrada(pool, { alunoId: aluno.id, origem, primeira, via: r.reuso ? 'link_de_novo' : 'link' });
       return res.json({
         success: true,
         token,

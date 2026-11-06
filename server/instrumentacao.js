@@ -3,7 +3,8 @@
 // Antes do login: de onde o aluno veio (?o= do link da régua) e onde a entrada falhou.
 //
 //   csu_entradas     uma linha por login ou cadastro que deu certo: aluno, origem (?o=), se foi a
-//                    primeira entrada da conta e por onde entrou (login ou cadastro).
+//                    primeira entrada da conta e por onde entrou (login, cadastro, link ou
+//                    link_de_novo, quando o aluno toca de novo no mesmo link no mesmo aparelho).
 //   csu_login_falhas uma linha por login recusado ou toque em "Esqueci minha senha": motivo, origem,
 //                    horário e o id do aluno só quando o que foi digitado bate com uma conta.
 //
@@ -101,7 +102,7 @@ function entrada(pool, { alunoId, origem, primeira, via }) {
   return garantir(pool)
     .then(() => pool.query(
       'INSERT INTO csu_entradas (aluno_id, origem, primeira, via) VALUES ($1, $2, $3, $4)',
-      [alunoId, limparOrigem(origem), primeira === true, ['cadastro', 'link'].includes(via) ? via : 'login'],
+      [alunoId, limparOrigem(origem), primeira === true, ['cadastro', 'link', 'link_de_novo'].includes(via) ? via : 'login'],
     ))
     .catch(avisar('a entrada'));
 }
