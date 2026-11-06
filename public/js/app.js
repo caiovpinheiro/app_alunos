@@ -428,6 +428,10 @@
         if (r && r.academico && r.academico.url) esqueci.href = r.academico.url;
         else esqueci.parentNode.classList.add('hidden');
       }).catch(function () { esqueci.parentNode.classList.add('hidden'); });
+      esqueci.addEventListener('click', function () {
+        var campo = document.getElementById('f_login_identifier');
+        if (window.Api.esqueciSenha) window.Api.esqueciSenha(campo ? campo.value : '');
+      });
     }
     // Cliques que levam para fora do portal (WhatsApp) entram na linha do tempo do atendente.
     document.addEventListener('click', function (event) {

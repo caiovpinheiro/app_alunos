@@ -27,20 +27,50 @@ window.Api = (function () {
     return token ? { Authorization: 'Bearer ' + token } : {};
   }
 
+  // Origem do link de entrada (?o=bv, ?o=reenvio, ?o=polo...): lida ao carregar a página, antes de a
+  // navegação trocar o endereço, e guardada na aba até o login (server/instrumentacao.js).
+  var ORIGEM_KEY = 'csu-origem';
+  (function guardarOrigem() {
+    try {
+      var o = new URLSearchParams(window.location.search).get('o');
+      if (o && /^[a-z0-9_-]{1,24}$/i.test(o)) sessionStorage.setItem(ORIGEM_KEY, o.toLowerCase());
+    } catch (e) { /* sem storage: entra sem origem */ }
+  })();
+  function origem() {
+    try { return sessionStorage.getItem(ORIGEM_KEY) || null; } catch (e) { return null; }
+  }
+  function esquecerOrigem() {
+    try { sessionStorage.removeItem(ORIGEM_KEY); } catch (e) { /* ok */ }
+  }
+
   async function login(identifier, password) {
-    return request('/api/auth/login', {
+    var r = await request('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ identifier: identifier, password: password }),
+      body: JSON.stringify({ identifier: identifier, password: password, origem: origem() }),
     });
+    esquecerOrigem();
+    return r;
   }
 
   async function register(payload) {
-    return request('/api/auth/register', {
+    var r = await request('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(Object.assign({}, payload, { origem: origem() })),
     });
+    esquecerOrigem();
+    return r;
+  }
+
+  // "Esqueci minha senha": avisa o servidor sem segurar o link (o WhatsApp abre do mesmo jeito).
+  // O RGM/e-mail digitado só serve para o servidor achar a conta; ele não é guardado.
+  function esqueciSenha(identifier) {
+    var corpo = JSON.stringify({ identifier: String(identifier || '').trim().slice(0, 120) || null, origem: origem() });
+    try {
+      if (navigator.sendBeacon && navigator.sendBeacon('/api/auth/esqueci', new Blob([corpo], { type: 'application/json' }))) return;
+    } catch (e) { /* cai no fetch */ }
+    try { fetch('/api/auth/esqueci', { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: corpo }).catch(function () {}); } catch (e) { /* ok */ }
   }
 
   async function logout() {
@@ -199,6 +229,7 @@ window.Api = (function () {
     getTotaisAvaliacoes: getTotaisAvaliacoes,
     login: login,
     register: register,
+    esqueciSenha: esqueciSenha,
     logout: logout,
     emitCertificate: emitCertificate,
     searchCursos: searchCursos,

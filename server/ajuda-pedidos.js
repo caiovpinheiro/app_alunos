@@ -24,6 +24,7 @@ const ORIGENS = {
   certificado_erro: 'Erro ao gerar o certificado',
   parado: 'Ficou parado no módulo',
   ajuda_painel: 'Pediu ajuda pelo painel',
+  nao_funcionou: 'Disse que não funcionou',
 };
 const SITUACOES = ['aberto', 'em_atendimento', 'resolvido', 'cancelado'];
 const LETRAS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // sem 0/O, 1/I/L
@@ -116,6 +117,8 @@ function lerEntrada(body) {
       tempo_s: inteiro(sinais.tempo_s, 0, 86400),
       termos: Array.isArray(sinais.termos) ? sinais.termos.slice(0, 3).map((x) => mascara(texto(x, 60))).filter(Boolean) : [],
       video: texto(sinais.video, 80),
+      // "Não funcionou": título do tutorial, da dúvida ou do módulo (texto nosso, não do aluno).
+      conteudo: texto(sinais.conteudo, 120),
     },
   };
 }
@@ -203,6 +206,11 @@ function mensagemAluno(row) {
   let frase;
   if (row.origem === 'certificado_erro') frase = 'Deu erro ao gerar o meu certificado da Aula Inaugural.';
   else if (row.origem === 'busca_vazia') frase = 'Procurei na Central de ajuda e não achei o que precisava.';
+  else if (row.origem === 'nao_funcionou') {
+    const c = ctx.tentou && ctx.tentou.conteudo;
+    frase = c ? `Tentei fazer o que "${c}" mostra e não funcionou.`
+      : o.nivel ? `Tentei fazer o que o Módulo ${o.nivel} da Aula Inaugural mostra e não funcionou.` : 'Tentei fazer o passo a passo e não funcionou.';
+  }
   else if (o.nivel) frase = `Travei ${ondeTexto(ctx)}.`;
   else frase = `Preciso de ajuda. Estou ${ondeTexto(ctx).replace('na tela ', 'na tela ')} do portal.`;
   return `Oi! ${frase} Protocolo ${row.protocolo}.`;
@@ -219,6 +227,9 @@ const NOME_EVENTO = {
   certificado_erro: 'erro no certificado', ajuda_oferecida: 'recebeu a oferta de ajuda', ajuda_aceita: 'aceitou falar com a equipe',
   ajuda_recusada: 'recusou a oferta de ajuda', ajuda_aberta: 'abriu o painel de ajuda', video_retomado: 'voltou ao vídeo', aviso_lido: 'leu um aviso',
   aula_capitulo: 'abriu capítulo da Aula', certificado_gerado: 'gerou o certificado', trilha_tarefa: 'marcou tarefa', trilha_nivel_concluido: 'concluiu o módulo',
+  resultado_pratico: 'respondeu "Conseguiu fazer?"', saida_externa: 'saiu para o sistema da faculdade',
+  aula_preferencia: 'mudou a leitura da Aula', trilha_reiniciada: 'começou a Aula de novo', aula_cartao_exibido: 'viu o cartão do topo da Aula',
+  aula_cartao_clicado: 'tocou no cartão do topo da Aula', aula_pratica_escolha: 'escolheu fazer agora ou depois (módulo 1)',
 };
 
 // Nota interna para a equipe (CRM ou admin): tudo o que se sabe, em texto corrido.
@@ -236,6 +247,7 @@ function notaEquipe(row) {
   if (o.video) tentou.push(`vídeo do módulo: ${o.video}`);
   if (t.video_pct != null) tentou.push(`assistiu ${t.video_pct}% do vídeo` + (t.pausas ? `, ${t.pausas} pausa(s)` : ''));
   if (t.viu_dica) tentou.push('viu a dica do "Travei"');
+  if (t.conteudo) tentou.push(`seguiu "${t.conteudo}" e disse que não funcionou`);
   if (t.termos && t.termos.length) tentou.push(`buscou ${t.termos.map((x) => `"${x}"`).join(', ')}`);
   if (o.erros_modulo) tentou.push(`${o.erros_modulo} erro(s) nas perguntas do módulo`);
   if (tentou.length) linhas.push(`Já tentou: ${tentou.join('; ')}`);

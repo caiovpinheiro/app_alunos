@@ -7,6 +7,24 @@
 - Push em `main` dispara `.github/workflows/deploy.yml`: publica `ghcr.io/caiovpinheiro/app_alunos:latest` e chama o webhook do EasyPanel (`secrets.EASYPANEL_DEPLOY_APP`).
 - Não invente outro fluxo de deploy (n8n, branch de homologação, etc.) sem pedido explícito.
 
+### 2026-11-06 - Instrumentação: "Conseguiu fazer?", saídas, entrada e aba Medição
+
+**Decisão**
+- "Conseguiu fazer?" ("Deu certo" / "Não funcionou") no fim de cada módulo da Aula (dentro de `.cleared`), no vídeo da Central e na resposta da FAQ: `Avaliacao.resultado()` em `public/js/avaliacao.js`, irmão do joinha. Grava em `csu_avaliacoes` com `tipo = 'pratica'` e id `modulo:N`, `video:<id>` ou `faq:<id>`, e emite `resultado_pratico`. Fica fora do placar de Avaliações, do índice 👍 e das joinhas por aluno. "Não funcionou" mostra no lugar a oferta de ajuda (`Dificuldade`, origem `nao_funcionou`, com o título do conteúdo no pedido); o chat nunca abre sozinho.
+- `saida_externa {destino, tela, modulo}` para AVA, Área do Aluno, e-mail acadêmico e lojas do Duda e do Authenticator, a partir de qualquer link do portal. Lista única de hosts em `DESTINOS` (`public/js/rastreio.js`).
+- Antes do login (`server/instrumentacao.js`): `csu_entradas` (origem `?o=`, primeira entrada da conta, login ou cadastro) e `csu_login_falhas` (motivo, hora, id da conta só quando identificada; nada do que foi digitado). "Esqueci minha senha" avisa `POST /api/auth/esqueci` por `sendBeacon` e continua abrindo o WhatsApp. O `?o=` fica na aba (`sessionStorage`, `public/js/api.js`) porque o portal troca o endereço para `/login` logo ao carregar.
+- Eventos novos: `aula_preferencia` (letra maior, vídeos mais devagar, ver tudo), `aula_cartao_exibido` e `trilha_reiniciada` (gravado no servidor antes de apagar o progresso em `trilha.reiniciar`). `central_video` e `faq_aberta` ganharam `id`.
+- Aba **Medição** no admin (`#medicao`, `admin-medicao.js`, `ds-medicao.css`, `GET /api/admin/medicao`, `server/medicao.js`): retenção D+1/D+7/D+14 por coorte semanal (só contas rastreadas em `csu_acessos`; compara só coortes com o prazo completo), resultado prático com os 5 piores, saídas por destino e por módulo com a taxa "Fazer agora → saiu", ofertas de ajuda oferecida → aceita → resolvida com tempo mediano, origem do primeiro acesso por coorte e falhas de login por dia. Respeita `contar_desde`; sem faixas Bom/Regular/Ruim porque estes números ainda não têm meta.
+- Catálogo de eventos, tabelas e definições dos relatórios em `docs/instrumentacao.md`.
+
+**Motivo**
+- Diagnóstico de 06/11/2026 (`docs/plano-ativacao-2026-11.md`, seção C): o app media vídeo, busca e progresso, mas não se o tutorial resolveu, se o aluno chegou ao sistema da faculdade, a retenção por coorte nem a origem do acesso.
+
+**Impacto**
+- Sem variável nova. Tabelas criadas sozinhas (`CREATE TABLE IF NOT EXISTS`); a regra de tipo de `csu_avaliacoes` é trocada uma vez para aceitar `pratica`.
+- Até a publicação, Medição mostra só a retenção (já há `csu_acessos`); resultado prático, saídas, origem e falhas começam vazios e dizem desde quando medem. A origem só aparece quando a régua e as campanhas mandarem o link com `?o=`.
+- Teste sem banco: `node tools/test-instrumentacao.js`. Dados de exemplo no banco local: `node tools/seed-medicao.js`.
+
 ### 2026-11-05 - Aula Inaugural: chegar mais rápido ao primeiro módulo
 
 **Decisão**

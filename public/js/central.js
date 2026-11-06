@@ -56,6 +56,10 @@ window.Central = (function () {
   }
   // Joinha pra cima / pra baixo (public/js/avaliacao.js). Sem o helper, não mostra nada.
   function avaliacao(tipo, id) { return id && window.Avaliacao ? window.Avaliacao.html(tipo, id) : ''; }
+  // "Conseguiu fazer?" (avaliacao.js): vem antes do joinha. titulo vai no pedido de ajuda do "Não funcionou".
+  function resultado(tipo, id, titulo) {
+    return id && window.Avaliacao && window.Avaliacao.resultado ? window.Avaliacao.resultado(tipo, id, { titulo: titulo }) : '';
+  }
 
   // ---------- Dados por tema ----------
   function temas() { return (C && C.temas) || []; }
@@ -175,8 +179,8 @@ window.Central = (function () {
     var id = esc(t.id + '-' + p.id);
     return (
       '<div class="c-q">' +
-        '<h4><button type="button" class="c-qbtn" id="c-qb-' + id + '" aria-expanded="false" aria-controls="c-qa-' + id + '">' + esc(p.q) + '</button></h4>' +
-        '<div class="c-a" id="c-qa-' + id + '" role="region" aria-labelledby="c-qb-' + id + '" hidden><p>' + p.a + '</p>' + linkTrilha(p) + avaliacao('faq', p.id) + '</div>' +
+        '<h4><button type="button" class="c-qbtn" id="c-qb-' + id + '" data-faq-id="' + esc(p.id) + '" aria-expanded="false" aria-controls="c-qa-' + id + '">' + esc(p.q) + '</button></h4>' +
+        '<div class="c-a" id="c-qa-' + id + '" role="region" aria-labelledby="c-qb-' + id + '" hidden><p>' + p.a + '</p>' + linkTrilha(p) + resultado('faq', p.id, p.q) + avaliacao('faq', p.id) + '</div>' +
       '</div>'
     );
   }
@@ -411,7 +415,7 @@ window.Central = (function () {
   function abrirVideo(id, gatilho) {
     var v = (C && C.videos || []).find(function (x) { return x.id === id; });
     if (!v) return;
-    track('central_video', { video: v.titulo, categoria: v.categoria, tema: v.tema || null });
+    track('central_video', { id: v.id, video: v.titulo, categoria: v.categoria, tema: v.tema || null });
     gatilhoVideo = gatilho || null;
     var m = document.getElementById('c-modal');
     if (!m) {
@@ -426,6 +430,7 @@ window.Central = (function () {
           ? '<div class="c-yt"><iframe src="https://www.youtube-nocookie.com/embed/' + encodeURIComponent(v.yt) + '?autoplay=1&rel=0" title="' + esc(v.titulo) + '" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>'
           : '<video controls autoplay playsinline preload="metadata" poster="' + esc(v.capa || v.v + '.jpg') + '"><source src="' + esc(v.v) + '.mp4" type="video/mp4"></video>') +
         (v.id === 'acesso-email-senha' ? '<div class="c-mdados" data-dados-acesso-slot="faixa" data-dados-acesso-onde="central" hidden></div>' : '') +
+        resultado('video', v.id, v.titulo) +
         avaliacao('video', v.id) +
         linkTrilha(v) +
         aSeguir(v) +
@@ -469,7 +474,7 @@ window.Central = (function () {
     btn.setAttribute('aria-expanded', 'true');
     var resp = document.getElementById(btn.getAttribute('aria-controls')); if (resp) resp.hidden = false;
     btn.closest('.c-q').classList.add('is-open');
-    track('faq_aberta', { pergunta: btn.textContent, busca: busca || null });
+    track('faq_aberta', { id: btn.getAttribute('data-faq-id') || null, pergunta: btn.textContent, busca: busca || null });
   }
 
   var carregamento = null;

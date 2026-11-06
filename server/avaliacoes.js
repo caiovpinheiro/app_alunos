@@ -11,11 +11,16 @@
 //   GET  /api/avaliacoes/minhas            -> {votos: {"video:tut_11": 1, ...}, comentarios: {"aula:modulo-4": "texto"}}
 //   GET  /api/avaliacoes/totais?tipo=video -> {totais: {"tut_11": 3, ...}}  (só 👍; público p/ aluno logado)
 //   GET  /api/admin/avaliacoes             -> {itens: [{tipo,id,titulo,positivos,negativos,total,pct_positivo,ultimo_voto_em,comentarios:[{texto,em}]}]}
+//
+// Tipo 'pratica' ("Conseguiu fazer?", 2026-11-06): voto 1 = deu certo, -1 = não funcionou, id = 'modulo:N',
+// 'video:<id>' ou 'faq:<id>'. Não é joinha: fica fora do placar, dos totais por aluno e do índice 👍
+// (o relatório é o "Resultado prático" da aba Medição, server/medicao.js).
 
 const fs = require('node:fs');
 const path = require('node:path');
 
-const TIPOS = new Set(['video', 'faq', 'aula']);
+const TIPOS = new Set(['video', 'faq', 'aula', 'pratica']);
+const ID_PRATICA = /^(modulo|video|faq):[\w-]{1,70}$/;
 const ID_VALIDO = /^[\w:-]{1,80}$/;
 const LIMITE_POR_MINUTO = 60;
 
@@ -23,7 +28,7 @@ async function ensureSchema(pool) {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS csu_avaliacoes (
       rgm TEXT NOT NULL,
-      tipo TEXT NOT NULL CHECK (tipo IN ('video', 'faq', 'aula')),
+      tipo TEXT NOT NULL CHECK (tipo IN ('video', 'faq', 'aula', 'pratica')),
       conteudo_id TEXT NOT NULL,
       voto SMALLINT NOT NULL CHECK (voto IN (1, -1)),
       criado_em TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -33,6 +38,16 @@ async function ensureSchema(pool) {
     CREATE INDEX IF NOT EXISTS idx_csu_avaliacoes_conteudo ON csu_avaliacoes (tipo, conteudo_id);
     ALTER TABLE csu_avaliacoes ADD COLUMN IF NOT EXISTS comentario TEXT;
     ALTER TABLE csu_avaliacoes ADD COLUMN IF NOT EXISTS comentario_em TIMESTAMPTZ;
+  `);
+  // Tabela criada antes do tipo 'pratica': troca a regra do tipo uma vez (só se ainda não aceita).
+  await pool.query(`
+    DO $$ BEGIN
+      IF EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid = 'csu_avaliacoes'::regclass
+                 AND conname = 'csu_avaliacoes_tipo_check' AND pg_get_constraintdef(oid) NOT LIKE '%pratica%') THEN
+        ALTER TABLE csu_avaliacoes DROP CONSTRAINT csu_avaliacoes_tipo_check;
+        ALTER TABLE csu_avaliacoes ADD CONSTRAINT csu_avaliacoes_tipo_check CHECK (tipo IN ('video', 'faq', 'aula', 'pratica'));
+      END IF;
+    END $$;
   `);
 }
 
@@ -55,6 +70,7 @@ function validar(body) {
   const id = body && typeof body.id === 'string' ? body.id : '';
   const voto = lerVoto(body && body.voto);
   if (!TIPOS.has(tipo) || !ID_VALIDO.test(id) || voto === null) return null;
+  if (tipo === 'pratica' && !ID_PRATICA.test(id)) return null;
   return { tipo, id, voto };
 }
 
@@ -66,7 +82,7 @@ function validarComentario(body) {
   const bruto = body && typeof body.comentario === 'string' ? body.comentario : '';
   // eslint-disable-next-line no-control-regex
   const comentario = bruto.replace(/[\u0000-\u0009\u000B-\u001F\u007F]/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
-  if (!TIPOS.has(tipo) || !ID_VALIDO.test(id) || !comentario || comentario.length > COMENTARIO_MAX) return null;
+  if (!TIPOS.has(tipo) || tipo === 'pratica' || !ID_VALIDO.test(id) || !comentario || comentario.length > COMENTARIO_MAX) return null;
   return { tipo, id, comentario };
 }
 
@@ -156,7 +172,7 @@ async function placar(pool) {
            count(*)::int AS total,
            max(atualizado_em) AS ultimo_voto_em
     FROM csu_avaliacoes
-    WHERE rgm IN (${require('./recorte').rgmsNoCorte(1)})
+    WHERE tipo <> 'pratica' AND rgm IN (${require('./recorte').rgmsNoCorte(1)})
     GROUP BY tipo, conteudo_id
   `, [desde]);
   // Comentários dos 👎, mais novos primeiro, sem o RGM (até 50 por conteúdo).
@@ -164,7 +180,7 @@ async function placar(pool) {
     SELECT tipo, conteudo_id, comentario, comentario_em FROM (
       SELECT tipo, conteudo_id, comentario, comentario_em,
              row_number() OVER (PARTITION BY tipo, conteudo_id ORDER BY comentario_em DESC) AS n
-      FROM csu_avaliacoes WHERE voto = -1 AND comentario IS NOT NULL AND rgm IN (${require('./recorte').rgmsNoCorte(1)})
+      FROM csu_avaliacoes WHERE voto = -1 AND tipo <> 'pratica' AND comentario IS NOT NULL AND rgm IN (${require('./recorte').rgmsNoCorte(1)})
     ) t WHERE n <= 50 ORDER BY comentario_em DESC
   `, [desde]);
   const comentarios = new Map();

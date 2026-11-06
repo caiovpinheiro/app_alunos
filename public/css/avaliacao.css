@@ -51,3 +51,19 @@ body:not(.trilha-on) .aval{display:none!important}
 .portal-vthumb .aval-selo[hidden]{display:none}
 .portal-vthumb .aval-selo svg{width:15px;height:15px;color:var(--portal-yellow,#ffc72c)}
 .portal-vthumb:not(.has-capa) .aval-selo{left:10px;bottom:10px}
+
+/* "Conseguiu fazer?" (Avaliacao.resultado): mesma linha do joinha, com botões de texto. */
+.aval .aval-res-btn{display:inline-flex;white-space:nowrap;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border:1.5px solid var(--portal-border,#d3dfee);border-radius:999px;background:#fff;color:var(--portal-blue,#0a4fa6);font:700 15px/1.2 var(--portal-body,inherit);cursor:pointer;transition:background-color .15s,border-color .15s,color .15s}
+.aval .aval-res-btn:hover{border-color:var(--portal-blue,#0a4fa6);background:var(--portal-blue-soft,#e3edfc)}
+.aval .aval-res-btn:focus-visible{outline:3px solid var(--portal-blue,#0a4fa6);outline-offset:3px}
+.aval .aval-res-btn[aria-pressed="true"]{background:var(--portal-blue,#0a4fa6);border-color:var(--portal-blue,#0a4fa6);color:#fff}
+.aval .aval-res-btn[data-res-voto="-1"][aria-pressed="true"]{background:var(--portal-navy,#0a2a5e);border-color:var(--portal-navy,#0a2a5e)}
+.aval .aval-res-ajuda{margin:10px 0 0;font-size:15px;color:var(--portal-muted,#45566e)}
+.aval .aval-res-ajuda[hidden]{display:none}
+.aval-res .dif{margin-top:12px}
+/* Joinha logo abaixo: sem a segunda linha divisória. */
+.aval-res + .aval{border-top:0;padding-top:4px;margin-top:4px}
+/* Fim do módulo da Aula: cartão branco dentro da faixa de "Módulo concluído". */
+.trilha .cleared .aval-res{flex:1 1 100%;margin:0;padding:14px 16px;border:0;border-radius:14px;background:#fff;color:var(--ink,#0b1f38)}
+@media (max-width:420px){.aval .aval-res-btn{padding:0 14px}}
+@media (prefers-reduced-motion: reduce){.aval .aval-res-btn{transition:none}}

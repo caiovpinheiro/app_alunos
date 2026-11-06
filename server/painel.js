@@ -116,7 +116,7 @@ function indicador(F, id, rotulo, n, de, explica, acao) {
 async function votosPorRgm(pool) {
   try {
     const r = await pool.query(`SELECT rgm, COUNT(*) FILTER (WHERE voto > 0)::int AS positivos, COUNT(*) FILTER (WHERE voto < 0)::int AS negativos
-                                FROM csu_avaliacoes GROUP BY rgm`);
+                                FROM csu_avaliacoes WHERE tipo <> 'pratica' GROUP BY rgm`);
     return r.rows.reduce((m, x) => { m[x.rgm] = { positivos: x.positivos, negativos: x.negativos }; return m; }, {});
   } catch (err) {
     if (err.code === '42P01') return {};

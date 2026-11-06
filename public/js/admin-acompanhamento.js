@@ -20,8 +20,16 @@ window.AdminAcomp = (function () {
     faq_aberta: 'Abriu pergunta', aula_capitulo: 'Abriu capítulo da Aula Inaugural',
     certificado_gerado: 'Gerou certificado', certificado_erro: 'Erro no certificado', aviso_lido: 'Leu aviso', whatsapp_clicado: 'Clicou no WhatsApp',
     ajuda_oferecida: 'Recebeu a oferta de ajuda', ajuda_aceita: 'Aceitou falar com a equipe', ajuda_recusada: 'Recusou a oferta de ajuda', pedido_ajuda: 'Pedido de ajuda',
+    aula_aberta_apos_login: 'Foi levado à Aula Inaugural ao entrar', aula_cartao_exibido: 'Viu o cartão do topo da Aula', aula_cartao_clicado: 'Tocou no cartão do topo da Aula',
+    aula_pratica_escolha: 'Módulo 1: ativar o acesso à faculdade', aula_preferencia: 'Mudou a leitura da Aula', trilha_reiniciada: 'Começou a Aula de novo (apagou o progresso)',
+    resultado_pratico: 'Respondeu "Conseguiu fazer?"', saida_externa: 'Saiu para o sistema da faculdade',
   };
-  var IMPORTANTES = { trilha_travei: 1, central_busca_sem_resultado: 1, certificado_erro: 1, trilha_video_pulado: 1, pedido_ajuda: 1 };
+  var IMPORTANTES = { trilha_travei: 1, central_busca_sem_resultado: 1, certificado_erro: 1, trilha_video_pulado: 1, pedido_ajuda: 1, trilha_reiniciada: 1 };
+  // Rótulos dos dados dos eventos novos (instrumentação de 06/11/2026).
+  var DESTINOS = { ava: 'AVA (Blackboard)', area_aluno: 'Área do Aluno', email_academico: 'E-mail acadêmico', loja_duda: 'loja do app Duda', loja_authenticator: 'loja do Authenticator' };
+  var PREFERENCIAS = { letra_maior: 'Letra maior', video_devagar: 'Vídeos mais devagar', ver_tudo: 'Ver tudo sem jogar' };
+  var CARTAO = { comecar: '"Comece por aqui"', continuar: '"Continue de onde parou"', certificado: '"Seu certificado está liberado"' };
+  var CONTEUDO = { modulo: 'Módulo', video: 'Vídeo da Central', faq: 'Dúvida da Central' };
 
   function quando(d) {
     if (!d) return '—';
@@ -220,7 +228,20 @@ window.AdminAcomp = (function () {
     } catch (err) { /* o envio do WhatsApp já aconteceu; só não ficou registrado */ }
   }
 
+  function descricaoNova(e) {
+    var d = e.dados || {};
+    if (e.nome === 'resultado_pratico') return (d.titulo || ((CONTEUDO[d.tipo] || d.tipo || '') + ' ' + (d.conteudo || ''))) + ' · ' + (d.resolveu ? 'deu certo' : 'não funcionou');
+    if (e.nome === 'saida_externa') return '→ ' + (DESTINOS[d.destino] || d.destino || '?') + (d.modulo ? ' · do módulo ' + d.modulo : '');
+    if (e.nome === 'aula_preferencia') return (PREFERENCIAS[d.preferencia] || d.preferencia || '') + ' · ' + (d.ligado ? 'ligou' : 'desligou');
+    if (e.nome === 'aula_cartao_exibido' || e.nome === 'aula_cartao_clicado') return (CARTAO[d.estado] || d.estado || '') + (d.modulo ? ' · módulo ' + d.modulo : '');
+    if (e.nome === 'aula_pratica_escolha') return d.escolha === 'agora' ? 'escolheu "Fazer agora"' : d.escolha === 'depois' ? 'escolheu "Fazer depois"' : '';
+    if (e.nome === 'trilha_reiniciada') return 'tinha ' + (d.modulos_concluidos || 0) + ' módulo(s) concluído(s) e ' + (d.pontos || 0) + ' pontos';
+    return null;
+  }
+
   function descricao(e) {
+    var nova = descricaoNova(e);
+    if (nova != null) return nova;
     var d = e.dados || {};
     var partes = [];
     if (d.alvo) partes.push('"' + d.alvo + '"');
@@ -255,7 +276,7 @@ window.AdminAcomp = (function () {
         : '<p class="text-gray-500 mb-4">Nenhum acesso registrado desde que o acompanhamento foi ligado.</p>';
       var eventos = r.eventos.length
         ? '<ol class="space-y-1">' + r.eventos.map(function (e) {
-            var imp = IMPORTANTES[e.nome];
+            var imp = IMPORTANTES[e.nome] || (e.nome === 'resultado_pratico' && e.dados && e.dados.resolveu === false);
             return '<li class="flex gap-3 px-2 py-1 rounded ' + (imp ? 'bg-amber-50' : '') + '"><span class="text-gray-500 whitespace-nowrap">' + esc(quando(e.criado_em)) + '</span><span><b>' + esc(NOMES_EVENTO[e.nome] || e.nome) + '</b> ' + esc(descricao(e)) + (e.tela ? ' <span class="text-gray-400">(' + esc(e.tela) + ')</span>' : '') + '</span></li>';
           }).join('') + '</ol>'
         : '<p class="text-gray-500">Sem eventos.</p>';

@@ -5,7 +5,14 @@
    (voto 1, -1 ou 0 para desfazer). Atualização otimista: se o POST falhar, o botão volta como estava.
    Depois de um 👎 abre a caixa "O que não ficou bom?": o texto vai para POST /api/avaliacoes/comentario
    e aparece para a equipe no admin. Trocar o voto para 👍 ou desfazer apaga o comentário.
-   Só aparece para quem tem a trilha liberada (body.trilha-on, ver avaliacao.css). */
+   Só aparece para quem tem a trilha liberada (body.trilha-on, ver avaliacao.css).
+
+   Irmão do joinha: Avaliacao.resultado(conteudo, id, opts) pergunta "Conseguiu fazer?" com "Deu certo" e
+   "Não funcionou" no fim de cada módulo da Aula, de cada tutorial e de cada resposta da Central.
+   conteudo: 'modulo' | 'video' | 'faq'. Grava em csu_avaliacoes com tipo 'pratica' e id 'conteudo:id'
+   (mesmas rotas e mesma memória dos votos) e emite resultado_pratico {conteudo, tipo, resolveu}.
+   "Não funcionou" oferece falar com a equipe ali mesmo (Dificuldade, origem nao_funcionou): o chat nunca
+   abre sozinho. Sem a ajuda ligada, aponta para o botão Ajuda do topo. */
 window.Avaliacao = (function () {
   'use strict';
 
@@ -98,7 +105,7 @@ window.Avaliacao = (function () {
   function caixas(k) {
     return Array.prototype.filter.call(document.querySelectorAll('[data-aval]'), function (b) { return !k || b.getAttribute('data-aval') === k; });
   }
-  function pintarTodos() { caixas().forEach(pintar); }
+  function pintarTodos() { caixas().forEach(pintar); caixasRes().forEach(pintarRes); }
 
   function aviso(box, texto) {
     var st = box.querySelector('.aval-st');
@@ -213,9 +220,92 @@ window.Avaliacao = (function () {
     if (txt) { txt.value = comentarios[box.getAttribute('data-aval')] || ''; txt.focus(); }
   }
 
+  // ---------- "Conseguiu fazer?" (resultado prático) ----------
+  function resultado(conteudo, id, opts) {
+    if (!conteudo || id == null || id === '') return '';
+    carregar();
+    var o = opts || {};
+    var vid = conteudo + ':' + id;
+    var k = chave('pratica', vid);
+    var atual = votos[k] || 0;
+    var qid = 'aval-q-' + (++seq);
+    function botao(v, rotulo) {
+      return '<button type="button" class="aval-res-btn" data-res-voto="' + v + '" aria-pressed="' + (atual === v) + '">' + rotulo + '</button>';
+    }
+    return (
+      '<div class="aval aval-res" data-res="' + esc(k) + '" data-res-conteudo="' + esc(conteudo) + '" data-res-id="' + esc(String(id)) + '"' +
+        (o.titulo ? ' data-res-titulo="' + esc(String(o.titulo).slice(0, 120)) + '"' : '') + (o.nivel ? ' data-res-nivel="' + Number(o.nivel) + '"' : '') + '>' +
+        '<div class="aval-linha">' +
+          '<p class="aval-q" id="' + qid + '">' + esc(o.pergunta || 'Conseguiu fazer?') + '</p>' +
+          '<div class="aval-btns" role="group" aria-labelledby="' + qid + '">' + botao(1, 'Deu certo') + botao(-1, 'Não funcionou') + '</div>' +
+          '<p class="aval-st" role="status" aria-live="polite"></p>' +
+        '</div>' +
+        '<p class="aval-res-ajuda" hidden></p>' +
+      '</div>'
+    );
+  }
+  function caixasRes(k) {
+    return Array.prototype.filter.call(document.querySelectorAll('[data-res]'), function (b) { return !k || b.getAttribute('data-res') === k; });
+  }
+  function pintarRes(box) {
+    var v = votos[box.getAttribute('data-res')] || 0;
+    box.querySelectorAll('[data-res-voto]').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(Number(b.getAttribute('data-res-voto')) === v));
+    });
+  }
+  // A oferta aparece logo depois de .aval-res-ajuda, dentro da própria caixa.
+  function ofertaAjuda(box) {
+    var alvo = box.querySelector('.aval-res-ajuda');
+    if (!alvo) return;
+    var D = window.Dificuldade;
+    var nivel = Number(box.getAttribute('data-res-nivel')) || null;
+    if (D && D.ativo && D.ativo()) {
+      alvo.hidden = true;
+      D.oferecer({ origem: 'nao_funcionou', nivel: nivel, ancora: alvo, automatica: false, titulo: 'Quer ajuda com isso?',
+        texto: 'Fale com a equipe do seu polo. A equipe vai saber o que você tentou fazer, para ajudar mais rápido.',
+        sinais: { conteudo: box.getAttribute('data-res-titulo') || null } });
+    } else {
+      alvo.hidden = false;
+      alvo.textContent = 'Toque em Ajuda, no topo da página, para falar com a equipe do seu polo.';
+    }
+  }
+  function tirarOferta(box) {
+    var alvo = box.querySelector('.aval-res-ajuda');
+    if (alvo) alvo.hidden = true;
+    var card = box.querySelector('.dif');
+    if (card && card.querySelector('[data-dif-sim]')) card.remove(); // pedido já feito fica (mostra o protocolo)
+  }
+  function votarRes(btn) {
+    var box = btn.closest('[data-res]');
+    if (!box) return;
+    var k = box.getAttribute('data-res');
+    if (salvando[k]) return;
+    var conteudo = box.getAttribute('data-res-conteudo'), id = box.getAttribute('data-res-id');
+    var novo = Number(btn.getAttribute('data-res-voto'));
+    var anterior = votos[k] || 0;
+    if (novo === anterior) { if (novo === -1 && !box.querySelector('.dif')) ofertaAjuda(box); return; }
+    votos[k] = novo;
+    caixasRes(k).forEach(pintarRes);
+    salvando[k] = true;
+    var tk = token();
+    window.Api.avaliar('pratica', conteudo + ':' + id, novo).then(function () {
+      if (window.Rastreio) window.Rastreio.track('resultado_pratico', { conteudo: id, tipo: conteudo, resolveu: novo === 1, titulo: box.getAttribute('data-res-titulo') || null });
+      if (!document.contains(box)) return;
+      aviso(box, novo === 1 ? 'Que bom! Obrigado por contar.' : 'Obrigado por avisar.');
+      if (novo === -1) ofertaAjuda(box); else tirarOferta(box);
+    }).catch(function () {
+      if (tk !== tokenVotos) return;
+      if (anterior) votos[k] = anterior; else delete votos[k];
+      caixasRes(k).forEach(pintarRes);
+      aviso(box, ERRO);
+    }).then(function () { delete salvando[k]; });
+  }
+
   document.addEventListener('click', function (e) {
     var t = e.target;
     if (!t || !t.closest) return;
+    var r = t.closest('[data-res] [data-res-voto]');
+    if (r) { votarRes(r); return; }
     var b = t.closest('[data-aval] [data-aval-voto]');
     if (b) { votar(b); return; }
     var ed = t.closest('[data-aval] [data-aval-editar]');
@@ -228,5 +318,5 @@ window.Avaliacao = (function () {
     enviarComentario(f);
   });
 
-  return { html: html, carregar: carregar, totais: totais, joinhas: joinhas, selo: selo };
+  return { html: html, resultado: resultado, carregar: carregar, totais: totais, joinhas: joinhas, selo: selo };
 })();

@@ -19,6 +19,7 @@ window.Trilha = (function () {
   var alvo = null;         // nível (0-based) para rolar quando a trilha terminar de montar
   var emitido = false;     // certificado já emitido (vem de /api/trilha/resumo)
   var querAulaCompleta = false; // pedido de "Assistir à aula completa" antes da tela montar
+  var cartaoVisto = null;  // estado do cartão "Comece por aqui" já registrado nesta montagem (aula_cartao_exibido)
 
   var LOCK = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2" fill="none"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4" fill="none"></path></svg>';
   // Card de conclusão (encerramento): medalha decorativa, check das pílulas e ícone de download.
@@ -237,6 +238,11 @@ window.Trilha = (function () {
     box.hidden = false;
     box.innerHTML = '<div class="tcomece-txt"><span class="tcomece-k">' + esc(k) + '</span><h2 id="tComeceH">' + esc(tit) + '</h2><p>' + esc(txt) + '</p></div>' +
       '<button type="button" class="tcomece-btn" data-comece="' + estado + '">' + esc(btn) + '</button>';
+    // Uma vez por montagem da tela e por estado (o cartão é redesenhado a cada resposta).
+    if (cartaoVisto !== estado) {
+      cartaoVisto = estado;
+      window.Rastreio && window.Rastreio.track('aula_cartao_exibido', { estado: estado, modulo: cur < tot ? cur + 1 : null });
+    }
   }
 
   function irPeloCartao(estado) {
@@ -423,7 +429,9 @@ window.Trilha = (function () {
     }).join('') + '</div></div></details></div></div>';
     h += '</div>';
     h += '<div class="step s3"><div class="part"><span class="pn">3</span><span class="pt">Responda as perguntas</span><span class="pts">módulo vale ' + pm() + ' pontos</span></div><div class="gate">' + LOCK + '<span>As perguntas aparecem quando você terminar de assistir ao vídeo.</span></div><div class="mission"></div></div>';
-    h += '<div class="cleared" hidden><span><b>Módulo concluído! +' + pm() + ' pontos</b><br>Sua conquista: ' + esc(l.rank) + '</span>' + (i < L().length - 1 ? '<button class="btn" type="button">Ir para o módulo ' + (i + 2) + '</button>' : '<button class="btn" type="button">Ir para o certificado</button>') + '</div></div>';
+    h += '<div class="cleared" hidden><span><b>Módulo concluído! +' + pm() + ' pontos</b><br>Sua conquista: ' + esc(l.rank) + '</span>' + (i < L().length - 1 ? '<button class="btn" type="button">Ir para o módulo ' + (i + 2) + '</button>' : '<button class="btn" type="button">Ir para o certificado</button>') +
+      // "Conseguiu fazer?" (public/js/avaliacao.js): o que o módulo ensinou funcionou na prática?
+      (window.Avaliacao && window.Avaliacao.resultado ? window.Avaliacao.resultado('modulo', i + 1, { nivel: i + 1, titulo: 'Módulo ' + (i + 1) + ' · ' + l.t }) : '') + '</div></div>';
     return h;
   }
 
@@ -658,6 +666,7 @@ window.Trilha = (function () {
   }
 
   function build() {
+    cartaoVisto = null;
     root.innerHTML = shell();
     if (window.Apps) window.Apps.render(root);
     var lv = $('#tLevels');
@@ -681,9 +690,11 @@ window.Trilha = (function () {
       var b = e.target.closest('[data-comece]');
       if (b) irPeloCartao(b.getAttribute('data-comece'));
     });
-    $('#tBig').addEventListener('click', function () { P.big = !P.big; savePrefs(); applyPrefs(); });
-    $('#tSlow').addEventListener('click', function () { P.slow = !P.slow; savePrefs(); applyPrefs(); });
-    $('#tReview').addEventListener('click', function () { P.review = !P.review; savePrefs(); refreshUI(); });
+    // Preferências de leitura: ficam no aparelho; o evento diz quem precisou delas.
+    var pref = function (nome, ligado) { window.Rastreio && window.Rastreio.track('aula_preferencia', { preferencia: nome, ligado: !!ligado }); };
+    $('#tBig').addEventListener('click', function () { P.big = !P.big; savePrefs(); applyPrefs(); pref('letra_maior', P.big); });
+    $('#tSlow').addEventListener('click', function () { P.slow = !P.slow; savePrefs(); applyPrefs(); pref('video_devagar', P.slow); });
+    $('#tReview').addEventListener('click', function () { P.review = !P.review; savePrefs(); refreshUI(); pref('ver_tudo', P.review); });
     var armed = null; var rs = $('#tReset');
     rs.addEventListener('click', function () {
       if (!armed) {

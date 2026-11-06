@@ -49,7 +49,7 @@ const CATALOGO = (() => {
 async function votos(pool) {
   const desde = await recorte.contarDesde(pool);
   try {
-    const r = await pool.query(`SELECT rgm, tipo, conteudo_id, voto FROM csu_avaliacoes WHERE rgm IN (${recorte.rgmsNoCorte(1)})`, [desde]);
+    const r = await pool.query(`SELECT rgm, tipo, conteudo_id, voto FROM csu_avaliacoes WHERE tipo <> 'pratica' AND rgm IN (${recorte.rgmsNoCorte(1)})`, [desde]);
     return r.rows;
   } catch (err) {
     if (err.code === '42P01') return [];

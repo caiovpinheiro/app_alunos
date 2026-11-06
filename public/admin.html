@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="/css/ds-admin.css?v=1">
   <link rel="stylesheet" href="/css/ds-painel.css?v=7">
   <link rel="stylesheet" href="/css/ds-aovivo.css?v=2">
+  <link rel="stylesheet" href="/css/ds-medicao.css?v=3">
   <link rel="stylesheet" href="/css/admin-grupos.css?v=3">
 </head>
 <body class="bg-slate-50">
@@ -60,6 +61,7 @@
           <button type="button" class="admin-tab" data-tab="acompanhamento">Quem contatar</button>
           <button type="button" class="admin-tab" data-tab="trilha">Aula Inaugural</button>
           <button type="button" class="admin-tab" data-tab="avaliacoes">Avaliações dos conteúdos</button>
+          <button type="button" class="admin-tab" data-tab="medicao">Medição</button>
           <button type="button" class="admin-tab" data-tab="grupos" hidden>Grupos de estudo</button>
         </div>
         <div class="admin-nav-group">
@@ -262,6 +264,35 @@
 
       <!-- Preenchido por admin-avaliacoes.js -->
       <div id="tab-avaliacoes" class="admin-panel hidden"></div>
+
+      <!-- Medição (admin-medicao.js, GET /api/admin/medicao): retenção, "Conseguiu fazer?", saídas, ajuda e entrada. -->
+      <div id="tab-medicao" class="admin-panel hidden">
+        <div class="admin-panel-head flex flex-wrap justify-between items-end gap-3">
+          <div>
+            <h2 class="text-xl font-bold">Medição</h2>
+            <p class="admin-panel-desc">O que decide o que produzir a seguir: quem volta, o que funcionou na prática, quem chegou ao sistema da faculdade, se a ajuda resolveu e por onde o aluno entrou. Só números.</p>
+          </div>
+          <div class="av-relogio">
+            <label class="flex flex-col gap-1 text-sm"><span class="text-gray-600">Período</span>
+              <select id="medicao-dias" class="border rounded-lg px-3 py-2 bg-white"><option value="7">Últimos 7 dias</option><option value="30" selected>Últimos 30 dias</option><option value="90">Últimos 90 dias</option></select></label>
+            <p id="medicao-status" role="status"></p>
+            <button type="button" id="medicao-atualizar" class="bg-white border text-sm font-semibold px-4 py-2 rounded-lg">Atualizar</button>
+          </div>
+        </div>
+        <p id="medicao-msg" class="pn-msg" role="status"></p>
+        <div class="admin-subtabs md-subtabs" role="group" aria-label="Partes da Medição">
+          <button type="button" class="admin-subtab is-active" data-subtab="retencao" aria-pressed="true">Retenção<span>Quem volta, por semana</span></button>
+          <button type="button" class="admin-subtab" data-subtab="resultado" aria-pressed="false">Conseguiu fazer?<span>Módulos e tutoriais</span></button>
+          <button type="button" class="admin-subtab" data-subtab="saidas" aria-pressed="false">Saídas<span>AVA, Área do Aluno, apps</span></button>
+          <button type="button" class="admin-subtab" data-subtab="ajuda" aria-pressed="false">Ajuda<span>Oferecida, aceita, resolvida</span></button>
+          <button type="button" class="admin-subtab" data-subtab="entrada" aria-pressed="false">Entrada<span>Origem e falhas de login</span></button>
+        </div>
+        <section data-subpanel="retencao" id="medicao-retencao" class="pn md" aria-label="Retenção"></section>
+        <section data-subpanel="resultado" id="medicao-resultado" class="pn md" aria-label="Conseguiu fazer?" hidden></section>
+        <section data-subpanel="saidas" id="medicao-saidas" class="pn md" aria-label="Saídas para a faculdade" hidden></section>
+        <section data-subpanel="ajuda" id="medicao-ajuda" class="pn md" aria-label="Ofertas de ajuda" hidden></section>
+        <section data-subpanel="entrada" id="medicao-entrada" class="pn md" aria-label="Entrada" hidden></section>
+      </div>
       <!-- Grupos de estudo: fila de moderação (admin-grupos.js). O botão do menu só aparece com GRUPO_ESTUDO_ATIVA_PARA. -->
       <div id="tab-grupos" class="admin-panel hidden"></div>
 
@@ -416,15 +447,16 @@
     </div>
   </div>
 
-  <script src="/js/admin.js?v=32"></script>
+  <script src="/js/admin.js?v=33"></script>
   <script src="/js/admin-base.js?v=2"></script>
   <script src="/js/admin-resultado.js?v=1"></script>
-  <script src="/js/admin-acompanhamento.js?v=11"></script>
+  <script src="/js/admin-acompanhamento.js?v=12"></script>
   <script src="/js/admin-painel.js?v=6"></script>
   <script src="/js/admin-aovivo.js?v=3"></script>
   <script src="/js/admin-pedidos.js?v=2"></script>
   <script src="/js/admin-aula.js?v=2"></script>
   <script src="/js/admin-avaliacoes.js?v=2"></script>
+  <script src="/js/admin-medicao.js?v=3"></script>
   <script src="/js/admin-grupos.js?v=3"></script>
   <script src="/js/admin-preparo.js?v=1" defer></script>
   <script src="/js/admin-alunos.js?v=2" defer></script>

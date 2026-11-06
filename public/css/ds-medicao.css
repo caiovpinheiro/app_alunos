@@ -1,0 +1,49 @@
+/* Admin › Medição (admin-medicao.js). Reaproveita .pn-*, .av-*, .rs-* e os tokens de ds.css; aqui só o que é novo. */
+.md{--rs-sim:#1452b8;margin-top:20px}
+.md-kpis{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
+.md .av-aviso code{font-size:13px;padding:1px 4px;border-radius:4px;background:rgba(10,42,94,.07)}
+.md-sec .pn-sub:empty{display:none}
+
+/* Cinco sub-abas numa linha só no computador; duas colunas no celular. */
+#admin-app .md-subtabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}
+#admin-app .md-subtabs .admin-subtab + .admin-subtab{border-left:1px solid var(--ds-line)}
+
+/* Retenção: cada célula traz %, "x de y" e uma barra curta. */
+#admin-app .md-ret tbody th{min-width:130px}
+#admin-app .md-ret td.pn-num{min-width:112px}
+#admin-app .md-nota{display:block;margin-top:2px;font-size:12px;color:var(--ds-faint)}
+#admin-app .md-ret .md-barra{height:6px;margin-top:6px}
+#admin-app .md-andamento b,#admin-app .md-andamento span{color:var(--ds-faint)}
+#admin-app .md-andamento .md-barra i{background:#b7c3d4}
+#admin-app .md-poucos .md-barra i{background:#8aa4cc}
+#admin-app .md-vazia{color:var(--ds-faint)}
+
+/* Conseguiu fazer?: barra empilhada deu certo / não funcionou / não respondeu. */
+#admin-app .md-res tbody th{min-width:260px}
+.md-pilha-c{min-width:140px}
+.md-pilha{display:flex;height:10px;border-radius:99px;background:#e8edf4;overflow:hidden}
+.md-pilha i{display:block;height:100%}
+.md-sim{background:var(--f-bom,#1d7a4b)}
+.md-nao{background:var(--f-ruim,#b42318)}
+.md-sem{background:#c9d3e0}
+.md-leg{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px 14px}
+.md-leg > span{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.md-leg i{display:inline-block;width:12px;height:12px;border-radius:3px}
+
+#admin-app .md-orig tbody th,#admin-app .md-origem tbody th{min-width:200px}
+#admin-app .md-ajuda tbody th{min-width:230px}
+#admin-app .md-ajuda .av-total th,#admin-app .md-ajuda .av-total td{background:var(--ds-surface-2)}
+#admin-app .md-falhas tbody th{min-width:70px}
+.md-falha-c{min-width:110px}
+
+@media (max-width:900px){
+  #admin-app .md-subtabs{grid-template-columns:1fr 1fr}
+  #admin-app .md-subtabs .admin-subtab{border-left:0;border-bottom:1px solid var(--ds-line)}
+  #admin-app .md-subtabs .admin-subtab:nth-child(odd){border-right:1px solid var(--ds-line)}
+}
+@media (max-width:640px){
+  .md-kpis{grid-template-columns:1fr 1fr}
+  #admin-app .md-res tbody th{min-width:200px}
+  #admin-app .md-ret tbody th{min-width:96px}
+  #admin-app .md-orig tbody th,#admin-app .md-origem tbody th,#admin-app .md-ajuda tbody th{min-width:160px}
+}

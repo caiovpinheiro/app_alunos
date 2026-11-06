@@ -112,6 +112,40 @@ window.Rastreio = (function () {
     var t = el.getAttribute('data-track') || el.getAttribute('aria-label') || el.textContent || el.getAttribute('title') || '';
     return t.replace(/\s+/g, ' ').trim().slice(0, 80);
   }
+  // Sistemas da faculdade: a lista única de destinos do evento saida_externa (o resultado real do
+  // onboarding é o aluno chegar lá). Vale para qualquer link do portal: módulo 1 ("Fazer agora"),
+  // Meu semestre, aplicativos (apps.js), trilha.json e faq.json. Lojas: só os apps do Duda e do Authenticator.
+  var DESTINOS = [
+    { id: 'ava', hosts: ['ava.cruzeirodosul.edu.br'] },
+    { id: 'area_aluno', hosts: ['novoportal.cruzeirodosul.edu.br'] },
+    { id: 'email_academico', hosts: ['emailacademico.cruzeiroead.com.br', 'outlook.office.com', 'outlook.office365.com'] },
+    { id: 'loja_duda', hosts: ['apps.apple.com', 'play.google.com'], caminho: /\/duda\/|id6451416655|br\.com\.cruzeirodosulvirtual/ },
+    { id: 'loja_authenticator', hosts: ['apps.apple.com', 'play.google.com'], caminho: /microsoft-authenticator|id983156458|com\.azure\.authenticator/ },
+  ];
+  function destinoDe(href) {
+    var u;
+    try { u = new URL(href, window.location.href); } catch (e) { return null; }
+    var host = u.hostname.toLowerCase();
+    for (var i = 0; i < DESTINOS.length; i++) {
+      var d = DESTINOS[i];
+      if (d.hosts.indexOf(host) < 0) continue;
+      if (d.caminho && !d.caminho.test(u.pathname + u.search)) continue;
+      return d.id;
+    }
+    return null;
+  }
+  // Módulo da Aula Inaugural onde está o link (seção #tlvN), senão null.
+  function moduloDe(el) {
+    var sec = el.closest && el.closest('[id^="tlv"]');
+    var n = sec ? parseInt(sec.id.slice(3), 10) : NaN;
+    return Number.isFinite(n) ? n + 1 : null;
+  }
+  function saidaExterna(el) {
+    if (!el || el.tagName !== 'A' || !el.href) return;
+    var destino = destinoDe(el.href);
+    if (destino) registrar('saida_externa', { destino: destino, tela: telaAtual(), modulo: moduloDe(el) });
+  }
+
   function aoClicar(e) {
     marcaAtividade();
     var el = e.target && e.target.closest && e.target.closest('a, button, [role="button"], summary, label.c-chip');
@@ -125,6 +159,13 @@ window.Rastreio = (function () {
       } catch (err) { /* href estranho: fica só o rótulo */ }
     }
     registrar('clique', dados);
+    saidaExterna(el);
+  }
+  // Botão do meio (abre em outra aba) também é saída.
+  function aoClicarMeio(e) {
+    if (e.button !== 1) return;
+    var el = e.target && e.target.closest && e.target.closest('a');
+    if (el && !el.closest('[data-no-track]')) saidaExterna(el);
   }
 
   // Vídeos: início, 25/50/75%, fim e pausa (com %). Vale para trilha, Central, Aula Inaugural e modal.
@@ -169,6 +210,7 @@ window.Rastreio = (function () {
     if (ouvindo) return;
     ouvindo = true;
     document.addEventListener('click', aoClicar, true);
+    document.addEventListener('auxclick', aoClicarMeio, true);
     ['play', 'pause', 'ended', 'timeupdate'].forEach(function (t) { document.addEventListener(t, aoMidia, true); });
     ['keydown', 'scroll', 'pointermove', 'touchstart'].forEach(function (t) {
       document.addEventListener(t, marcaAtividade, { capture: true, passive: true });
@@ -321,5 +363,5 @@ window.Rastreio = (function () {
     };
   }
 
-  return { iniciar: iniciar, track: track, contexto: contexto, sincronizarChat: sincronizarChat, registrar: registrar, enviar: enviar, parar: parar, debug: debug };
+  return { iniciar: iniciar, track: track, contexto: contexto, sincronizarChat: sincronizarChat, registrar: registrar, enviar: enviar, parar: parar, debug: debug, destinoDe: destinoDe };
 })();

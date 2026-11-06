@@ -30,6 +30,8 @@ const aoVivoRegua = require('./ao-vivo-regua');
 const aoVivoTestes = require('./ao-vivo-testes');
 const ajudaPedidos = require('./ajuda-pedidos');
 const avaliacoes = require('./avaliacoes');
+const instrumentacao = require('./instrumentacao');
+const medicao = require('./medicao');
 const preparo = require('./preparo');
 const dadosAcesso = require('./dadosAcesso');
 const simulado = require('./simulado');
@@ -318,15 +320,20 @@ app.post('/api/auth/login', async (req, res) => {
 
   const identifier = normalizeSpaces(req.body?.identifier);
   const password = String(req.body?.password ?? '');
+  // Origem do link de entrada (?o=bv...) e falhas: server/instrumentacao.js (sem o que foi digitado).
+  const origem = instrumentacao.limparOrigem(req.body?.origem);
+  let aluno = null;
 
   if (!identifier || !password) {
+    instrumentacao.falha(pool, { motivo: 'campos_vazios', origem });
     return res.status(401).json({ success: false, message: 'Credenciais inválidas.' });
   }
 
   try {
     await db.ensureSchema(pool);
-    const aluno = await db.findAlunoByIdentifier(pool, identifier);
+    aluno = await db.findAlunoByIdentifier(pool, identifier);
     if (!aluno || !aluno.ativo) {
+      instrumentacao.falha(pool, { alunoId: aluno ? aluno.id : null, motivo: aluno ? 'conta_inativa' : 'conta_nao_encontrada', origem });
       return res.status(401).json({ success: false, message: 'Credenciais inválidas.' });
     }
 
@@ -334,11 +341,14 @@ app.post('/api/auth/login', async (req, res) => {
     const derivedOk = matriculados.passwordMatches(derived, password);
     const hashOk = await db.verifyPassword(aluno, password);
     if (!derivedOk && !hashOk) {
+      instrumentacao.falha(pool, { alunoId: aluno.id, motivo: 'senha_incorreta', origem });
       return res.status(401).json({ success: false, message: 'Credenciais inválidas.' });
     }
 
     const token = crypto.randomBytes(32).toString('hex');
+    const primeira = await instrumentacao.primeiraEntrada(pool, aluno.id);
     await db.createSession(pool, aluno.id, token);
+    instrumentacao.entrada(pool, { alunoId: aluno.id, origem, primeira, via: 'login' });
     return res.json({
       success: true,
       token,
@@ -346,6 +356,7 @@ app.post('/api/auth/login', async (req, res) => {
     });
   } catch (err) {
     console.error('Falha no login:', err.code || '', err.message);
+    instrumentacao.falha(pool, { alunoId: aluno ? aluno.id : null, motivo: 'erro_interno', origem });
     return res.status(500).json({ success: false, message: 'Não foi possível entrar. Tente novamente em instantes.' });
   }
 });
@@ -414,6 +425,7 @@ app.post('/api/auth/register', async (req, res) => {
     }
     const token = crypto.randomBytes(32).toString('hex');
     await db.createSession(pool, aluno.id, token);
+    instrumentacao.entrada(pool, { alunoId: aluno.id, origem: req.body?.origem, primeira: true, via: 'cadastro' });
     return res.status(201).json({
       success: true,
       token,
@@ -431,6 +443,9 @@ app.post('/api/auth/register', async (req, res) => {
     return res.status(500).json({ success: false, message: 'Não foi possível concluir o cadastro. Tente novamente.' });
   }
 });
+
+// "Esqueci minha senha" na tela de login (server/instrumentacao.js).
+instrumentacao.registrarRotas(app, { getPool: () => pool, findAluno: db.findAlunoByIdentifier });
 
 app.post('/api/auth/logout', authMiddleware, async (req, res) => {
   try {
@@ -1778,6 +1793,18 @@ app.post('/api/admin/acompanhamento/:id/followup', requireAdmin, async (req, res
 
 // ---------- Avaliação dos conteúdos (joinha pra cima / pra baixo) ----------
 avaliacoes.registrarRotas(app, { getPool: () => pool, authMiddleware, requireAdmin });
+
+// Aba Medição: retenção, resultado prático, saídas para a faculdade, ajuda e entrada (server/medicao.js).
+app.get('/api/admin/medicao', requireAdmin, async (req, res) => {
+  if (!pool) return unavailable(res);
+  try {
+    await Promise.all([ensureAcompanhamento(), instrumentacao.garantir(pool)]);
+    return res.json(await medicao.relatorio(pool, { dias: req.query.dias }));
+  } catch (err) {
+    console.error('Falha na Medição:', err.code || '', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível carregar a Medição.' });
+  }
+});
 // Acesso em preparação (aluno sem RGM): o polo cria a conta e depois informa o RGM.
 preparo.registrar(app, { pool, requireAdmin });
 // Dados de acesso à faculdade (RGM, curso, e-mail acadêmico): o polo sobe; o aluno consulta.

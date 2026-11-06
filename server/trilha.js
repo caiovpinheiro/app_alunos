@@ -385,7 +385,24 @@ async function marcarTarefa(pool, alunoId, tarefa, feita) {
   return true;
 }
 
+// "Começar de novo" apaga o progresso. Antes, com o rastreio ligado para a conta, grava no percurso
+// o que havia (trilha_reiniciada): sem isso o admin veria um aluno "que nunca começou".
 async function reiniciar(pool, alunoId) {
+  try {
+    const acompanhamento = require('./acompanhamento'); // aqui dentro: acompanhamento carrega painel
+    const a = await pool.query('SELECT id, rgm, email FROM csu_alunos WHERE id = $1', [alunoId]);
+    if (a.rows[0] && acompanhamento.liberadoPara(a.rows[0])) {
+      const p = await getProgresso(pool, alunoId);
+      const abertos = p.niveis.filter((l) => l.concluido || l.video_ok || l.pulou_video || (l.partes_vistas || []).length).length;
+      await pool.query(
+        `INSERT INTO csu_eventos (aluno_id, nome, tela, dados) VALUES ($1, 'trilha_reiniciada', '/trilha', $2::jsonb)`,
+        [alunoId, JSON.stringify({ modulos_concluidos: p.concluidos, modulos_mexidos: abertos, pontos: p.pontos })],
+      );
+    }
+  } catch (err) {
+    // Sem a tabela de eventos (rastreio nunca ligado) ou falha ao gravar: apaga do mesmo jeito.
+    if (err.code !== '42P01') console.error('Falha ao registrar "Começar de novo":', err.message);
+  }
   await pool.query('DELETE FROM csu_trilha_progresso WHERE aluno_id = $1', [alunoId]);
 }
 
