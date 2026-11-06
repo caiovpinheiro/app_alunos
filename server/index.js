@@ -861,6 +861,20 @@ app.post('/api/trilha/tarefa', authMiddleware, async (req, res) => {
   }
 });
 
+// Assistiu à aula completa até o fim: nos módulos, as perguntas abrem sem rever o vídeo (server/trilha.js).
+app.post('/api/trilha/aula-completa', authMiddleware, async (req, res) => {
+  if (!pool) return unavailable(res);
+  if (!trilha.liberadaPara(req.aluno)) return res.status(403).json({ success: false, message: 'Aula Inaugural indisponível.' });
+  try {
+    await ensureTrilha();
+    await trilha.marcarAulaCompleta(pool, req.aluno.id);
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Falha ao marcar a aula completa:', err.message);
+    return res.status(500).json({ success: false, message: 'Não foi possível salvar.' });
+  }
+});
+
 app.post('/api/trilha/reiniciar', authMiddleware, async (req, res) => {
   if (!pool) return unavailable(res);
   try {

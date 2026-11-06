@@ -5,7 +5,7 @@
   --warn-bg:#fff5d6; --warn-fg:#5a4100; --warn-line:#f2d27a;
   --ok:#0a4fa6; --ok-soft:#e3edfc; --bad:#b3261e; --bad-soft:#fce8e6; --lock:#8696ad;
   --hero-1:#00356b; --hero-2:#0b56b0; --hero-fg:#ffffff; --hero-muted:#d4e3f7; --hero-line:rgba(255,255,255,.24); --hero-chip:rgba(255,255,255,.1);
-  --hud-bg:rgba(238,244,251,.88);
+  --hud-bg:rgba(238,244,251,.97);
   --ink:#0b1f38; --sun:#f6e27a; --sky:#7cc4f0; --paper:#efe5d3; --bubble-bg:#00244d; --bubble-fg:#ffffff; --hero-shadow:rgba(0,12,32,.55);
   --shadow:0 1px 2px rgba(0,40,90,.06),0 10px 28px -16px rgba(0,40,90,.24);
   --shadow-lg:0 2px 6px rgba(0,40,90,.08),0 28px 56px -24px rgba(0,40,90,.4);
@@ -400,15 +400,35 @@
 .trilha details.resumo-full summary::before{-webkit-mask-image:var(--i-text);mask-image:var(--i-text)}
 .trilha details.transcript-box summary::before{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z'/%3E%3Cpath d='M8.5 10.5h7M8.5 14h4'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z'/%3E%3Cpath d='M8.5 10.5h7M8.5 14h4'/%3E%3C/svg%3E")}.trilha .stuck1-msg{margin:8px 0 0}
 @media (min-width:760px){.trilha .hudmain{grid-template-areas:"r bar" "r line" "cert cert"}.trilha .certline{grid-area:cert}}
-/* Aula completa (todos os capítulos em sequência, sem pontos) */
-.trilha .taula > summary{display:flex;align-items:center;gap:14px;cursor:pointer;list-style:none}
+/* Aula completa: atalho em destaque. Quem assiste até o fim vai direto às perguntas nos módulos. */
+.trilha .taula{border:0;background:var(--surface);box-shadow:var(--shadow-lg)}
+.trilha .taula > summary{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:16px;cursor:pointer;list-style:none;color:var(--hero-fg);background:linear-gradient(135deg,var(--hero-1),var(--hero-2));border-radius:var(--r-lg)}
 .trilha .taula > summary::-webkit-details-marker{display:none}
-.trilha .taula > summary .tt{display:flex;flex-direction:column;min-width:0}
-.trilha .taula > summary b{font:600 1.15rem/1.3 var(--display,inherit)}
-.trilha .taula > summary small{color:var(--muted);font-size:.92rem}
-.trilha .taula > summary::after{content:"Abrir";margin-left:auto;font-weight:700;color:#0a4fa6;text-decoration:underline;text-underline-offset:3px}
-.trilha .taula[open] > summary::after{content:"Fechar"}
+.trilha .taula > summary:focus-visible{outline:3px solid var(--xp);outline-offset:3px}
+.trilha .taula-play{width:56px;height:56px;border-radius:16px;background:var(--xp);box-shadow:0 6px 0 var(--xp-2);display:grid;place-items:center;flex:none}
+.trilha .taula-play::before{content:"";width:0;height:0;border-left:18px solid var(--on-xp);border-top:11px solid transparent;border-bottom:11px solid transparent;margin-left:5px}
+.trilha .taula > summary .tt{display:flex;flex-direction:column;gap:4px;min-width:0}
+.trilha .taula-tag{align-self:flex-start;font:700 13px/1 var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--on-xp);background:var(--xp);padding:6px 10px;border-radius:999px}
+.trilha .taula > summary b{font:700 1.45rem/1.2 var(--display,inherit);color:var(--hero-fg)}
+.trilha .taula-gain{font-size:1.05rem;line-height:1.45;color:var(--hero-fg)}
+.trilha .taula > summary small{color:var(--hero-muted);font-size:.95rem}
+.trilha .taula-cta{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 20px;border-radius:999px;background:var(--hero-fg);color:var(--solid);font:700 1rem/1 var(--body);white-space:nowrap}
+.trilha .taula-cta::after{content:"Assistir agora"}
+.trilha .taula[open] .taula-cta::after{content:"Fechar"}
+.trilha .taula.is-vista .taula-cta::after{content:"Rever"}
+.trilha .taula.is-vista[open] .taula-cta::after{content:"Fechar"}
+.trilha .taula.is-vista .taula-tag::before{content:"✓ "}
+.trilha .taula[open] > summary{border-radius:var(--r-lg) var(--r-lg) 0 0}
+.trilha .taula > .taula-prog{margin-top:16px;margin-bottom:0;color:var(--accent);font-weight:700}
+.trilha .taula > .taula-prog:empty{display:none}
 .trilha .taula .parts{max-height:none}
+@media (max-width:759.98px){
+  .trilha .taula > summary{grid-template-columns:auto 1fr;gap:12px 14px}
+  .trilha .taula-play{width:48px;height:48px;border-radius:14px}
+  .trilha .taula-cta{grid-column:1 / -1;width:100%}
+  .trilha .taula > summary b{font-size:1.3rem}
+}
+@media (prefers-reduced-motion:no-preference){.trilha .taula-play{transition:transform .2s var(--ease)}.trilha .taula > summary:hover .taula-play{transform:translateY(-2px)}}
 /* Players sem pontos (abertura, aula completa, encerramento): vídeo menor, com a lista de capítulos ao lado no desktop */
 .trilha .tcaps .player{max-width:640px}
 @media (min-width:900px){
@@ -426,11 +446,8 @@
 .trilha .tcaps-sec > .tcaps{margin-top:0}
 .trilha .taula{padding-bottom:0}
 .trilha .taula[open]{padding-bottom:var(--cpad)}
-.trilha .taula > summary{padding:16px var(--cpad);min-height:72px}
-.trilha .taula > summary:focus-visible{outline-offset:-4px;border-radius:var(--r-lg)}
-.trilha .taula > summary::after{flex:none;padding-left:8px}
-.trilha .taula .lvbadge{width:48px;height:48px;font-size:1.15rem}
-.trilha .taula[open] > .tcaps{margin-top:4px}
+.trilha .taula > summary{padding:22px var(--cpad);min-height:72px}
+.trilha .taula[open] > .tcaps{margin-top:16px}
 /* Vídeo inteiro dentro da moldura arredondada, sem faixa de outra cor sobrando. */
 .trilha .tcaps .player{max-width:none;background:#061427}
 .trilha .tcaps .player video{height:100%;border-radius:0;background:#061427}

@@ -16,6 +16,9 @@ const NIVEIS = CONTEUDO.niveis;
 // meta 1.800) vale sem migração. A coluna `pontos` da tabela fica só como cache.
 const PONTOS_MODULO = Number(CONTEUDO.pontos_modulo) || 10;
 const TAREFAS = new Set(CONTEUDO.tarefas.map((t) => t.id));
+// Assistiu à aula completa até o fim: nos módulos, vai direto às perguntas (os pontos continuam
+// vindo só das perguntas). Fica em csu_trilha_tarefas com este id, fora da lista de tarefas.
+const MARCA_AULA_COMPLETA = 'aula_completa';
 const MAX_PONTOS = NIVEIS.length * PONTOS_MODULO;
 // Aula Inaugural = programa único: cada nível (módulo) tem como vídeo o(s) capítulo(s) da aula
 // ligados a ele (nivel_trilha em central/aula-inaugural.json). Os vídeos antigos da trilha
@@ -275,7 +278,15 @@ async function getProgresso(pool, alunoId) {
     pontos: niveis.reduce((n, l) => n + l.pontos, 0),
     concluidos: niveis.filter((l) => l.concluido).length,
     tarefas: tarefas.rows.map((r) => r.tarefa).filter((t) => TAREFAS.has(t)),
+    aula_completa: tarefas.rows.some((r) => r.tarefa === MARCA_AULA_COMPLETA),
   };
+}
+
+async function marcarAulaCompleta(pool, alunoId) {
+  await pool.query(
+    `INSERT INTO csu_trilha_tarefas (aluno_id, tarefa) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+    [alunoId, MARCA_AULA_COMPLETA],
+  );
 }
 
 // Lê, altera e grava a linha do nível numa transação (evita corrida entre cliques).
@@ -425,6 +436,7 @@ module.exports = {
   marcarTravei,
   responder,
   marcarTarefa,
+  marcarAulaCompleta,
   reiniciar,
   statusCertificado,
   META_CERTIFICADO,

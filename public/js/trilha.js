@@ -75,6 +75,7 @@ window.Trilha = (function () {
       Object.keys(n.respostas || {}).forEach(function (k) { s.ans[i + '-' + k] = n.respostas[k]; });
     });
     (prog.tarefas || []).forEach(function (t) { s.tarefas[t] = true; });
+    s.aulaCompleta = !!prog.aula_completa;
     return s;
   }
 
@@ -210,7 +211,7 @@ window.Trilha = (function () {
     st.className = 'state ' + (S.done[i] ? 's-done' : open ? 's-cur' : '');
     st.textContent = S.done[i] ? 'Concluído' : open ? 'Em andamento' : 'Bloqueado';
     sec.querySelector('.cleared').hidden = !S.done[i];
-    var mOpen = P.review || S.watched[i] || S.skipped[i] || S.done[i];
+    var mOpen = P.review || S.watched[i] || S.skipped[i] || S.done[i] || S.aulaCompleta;
     sec.querySelector('.mission').hidden = !mOpen;
     sec.querySelector('.gate').hidden = !!mOpen;
     sec.querySelector('.skip').hidden = !!mOpen;
@@ -223,6 +224,10 @@ window.Trilha = (function () {
       sec.querySelector('.vidbar .prog').textContent = S.done[i] && !S.skipped[i]
         ? 'Módulo concluído.'
         : 'Você pulou o vídeo. Pode voltar a ele quando quiser.';
+    } else if (S.aulaCompleta) {
+      var pa = sec.querySelector('.vidbar .prog');
+      pa.className = 'prog seen';
+      pa.textContent = 'Você já viu isto na aula completa. Vá direto às perguntas.';
     }
   }
 
@@ -234,7 +239,7 @@ window.Trilha = (function () {
     var tot = L().length;
     var d = doneCount();
     var cur = currentIdx();
-    var mexeu = d > 0 || Object.keys(S.pseen || {}).length > 0 || L().some(function (_, i) { return S.watched[i] || S.skipped[i]; });
+    var mexeu = d > 0 || S.aulaCompleta || Object.keys(S.pseen || {}).length > 0 || L().some(function (_, i) { return S.watched[i] || S.skipped[i]; });
     var k; var tit; var txt; var btn; var estado;
     if (cur >= tot) {
       estado = 'certificado'; k = 'Você concluiu os módulos'; tit = 'Seu certificado de ' + horas() + ' horas está liberado';
@@ -267,12 +272,12 @@ window.Trilha = (function () {
     irParaAlvo();
     // O toque do aluno libera o vídeo para tocar sozinho no celular.
     var sec = document.getElementById('tlv' + cur);
-    var v = sec && !S.watched[cur] && !S.skipped[cur] ? sec.querySelector('.player video') : null;
+    var v = sec && !S.watched[cur] && !S.skipped[cur] && !S.aulaCompleta ? sec.querySelector('.player video') : null;
     if (v) { var pr = v.play(); if (pr && pr.catch) pr.catch(function () {}); }
   }
 
   function refreshUI() {
-    hud(); map(); comece();
+    hud(); map(); comece(); aulaCompletaUI();
     L().forEach(function (_, i) { levelState(i); });
     todoCount();
   }
@@ -314,15 +319,23 @@ window.Trilha = (function () {
     h += '<div class="hudmain"><div class="rank"><small>Sua conquista</small><b id="tRank">Visitante</b></div><div class="xpbar"><i id="tXpFill"></i></div>';
     h += '<div class="xpline"><span id="tXpTxt"></span><span id="tLvTxt"></span></div><p class="certline" id="tCertTxt" aria-live="polite"></p></div></div></div>';
 
-    h += '<div class="trailhead" id="tModulos"><div><h2 class="sec-h" id="tModulosH" tabindex="-1">Seus módulos</h2><p class="hint">Faça na ordem que quiser. A ordem sugerida é de cima para baixo. Já sabe algum assunto? Em cada módulo, toque em <b>Já sei isso</b>. Prefere ver tudo de uma vez? <button type="button" class="linkbtn lede-link" data-open-aula>Assistir à aula completa (sem pontos)</button></p></div>';
+    h += '<div class="trailhead" id="tModulos"><div><h2 class="sec-h" id="tModulosH" tabindex="-1">Seus módulos</h2><p class="hint">Faça na ordem que quiser. A ordem sugerida é de cima para baixo. Já sabe algum assunto? Em cada módulo, toque em <b>Já sei isso</b>. Prefere ver tudo de uma vez? <button type="button" class="linkbtn lede-link" data-open-aula>Assista à aula completa e vá direto às perguntas</button></p></div>';
     h += '<div class="tools"><button class="chipbtn" id="tBig" type="button" aria-pressed="false">A+ Letra maior</button><button class="chipbtn" id="tSlow" type="button" aria-pressed="false">Vídeos mais devagar</button><button class="chipbtn" id="tReview" type="button" aria-pressed="false">Ver tudo sem jogar</button>';
     h += '<button class="chipbtn" id="tReset" type="button">Começar de novo</button></div></div>';
     h += '<ol class="map" id="tMap" aria-label="Mapa dos módulos"></ol>';
-    // Aula completa: todos os capítulos em sequência, sem pontos (os pontos vêm dos módulos).
+    // Aula completa: todos os capítulos em sequência. Quem assiste até o fim vai direto às perguntas
+    // nos 7 módulos (server/trilha.js, aula_completa); os pontos continuam vindo só das perguntas.
     if (C.aula_completa && C.aula_completa.length) {
       var seg = C.aula_completa.reduce(function (n, c) { var p = String(c.duracao || '0:0').split(':'); return n + (Number(p[0]) * 60 + Number(p[1] || 0)); }, 0);
-      h += '<details class="level tcaps-sec taula" id="tAulaCompleta"><summary><span class="lvbadge" aria-hidden="true">▶</span><span class="tt"><span class="lvnum">Sem pontos</span><b>Aula completa</b>' +
-        '<small>' + C.aula_completa.length + ' capítulos em sequência' + (seg ? ' · ' + Math.round(seg / 60) + ' min' : '') + '. Para quem prefere ver tudo de uma vez.</small></span></summary>' +
+      var minutos = seg ? Math.round(seg / 60) + ' min' : '';
+      h += '<details class="level tcaps-sec taula" id="tAulaCompleta"><summary>' +
+        '<span class="taula-play" aria-hidden="true"></span>' +
+        '<span class="tt"><span class="taula-tag" id="tAcTag">Atalho' + (minutos ? ' · ' + minutos : '') + '</span>' +
+        '<b>Aula completa</b>' +
+        '<span class="taula-gain" id="tAcGain">Veja os ' + C.aula_completa.length + ' capítulos de uma vez e vá direto às perguntas nos 7 módulos, sem rever os vídeos.</span>' +
+        '<small id="tAcNota">Os pontos continuam vindo das perguntas de cada módulo.</small></span>' +
+        '<span class="taula-cta" aria-hidden="true"></span></summary>' +
+        '<p class="taula-prog" id="tAcProg" aria-live="polite"></p>' +
         capsPlayer(C.aula_completa, 'tAc') + '</details>';
     }
     // Abertura (sem pontos), os 7 módulos e o encerramento com o certificado.
@@ -383,6 +396,67 @@ window.Trilha = (function () {
       var atual = Array.prototype.findIndex.call(btns, function (x) { return x.getAttribute('aria-pressed') === 'true'; });
       if (atual > -1 && btns[atual + 1]) btns[atual + 1].click();
     });
+    if (box.getAttribute('data-caps') === 'tAc') acompanharAulaCompleta(v, btns);
+  }
+
+  // ---------- Aula completa: atalho para as perguntas ----------
+  // Cada capítulo conta quando passa de 90%. Com todos vistos, o servidor guarda e os módulos abrem
+  // nas perguntas. O que já foi visto fica no aparelho, para quem assiste em mais de uma vez.
+  var AC_KEY = 'csu-aula-completa-vistos';
+  function acVistos() {
+    try { return JSON.parse(localStorage.getItem(AC_KEY) || '[]') || []; } catch (e) { return []; }
+  }
+  function acGuardar(lista) {
+    try { localStorage.setItem(AC_KEY, JSON.stringify(lista)); } catch (e) { /* sem storage: conta só nesta visita */ }
+  }
+  var acMem = null;
+  function acompanharAulaCompleta(v, btns) {
+    acMem = acVistos();
+    var total = btns.length || 1;
+    var enviando = false;
+    function atual() {
+      var k = Array.prototype.findIndex.call(btns, function (x) { return x.getAttribute('aria-pressed') === 'true'; });
+      return btns.length ? btns[Math.max(0, k)].getAttribute('data-cap-v') : 'unico';
+    }
+    function marcar() {
+      if (S.aulaCompleta) return;
+      var id = atual();
+      if (acMem.indexOf(id) === -1) { acMem.push(id); acGuardar(acMem); }
+      var vistos = btns.length ? Array.prototype.filter.call(btns, function (b) { return acMem.indexOf(b.getAttribute('data-cap-v')) > -1; }).length : acMem.length;
+      if (vistos >= total && !enviando) {
+        enviando = true;
+        window.Api.trilhaPost('aula-completa', {}).then(function () {
+          S.aulaCompleta = true;
+          window.Rastreio && window.Rastreio.track('aula_completa_vista', { capitulos: total });
+          refreshUI();
+        }).catch(function () { enviando = false; });
+      }
+      aulaCompletaUI();
+    }
+    v.addEventListener('timeupdate', function () {
+      if (v.duration && v.currentTime / v.duration >= 0.9) marcar();
+    });
+    v.addEventListener('ended', marcar);
+  }
+
+  function aulaCompletaUI() {
+    var box = document.getElementById('tAulaCompleta');
+    if (!box) return;
+    var caps = (C.aula_completa || []).length;
+    var vistos = S.aulaCompleta ? caps : (acMem || acVistos()).filter(function (id) {
+      return (C.aula_completa || []).some(function (c) { return c.v === id; });
+    }).length;
+    box.classList.toggle('is-vista', !!S.aulaCompleta);
+    var tag = document.getElementById('tAcTag');
+    var gain = document.getElementById('tAcGain');
+    var prog = document.getElementById('tAcProg');
+    if (S.aulaCompleta) {
+      tag.textContent = 'Assistida';
+      gain.textContent = 'Pronto: nos 7 módulos, as perguntas já estão abertas.';
+      prog.textContent = '';
+    } else {
+      prog.textContent = vistos ? vistos + ' de ' + caps + ' capítulos vistos. Ao terminar, as perguntas dos módulos abrem direto.' : '';
+    }
   }
 
   function levelHtml(l, i) {
