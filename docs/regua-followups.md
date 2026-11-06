@@ -1,7 +1,7 @@
 # Régua de acesso com lembretes e testes A/B
 
 Objetivo: levar o primeiro acesso de 54% para 80% das contas (e de 44% para 60% em até 24 h), avisando só
-quem ainda não entrou e medindo qual texto funciona melhor. Proposta de 06/11/2026; nada foi ligado no CRM.
+quem ainda não entrou e medindo qual mensagem funciona melhor. Desenho de 06/11/2026; nada foi ligado no CRM.
 
 ## Como funciona
 
@@ -11,78 +11,84 @@ quem ainda não entrou e medindo qual texto funciona melhor. Proposta de 06/11/2
 2. **Antes de cada lembrete, a régua confere.** O passo webhook chama `POST /api/integracoes/regua-fup`. Se a
    pessoa já entrou, o app marca a tag na hora; a condição seguinte vê a tag e encerra a régua.
 3. **Cada lembrete tem um link próprio.** Com `origem`, o mesmo webhook gera um link novo (vale 7 dias, uma vez)
-   e grava nos campos do negócio antes do template ser enviado. O link anterior continua valendo; quando um é
-   usado, os outros são cancelados.
-4. **O vigia mede.** Cada link leva o código da mensagem no `?o=` (`fup1_a`, `fup1_b`...). A aba Vigia mostra,
-   por código, quem recebeu e quantos entraram em 24 h, e avisa no WhatsApp da equipe quando uma variante vence.
+   e grava no campo `link_acesso` do negócio. O link anterior continua valendo; quando um é usado, os outros são
+   cancelados.
+4. **O link vai depois do toque.** O template não leva link (é o que a Meta aceita como utilidade). Quem toca em
+   "Quero meu acesso" abre a janela de 24 h do WhatsApp, e a régua responde com o link numa mensagem comum.
+5. **O vigia mede.** O link de cada lembrete leva o código no `?o=` (`fup1_a`, `fup1_b`...). O link é gerado na
+   hora do envio do template, então a base é "quem recebeu o lembrete", e a taxa é "entrou em até 24 h por
+   qualquer caminho" (pelo link, com senha ou depois de tocar no botão).
+
+## Por que não há templates novos
+
+Em 06/11 o template `acesso_lembrete1_a` (texto com botão de link e tom de lembrete) foi recusado na hora pela
+Meta como `INCORRECT_CATEGORY`, como já tinha acontecido com `bv_app`. Os que passam como UTILITY seguem o
+padrão de `bv_app1` e `bv_app2`: avisam a situação da conta ("o seu primeiro acesso ainda não foi registrado"),
+sem link no texto, com botão de resposta rápida "Quero meu acesso". Os dois já estão aprovados e já dizem o que
+o lembrete precisa dizer, então viram as variantes do teste:
+
+| Variante | Template | Diferença |
+|---|---|---|
+| A | `bv_app2` | sem o nome da pessoa (é o mesmo texto da BV) |
+| B | `bv_app1` | começa com "Olá, {{1}}!" (primeiro nome) |
+
+Testes de texto novos ficam para depois, sempre nesse padrão (aviso da conta + resposta rápida). O
+`acesso_lembrete1_a` recusado continua no CRM com status REJECTED; não atrapalha nada.
 
 ## Sequência
 
-| Quando | Para quem | Mensagem | Teste |
+O rodízio sorteia uma vez, no começo; cada pessoa recebe sempre a mesma variante nos três lembretes.
+
+| Quando | Para quem | Variante A | Variante B |
 |---|---|---|---|
-| Venda (já existe) | todos | BV com o link pessoal (`bv_acesso`) | |
-| +3 h, só entre 8h e 21h | sem `app_entrou` | Lembrete 1 | A: direto e curto · B: o que tem no app |
-| +24 h | sem `app_entrou` | Lembrete 2 | A: oferece ajuda · B: "leva menos de 1 minuto" |
-| +72 h | sem `app_entrou` | Lembrete 3 + tarefa para o Acolhimento ligar | sem teste |
-| a qualquer momento | entrou | a régua para (condição da tag) | |
+| Venda (já existe) | todos | BV com o link pessoal (`bv_acesso`) | igual |
+| +3 h, só entre 8h e 21h | sem `app_entrou` | `bv_app2`, código `fup1_a` | `bv_app1`, código `fup1_b` |
+| +24 h | sem `app_entrou` | `bv_app2`, código `fup2_a` | `bv_app1`, código `fup2_b` |
+| +72 h | sem `app_entrou` | `bv_app2`, código `fup3_a` + tarefa para o Acolhimento ligar | `bv_app1`, código `fup3_b` + tarefa |
+| a qualquer momento | entrou | a régua para (condição da tag) | igual |
 
-Um teste por lembrete de cada vez. Não mude o texto nem o rodízio no meio de um teste: comece outro com outro
-código (`fup1_c`, ou `fup1h_a` para testar horário). O vigia declara o vencedor quando cada variante tem 60
-contas e a diferença passa da margem (z ≥ 1,96; 2,24 com 3 variantes). Antes disso, mostra "Coletando" ou
-"Sem diferença ainda".
+O vigia compara `fup1_a` com `fup1_b`, `fup2_a` com `fup2_b` e assim por diante. Declara o vencedor quando cada
+variante tem 60 contas e a diferença passa da margem (z ≥ 1,96). Antes disso mostra "Coletando" ou "Sem
+diferença ainda". Não mude o rodízio no meio do teste: para testar outra coisa, use outros códigos.
 
-## Templates (WhatsApp, categoria UTILITY, pt_BR)
+## Mensagem depois do toque em "Quero meu acesso"
 
-Todos com o corpo abaixo, `{{1}}` = primeiro nome, e o botão de URL **Entrar no app** com URL dinâmica
-`https://app.cruzeiroead.com.br/a/{{1}}` (no CRM, a variável do botão é o campo `link_acesso_codigo`).
-Mensagem de acesso a uma conta que a pessoa já tem é utilidade; evitar palavras de promoção para a Meta não
-recategorizar como MARKETING (o vigia alerta se isso acontecer, via `VIGIA_TEMPLATES_CHAVE`).
+Mensagem comum (não é template; vale dentro da janela de 24 h aberta pelo toque):
 
-**`acesso_lembrete1_a`** (Lembrete 1, variante A)
-> Olá, {{1}}! Seu acesso ao App do Aluno já está liberado. Toque em *Entrar no app* para abrir a sua área sem
-> digitar RGM nem senha. O link é pessoal e vale por 7 dias.
+> Aqui está o seu link de entrada no App do Aluno:
+> {{link_acesso}}
+> Ele abre a sua área sem pedir senha, vale por 7 dias e funciona uma vez. Se não abrir, responda esta mensagem.
 
-**`acesso_lembrete1_b`** (Lembrete 1, variante B)
-> Olá, {{1}}! Sua matrícula já tem acesso ao App do Aluno. Lá estão a Aula Inaugural, o passo a passo do AVA
-> e o seu certificado de 4 horas. Toque em *Entrar no app* para entrar sem senha. O link é pessoal e vale por
-> 7 dias.
-
-**`acesso_lembrete2_a`** (Lembrete 2, variante A) · botões: *Entrar no app* (URL) e *Preciso de ajuda* (resposta rápida)
-> {{1}}, o seu acesso ao App do Aluno ainda não foi usado. Se algo não funcionou, toque em *Preciso de ajuda*
-> e a equipe do polo responde por aqui. Para entrar agora, toque em *Entrar no app*.
-
-**`acesso_lembrete2_b`** (Lembrete 2, variante B) · mesmos botões
-> {{1}}, entrar no App do Aluno leva menos de 1 minuto: toque em *Entrar no app* e você já cai na sua área,
-> sem senha. É por lá que você começa o curso e recebe os avisos do polo.
-
-**`acesso_lembrete3`** (Lembrete 3) · botões: *Entrar no app* (URL) e *Falar com o polo* (resposta rápida)
-> {{1}}, renovamos o seu link de acesso ao App do Aluno. Toque em *Entrar no app* para abrir a sua área. Se
-> preferir, toque em *Falar com o polo* e alguém da equipe chama você.
+`{{link_acesso}}` é o campo do negócio que o webhook do lembrete acabou de gravar.
 
 ## Passos na automação do CRM
 
 Uma automação nova, "Lembretes de acesso", com o mesmo gatilho da BV (negócio criado na etapa Acolhimento do
-funil ACADÊMICO). Corpo de todos os webhooks: `POST https://app.cruzeiroead.com.br/api/integracoes/regua-fup`,
-JSON com `"segredo"` (o mesmo de `LINK_ACESSO_SEGREDO`), `"negocio": "{{deal.id}}"` e `"rgm": "{{campo RGM do negócio}}"`.
+funil ACADÊMICO). Todos os webhooks: `POST https://app.cruzeiroead.com.br/api/integracoes/regua-fup`, JSON
+com `"segredo"` (o mesmo de `LINK_ACESSO_SEGREDO`), `"negocio": "{{deal.id}}"` e `"rgm": "{{campo RGM do negócio}}"`.
 
 ```
 1  delay 3 h
 2  business_hours 8h–21h (fora disso, espera abrir)
-3  webhook {segredo, negocio, rgm}                          ← confere e marca app_entrou
+3  webhook {segredo, negocio, rgm}                   ← confere e marca app_entrou se já entrou
 4  condition: negócio tem tag app_entrou → finish
 5  round_robin  A | B
-6A webhook {…, "origem": "fup1_a"} → template acesso_lembrete1_a
-6B webhook {…, "origem": "fup1_b"} → template acesso_lembrete1_b
-7  delay até completar 24 h desde a venda
-8  webhook {segredo, negocio, rgm}  → condition tag app_entrou → finish
-9  round_robin  A | B
-10A webhook {…, "origem": "fup2_a"} → template acesso_lembrete2_a
-10B webhook {…, "origem": "fup2_b"} → template acesso_lembrete2_b
-11 delay até 72 h
-12 webhook {segredo, negocio, rgm}  → condition tag app_entrou → finish
-13 webhook {…, "origem": "fup3"} → template acesso_lembrete3
-14 create_activity para o responsável do Acolhimento: "Não entrou no app em 3 dias: ligar"
+
+Caminho A (repita em B trocando bv_app2 → bv_app1 e _a → _b):
+6  webhook {…, "origem": "fup1_a"}                   ← gera o link e grava em link_acesso
+7  template bv_app2
+8  wait_for_reply (até 24 h): resposta "Quero meu acesso" → mensagem do link (seção acima)
+9  delay até completar 24 h desde a venda
+10 webhook {segredo, negocio, rgm} → condition tag app_entrou → finish
+11 webhook {…, "origem": "fup2_a"} → template bv_app2 → wait_for_reply → mensagem do link
+12 delay até 72 h
+13 webhook {segredo, negocio, rgm} → condition tag app_entrou → finish
+14 webhook {…, "origem": "fup3_a"} → template bv_app2 → wait_for_reply → mensagem do link
+15 create_activity para o responsável do Acolhimento: "Não entrou no app em 3 dias: ligar"
 ```
+
+Antes de ligar, confira no CRM que o toque em "Quero meu acesso" de um lembrete não é tratado também pela BV
+(as duas usam o mesmo botão), para a pessoa não receber o link e as credenciais ao mesmo tempo.
 
 O webhook só devolve erro com segredo errado: conta não encontrada, CRM fora ou banco fora respondem 200, para
 não interromper a régua (no CRM, webhook com erro para o fluxo daquele aluno).
@@ -91,12 +97,14 @@ não interromper a régua (no CRM, webhook com erro para o fluxo daquele aluno).
 
 | Onde | O quê |
 |---|---|
-| CRM | campo de negócio `link_acesso_codigo` (texto) e a tag `app_entrou`; os 5 templates; a automação acima |
+| CRM | a tag `app_entrou` e a automação acima |
 | n8n | no nó que chama `/api/integracoes/link-acesso` na venda, mandar também `"negocio": <id do negócio criado>` |
-| EasyPanel | `CRM_API_TOKEN`, `CRM_CAMPO_LINK_ACESSO` (id do campo `link_acesso`), `CRM_CAMPO_LINK_CODIGO`, e `VIGIA_TEMPLATES_CHAVE` com os 5 nomes |
+| EasyPanel | `CRM_API_TOKEN`, `CRM_CAMPO_LINK_ACESSO` (id do campo `link_acesso` do negócio) e `VIGIA_TEMPLATES_CHAVE=bv_app1,bv_app2` (o vigia alerta se saírem de APPROVED ou virarem MARKETING) |
 
-Sem `negocio` no pedido da venda, a tag só é marcada quando um lembrete confere (passo 3), e o lembrete 1
-ainda sai para quem entrou nas primeiras 3 h sem a tag. Por isso o item do n8n vem primeiro.
+`CRM_CAMPO_LINK_CODIGO` só é preciso num template com botão de URL dinâmica, que hoje não existe.
+
+Sem `negocio` no pedido da venda, a tag só é marcada quando um lembrete confere (passo 3). Por isso o item do
+n8n vem primeiro.
 
 ## Onde ver o resultado
 
