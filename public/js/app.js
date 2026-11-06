@@ -354,6 +354,8 @@
   function carregarWebchat(cfg) {
     if (webchatCarregado || !cfg || !cfg.src || !cfg.key) return;
     webchatCarregado = true;
+    // O botão do chat flutua no canto: ds.css dá folga no fim das telas para ele não cobrir a última linha.
+    document.body.classList.add('tem-chat');
     var s = document.createElement('script');
     s.async = true;
     s.src = cfg.src;

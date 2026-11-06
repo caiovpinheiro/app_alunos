@@ -60,6 +60,8 @@ window.Trilha = (function () {
     return window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
   }
   function $(sel) { return root ? root.querySelector(sel) : null; }
+  // Mesmo corte do trilha.css para o celular (faixa do placar, extras fechados).
+  function celular() { return !!(window.matchMedia && matchMedia('(max-width: 759.98px)').matches); }
 
   // ---------- estado ----------
 
@@ -121,6 +123,14 @@ window.Trilha = (function () {
     $('#tXpTxt').textContent = num(S.xp) + ' de ' + num(meta()) + ' pontos para o certificado';
     $('#tLvTxt').textContent = d + ' de ' + L().length + ' módulos';
     $('#tXpFill').style.width = Math.min(100, S.xp / meta() * 100) + '%';
+    // Faixa do celular: "3 de 7 módulos · 30 de 70 pts" (o leitor de tela ouve por extenso).
+    $('#tHudMini').textContent = d;
+    $('#tHudMiniFill').style.width = Math.min(100, S.xp / meta() * 100) + '%';
+    // Só reescreve quando muda: a faixa é aria-live e anuncia o progresso no celular (lá a linha do certificado fica fechada).
+    var resumo = '<span aria-hidden="true">' + d + ' de ' + L().length + ' módulos · ' + num(S.xp) + ' de ' + num(meta()) + ' pts</span>' +
+      '<span class="sr-only">Seu progresso: ' + d + ' de ' + L().length + ' módulos, ' + num(S.xp) + ' de ' + num(meta()) + ' pontos. Detalhes do progresso</span>';
+    var rs = $('#tHudResumo');
+    if (rs.innerHTML !== resumo) rs.innerHTML = resumo;
     $('#tReview').setAttribute('aria-pressed', P.review ? 'true' : 'false');
     certStatus();
     if (lastXp !== null && S.xp > lastXp) {
@@ -296,7 +306,11 @@ window.Trilha = (function () {
     if (C.whatsapp_url) rodape += '<p><a class="tWa" href="' + esc(C.whatsapp_url) + '" target="_blank" rel="noopener">Chamar o setor acadêmico no WhatsApp</a></p>';
     rodape += '</aside></div>';
 
-    h += '<div class="hud" id="tHud"><div class="in"><span class="medal" id="tMedal">0</span><span class="gain" id="tGain" aria-hidden="true"></span>';
+    // No celular o placar vira uma faixa fina (o essencial) que abre ao tocar; no desktop fica sempre aberto (trilha.css).
+    h += '<div class="hud" id="tHud"><button type="button" class="hud-faixa" id="tHudBtn" aria-expanded="false" aria-controls="tHudIn">' +
+      '<span class="hud-faixa-medal" id="tHudMini" aria-hidden="true">0</span><span class="hud-faixa-txt" id="tHudResumo" aria-live="polite"></span>' +
+      '<span class="hud-faixa-acao" aria-hidden="true"></span><span class="hud-faixa-bar" aria-hidden="true"><i id="tHudMiniFill"></i></span></button>';
+    h += '<div class="in" id="tHudIn"><span class="medal" id="tMedal">0</span><span class="gain" id="tGain" aria-hidden="true"></span>';
     h += '<div class="hudmain"><div class="rank"><small>Sua conquista</small><b id="tRank">Visitante</b></div><div class="xpbar"><i id="tXpFill"></i></div>';
     h += '<div class="xpline"><span id="tXpTxt"></span><span id="tLvTxt"></span></div><p class="certline" id="tCertTxt" aria-live="polite"></p></div></div></div>';
 
@@ -393,6 +407,14 @@ window.Trilha = (function () {
     h += '<div class="vidbar"><span class="prog">Assista até o fim para liberar as perguntas.</span><button class="linkbtn skip" type="button">Já sei isso, quero ir direto para as perguntas</button>' +
       (l.parts ? '' : '<button class="linkbtn stuck1" type="button">Travei neste módulo</button>') + '</div>';
     if (!l.parts) h += '<p class="perr stuck1-msg" hidden>Sem problema! Leia o resumo, veja os vídeos curtos de como fazer ou toque em <b>Ajuda</b>, no topo da página, para falar com a equipe do seu polo.</p>';
+    // Módulo 1: a escolha prática fica logo depois do vídeo e os botões vêm antes da explicação,
+    // para "Fazer agora" caber na primeira tela do celular.
+    if (i === 0) {
+      h += '<div class="tpratica" data-pratica-box><b>Ativar o seu acesso à faculdade</b>' +
+        '<div class="tpratica-acts"><button type="button" class="chipbtn" data-pratica="agora">Fazer agora</button><button type="button" class="linkbtn" data-pratica="depois">Fazer depois</button></div>' +
+        '<p>Não precisa fazer agora para concluir este módulo. Faça quando estiver com o celular e um papel à mão.</p>' +
+        '<p class="hint" data-pratica-msg hidden>Combinado. Os vídeos ficam aqui neste módulo e na Central de ajuda.</p></div>';
+    }
     h += avaliacao('modulo-' + (i + 1));
     h += '</div>';
     // Coluna do resumo: tópicos curtos, regra em destaque e, fechado, tudo o que é para aprofundar.
@@ -404,36 +426,43 @@ window.Trilha = (function () {
     if (l.formula) h += '<div class="formula">' + l.formula + '</div>';
     // O texto vai num <span>: a caixa é flex (ícone "!" + texto) e links/negritos soltos virariam colunas.
     if (l.tip) h += '<p class="tip"><span>' + l.tip + '</span></p>';
-    h += '<div class="extras">';
-    if (i === 0) {
-      h += '<div class="tpratica" data-pratica-box><b>Ativar o seu acesso à faculdade</b>' +
-        '<p>Não precisa fazer agora para concluir este módulo. Faça quando estiver com o celular e um papel à mão.</p>' +
-        '<div class="tpratica-acts"><button type="button" class="chipbtn" data-pratica="agora">Fazer agora</button><button type="button" class="linkbtn" data-pratica="depois">Fazer depois</button></div>' +
-        '<p class="hint" data-pratica-msg hidden>Combinado. Os vídeos ficam aqui neste módulo e na Central de ajuda.</p></div>';
-    }
-    // Vídeos antigos do módulo (sem pontos): o "como fazer" mostrando as telas. Com passo_aberto, já vem aberto.
+    // Para aprofundar, tudo no mesmo formato e fechado (vídeos curtos, resumo completo, narração e telas).
+    // No celular os quatro ficam atrás de um único "Para aprofundar" (trilha.css): o módulo mostra primeiro
+    // o vídeo, o resumo curto e as perguntas. No desktop o botão some e os quatro aparecem como antes.
+    var itens = [];
+    if ((l.passo_a_passo || []).length) itens.push((l.passo_a_passo.length > 1 ? 'vídeos curtos' : 'vídeo extra'));
+    if (l.topicos && l.topicos.length) itens.push('resumo completo');
+    itens.push('narração', 'telas');
+    var itensTxt = itens.slice(0, -1).join(', ') + ' e ' + itens[itens.length - 1];
+    h += '<button type="button" class="extras-mais" aria-expanded="false" aria-controls="tExtras' + i + '"><span>Para aprofundar<small>' +
+      itensTxt.charAt(0).toUpperCase() + itensTxt.slice(1) + '. Opcional.</small></span></button>';
+    h += '<div class="extras" id="tExtras' + i + '">';
+    // Vídeos antigos do módulo (sem pontos): o "como fazer" mostrando as telas. Com passo_aberto, já vem aberto
+    // só em tela larga; no celular fica fechado como os demais.
     var passo = l.passo_a_passo || [];
     if (passo.length) {
       var passoTit = passo.length > 1 ? 'Vídeos curtos: como fazer no portal (' + passo.length + ')' : 'Vídeo extra: veja como fazer, tela por tela';
-      h += '<details class="more passo"' + (l.passo_aberto ? ' open' : '') + '><summary><span>' + passoTit + '<small>Opcional, não vale pontos</small></span></summary><div class="inner">' +
+      h += '<details class="more passo"' + (l.passo_aberto && !celular() ? ' open' : '') + '><summary><span>' + passoTit + '<small>Opcional, não vale pontos</small></span></summary><div class="inner">' +
         (passo.length > 1 ? '<div class="parts" role="group" aria-label="Vídeos curtos">' + passo.map(function (p, k) {
           return '<button type="button" class="pbtn" data-passo-v="' + esc(p.v) + '" aria-pressed="' + (k ? 'false' : 'true') + '"><span class="pk">' + (k + 1) + '</span><span>' + esc(p.t) + '</span></button>';
         }).join('') + '</div>' : '') +
         '<div class="player"><video controls playsinline preload="none" poster="' + esc(passo[0].v) + '.jpg"><source src="' + esc(passo[0].v) + '.mp4" type="video/mp4"></video></div></div></details>';
     }
     if (l.topicos && l.topicos.length) {
-      h += '<details class="more resumo-full"><summary>Ver resumo completo</summary><div class="inner"><ul class="learn">' + l.learn.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul></div></details>';
+      h += '<details class="more resumo-full"><summary><span>Ver resumo completo<small>' + l.learn.length + ' tópicos, com os detalhes</small></span></summary><div class="inner"><ul class="learn">' + l.learn.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul></div></details>';
     }
-    h += '<details class="more transcript-box"><summary>Ler a narração do vídeo</summary><div class="inner transcript"><p>Carregando…</p></div></details>';
-    h += '<details class="more"><summary>Ver as telas em alta resolução (' + l.shots.length + ')</summary><div class="inner"><div class="shots' + (l.tallShots ? ' tall' : '') + '">' + l.shots.map(function (s) {
+    h += '<details class="more transcript-box"><summary><span>Ler a narração do vídeo<small>O texto do que o vídeo fala</small></span></summary><div class="inner transcript"><p>Carregando…</p></div></details>';
+    h += '<details class="more"><summary><span>Ver as telas em alta resolução (' + l.shots.length + ')<small>Toque numa tela para ampliar</small></span></summary><div class="inner"><div class="shots' + (l.tallShots ? ' tall' : '') + '">' + l.shots.map(function (s) {
       var src = '/trilha-midia/telas/' + s.img + '.webp';
       return '<figure class="shot"><button type="button" data-src="' + src + '" aria-label="Ampliar tela"><img src="' + src + '" width="' + s.w + '" height="' + s.h + '" loading="lazy" alt=""></button><figcaption>' + s.cap + '</figcaption></figure>';
     }).join('') + '</div></div></details></div></div>';
     h += '</div>';
     h += '<div class="step s3"><div class="part"><span class="pn">3</span><span class="pt">Responda as perguntas</span><span class="pts">módulo vale ' + pm() + ' pontos</span></div><div class="gate">' + LOCK + '<span>As perguntas aparecem quando você terminar de assistir ao vídeo.</span></div><div class="mission"></div></div>';
-    h += '<div class="cleared" hidden><span><b>Módulo concluído! +' + pm() + ' pontos</b><br>Sua conquista: ' + esc(l.rank) + '</span>' + (i < L().length - 1 ? '<button class="btn" type="button">Ir para o módulo ' + (i + 2) + '</button>' : '<button class="btn" type="button">Ir para o certificado</button>') +
-      // "Conseguiu fazer?" (public/js/avaliacao.js): o que o módulo ensinou funcionou na prática?
-      (window.Avaliacao && window.Avaliacao.resultado ? window.Avaliacao.resultado('modulo', i + 1, { nivel: i + 1, titulo: 'Módulo ' + (i + 1) + ' · ' + l.t }) : '') + '</div></div>';
+    // Ordem: mensagem de concluído, "Conseguiu fazer?" (public/js/avaliacao.js) e só então o botão de avançar,
+    // para quem segue também ver a pergunta. O botão continua à vista, sem esperar a resposta.
+    h += '<div class="cleared" hidden><span><b>Módulo concluído! +' + pm() + ' pontos</b><br>Sua conquista: ' + esc(l.rank) + '</span>' +
+      (window.Avaliacao && window.Avaliacao.resultado ? window.Avaliacao.resultado('modulo', i + 1, { nivel: i + 1, titulo: 'Módulo ' + (i + 1) + ' · ' + l.t }) : '') +
+      (i < L().length - 1 ? '<button class="btn" type="button">Ir para o módulo ' + (i + 2) + '</button>' : '<button class="btn" type="button">Ir para o certificado</button>') + '</div></div>';
     return h;
   }
 
@@ -454,6 +483,14 @@ window.Trilha = (function () {
         var pr = pv.play(); if (pr && pr.catch) pr.catch(function () {});
       });
     });
+    // "Para aprofundar" (só aparece no celular): mostra e esconde os extras do módulo.
+    var mais = sec.querySelector('.extras-mais');
+    var extras = sec.querySelector('.extras');
+    function abrirExtras(aberto) {
+      mais.setAttribute('aria-expanded', aberto ? 'true' : 'false');
+      extras.classList.toggle('is-aberto', aberto);
+    }
+    mais.addEventListener('click', function () { abrirExtras(mais.getAttribute('aria-expanded') !== 'true'); });
     var pratica = sec.querySelector('[data-pratica-box]');
     if (pratica) pratica.addEventListener('click', function (e) {
       var b = e.target.closest('[data-pratica]');
@@ -462,6 +499,7 @@ window.Trilha = (function () {
       window.Rastreio && window.Rastreio.track('aula_pratica_escolha', { escolha: escolha });
       if (escolha === 'agora') {
         var det = sec.querySelector('.passo');
+        abrirExtras(true);
         if (det) { det.open = true; det.scrollIntoView({ behavior: smooth(), block: 'start' }); }
       } else {
         pratica.querySelector('[data-pratica-msg]').hidden = false;
@@ -709,6 +747,14 @@ window.Trilha = (function () {
         S = fromServer(res.progresso); lastXp = null; build(); window.scrollTo(0, 0);
       }).catch(function () { rs.textContent = 'Não deu certo. Tente de novo'; });
     });
+    // Faixa do placar (celular): abre e fecha os detalhes do progresso.
+    var hudBtn = $('#tHudBtn');
+    hudBtn.addEventListener('click', function () {
+      var aberto = hudBtn.getAttribute('aria-expanded') !== 'true';
+      hudBtn.setAttribute('aria-expanded', aberto ? 'true' : 'false');
+      $('#tHud').classList.toggle('is-aberto', aberto);
+    });
+    medirTopo();
     $('#tLbClose').addEventListener('click', function () { $('#tLb').close(); });
     $('#tLb').addEventListener('click', function (e) { if (e.target === $('#tLb') || e.target.classList.contains('lbin')) $('#tLb').close(); });
     root.addEventListener('loadedmetadata', function (e) { if (e.target.tagName === 'VIDEO') e.target.playbackRate = P.slow ? 0.8 : 1; }, true);
@@ -718,6 +764,30 @@ window.Trilha = (function () {
     built = true;
     irParaAlvo();
     if (querAulaCompleta) { querAulaCompleta = false; mostrarAulaCompleta(); }
+  }
+
+  // O placar gruda logo abaixo do cabeçalho, que no celular tem duas linhas (logo e ações; menu).
+  // A altura real vai para --trilha-topo (trilha.css); sem ResizeObserver, fica o valor do CSS.
+  var topoObs = null;
+  var hudObs = null;
+  function medirTopo() {
+    var cab = document.querySelector('#trilha-page > header');
+    if (!cab || !root) return;
+    var aplica = function () {
+      var alt = Math.round(cab.getBoundingClientRect().height);
+      if (root && alt) root.style.setProperty('--trilha-topo', alt + 'px'); // escondida (0): mantém a última medida
+    };
+    aplica();
+    if (!topoObs && window.ResizeObserver) { topoObs = new ResizeObserver(aplica); topoObs.observe(cab); }
+    // Altura do placar (faixa no celular, aberto no desktop): ao pular para um módulo, o título não fica embaixo dele.
+    var hud = $('#tHud');
+    if (!hud || !window.ResizeObserver) return;
+    if (hudObs) hudObs.disconnect();
+    hudObs = new ResizeObserver(function () {
+      var alt = Math.round(hud.getBoundingClientRect().height);
+      if (root && alt) root.style.setProperty('--trilha-hud', alt + 'px');
+    });
+    hudObs.observe(hud);
   }
 
   // "Assistir à aula completa" (de qualquer tela): abre o bloco da aula completa nesta tela.

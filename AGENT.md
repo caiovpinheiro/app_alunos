@@ -7,6 +7,26 @@
 - Push em `main` dispara `.github/workflows/deploy.yml`: publica `ghcr.io/caiovpinheiro/app_alunos:latest` e chama o webhook do EasyPanel (`secrets.EASYPANEL_DEPLOY_APP`).
 - Não invente outro fluxo de deploy (n8n, branch de homologação, etc.) sem pedido explícito.
 
+### 2026-11-06 - Login e Aula Inaugural no celular (revisão com a HIG da Apple)
+
+**Decisão**
+- Login: "Esqueci minha senha", "Criar acesso agora" (e "Entrar" no cadastro) ganharam área de toque de 44×44 por um `::after` transparente (`.alvo-44`, `styles.css`), sem mudar texto nem espaçamento. "Mostrar senha" com 44 px de largura. Campo "RGM ou E-mail" (e e-mail/RGM do cadastro) com `autocapitalize="none"`, `autocorrect="off"` e `spellcheck="false"`.
+- Cabeçalho (`ds.css`): Ajuda, Avisos e Sair com 44×44 (ícones continuam com 20 px). Abaixo de 360 px, logo de 28 px e menos margem, para logo e ações caberem numa linha.
+- Placar da Aula (`.hud`): abaixo de 760 px vira uma faixa de 44 px ("3 de 7 módulos · 30 de 70 pts", com barra fina) que abre ao tocar (`#tHudBtn`, `aria-expanded`); no desktop continua aberto. Gruda logo abaixo do cabeçalho real: `trilha.js` mede o cabeçalho e o placar (`--trilha-topo`, `--trilha-hud`) e o `scroll-margin-top` dos módulos usa essas medidas (antes era 64 px fixo e o placar entrava 29 px embaixo do cabeçalho de duas linhas do celular).
+- Fim do módulo: "Conseguiu fazer?" aparece entre "Módulo concluído" e o botão de avançar. O que é gravado e o evento `resultado_pratico` não mudaram.
+- Módulo 1: "Ativar o seu acesso à faculdade" (Fazer agora / Fazer depois) subiu para logo depois do vídeo, com os botões antes da explicação. Em todos os módulos, no celular, os extras (vídeos curtos, resumo completo, narração, telas) ficam atrás de um único botão "Para aprofundar" (`.extras-mais`, `aria-expanded`); no desktop o botão some e as quatro caixas aparecem como antes. `passo_aberto` só abre o passo a passo em tela larga. "Fazer agora" abre os extras e o passo a passo. Perguntas mais compactas no celular (opções com 48 px). A regra de conclusão não mudou.
+- Texto: o corpo da Aula já estava em 18 px (medido em 06/11; a revisão anotou 15 px) e ficou assim. Rótulos (estado do módulo, "Sua conquista", "Agora", "Ampliar") foram para 13 px; legendas, capítulos e botões de apoio para 16 px no celular.
+- Glossário (`.glo-t`): área de toque de 44×44 por `::after`, sem mexer na linha.
+- Chat do CRM: `app.js` liga `body.tem-chat` ao carregar o widget, e `ds.css` dá 96 px de folga no fim das telas.
+
+**Motivo**
+- 71% dos alunos usam celular e o módulo 1 é onde mais param (17 de 54). Medido em 375×812 com aluno novo: topo fixo de 291 px (36% da tela) → 144 px (18%); "Fazer agora" a 1.524 px do topo do módulo → 531 px (primeira tela); módulo 1 com perguntas à vista 3.703 → 3.193 px; concluído 4.559 → 4.047 px; alvos menores que 44 px na Aula 37 → 3 (o logo e dois links no meio do texto); textos menores que 13 px 3 → 0.
+
+**Impacto**
+- Só front: `index.html`, `styles.css`, `ds.css`, `trilha.css`, `glossario.css`, `trilha.js`, `app.js` (e os `?v=` em `index.html`, `simulado.html` e `admin.html`). Sem rota, evento, pontuação ou regra de conclusão nova.
+- O redesenho do cabeçalho em `claude/navegacao-suave` (5d363e5) apaga o bloco do cabeçalho em `ds.css` que este ajuste mudou e troca `.trilha .hud{top}` e os `scroll-margin-top` por `--cab-h`: ao juntar, ficar com os 44 px que aquele branch já tem e trocar `--trilha-topo` por `--cab-h` (ou manter a medida do `trilha.js`).
+- Publicação: commits no branch da worktree; vai para `main` só com a aprovação do usuário.
+
 ### 2026-11-06 - Instrumentação: "Conseguiu fazer?", saídas, entrada e aba Medição
 
 **Decisão**

@@ -67,9 +67,10 @@ body{font-family:var(--ds-font)!important;color:var(--ds-ink);background:var(--d
 #app .portal-nav a[aria-current="page"]::after{left:14px;right:14px;bottom:0;height:3px;border-radius:3px 3px 0 0;background:var(--ds-star)}
 @media (min-width:1024px){#app .portal-nav a{min-height:68px;border-radius:0}#app .portal-nav a:hover{background:none}}
 
-#app .portal-help-btn{min-height:40px;padding:0 14px;border-radius:var(--ds-r-md);border:1px solid var(--ds-line);background:#fff;color:var(--ds-navy);font:700 15px/1 var(--ds-font)}
+/* Ajuda, Avisos e Sair: área de toque de 44×44 (HIG); os ícones continuam com 20 px. */
+#app .portal-help-btn{min-height:44px;min-width:44px;justify-content:center;padding:0 14px;border-radius:var(--ds-r-md);border:1px solid var(--ds-line);background:#fff;color:var(--ds-navy);font:700 15px/1 var(--ds-font)}
 #app .portal-help-btn:hover{border-color:var(--ds-navy);color:var(--ds-navy);background:var(--ds-surface-2)}
-#app .notif-bell{width:40px;height:40px;display:grid;place-items:center;padding:0;border-radius:var(--ds-r-md);color:var(--ds-muted)}
+#app .notif-bell{width:44px;height:44px;display:grid;place-items:center;padding:0;border-radius:var(--ds-r-md);color:var(--ds-muted)}
 #app .notif-bell:hover{background:var(--ds-surface-2);color:var(--ds-navy)}
 #app .notif-badge{background:var(--ds-bad);color:#fff;border:2px solid #fff;font:700 11px/1 var(--ds-font);min-width:20px;height:20px;top:2px;right:0}
 #app .notif-dropdown{border:1px solid var(--ds-line);border-radius:var(--ds-r-lg);box-shadow:var(--ds-overlay);background:#fff;backdrop-filter:none;-webkit-backdrop-filter:none;overflow:hidden}
@@ -81,7 +82,7 @@ body{font-family:var(--ds-font)!important;color:var(--ds-ink);background:var(--d
 #app .notif-item.is-unread{background:#fffbea}
 #app [data-user-name]{color:var(--ds-ink)!important;font-weight:700}
 #app [data-acesso-rgm]{color:var(--ds-faint)!important;font-variant-numeric:tabular-nums}
-#app header button[onclick="logout()"]{width:40px;height:40px;display:grid;place-items:center;padding:0;border-radius:var(--ds-r-md);color:var(--ds-faint)}
+#app header button[onclick="logout()"]{width:44px;height:44px;display:grid;place-items:center;padding:0;border-radius:var(--ds-r-md);color:var(--ds-faint)}
 #app header button[onclick="logout()"]:hover{background:var(--ds-bad-soft);color:var(--ds-bad)}
 
 /* Containers: telas que usavam larguras soltas do Tailwind ficam no mesmo eixo. */
@@ -92,6 +93,10 @@ body{font-family:var(--ds-font)!important;color:var(--ds-ink);background:var(--d
 /* "Voltar ao início" */
 #app main > button[onclick*="dashboard-page"],#form-page button[onclick*="dashboard-page"]{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 4px;margin-bottom:12px;color:var(--ds-blue)!important;font-weight:700;font-size:16px}
 #app main > button[onclick*="dashboard-page"]:hover{text-decoration:underline;text-underline-offset:3px}
+/* Aula Inaugural: "Voltar ao início" com 44 px de altura de toque (HIG). */
+#trilha-page main > button[onclick*="dashboard-page"]{min-height:44px}
+/* Chat do CRM (botão flutuante de 56 px no canto): o fim de cada tela fica acima dele. app.js liga a classe. */
+body.tem-chat #app > section > main{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 
 /* --------------------------------------------------------------------------
    Botões e links (mesma família em todas as telas)
@@ -334,4 +339,11 @@ body{font-family:var(--ds-font)!important;color:var(--ds-ink);background:var(--d
   #app .portal-help-btn{padding:0 10px}
   #app .portal-help-btn span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
   #app .portal-brand img{height:32px}
+}
+/* 320 px: com os ícones de 44 px, logo e ações ainda cabem numa linha só. */
+@media (max-width:359.98px){
+  #app section > header > div{padding-inline:14px}
+  #app .portal-head{column-gap:6px}
+  #app .portal-head > div:last-child{gap:2px}
+  #app .portal-brand img{height:28px}
 }

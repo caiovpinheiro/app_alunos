@@ -287,6 +287,32 @@ body {
 .auth-screen form > *:nth-child(5) { animation-delay: 300ms; }
 .auth-screen form > *:nth-child(6) { animation-delay: 360ms; }
 
+/* Links de texto da entrada ("Esqueci minha senha", "Criar acesso agora", "Entrar"): área de toque de
+   44×44 (HIG) sem mudar o texto nem o espaçamento. A área a mais é um ::after transparente centralizado. */
+.auth-screen .alvo-44 {
+  position: relative;
+}
+.auth-screen .alvo-44::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
+}
+.auth-screen .alvo-44:focus-visible {
+  outline: 3px solid var(--csu-blue);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+/* Mostrar/ocultar senha: 44 px de largura (o ícone continua com 20 px). */
+.auth-screen [data-password-toggle] {
+  min-width: 44px;
+  justify-content: center;
+}
+
 .auth-screen.is-busy .auth-card {
   pointer-events: none;
 }

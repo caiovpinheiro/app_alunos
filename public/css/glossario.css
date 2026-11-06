@@ -26,3 +26,7 @@
 .glo-pop.glo-big .glo-in b{font-size:1.15rem}
 @media (prefers-reduced-motion:no-preference){.glo-pop.is-open{animation:glo-in .16s var(--ease)}}
 @keyframes glo-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+/* Área de toque de 44×44 (HIG) sem mexer na linha: um ::after transparente centralizado na palavra.
+   Fica por cima do texto vizinho (posicionado), então o toque perto da palavra também abre a explicação. */
+.trilha .glo-t{position:relative}
+.trilha .glo-t::after{content:"";position:absolute;left:50%;top:50%;width:max(100%,44px);height:44px;transform:translate(-50%,-50%)}
