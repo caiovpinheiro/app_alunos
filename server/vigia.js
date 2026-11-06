@@ -62,6 +62,8 @@ const REGRAS_PADRAO = {
   bv_ignorar_passos: [],    // passos do BV cujo FAILED já é tratado
   matricula_min: 1,         // negócio no passo do template de matrícula
   email_failed_min: 1,
+  regua_dias: 14,           // janela da medida "entrou em 24 h" por mensagem da régua
+  ab_min_amostra: 60,       // contas por variante antes de declarar vencedor
   atraso_min: 150,          // a aba avisa quando passa disso sem leitura
   lembrete_h: 0,            // 0 = não repete alerta que continua igual
 };
@@ -548,6 +550,18 @@ function regras(ind, fontes, L, { inicio, agora }) {
     });
   }
 
+  // Régua: teste A/B com vencedor
+  const rg = ind.regua;
+  if (rg) {
+    rg.testes.filter((t) => t.estado === 'vencedor').forEach((t) => {
+      const v = t.variantes.find((x) => x.variante === t.vencedor);
+      const outras = t.variantes.filter((x) => x !== v).map((x) => `${x.variante} ${pc(x.pct)} (${x.entraram} de ${x.base})`).join(', ');
+      add(`teste:${t.teste}:${t.vencedor}`, 'info', `Teste ${t.teste}: a variante ${t.vencedor} venceu`,
+        `${pc(v.pct)} entraram em 24 h (${v.entraram} de ${v.base}) contra ${outras}.`,
+        `Deixe só a variante ${t.vencedor} (${v.origem}) no rodízio do CRM e comece o próximo teste com outro código.`);
+    });
+  }
+
   // Falhas de login
   const f = ind.app && ind.app.falhas;
   if (f && f.tentativas >= L.login_min_amostra && f.pct > L.falhas_login_pct) {
@@ -601,7 +615,7 @@ function novidades(alertas, conhecidos, agora, lembreteH = 0) {
   return { novos, resolvidos, proximo };
 }
 
-const ICONE = { critico: '🔴', atencao: '🟡' };
+const ICONE = { critico: '🔴', atencao: '🟡', info: '🟢' };
 
 function montarMensagem({ novos, resolvidos = [], titulos = {}, abertos = 0, agora, painel }) {
   const linhas = [`*Vigia do calouro* · ${dataHoraTxt(agora)}`];
@@ -648,19 +662,77 @@ function resumo(ind, alertas) {
   };
 }
 
+// ---------- régua: o que funciona ----------
+
+// Cada mensagem da régua gera um link com o seu código no ?o= (bv_acesso, fup1_a, fup1_b...). Por código:
+// quantas contas receberam (base: ainda não tinham entrado), quantas entraram em até 24 h por qualquer
+// caminho. Só entra quem já teve as 24 h inteiras. Códigos que terminam em _a, _b, _c são variantes de um
+// teste A/B (prefixo antes do _): o vencedor sai quando bate todas as outras com folga estatística.
+async function lerRegua(pool, agora, L) {
+  const ate = new Date(new Date(agora).getTime() - 24 * 3600000);
+  const desde = new Date(new Date(agora).getTime() - L.regua_dias * 86400000);
+  const linhas = await seguro(pool.query(`
+    WITH envios AS (
+      SELECT DISTINCT ON (l.aluno_id, l.origem) l.aluno_id, l.origem, l.criado_em
+      FROM csu_links_acesso l
+      WHERE l.origem IS NOT NULL AND l.criado_em >= $1 AND l.criado_em <= $2
+      ORDER BY l.aluno_id, l.origem, l.criado_em
+    )
+    SELECT e.origem,
+           COUNT(*) FILTER (WHERE a.primeiro_login_em IS NULL OR a.primeiro_login_em >= e.criado_em)::int AS base,
+           COUNT(*) FILTER (WHERE a.primeiro_login_em >= e.criado_em AND a.primeiro_login_em < e.criado_em + interval '24 hours')::int AS entraram
+    FROM envios e JOIN csu_alunos a ON a.id = e.aluno_id
+    GROUP BY 1 ORDER BY 1`, [desde, ate]).then((r) => r.rows), []);
+  const mensagens = linhas.map((x) => ({ ...x, pct: pct(x.entraram, x.base) }));
+  return { dias: L.regua_dias, mensagens, testes: testesAB(mensagens, L.ab_min_amostra) };
+}
+
+// z de duas proporções (pooled).
+function zDuas(a, b) {
+  const p = (a.entraram + b.entraram) / (a.base + b.base);
+  const se = Math.sqrt(p * (1 - p) * (1 / a.base + 1 / b.base));
+  return se ? (a.entraram / a.base - b.entraram / b.base) / se : 0;
+}
+
+function testesAB(mensagens, minAmostra = REGRAS_PADRAO.ab_min_amostra) {
+  const grupos = {};
+  mensagens.forEach((m) => {
+    const x = /^(.+)_([a-z])$/.exec(m.origem);
+    if (!x) return;
+    (grupos[x[1]] = grupos[x[1]] || []).push({ variante: x[2].toUpperCase(), ...m });
+  });
+  return Object.keys(grupos).filter((k) => grupos[k].length >= 2).map((k) => {
+    const vs = grupos[k].sort((a, b) => a.variante.localeCompare(b.variante));
+    const faltam = vs.reduce((t, v) => t + Math.max(0, minAmostra - v.base), 0);
+    const melhor = vs.filter((v) => v.base).sort((a, b) => b.entraram / b.base - a.entraram / a.base)[0];
+    const corte = vs.length > 2 ? 2.24 : 1.96; // com 3+ variantes, margem mais rígida (Bonferroni)
+    const zs = melhor ? vs.filter((v) => v !== melhor).map((v) => (v.base ? zDuas(melhor, v) : 0)) : [];
+    const venceu = Boolean(melhor) && !faltam && zs.length && zs.every((z) => z >= corte);
+    return {
+      teste: k,
+      variantes: vs.map((v) => ({ variante: v.variante, origem: v.origem, base: v.base, entraram: v.entraram, pct: v.pct })),
+      estado: venceu ? 'vencedor' : faltam ? 'coletando' : 'empate',
+      vencedor: venceu ? melhor.variante : null,
+      faltam,
+      z_min: zs.length ? Math.round(Math.min(...zs) * 100) / 100 : null,
+    };
+  });
+}
+
 // ---------- rodada ----------
 
 async function coletar(pool, { agora, fetchImpl, L }) {
   const inicio = new Date(new Date(agora).getTime() - L.janela_min * 60000);
   const totalNiveis = (() => { try { return require('./trilha').NIVEIS.length; } catch (e) { return 7; } })();
-  const [app, saude, n8n, crm] = await Promise.all([
+  const [app, saude, n8n, crm, regua] = await Promise.all([
     lerApp(pool, inicio, totalNiveis).then((d) => ({ d, f: { estado: 'ok' } }), (err) => ({ d: null, f: { estado: 'erro', detalhe: err.code || err.message } })),
     lerSaude(fetchImpl),
     lerN8n(fetchImpl, inicio),
     lerCrm(fetchImpl, inicio, agora, L),
+    lerRegua(pool, agora, L).catch((err) => { console.error('Vigia: régua', err.code || '', err.message); return null; }),
   ]);
   const fontes = { app: app.f, app_publico: { estado: saude.app.estado === 'ok' && saude.gerador.estado === 'ok' ? 'ok' : 'erro' }, n8n: n8n.fonte, ...crm.fontes };
-  const indicadores = { janela_min: L.janela_min, app: app.d, saude, n8n: n8n.dados, crm: crm.dados };
+  const indicadores = { janela_min: L.janela_min, app: app.d, saude, n8n: n8n.dados, crm: crm.dados, regua };
   return { inicio, fontes, indicadores };
 }
 
@@ -832,7 +904,7 @@ function registrarRotas(app, { getPool, requireAdmin }) {
 module.exports = {
   FLUXOS_N8N, CRM, REGRAS_PADRAO,
   ligado, limites, configuracao, slotDe, minutosSP,
-  agregarN8n, agregarLogs, numeros, regras, novidades, montarMensagem, resumo,
+  agregarN8n, agregarLogs, numeros, regras, novidades, montarMensagem, resumo, testesAB, lerRegua,
   ensureSchema, garantir, registrarPedidoLink, lerApp, lerN8n, lerCrm, lerSaude,
   rodar, rodadaAgendada, iniciar, painelAdmin, registrarRotas,
 };
