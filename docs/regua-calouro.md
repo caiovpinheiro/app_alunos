@@ -1,6 +1,6 @@
 # Régua do calouro: da venda ao primeiro acesso
 
-Atualizado em 07/11/2026. Como o aluno novo recebe o acesso ao portal, o que dispara cada mensagem, quanto tempo leva, onde cada caminho termina e como operar e medir. Envolve três sistemas: o **CRM Bwipo** (automações e WhatsApp oficial), o **n8n** (integrações) e este **App do Aluno**.
+Atualizado em 07/11/2026, à tarde. Como o aluno novo recebe o acesso ao portal, o que dispara cada mensagem, quanto tempo leva, onde cada caminho termina e como operar e medir. Envolve três sistemas: o **CRM Bwipo** (automações e WhatsApp oficial), o **n8n** (integrações) e este **App do Aluno**.
 
 Identificadores internos (ids de automação, de passo e de fluxo, endereços de webhook) não ficam aqui porque o repositório é público. Eles estão no manual de operação privado da equipe (página "Régua do calouro" no Claude), na seção "Operação".
 
@@ -43,8 +43,9 @@ flowchart TD
   F -- "entrou ou sem conta" --> FIM["fim"]
   A -- "Sobre o Curso" --> C["página Como funciona + menu"]
   A -- "escreveu texto" --> H["fila do Acolhimento (pessoa)"]
-  A -- "24 h sem resposta" --> A2["bv_app2 de novo"] -- "24 h sem resposta" --> SI["registra sem interação e encerra"]
-  M -- "1 h sem resposta" --> FUP["fup_bv_calouros (template)"] -- "1 h sem resposta" --> SI
+  A -- "2 h sem toque" --> A2["bv_app2 de novo"] -- "mais 22 h sem toque" --> P["registra e passa a uma pessoa do Acolhimento"]
+  M -- "1 h sem resposta" --> FUP["fup_bv_calouros (template)"] -- "1 h sem resposta" --> SI["registra sem interação e encerra"]
+  FUP -- "Preciso de ajuda" --> P
 ```
 
 ## Etapa por etapa
@@ -54,11 +55,12 @@ Template = mensagem aprovada pela Meta, chega mesmo fora da janela de 24 h. Mens
 | Quando | O quê | Tipo | Saídas |
 |---|---|---|---|
 | Venda | Negócio criado com senha inicial (primeiro nome + `123@`) e link pessoal (`?o=bv_acesso`, vale 7 dias) | interno | Sem conta no app: negócio sem link, aluno recebe só login e senha. |
-| 0 min | BV confere a senha | interno | Com senha: `bv_app2`. Sem senha: espera 1 min (o passo se chama "1 h"). |
+| 0 min | BV confere a senha | interno | Com senha: `bv_app2`. Sem senha: espera 1 min. |
 | +1 e +3 min | Rede de proteção e nova conferência | interno | Pós-Graduação continua sem senha e espera 4 h. |
-| +4 h | Sem senha: `matricula_canal_oficial` | template | Sobre o Curso; Primeiro Acesso (instruções do portal da faculdade e do app Duda); Chamo Depois. 1 h sem resposta: `fup_bv_calouros`. |
-| Na hora | `bv_app2` ("toque em QUERO MEU ACESSO") | template | Quero meu acesso e Primeiro Acesso levam ao acesso. Sobre o Curso. Texto livre: fila do Acolhimento. 24 h sem resposta: `bv_app2` de novo; mais 24 h: registra "sem interação" e encerra. |
+| +4 h | Sem senha: `matricula_canal_oficial` | template | Sobre o Curso; Primeiro Acesso (instruções do portal da faculdade e do app Duda, avisando que a senha de lá é diferente da senha do app); Chamo Depois. 1 h sem resposta: `fup_bv_calouros` (Está tudo certo: menu; Preciso de ajuda: pessoa do Acolhimento; 1 h sem resposta: registra e encerra). |
+| Na hora | `bv_app2` ("toque em QUERO MEU ACESSO") | template | Quero meu acesso e Primeiro Acesso levam ao acesso. Sobre o Curso. Texto livre: fila do Acolhimento. 2 h sem toque: `bv_app2` de novo. Mais 22 h sem toque: registra no n8n, move o negócio para ATENDIMENTO › Em Atendimento e distribui para uma pessoa do Acolhimento (ela fala com o aluno por template ou ligação, porque a janela de 24 h não está aberta). |
 | Ao tocar | Link pessoal ("Entre com um toque") com login e senha de reserva, ou só login e senha | livre | O BV passa o aluno para o email_acad e para ali. |
+| Menu | "Conseguiu entender?" depois de cada explicação | livre | Sim: encerra. Preciso de ajuda: pessoa. Outro assunto: menu. 30 min sem resposta: encerra. O botão "Portal da faculdade" (antes "Acesso ao Portal") ensina o portal da faculdade, não o app. |
 | +30 min | `email_academico_ativo` | template | O email_acad chama o follow-up. Se o template falhar, o follow-up não começa. |
 | +24 h | Follow-up pergunta ao app (via n8n) se o aluno entrou | interno | `entrou`, `sem_conta` ou `erro`: fim. `nao_entrou`: lembrete. |
 | +24 h | `bv_app2` de novo | template | Quero meu acesso: reenvia o mesmo link (login `?o=bv_lembrete`) e convida para a Aula Inaugural. Sobre o Curso: Como funciona com botão "Quero meu acesso". Texto livre: fila do Acolhimento. |
@@ -136,12 +138,11 @@ Quem contatar: a busca por RGM, nome ou e-mail procura em todos os alunos, ignor
 
 ## Pontos em aberto (07/11/2026)
 
-1. Quem não toca em nada recebe dois `bv_app2` em 48 h e para; não há aviso para a equipe.
-2. "Conseguiu entender?" encerra a conversa em 1 min.
-3. "Preciso de ajuda" no `fup_bv_calouros` leva ao menu automático, não a uma pessoa.
-4. O caminho "Primeiro Acesso" do template de matrícula ensina a senha do portal da faculdade, diferente da senha do app.
-5. Alunos que pediram o acesso antes de 07/11 e não entraram ficam fora do follow-up; os links deles vencem em 14/11.
-6. Atendimento por pessoas: 189 conversas esperando e 169 com SLA crítico em 07/11 de manhã.
+1. A espera do CRM pelo botão nem sempre dispara: de 19 alunos que não tocaram em nada (03 a 05/11), 7 não receberam o lembrete. Acompanhar com a cadência nova de 2 h.
+2. Alunos que pediram o acesso antes de 07/11 e não entraram ficam fora do follow-up; os links deles vencem em 14/11.
+3. Não há follow-up para quem entrou e não começou a Aula Inaugural.
+4. Atendimento por pessoas: 189 conversas esperando e 169 com SLA crítico em 07/11 de manhã. A cadência nova manda para lá quem não toca em 24 h.
+5. Fluxo antigo de ativação de acolhimento no n8n (Kommo): falha todo dia porque a conta do Kommo está no plano gratuito, e guarda a chave do Kommo dentro de dois passos, fora das credenciais. Precisa ser desligado e a chave revogada no Kommo.
 
 ## Histórico
 
@@ -152,3 +153,4 @@ Quem contatar: a busca por RGM, nome ou e-mail procura em todos os alunos, ignor
 | 07/11 | Link pessoal gravado em 146 negócios de Graduação de 30/10 a 06/11 que estavam sem link. |
 | 07/11 | Texto da mensagem do link ("vale por 7 dias no celular em que você abrir primeiro"). Login e Como funciona sem prometer senha nova (PR #11). |
 | 07/11 | Situação de acesso no app (PR #13) e Follow-up pós-link ligado. |
+| 07/11 | Cadência de quem não toca: lembrete em 2 h (antes 24 h) e pessoa em 24 h (antes encerrava em 48 h). "Conseguiu entender?" espera 30 min (antes 1 min). "Preciso de ajuda" do `fup_bv_calouros` chama uma pessoa. Textos do portal da faculdade separam a senha de lá da senha do app. |
