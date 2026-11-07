@@ -175,6 +175,49 @@ function registrarRotas(app, { getPool, findAluno, createSession, instrumentacao
     }
   });
 
+  // n8n / CRM: o aluno deste RGM já entrou no app? Mesmo segredo do gerador. Serve ao follow-up da régua
+  // ("recebeu o link e não entrou"). Devolve só a situação, nada pessoal além do que o CRM já tem.
+  //   situacao: 'entrou' | 'nao_entrou' | 'sem_conta'
+  app.post('/api/integracoes/situacao-acesso', async (req, res) => {
+    const pool = getPool();
+    if (!envValue('LINK_ACESSO_SEGREDO')) return res.status(503).json({ success: false, message: 'Integração desligada.' });
+    if (!segredoOk(req.get('x-segredo') || (req.body && req.body.segredo))) {
+      return res.status(401).json({ success: false, message: 'Segredo inválido.' });
+    }
+    if (!pool) return res.status(503).json({ success: false, message: 'Serviço de dados indisponível.' });
+    const rgm = String((req.body && req.body.rgm) || '').replace(/\D+/g, '');
+    if (!rgm) return res.status(400).json({ success: false, message: 'Informe o RGM.' });
+    try {
+      if (ensureSchemaAlunos) await ensureSchemaAlunos();
+      await ensureSchema(pool);
+      const aluno = await findAluno(pool, rgm);
+      if (!aluno || !aluno.ativo) return res.json({ success: true, situacao: 'sem_conta' });
+      const r = await pool.query(
+        `SELECT a.primeiro_login_em,
+                l.criado_em AS link_gerado_em, l.usado_em AS link_usado_em, l.expira_em AS link_expira_em
+         FROM csu_alunos a
+         LEFT JOIN LATERAL (
+           SELECT criado_em, usado_em, expira_em FROM csu_links_acesso
+           WHERE aluno_id = a.id AND cancelado_em IS NULL ORDER BY criado_em DESC LIMIT 1
+         ) l ON TRUE
+         WHERE a.id = $1`,
+        [aluno.id],
+      );
+      const x = r.rows[0] || {};
+      return res.json({
+        success: true,
+        situacao: x.primeiro_login_em ? 'entrou' : 'nao_entrou',
+        primeira_entrada_em: x.primeiro_login_em || null,
+        link: x.link_gerado_em
+          ? { gerado_em: x.link_gerado_em, usado: Boolean(x.link_usado_em), vencido: new Date(x.link_expira_em).getTime() <= Date.now() }
+          : null,
+      });
+    } catch (err) {
+      console.error('Falha ao consultar a situação de acesso:', err.message);
+      return res.status(500).json({ success: false, message: 'Não foi possível consultar.' });
+    }
+  });
+
   // Tela /a/<token>: o app chama aqui e recebe a sessão, como no login.
   app.post('/api/auth/link', async (req, res) => {
     const pool = getPool();

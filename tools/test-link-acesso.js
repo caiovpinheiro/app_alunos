@@ -5,7 +5,8 @@
  *   DATABASE_URL=postgres://localhost:5433/teste LINK_ACESSO_SEGREDO=x node tools/test-link-acesso.js
  *
  * Cobre: primeira entrada grava o cookie do aparelho; tocar de novo no mesmo aparelho entra;
- * outro aparelho ou sem cookie conta como usado; link novo cancela o antigo; link vencido.
+ * outro aparelho ou sem cookie conta como usado; link novo cancela o antigo; link vencido;
+ * situação de acesso para o follow-up (não entrou, entrou, sem conta, segredo errado).
  * Nunca rode contra o banco de produção: o teste cria e apaga um aluno.
  */
 const assert = require('node:assert/strict');
@@ -59,7 +60,22 @@ async function main() {
     body: JSON.stringify({ token, origem: 'teste' }),
   });
 
+  const situacao = (rgmX, segredo) => fetch(base + '/api/integracoes/situacao-acesso', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Segredo': segredo || process.env.LINK_ACESSO_SEGREDO },
+    body: JSON.stringify({ rgm: rgmX }),
+  });
+
   try {
+    // 0. Situação antes de tudo: conta existe e nunca entrou; RGM sem conta; segredo errado.
+    let s = await situacao(rgm);
+    assert.equal(s.status, 200);
+    let sb = await s.json();
+    assert.equal(sb.situacao, 'nao_entrou', 'conta nova não entrou');
+    assert.equal(sb.link, null, 'sem link ainda');
+    assert.equal((await (await situacao('11112222')).json()).situacao, 'sem_conta');
+    assert.equal((await situacao(rgm, 'errado')).status, 401, 'segredo errado');
+
     // Gera pelo endpoint do n8n.
     let r = await fetch(base + '/api/integracoes/link-acesso', {
       method: 'POST',
@@ -68,6 +84,11 @@ async function main() {
     });
     assert.equal(r.status, 200, 'gera o link');
     const token = /\/a\/([A-Za-z0-9_-]+)/.exec((await r.json()).url)[1];
+
+    // Link gerado e ainda não usado: continua "nao_entrou", com o link pendente.
+    sb = await (await situacao(rgm)).json();
+    assert.equal(sb.situacao, 'nao_entrou');
+    assert.deepEqual([sb.link.usado, sb.link.vencido], [false, false]);
 
     // 1. Primeira entrada: sessão e cookie do aparelho só na rota do link.
     r = await entrar(token);
@@ -78,6 +99,11 @@ async function main() {
     assert.match(ck.bruto, /HttpOnly/);
     const b1 = await r.json();
     assert.ok(b1.token, 'devolve sessão');
+
+    sb = await (await situacao(rgm)).json();
+    assert.equal(sb.situacao, 'entrou', 'depois de entrar pelo link');
+    assert.ok(sb.primeira_entrada_em);
+    assert.equal(sb.link.usado, true);
 
     // 2. Mesmo aparelho, toca de novo: entra de novo, sem regravar o cookie.
     r = await entrar(token, ck.valor);
@@ -122,7 +148,7 @@ async function main() {
     const e = await pool.query(`SELECT via, count(*)::int AS n FROM csu_entradas WHERE aluno_id = $1 GROUP BY via ORDER BY via`, [alunoId]);
     assert.deepEqual(Object.fromEntries(e.rows.map((x) => [x.via, x.n])), { link: 2, link_de_novo: 1 });
 
-    console.log('ok: link de acesso (primeira entrada, mesmo aparelho, outro aparelho, cancelado, vencido, inválido)');
+    console.log('ok: link de acesso (primeira entrada, mesmo aparelho, outro aparelho, cancelado, vencido, inválido) e situação de acesso');
   } finally {
     srv.close();
     await pool.query('DELETE FROM csu_alunos WHERE id = $1', [alunoId]);
