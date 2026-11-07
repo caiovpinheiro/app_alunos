@@ -10,6 +10,7 @@ window.AdminAcomp = (function () {
   var situacoes = {};
   var pendente = null; // filtro pedido pela Visão geral antes de as opções existirem
   var paginaAtual = 1;
+  var ultimaBuscaAberta = ''; // última busca que já abriu o percurso sozinha
 
   var NOMES_EVENTO = {
     tela_aberta: 'Abriu a tela', clique: 'Clicou', saiu: 'Saiu do portal',
@@ -194,11 +195,21 @@ window.AdminAcomp = (function () {
         card('Precisam de contato', t.com_sinal, 'travaram, pararam ou sumiram');
       document.getElementById('acomp-lista').innerHTML = r.alunos.length
         ? r.alunos.map(linhaAluno).join('')
-        : '<p class="text-gray-500 text-sm">Ninguém nesse filtro.</p>';
+        : '<p class="text-gray-500 text-sm">' + (r.buscando ? 'Ninguém encontrado.' : 'Ninguém nesse filtro.') + '</p>';
       paginaAtual = r.pagina;
       var ini = (r.pagina - 1) * r.por_pagina + 1;
       var contagem = r.paginas > 1 ? 'Mostrando ' + ini + ' a ' + (ini + r.alunos.length - 1) + ' de ' + r.total_filtrado + ' alunos.' : r.total_filtrado + ' aluno(s).';
       var etapaAtiva = filtros().get('etapa');
+      if (r.buscando) {
+        // Busca vale para todos os alunos (o servidor ignora Mostrar, Etapa e datas).
+        msg.textContent = (r.total_filtrado ? contagem : 'Nenhum aluno com esse RGM, nome ou e-mail no app.') + ' Busca em todos os alunos, sem os filtros acima.';
+        desenharPaginas(r);
+        // Achou um só: abre o percurso direto, uma vez por busca.
+        var q = filtros().get('q');
+        if (r.alunos.length === 1 && q !== ultimaBuscaAberta) { ultimaBuscaAberta = q; percurso(r.alunos[0].id); }
+        return;
+      }
+      ultimaBuscaAberta = '';
       msg.textContent = r.novas && !etapaAtiva ? r.novas.contas + ' conta(s) nova(s): ' + r.novas.entraram + (r.novas.entraram === 1 ? ' entrou, ' : ' entraram, ') + (r.novas.contas - r.novas.entraram) + ' ainda não.' + (r.paginas > 1 ? ' ' + contagem : '') : contagem;
       desenharPaginas(r);
     } catch (err) {

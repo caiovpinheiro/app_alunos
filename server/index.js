@@ -1455,12 +1455,15 @@ async function listaAcompanhamento(req) {
     x.certificado_emitido = Boolean(certificados[x.id]);
     x.joinhas = votos[x.rgm] || { positivos: 0, negativos: 0 };
   });
-  const situacao = String(req.query.situacao || '');
+  // Com texto em "Buscar aluno" (RGM, nome ou e-mail), a busca vale para todos os alunos: os filtros de
+  // Mostrar, Etapa e datas não escondem quem foi procurado (calouro sem sinal sumia da lista).
+  const buscando = Boolean(String(req.query.q || '').trim());
+  const situacao = buscando ? '' : String(req.query.situacao || '');
   if (painel.SITUACAO[situacao]) lista = lista.filter((x) => x.situacao === situacao);
-  const filtro = String(req.query.sinal || (situacao ? 'todos' : 'com_sinal'));
+  const filtro = buscando ? 'todos' : String(req.query.sinal || (situacao ? 'todos' : 'com_sinal'));
   // Contas novas: por dia de criação (hoje, 7, 30 ou 90 dias, no horário de Brasília), mais recentes primeiro.
   let novas = null;
-  const intervalo = resultado.intervaloDe(req.query.criada_de, req.query.criada_ate);
+  const intervalo = buscando ? null : resultado.intervaloDe(req.query.criada_de, req.query.criada_ate);
   if (intervalo) {
     lista = lista.filter((x) => {
       if (!x.created_at) return false;
@@ -1477,18 +1480,18 @@ async function listaAcompanhamento(req) {
   else if (filtro !== 'todos' && filtro !== 'em_espera') lista = lista.filter((x) => x.sinais.some((s) => s.id === filtro));
   else if (filtro === 'em_espera') lista = lista.filter((x) => x.em_espera);
   // Etapa do funil: a mesma regra do Resultado da Visão geral, para os números baterem com os nomes.
-  const etapa = String(req.query.etapa || '');
+  const etapa = buscando ? '' : String(req.query.etapa || '');
   if (etapa) lista = lista.filter((x) => resultado.temEtapa(x, etapa, certificados, cfg.faixas.dias_sumiu));
   lista.sort(novas
     ? (a, b) => new Date(b.created_at) - new Date(a.created_at)
     : (a, b) => a.prioridade - b.prioridade || new Date(b.ultimo_acesso || 0) - new Date(a.ultimo_acesso || 0));
-  return { dias, lista, rows, cfg, novas };
+  return { dias, lista, rows, cfg, novas, buscando };
 }
 
 app.get('/api/admin/acompanhamento', requireAdmin, async (req, res) => {
   if (!pool) return unavailable(res);
   try {
-    const { dias, lista, rows, cfg, novas } = await listaAcompanhamento(req);
+    const { dias, lista, rows, cfg, novas, buscando } = await listaAcompanhamento(req);
     const porPagina = Math.max(1, Math.min(100, Math.floor(Number(req.query.por_pagina)) || 50));
     const paginas = Math.max(1, Math.ceil(lista.length / porPagina));
     const pagina = Math.max(1, Math.min(paginas, Math.floor(Number(req.query.pagina)) || 1));
@@ -1507,7 +1510,7 @@ app.get('/api/admin/acompanhamento', requireAdmin, async (req, res) => {
     };
     const sinais = acompanhamento.catalogo().filter((x) => cfg.sinais[x.id].ativo);
     const situacoes = painel.situacoes(cfg.faixas.dias_sumiu).map((x) => ({ id: x.id, rotulo: x.rotulo, faixa: x.faixa, acao: x.acao }));
-    return res.json({ success: true, dias, totais, sinais, situacoes, novas, total_filtrado: lista.length, pagina, paginas, por_pagina: porPagina, alunos: trecho });
+    return res.json({ success: true, dias, totais, sinais, situacoes, novas, buscando, total_filtrado: lista.length, pagina, paginas, por_pagina: porPagina, alunos: trecho });
   } catch (err) {
     console.error('Falha no acompanhamento:', err.message);
     return res.status(500).json({ success: false, message: 'Não foi possível carregar o acompanhamento.' });

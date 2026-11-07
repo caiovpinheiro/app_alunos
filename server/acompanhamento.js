@@ -312,7 +312,8 @@ function sinaisDo(r, cfg) {
 async function listar(pool, opts) {
   const dias = Math.max(1, Math.min(180, Number(opts.dias) || 30));
   const busca = String(opts.q || '').trim().toLowerCase();
-  const desde = (await lerConfig(pool)).faixas.contar_desde;
+  // Buscando um aluno, as contas anteriores a "contar desde" também aparecem.
+  const desde = busca ? null : (await lerConfig(pool)).faixas.contar_desde;
   const { rows } = await pool.query(
     `WITH ac AS (
        SELECT aluno_id, COUNT(*)::int AS acessos, COALESCE(SUM(segundos_ativos),0)::int AS segundos,
