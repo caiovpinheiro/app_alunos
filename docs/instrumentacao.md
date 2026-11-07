@@ -64,6 +64,8 @@ Link novo para o sistema da faculdade: acrescentar o host aqui e em `DESTINOS` d
 - Links da régua e das campanhas: `https://app.cruzeiroead.com.br/?o=bv`, `?o=reenvio`, `?o=polo` (minúsculas, números, `_` e `-`, até 24 caracteres; o resto vira "sem origem").
 - O portal lê `?o=` ao carregar (`public/js/api.js`), guarda na aba (`sessionStorage`) porque a navegação troca o endereço para `/login`, e manda no `POST` do login ou do cadastro. Depois do login, apaga.
 - Quem já está logado e abre o link não passa pelo login: essa visita não entra em `csu_entradas`.
+- Origens da régua do calouro (`bv_acesso`, `bv`, `bv_lembrete`, `bv_curso`, `cert`, `cert_erro`): ver `docs/regua-calouro.md`.
+- Entrada pelo link pessoal grava `via = link`; tocar de novo no mesmo aparelho grava `via = link_de_novo` (desde 06/11/2026). Falhas do link: `link_usado` (outro aparelho ou trocado por um link novo), `link_expirado`, `link_invalido`.
 
 ## Aba Medição (`/admin#medicao`)
 

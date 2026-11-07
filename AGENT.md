@@ -7,6 +7,25 @@
 - Push em `main` dispara `.github/workflows/deploy.yml`: publica `ghcr.io/caiovpinheiro/app_alunos:latest` e chama o webhook do EasyPanel (`secrets.EASYPANEL_DEPLOY_APP`).
 - Não invente outro fluxo de deploy (n8n, branch de homologação, etc.) sem pedido explícito.
 
+### 2026-11-07 - Régua do calouro: link reaberto, textos, busca por RGM e follow-up pós-link
+
+**Decisão**
+- Link pessoal (`server/link-acesso.js`): o mesmo aparelho pode tocar de novo no link enquanto ele vale (cookie `csu_link` HttpOnly no caminho `/api/auth/link`, só o sha256 no banco, até 30 entradas, `via = link_de_novo`). Outro aparelho continua recusado, com o RGM preenchido e o cursor na senha. Link novo cancela todos os anteriores, inclusive os usados; vencido conta como `link_expirado`.
+- Textos: login e Como funciona dizem "Se o app pedir, crie uma senha só sua" (a troca de senha está desligada).
+- Quem contatar: com texto na busca, procura em todos os alunos (ignora Mostrar, Etapa, datas e "contar desde") e abre o percurso quando acha um só.
+- `POST /api/integracoes/situacao-acesso` (mesmo segredo do gerador de link): `entrou`, `nao_entrou` ou `sem_conta`, mais a situação do link. Usado pelo n8n para o Follow-up pós-link do CRM.
+- Fora do repositório (CRM e n8n): mensagem do link "vale por 7 dias no celular em que você abrir primeiro"; link gravado em 146 negócios antigos de Graduação; campo `situacao_acesso_app`; automação "Follow-up pós-link" chamada pelo email_acad. Tudo em `docs/regua-calouro.md`.
+
+**Motivo**
+- Alunos voltavam à mensagem do WhatsApp, tocavam de novo no link e caíam em "link já usado" (10 falhas em 14 dias).
+- A tela prometia uma senha nova que o aluno não vê.
+- Buscar o RGM de um calouro em "Quem precisa de contato" dava "Ninguém nesse filtro".
+- O BV encerra a conversa logo depois do acesso, e 41% das contas novas nunca entram: faltava conferir e lembrar.
+
+**Impacto**
+- `server/link-acesso.js`, `server/instrumentacao.js`, `server/index.js`, `server/acompanhamento.js`, `public/js/app.js`, `public/js/admin-acompanhamento.js`, `public/index.html`, `public/como-funciona.html`, `public/admin.html`, `tools/test-link-acesso.js`. Colunas novas `aparelho_hash` e `reusos` em `csu_links_acesso` (criadas sozinhas).
+- Publicação: PRs #10, #11 e #13 juntados na `main` com OK do usuário em 06 e 07/11; PR #12 (busca) aguardando. Este repositório pede commits direto na `main`; nesta rodada o usuário aprovou cada publicação por PR.
+
 ### 2026-11-06 - Login e Aula Inaugural no celular (revisão com a HIG da Apple)
 
 **Decisão**
