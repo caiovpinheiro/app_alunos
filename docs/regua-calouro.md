@@ -142,7 +142,8 @@ Quem contatar: a busca por RGM, nome ou e-mail procura em todos os alunos, ignor
 2. Alunos que pediram o acesso antes de 07/11 e não entraram ficam fora do follow-up; os links deles vencem em 14/11.
 3. Não há follow-up para quem entrou e não começou a Aula Inaugural.
 4. Atendimento por pessoas: 189 conversas esperando e 169 com SLA crítico em 07/11 de manhã. A cadência nova manda para lá quem não toca em 24 h.
-5. Fluxo antigo de ativação de acolhimento no n8n (Kommo): falha todo dia porque a conta do Kommo está no plano gratuito, e guarda a chave do Kommo dentro de dois passos, fora das credenciais. Precisa ser desligado e a chave revogada no Kommo.
+
+O fluxo antigo de ativação no n8n que usa o Kommo está fora desta régua: o Kommo não é mais usado.
 
 ## Histórico
 
