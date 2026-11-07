@@ -61,7 +61,7 @@ Template = mensagem aprovada pela Meta, chega mesmo fora da janela de 24 h. Mens
 | Na hora | `bv_app2` ("toque em QUERO MEU ACESSO") | template | Quero meu acesso e Primeiro Acesso levam ao acesso. Sobre o Curso. Texto livre: fila do Acolhimento. 2 h sem toque: `bv_app2` de novo. Mais 22 h sem toque: registra no n8n, move o negócio para ATENDIMENTO › Em Atendimento e distribui para uma pessoa do Acolhimento (ela fala com o aluno por template ou ligação, porque a janela de 24 h não está aberta). |
 | Ao tocar | Link pessoal ("Entre com um toque") com login e senha de reserva, ou só login e senha | livre | O BV passa o aluno para o email_acad e para ali. |
 | Menu | "Conseguiu entender?" depois de cada explicação | livre | Sim: encerra. Preciso de ajuda: pessoa. Outro assunto: menu. 30 min sem resposta: encerra. O botão "Portal da faculdade" (antes "Acesso ao Portal") ensina o portal da faculdade, não o app. |
-| +30 min | `email_academico_ativo` | template | O email_acad chama o follow-up. Se o template falhar, o follow-up não começa. |
+| +30 min | `email_academico_ativo` | template | O email_acad espera 1 min por resposta e chama o follow-up (respondendo ou não). Se o template falhar, o follow-up não começa. |
 | +24 h | Follow-up pergunta ao app (via n8n) se o aluno entrou | interno | `entrou`, `sem_conta` ou `erro`: fim. `nao_entrou`: lembrete. |
 | +24 h | `bv_app2` de novo | template | Quero meu acesso: reenvia o mesmo link (login `?o=bv_lembrete`) e convida para a Aula Inaugural. Sobre o Curso: Como funciona com botão "Quero meu acesso". Texto livre: fila do Acolhimento. |
 | +48 a 72 h | Segunda conferência e último lembrete | template | Depois disso, fim. |
@@ -120,7 +120,7 @@ A troca de senha no primeiro acesso existe (`server/senha.js`), mas está deslig
 
 ### Admin
 
-Quem contatar: a busca por RGM, nome ou e-mail procura em todos os alunos, ignorando Mostrar, Etapa e datas, e abre o percurso quando acha um só (PR #12, aguardando publicação em 07/11). Medição: entradas por origem e falhas de login por motivo (`docs/instrumentacao.md`).
+Quem contatar: a busca por RGM, nome ou e-mail procura em todos os alunos, ignorando Mostrar, Etapa e datas, e abre o percurso quando acha um só (PR #12, publicado em 07/11). Medição: entradas por origem e falhas de login por motivo (`docs/instrumentacao.md`).
 
 ## Como medir
 
@@ -154,4 +154,5 @@ O fluxo antigo de ativação no n8n que usa o Kommo está fora desta régua: o K
 | 07/11 | Link pessoal gravado em 146 negócios de Graduação de 30/10 a 06/11 que estavam sem link. |
 | 07/11 | Texto da mensagem do link ("vale por 7 dias no celular em que você abrir primeiro"). Login e Como funciona sem prometer senha nova (PR #11). |
 | 07/11 | Situação de acesso no app (PR #13) e Follow-up pós-link ligado. |
+| 07/11 | email_acad: o template esperava resposta por 24 h e, sem resposta, pulava a chamada do follow-up; agora espera 1 min e segue. Quem recebeu o e-mail antes da correção entra no follow-up quando a espera antiga de 24 h vencer. |
 | 07/11 | Cadência de quem não toca: lembrete em 2 h (antes 24 h) e pessoa em 24 h (antes encerrava em 48 h). "Conseguiu entender?" espera 30 min (antes 1 min). "Preciso de ajuda" do `fup_bv_calouros` chama uma pessoa. Textos do portal da faculdade separam a senha de lá da senha do app. |
