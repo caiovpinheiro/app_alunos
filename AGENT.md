@@ -24,7 +24,7 @@
 
 **Impacto**
 - `server/link-acesso.js`, `server/instrumentacao.js`, `server/index.js`, `server/acompanhamento.js`, `public/js/app.js`, `public/js/admin-acompanhamento.js`, `public/index.html`, `public/como-funciona.html`, `public/admin.html`, `tools/test-link-acesso.js`. Colunas novas `aparelho_hash` e `reusos` em `csu_links_acesso` (criadas sozinhas).
-- Publicação: PRs #10, #11 e #13 juntados na `main` com OK do usuário em 06 e 07/11; PR #12 (busca) aguardando. Este repositório pede commits direto na `main`; nesta rodada o usuário aprovou cada publicação por PR.
+- Publicação: PRs #10 a #15 juntados na `main` com OK do usuário em 06 e 07/11. Este repositório pede commits direto na `main`; nesta rodada o usuário aprovou cada publicação por PR.
 
 ### 2026-11-06 - Login e Aula Inaugural no celular (revisão com a HIG da Apple)
 
