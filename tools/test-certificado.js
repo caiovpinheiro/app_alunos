@@ -330,6 +330,48 @@ async function fluxo(pool) {
     assert.ok(certificado.paraCsv(todos).startsWith('nome;rgm;email;curso;polo;motivo'));
   });
 
+  await caso('emissão automática no fim do sync: quem concluiu e não clicou recebe o certificado', async () => {
+    const kai = await aluno('Kai Nunca Clicou', '2000011'); // concluiu, sem polo ainda
+    const lia = await aluno('Lia Com Polo', '2000012', { curso: 'Pedagogia', unidade: 'Barra Funda' }); // concluiu, conta já com polo
+    const mel = await aluno('Mel Pela Metade', '2000013', { curso: 'Pedagogia', unidade: 'Barra Funda' }); // 5 módulos: não ganha
+    await concluir(kai, '2026-11-03 10:00-03');
+    await concluir(lia, '2026-11-02 10:00-03');
+    await concluir(mel, '2026-11-03 10:00-03', 5);
+    const r1 = await sync.completarCertificados(pool);
+    // kai, lia e "Jo Concluiu" (do caso anterior: concluiu em 04/11, com polo, nunca tentou). Ninguém mais sem certificado concluiu.
+    assert.strictEqual(r1.emitidos, 3, JSON.stringify(r1));
+    assert.strictEqual(r1.falhas, 0);
+    const linha = async (id) => (await pool.query(`SELECT curso, unidade, to_char(data_aula_inaugural, 'YYYY-MM-DD') AS dia, baixado_em FROM csu_certificados WHERE aluno_id = $1`, [id])).rows[0];
+    assert.deepStrictEqual(await linha(lia), { curso: 'Pedagogia', unidade: 'Barra Funda', dia: '2026-11-02', baixado_em: null });
+    assert.deepStrictEqual(await linha(kai), { curso: null, unidade: null, dia: '2026-11-03', baixado_em: null });
+    assert.strictEqual(await qtd(mel), 0);
+    const ev = await pool.query(`SELECT count(*)::int AS n FROM csu_eventos WHERE aluno_id = $1 AND nome = 'certificado_gerado' AND dados->>'origem' = 'automatico'`, [lia]);
+    assert.strictEqual(ev.rows[0].n, 1);
+    // Quem concluiu saiu da lista de "ficou para trás"; quem só teve erro sem concluir (Hana) continua nela.
+    const todos = await certificado.pendentesDeAviso(pool, { concluiram: true, totalModulos: TOTAL });
+    assert.deepStrictEqual(todos.map((a) => a.rgm), ['2000008']);
+    // O Início sabe que está emitido e, para Kai, sem polo.
+    assert.deepStrictEqual({ ...(await certificado.estado(pool, kai)), emitido_em: undefined }, { emitido: true, emitido_em: undefined, sem_polo: true, polo_completado: false });
+    // Segunda volta: nada muda.
+    const r2 = await sync.completarCertificados(pool);
+    assert.strictEqual(r2.emitidos, 0);
+    assert.strictEqual(r2.completados, 0);
+    // O polo de Kai chega pelo relatório: a volta seguinte completa o certificado dele.
+    await db.upsertAcessoDerived(pool, { email: 'kai2000011@teste.local', rgm: '2000011', nome: 'Kai Nunca Clicou', curso: 'Administração', unidade: 'Itapira' });
+    const r3 = await sync.completarCertificados(pool);
+    assert.strictEqual(r3.completados, 1);
+    assert.strictEqual((await certificado.estado(pool, kai)).polo_completado, true);
+    // O primeiro download do aluno reaproveita o protocolo, já completo e com a data da conclusão.
+    const out = await certificado.emitir(pool, kai, deps);
+    assert.strictEqual(out.status, 200);
+    assert.strictEqual(out.body.reaproveitado, true);
+    assert.strictEqual(out.body.unidade, 'Itapira');
+    assert.strictEqual(out.body.data_aula_inaugural, '2026-11-03');
+    assert.strictEqual(out.body.polo_pendente, false);
+    assert.strictEqual(await qtd(kai), 1);
+    assert.ok((await linha(kai)).baixado_em);
+  });
+
   await caso('cadastro: RGM com pontos e hífen não duplica conta', async () => {
     await assert.rejects(db.createAluno(pool, { email: 'outro@teste.local', nome: 'Outro', rgm: '2.000.001', password: 'segredo1' }), (err) => err.code === 'DUPLICATE' && err.field === 'rgm');
   });

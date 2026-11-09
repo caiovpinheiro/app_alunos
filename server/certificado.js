@@ -112,8 +112,8 @@ async function certificadoDoAluno(q, alunoId) {
 }
 
 // Grava (ou reaproveita) o certificado do aluno. Bloqueia a linha do aluno: dois cliques seguidos
-// não criam dois certificados.
-async function gravar(pool, aluno, { curso, unidade, dataAula, agora }) {
+// não criam dois certificados. `baixado: false` é a emissão automática: o aluno ainda não baixou.
+async function gravar(pool, aluno, { curso, unidade, dataAula, agora, baixado = true }) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -126,19 +126,19 @@ async function gravar(pool, aluno, { curso, unidade, dataAula, agora }) {
            curso = COALESCE(curso, $2),
            unidade = COALESCE(unidade, $3),
            completado_em = CASE WHEN unidade IS NULL AND $3::text IS NOT NULL THEN now() ELSE completado_em END,
-           baixado_em = now()
+           baixado_em = CASE WHEN $4::boolean THEN now() ELSE baixado_em END
          WHERE id = $1
          RETURNING ${COLUNAS}`,
-        [atual.id, curso, unidade],
+        [atual.id, curso, unidade, baixado],
       );
       row = { ...r.rows[0], reaproveitado: true };
     } else {
       const r = await client.query(
         `INSERT INTO csu_certificados
            (certificate_id, aluno_id, email, nome, rgm, data_aula_inaugural, curso, unidade, created_at, baixado_em)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, now())
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CASE WHEN $10::boolean THEN now() END)
          RETURNING ${COLUNAS}`,
-        [novoId(agora), aluno.id, aluno.email, aluno.nome, aluno.rgm, dataAula, curso, unidade, agora],
+        [novoId(agora), aluno.id, aluno.email, aluno.nome, aluno.rgm, dataAula, curso, unidade, agora, baixado],
       );
       row = { ...r.rows[0], reaproveitado: false };
     }
@@ -159,6 +159,7 @@ async function gravar(pool, aluno, { curso, unidade, dataAula, agora }) {
  *   exigirAula?: async (alunoId) => null | {status, body}   // regra dos módulos; só vale para a 1ª emissão
  *   totalModulos?: number                                    // para a data de conclusão
  *   agora?: Date
+ *   semDownload?: boolean                                    // emissão automática: não marca baixado_em
  * }
  */
 async function emitir(pool, alunoId, deps = {}) {
@@ -184,7 +185,7 @@ async function emitir(pool, alunoId, deps = {}) {
   const dataAula = existente ? existente.data_aula_inaugural
     : (await dataConclusao(pool, aluno.id, deps.totalModulos)) || agora.slice(0, 10);
 
-  const cert = await gravar(pool, aluno, { curso, unidade, dataAula, agora });
+  const cert = await gravar(pool, aluno, { curso, unidade, dataAula, agora, baixado: !deps.semDownload });
   const semPolo = !cert.unidade;
   return {
     status: 200,
@@ -244,6 +245,47 @@ async function completarPendentes(pool) {
   return r.rowCount;
 }
 
+// Emite sozinho o certificado de quem concluiu a Aula (os `totalModulos` módulos), tem RGM e ainda não tem
+// certificado: quem nunca clicou e quem tentou e deu erro antes da correção de 07/11. Roda no fim de cada
+// volta do sync (`completarCertificados`). Sem curso e polo o certificado sai com NULL, e `completarPendentes`
+// preenche logo em seguida; `baixado_em` fica NULL até o aluno baixar. Registra `certificado_gerado`
+// (origem `automatico`) em `csu_eventos`, para o sinal "Erro no certificado" do acompanhamento se apagar.
+// Sem a tabela da Aula não há como saber quem concluiu: devolve zeros.
+async function emitirPendentes(pool, { totalModulos = 7, buscarMatricula = null, agora } = {}) {
+  let alvo;
+  try {
+    alvo = await pool.query(
+      `SELECT a.id
+       FROM csu_alunos a
+       JOIN (SELECT aluno_id, count(concluido_em)::int AS n FROM csu_trilha_progresso GROUP BY aluno_id) m ON m.aluno_id = a.id
+       WHERE a.ativo AND NULLIF(btrim(a.rgm), '') IS NOT NULL AND m.n >= $1
+         AND NOT EXISTS (SELECT 1 FROM csu_certificados c WHERE c.aluno_id = a.id)
+       ORDER BY a.id`,
+      [totalModulos],
+    );
+  } catch (err) {
+    if (err.code === '42P01') return { candidatos: 0, emitidos: 0, falhas: 0 };
+    throw err;
+  }
+  let emitidos = 0;
+  let falhas = 0;
+  for (const { id } of alvo.rows) {
+    try {
+      const out = await emitir(pool, id, { totalModulos, buscarMatricula, agora, semDownload: true });
+      if (out.status !== 200) { falhas += 1; continue; }
+      emitidos += 1;
+      await pool.query(
+        `INSERT INTO csu_eventos (aluno_id, nome, dados) VALUES ($1, 'certificado_gerado', $2::jsonb)`,
+        [id, JSON.stringify({ protocolo: out.body.certificate_id, origem: 'automatico', polo_pendente: out.body.polo_pendente })],
+      ).catch(() => {}); // sem rastreio (tabela ausente): o certificado vale do mesmo jeito
+    } catch (err) {
+      falhas += 1;
+      console.error('Certificado automático falhou:', id, err.code || err.message);
+    }
+  }
+  return { candidatos: alvo.rowCount, emitidos, falhas };
+}
+
 // Quem tentou emitir, teve erro e ainda não tem certificado, mas já tem curso e polo: o atendimento avisa
 // "seu certificado está liberado". Com `concluiram: true`, entra também quem concluiu a Aula e nunca tentou.
 async function pendentesDeAviso(pool, { concluiram = false, totalModulos = 7 } = {}) {
@@ -289,6 +331,7 @@ module.exports = {
   dataConclusao,
   emitir,
   estado,
+  emitirPendentes,
   completarPendentes,
   pendentesDeAviso,
   paraCsv,

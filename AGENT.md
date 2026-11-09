@@ -7,6 +7,19 @@
 - Push em `main` dispara `.github/workflows/deploy.yml`: publica `ghcr.io/caiovpinheiro/app_alunos:latest` e chama o webhook do EasyPanel (`secrets.EASYPANEL_DEPLOY_APP`).
 - Não invente outro fluxo de deploy (n8n, branch de homologação, etc.) sem pedido explícito.
 
+### 2026-11-09 - Certificado sai sozinho para quem concluiu a Aula e não clicou
+
+**Decisão**
+- `certificado.emitirPendentes` (`server/certificado.js`): quem está ativo, tem RGM, concluiu os 7 módulos e não tem certificado recebe um sem clicar. Roda no fim de cada volta do sync (`completarCertificados`, inclusive quando o relatório não mudou e no boot), antes de `completarPendentes`, então quem já tem curso e polo na conta sai completo na mesma volta; sem polo sai com NULL e é completado quando o polo chegar.
+- A emissão automática não marca `baixado_em` (`emitir` com `semDownload`): o Início mostra "Baixar"; o primeiro download reaproveita o mesmo protocolo. Grava `certificado_gerado` (`dados.origem = automatico`) em `csu_eventos`, e o sinal "Erro no certificado" do acompanhamento se apaga.
+- `GET /api/admin/certificados/pendentes` continua valendo, mas fica para quem teve erro e **não** concluiu os módulos (raro): quem concluiu passa a receber o certificado na volta seguinte do sync.
+
+**Motivo**
+- Em 09/11, 28 alunos tinham concluído a Aula sem certificado: 27 bateram no erro antigo (sem curso e polo no 1º dia) antes da correção de 07/11 e não voltaram a clicar. A versão de 07/11 só emite no clique.
+
+**Impacto**
+- `completarCertificados` devolve também `emitidos` e `falhas` (aparecem em `/api/admin/sync-from-matriculados`). Caso novo em `tools/test-certificado.js`.
+
 ### 2026-11-07 - Régua do calouro: link reaberto, textos, busca por RGM e follow-up pós-link
 
 **Decisão**

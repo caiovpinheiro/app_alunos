@@ -16,20 +16,24 @@ const MOTIVOS_FORA = {
   erro: 'Erro ao criar a conta',
 };
 
-// Fim do sync: certificados que saíram sem curso ou polo ganham o que a conta já tem. Nunca derruba o sync.
+// Fim do sync: quem concluiu a Aula e não tem certificado ganha um (sem clicar); depois, os certificados que
+// saíram sem curso ou polo ganham o que a conta já tem. Nunca derruba o sync.
 async function completarCertificados(destPool) {
   try {
     // eslint-disable-next-line global-require
     const certificado = require('./certificado');
+    // eslint-disable-next-line global-require
+    const trilha = require('./trilha');
+    const auto = await certificado.emitirPendentes(destPool, { totalModulos: trilha.NIVEIS.length });
     const completados = await certificado.completarPendentes(destPool);
     const pendentes = (await certificado.pendentesDeAviso(destPool)).length;
-    if (completados || pendentes) {
-      console.log('Certificados:', `completados=${completados}`, `erro_sem_certificado_com_polo=${pendentes}`);
+    if (auto.emitidos || auto.falhas || completados || pendentes) {
+      console.log('Certificados:', `emitidos=${auto.emitidos}`, `falhas=${auto.falhas}`, `completados=${completados}`, `erro_sem_certificado_com_polo=${pendentes}`);
     }
-    return { completados, pendentes };
+    return { emitidos: auto.emitidos, falhas: auto.falhas, completados, pendentes };
   } catch (err) {
     console.error('Falha ao completar certificados:', err.message);
-    return { completados: 0, pendentes: null };
+    return { emitidos: 0, falhas: 0, completados: 0, pendentes: null };
   }
 }
 
