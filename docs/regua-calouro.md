@@ -117,7 +117,7 @@ A troca de senha no primeiro acesso existe (`server/senha.js`), mas está deslig
 | `bv_lembrete` | link do login no reenvio do follow-up |
 | `bv_curso` | página Como funciona a partir do botão Sobre o Curso |
 | `cert`, `cert_erro` | avisos de certificado de 06/11/2026 |
-| `enxoval_pdf` | link do app no guia em PDF do enxoval do calouro (`docs/enxoval.md`) |
+| `guia_pdf` | link do app no guia em PDF do enxoval do calouro (`docs/enxoval.md`) |
 
 ### Admin
 
