@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Seu kit de calouro | Cruzeiro do Sul Virtual</title>
+<meta name="description" content="Tudo o que você precisa para começar o curso num lugar só: primeiro acesso, onde ficam as aulas e como pedir ajuda.">
+<meta property="og:title" content="Seu kit de calouro">
+<meta property="og:description" content="Primeiro acesso, onde ficam as aulas e como pedir ajuda. Guarde para quando for a hora.">
+<meta property="og:image" content="/trilha-midia/aula/cap_02.jpg">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+<style>
+/* Enxoval do calouro: página aberta (sem login) para quem ainda não quer entrar no app ou não respondeu a régua.
+   Mesmas cores e componentes da página Como funciona (como-funciona.html). */
+:root{--bg:#eef4fb;--surface:#fff;--fg:#0b1f38;--muted:#45566e;--line:#d3dfee;--accent:#0a4fa6;--accent-soft:#e3edfc;
+  --solid:#00356b;--hero-2:#0b56b0;--xp:#ffc72c;--xp-2:#f59a00;--on-xp:#2b1d00;--ok:#13795b;--ok-soft:#e2f4ec;
+  --display:"Poppins","Segoe UI",system-ui,sans-serif;--body:"Atkinson Hyperlegible Next","Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+  --r:20px;--shadow:0 1px 2px rgba(0,40,90,.06),0 12px 30px -18px rgba(0,40,90,.3)}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 17px/1.55 var(--body)}
+a{color:var(--accent)}
+.wrap{max-width:760px;margin:0 auto;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 48px max(16px,env(safe-area-inset-left))}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0 20px}
+header img{height:36px;width:auto}
+header a{font-weight:700;text-decoration:none;min-height:44px;display:inline-flex;align-items:center;padding:0 4px}
+.hero{background:linear-gradient(135deg,var(--solid),var(--hero-2));color:#fff;border-radius:var(--r);padding:24px 20px 22px;box-shadow:var(--shadow)}
+.tag{display:inline-block;font:700 13px/1 var(--body);letter-spacing:.06em;text-transform:uppercase;background:var(--xp);color:var(--on-xp);padding:7px 10px;border-radius:999px}
+h1{font:700 clamp(1.6rem,5.5vw,2.2rem)/1.15 var(--display);margin:12px 0 8px;text-wrap:balance}
+.hero p{margin:0 0 16px;color:#d4e3f7;max-width:60ch}
+.indice{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.indice a{display:flex;align-items:center;min-height:48px;padding:10px 14px;border-radius:14px;background:rgba(255,255,255,.12);color:#fff;font-weight:700;text-decoration:none;line-height:1.25}
+.indice a:focus-visible,.btn:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 22px;border-radius:999px;font:700 1rem/1 var(--body);text-decoration:none;text-align:center}
+.btn-main{background:var(--xp);color:var(--on-xp);box-shadow:0 5px 0 var(--xp-2)}
+.btn-line{background:var(--accent-soft);color:var(--accent)}
+section{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px 20px;margin-top:16px;box-shadow:var(--shadow);scroll-margin-top:12px}
+h2{font:700 1.3rem/1.25 var(--display);margin:0 0 6px}
+.sub{color:var(--muted);margin:0 0 16px}
+ol.passos{list-style:none;margin:0;padding:0;display:grid;gap:16px;counter-reset:p}
+ol.passos>li{counter-increment:p;display:grid;grid-template-columns:40px minmax(0,1fr);gap:12px;align-items:start}
+ol.passos a{overflow-wrap:anywhere}
+ol.passos>li::before{content:counter(p);width:40px;height:40px;border-radius:12px;background:var(--accent-soft);color:var(--accent);font:700 1.1rem/40px var(--display);text-align:center}
+ol.passos b{display:block}
+ol.passos p{margin:2px 0 0;color:var(--muted)}
+.lojas{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.lojas a{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border:1px solid var(--line);border-radius:12px;font-weight:700;text-decoration:none;font-size:.95rem}
+.senha{margin-top:8px;padding:12px 14px;border-radius:12px;background:var(--accent-soft);color:var(--fg)}
+.senha code{font:700 1.05rem/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.02em}
+ul.lugares{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+ul.lugares li{padding:14px;border:1px solid var(--line);border-radius:14px}
+ul.lugares b{display:block;font-size:1.05rem}
+ul.lugares p{margin:2px 0 8px;color:var(--muted)}
+ul.lugares a{font-weight:700;display:inline-flex;align-items:center;min-height:44px}
+ul.check{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+ul.check label{display:grid;grid-template-columns:28px 1fr;gap:12px;align-items:start;padding:12px 14px;border:1px solid var(--line);border-radius:14px;cursor:pointer;min-height:48px}
+ul.check input{width:24px;height:24px;margin:1px 0 0;accent-color:var(--ok)}
+ul.check input:checked+span{color:var(--muted);text-decoration:line-through}
+ul.check label:has(input:checked){background:var(--ok-soft);border-color:#b7e2cf}
+.progresso{margin:14px 0 0;font-weight:700;color:var(--ok)}
+.nota{color:var(--muted);font-size:.95rem;margin:12px 0 0}
+.final{text-align:center}
+@media (min-width:720px){.hero{padding:32px}.wrap{padding-top:24px}section{padding:26px 28px}.indice{grid-template-columns:repeat(4,1fr)}}
+@media (prefers-reduced-motion:no-preference){.btn{transition:transform .15s}.btn:active{transform:translateY(2px)}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="/assets/logo-csv.webp" alt="Cruzeiro do Sul Virtual, Educação a distância" width="666" height="168">
+    <a href="/login" data-com-origem>Entrar</a>
+  </header>
+
+  <div class="hero">
+    <span class="tag">Seu kit de calouro</span>
+    <h1>Tudo para começar o curso, num lugar só</h1>
+    <p>Sem pressa. Guarde esta página e volte quando for a hora: aqui estão o primeiro acesso à faculdade, onde ficam as aulas e como pedir ajuda.</p>
+    <ul class="indice" aria-label="Neste kit">
+      <li><a href="#acesso">Primeiro acesso</a></li>
+      <li><a href="#lugares">Onde fica cada coisa</a></li>
+      <li><a href="#semana">Lista da 1ª semana</a></li>
+      <li><a href="#ajuda">Ajuda</a></li>
+    </ul>
+  </div>
+
+  <section id="acesso" aria-labelledby="t-acesso">
+    <h2 id="t-acesso">Primeiro acesso à faculdade</h2>
+    <p class="sub">Leva uns 10 minutos. Tenha o seu CPF e o seu RGM (o número da matrícula) por perto.</p>
+    <ol class="passos">
+      <li><div>
+        <b>Baixe os dois aplicativos</b>
+        <p>O Duda é a porta de entrada da faculdade. O Microsoft Authenticator, o do cadeado azul, confirma que é você.</p>
+        <div class="lojas">
+          <a href="https://apps.apple.com/br/app/duda/id6451416655" target="_blank" rel="noopener noreferrer">Duda no iPhone</a>
+          <a href="https://play.google.com/store/apps/details?id=br.com.cruzeirodosulvirtual" target="_blank" rel="noopener noreferrer">Duda no Android</a>
+          <a href="https://apps.apple.com/br/app/microsoft-authenticator/id983156458" target="_blank" rel="noopener noreferrer">Authenticator no iPhone</a>
+          <a href="https://play.google.com/store/apps/details?id=com.azure.authenticator" target="_blank" rel="noopener noreferrer">Authenticator no Android</a>
+        </div>
+      </div></li>
+      <li><div>
+        <b>Descubra o seu e-mail acadêmico</b>
+        <p>Abra <a href="https://emailacademico.cruzeiroead.com.br/descobrir" target="_blank" rel="noopener noreferrer">emailacademico.cruzeiroead.com.br/descobrir</a>, digite o CPF e toque em Continuar. Anote o e-mail num papel.</p>
+      </div></li>
+      <li><div>
+        <b>Monte a primeira senha</b>
+        <p>As 3 primeiras letras do nome (a primeira maiúscula), @, os 3 primeiros números do RGM e os 4 primeiros do CPF.</p>
+        <p class="senha">Ana Souza, RGM 512…, CPF 9876… → <code>Ana@5129876</code></p>
+      </div></li>
+      <li><div>
+        <b>Crie a sua senha e ligue o Authenticator</b>
+        <p>Na tela da Microsoft, troque a primeira senha por uma só sua e anote: ela vale para o curso inteiro. Depois siga a tela para ligar o Authenticator.</p>
+      </div></li>
+      <li><div>
+        <b>Entre no Duda</b>
+        <p>Digite o CPF e toque em Fazer login. Vai aparecer um número: abra o Authenticator, digite o número e toque em SIM. No Duda, o botão Acessar Blackboard abre as suas aulas.</p>
+      </div></li>
+    </ol>
+    <p class="nota">A senha da faculdade é diferente da senha do app do aluno.</p>
+  </section>
+
+  <section id="lugares" aria-labelledby="t-lugares">
+    <h2 id="t-lugares">Onde fica cada coisa</h2>
+    <p class="sub">Você vai usar quatro lugares.</p>
+    <ul class="lugares">
+      <li><b>App Duda</b><p>A porta de entrada, no celular. É por ele que você chega às aulas.</p></li>
+      <li><b>AVA (Blackboard)</b><p>Onde ficam as aulas, as atividades e as provas. São dois nomes para a mesma coisa.</p>
+        <a href="https://ava.cruzeirodosul.edu.br/" target="_blank" rel="noopener noreferrer">Abrir o AVA</a></li>
+      <li><b>Área do Aluno</b><p>O site da sua matrícula: notas, pagamentos e pedidos.</p>
+        <a href="https://novoportal.cruzeirodosul.edu.br/" target="_blank" rel="noopener noreferrer">Abrir a Área do Aluno</a></li>
+      <li><b>App do aluno</b><p>Este app: a Aula Inaugural, que vale certificado de 4 horas, vídeos de ajuda e o passo a passo do primeiro acesso.</p>
+        <a href="/login" data-com-origem>Entrar no app do aluno</a></li>
+    </ul>
+  </section>
+
+  <section id="semana" aria-labelledby="t-semana">
+    <h2 id="t-semana">Lista da primeira semana</h2>
+    <p class="sub">Marque o que já fez. A lista fica guardada neste celular.</p>
+    <ul class="check" data-check>
+      <li><label><input type="checkbox" value="apps"><span>Baixei o Duda e o Authenticator</span></label></li>
+      <li><label><input type="checkbox" value="email"><span>Descobri o meu e-mail acadêmico</span></label></li>
+      <li><label><input type="checkbox" value="senha"><span>Criei a minha senha e anotei num lugar seguro</span></label></li>
+      <li><label><input type="checkbox" value="duda"><span>Entrei no Duda e abri o AVA</span></label></li>
+      <li><label><input type="checkbox" value="video"><span>Assisti ao vídeo de como funciona o curso</span></label></li>
+      <li><label><input type="checkbox" value="aula"><span>Comecei a Aula Inaugural</span></label></li>
+    </ul>
+    <p class="progresso" data-progresso aria-live="polite" hidden></p>
+    <div class="cta">
+      <a class="btn btn-line" href="/como-funciona" data-com-origem>Ver como funciona o curso</a>
+    </div>
+  </section>
+
+  <section id="ajuda" aria-labelledby="t-ajuda">
+    <h2 id="t-ajuda">Precisa de ajuda?</h2>
+    <p class="sub">Travou em algum passo? Responda a mensagem do WhatsApp oficial do Atendimento ao Aluno em que você recebeu este link e escreva onde parou. Uma pessoa da equipe responde.</p>
+    <p class="nota">A Cruzeiro do Sul nunca pede a sua senha nem pagamento por WhatsApp fora do canal oficial.</p>
+  </section>
+
+  <section class="final" aria-labelledby="t-fim">
+    <h2 id="t-fim">Quando quiser, é só entrar</h2>
+    <p class="sub">No app do aluno você faz a Aula Inaugural e vê o primeiro acesso com vídeos.</p>
+    <a class="btn btn-main" href="/login" data-com-origem>Entrar no app do aluno</a>
+  </section>
+</div>
+<script>
+(function () {
+  // Leva a origem do link (?o=enxoval) para o login e para a página Como funciona (server/instrumentacao.js).
+  try {
+    var o = new URLSearchParams(location.search).get('o');
+    if (o && /^[a-z0-9_-]{1,24}$/i.test(o)) {
+      document.querySelectorAll('[data-com-origem]').forEach(function (a) {
+        a.setAttribute('href', a.getAttribute('href') + '?o=' + encodeURIComponent(o.toLowerCase()));
+      });
+    }
+  } catch (e) { /* sem origem */ }
+
+  // Lista da primeira semana: só neste aparelho (sem login). Sem armazenamento, a lista funciona sem guardar.
+  var CHAVE = 'csu_enxoval_lista';
+  var lista = document.querySelector('[data-check]');
+  var aviso = document.querySelector('[data-progresso]');
+  if (!lista) return;
+  var caixas = Array.prototype.slice.call(lista.querySelectorAll('input[type=checkbox]'));
+  function ler() { try { return JSON.parse(localStorage.getItem(CHAVE) || '[]'); } catch (e) { return []; } }
+  function gravar(v) { try { localStorage.setItem(CHAVE, JSON.stringify(v)); } catch (e) { /* sem armazenamento */ } }
+  function atualizar() {
+    var feitos = caixas.filter(function (c) { return c.checked; }).length;
+    aviso.hidden = feitos === 0;
+    aviso.textContent = feitos === caixas.length
+      ? 'Tudo pronto. Boa jornada!'
+      : feitos + ' de ' + caixas.length + ' feitos.';
+  }
+  var salvos = ler();
+  caixas.forEach(function (c) { c.checked = salvos.indexOf(c.value) >= 0; });
+  lista.addEventListener('change', function () {
+    gravar(caixas.filter(function (c) { return c.checked; }).map(function (c) { return c.value; }));
+    atualizar();
+  });
+  atualizar();
+})();
+</script>
+</body>
+</html>

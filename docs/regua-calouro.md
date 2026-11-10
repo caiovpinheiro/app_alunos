@@ -117,6 +117,7 @@ A troca de senha no primeiro acesso existe (`server/senha.js`), mas está deslig
 | `bv_lembrete` | link do login no reenvio do follow-up |
 | `bv_curso` | página Como funciona a partir do botão Sobre o Curso |
 | `cert`, `cert_erro` | avisos de certificado de 06/11/2026 |
+| `enxoval`, `enxoval_d3`, `enxoval_d7` | página do enxoval do calouro (`docs/enxoval.md`), para quem não quer entrar agora ou não responde |
 
 ### Admin
 
@@ -143,6 +144,8 @@ Quem contatar: a busca por RGM, nome ou e-mail procura em todos os alunos, ignor
 3. Não há follow-up para quem entrou e não começou a Aula Inaugural.
 4. Atendimento por pessoas: 189 conversas esperando e 169 com SLA crítico em 07/11 de manhã. A cadência nova manda para lá quem não toca em 24 h.
 
+Para quem não quer entrar agora ou não responde, há o enxoval do calouro: página `/enxoval` e templates em rascunho (`docs/enxoval.md`), ainda sem gatilho ligado.
+
 O fluxo antigo de ativação no n8n que usa o Kommo está fora desta régua: o Kommo não é mais usado.
 
 ## Histórico
@@ -156,3 +159,4 @@ O fluxo antigo de ativação no n8n que usa o Kommo está fora desta régua: o K
 | 07/11 | Situação de acesso no app (PR #13) e Follow-up pós-link ligado. |
 | 07/11 | email_acad: o template esperava resposta por 24 h e, sem resposta, pulava a chamada do follow-up; agora espera 1 min e segue. Quem recebeu o e-mail antes da correção entra no follow-up quando a espera antiga de 24 h vencer. |
 | 07/11 | Cadência de quem não toca: lembrete em 2 h (antes 24 h) e pessoa em 24 h (antes encerrava em 48 h). "Conseguiu entender?" espera 30 min (antes 1 min). "Preciso de ajuda" do `fup_bv_calouros` chama uma pessoa. Textos do portal da faculdade separam a senha de lá da senha do app. |
+| 10/11 | Página do enxoval do calouro (`/enxoval`) e rascunho de três templates; nenhum gatilho ligado. |
