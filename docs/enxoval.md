@@ -1,8 +1,10 @@
 # Enxoval do calouro
 
+> **Regra:** "enxoval" é só o nome interno deste material. Com o aluno, nunca use a palavra: fale em "passo a passo do primeiro acesso", "guia" e "vídeo". As peças trazem no rodapé "Seus primeiros passos".
+
 Atualizado em 10/11/2026. Kit para o calouro de Graduação EaD que **não quer entrar no app agora** ou **não responde** a régua de boas-vindas (`docs/regua-calouro.md`). Chega pelo WhatsApp em peças curtas: mensagens intercaladas com 5 artes e um guia em PDF para guardar.
 
-**Estado:** as artes e o PDF estão prontos neste PR. Os textos das mensagens e dos templates estão escritos, mas os templates ainda não foram enviados para aprovação da Meta e nenhum gatilho está ligado. O primeiro envio é só para o dono do projeto, como teste.
+**Estado (10/11/2026):** as artes e o PDF estão no ar. Os dois templates foram enviados à Meta como utilidade e esperam aprovação. Nenhum gatilho está ligado. O primeiro envio é só para o dono do projeto, como teste.
 
 ## Peças
 
@@ -37,15 +39,17 @@ Fora da janela de 24 h só sai template aprovado, com no máximo uma imagem ou u
 
 Cabeçalho: imagem `arte-1-aplicativos.png`.
 
-> Olá, {{1}}! Sua matrícula está ativa e separamos o seu enxoval de calouro: o passo a passo do primeiro acesso, a mensalidade e as disciplinas, em imagens curtas e um guia para guardar. Toque em RECEBER MEU ENXOVAL e mandamos tudo aqui.
+> (Texto enviado à Meta em 10/11, **a retirar** porque usa a palavra "enxoval". Na régua do comercial esta abertura não é necessária: ver `docs/proposta-regua-comercial.md`.)
 
-Botões (resposta rápida): **Receber meu enxoval** · **Agora não**.
+Botões enviados: "Receber meu enxoval" · "Agora não" (também a retirar).
 
-### 2. Ao tocar em "Receber meu enxoval" (mensagens comuns, janela aberta)
+### 2. O passo a passo (mensagens comuns, janela aberta)
+
+Sai quando o aluno escolhe não ser atendido agora. A primeira mensagem é: "Tudo bem! 😊 Para você entrar quando quiser, aqui está o passo a passo do seu primeiro acesso: um vídeo curto, 5 imagens e um guia para guardar." Em seguida:
 
 | # | Tipo | Conteúdo |
 |---|---|---|
-| a | texto | Que bom! São 5 imagens curtas e um guia em PDF. Comece pelos aplicativos 👇 |
+| a | vídeo | Primeiro acesso (Kairo). Legenda: Em menos de 1 minuto, o caminho completo para entrar. |
 | b | imagem `arte-1` | Legenda: *Duda* · iPhone: https://apps.apple.com/br/app/duda/id6451416655 · Android: https://play.google.com/store/apps/details?id=br.com.cruzeirodosulvirtual — *Authenticator* · iPhone: https://apps.apple.com/br/app/microsoft-authenticator/id983156458 · Android: https://play.google.com/store/apps/details?id=com.azure.authenticator |
 | c | imagem `arte-2` | Legenda: Descubra o seu e-mail acadêmico com o CPF: https://emailacademico.cruzeiroead.com.br/descobrir |
 | d | imagem `arte-3` | Legenda: Crie uma senha só sua e anote num lugar seguro. Ela vale para o curso inteiro. |
@@ -63,11 +67,11 @@ Sai 3 dias depois, só se o aluno ainda não entrou na faculdade nem no app. A c
 
 Cabeçalho: documento `guia-do-calouro.pdf`.
 
-> {{1}}, deixamos aqui o seu guia do calouro, com o primeiro acesso, a mensalidade e as disciplinas. Guarde para quando for a hora. Se travou em algum passo, responda esta mensagem contando onde parou.
+> Olá, {{1}}! Deixamos aqui o seu guia do calouro, com o primeiro acesso, a mensalidade e as disciplinas. Guarde para quando for a hora. Se travou em algum passo, responda esta mensagem contando onde parou.
 
 Botões (resposta rápida): **Preciso de ajuda** · **Já consegui**.
 
-Os dois templates são de **utilidade**: falam da matrícula que já existe, sem oferta nem promoção. `{{1}}` é o primeiro nome.
+Os dois templates são de **utilidade**: falam da matrícula que já existe, sem oferta nem promoção. `{{1}}` é o primeiro nome. A Meta recusa corpo que começa ou termina com a variável, por isso os dois abrem com "Olá, {{1}}!". Foram criados pela tela Configurações › Modelos de mensagem do CRM, no canal oficial, com a mídia de exemplo das peças publicadas.
 
 ## Gatilhos possíveis (nenhum ligado)
 
@@ -79,11 +83,11 @@ Os dois templates são de **utilidade**: falam da matrícula que já existe, sem
 
 ## Medição
 
-O link do app no PDF leva a origem `?o=enxoval_pdf`, e a entrada aparece na aba Medição por origem. No CRM, conte os toques em "Receber meu enxoval", "Já consegui" e "Preciso de ajuda".
+O link do app no PDF leva a origem `?o=guia_pdf`, e a entrada aparece na aba Medição por origem. No CRM, conte os toques em "Agora não", "Já consegui" e "Preciso de ajuda".
 
 ## Próximos passos
 
-1. Publicar as peças (este PR), para elas terem endereço público.
-2. Mandar `enxoval_calouro` e `enxoval_guia` para aprovação da Meta pelo CRM.
+1. ~~Publicar as peças~~ (PR #17, 10/11).
+2. ~~Mandar `enxoval_calouro` e `enxoval_guia` para aprovação da Meta~~ (10/11, aguardando).
 3. Teste só com o número do dono do projeto: uma automação desligada para os alunos e disparada à mão.
 4. Escolher os gatilhos e ligar, com cópia da automação antes da mudança (regra do `docs/regua-calouro.md`).
