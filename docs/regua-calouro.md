@@ -122,6 +122,8 @@ A troca de senha no primeiro acesso existe (`server/senha.js`), mas está deslig
 
 Quem contatar: a busca por RGM, nome ou e-mail procura em todos os alunos, ignorando Mostrar, Etapa e datas, e abre o percurso quando acha um só (PR #12, publicado em 07/11). Medição: entradas por origem e falhas de login por motivo (`docs/instrumentacao.md`).
 
+Fluxo do Acolhimento (Ferramentas): desenho editável da etapa seguinte, Comercial → Acolhimento. Só desenho, não dispara nada nem muda esta régua (`docs/fluxo-acolhimento.md`).
+
 ## Como medir
 
 - **Toque no botão**: dos negócios que entraram depois das mudanças de 06/11, 83% tocaram em "Quero meu acesso" (19 de 23); antes eram 75% (202 de 268), metade em até 6 min.

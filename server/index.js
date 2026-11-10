@@ -32,6 +32,7 @@ const ajudaPedidos = require('./ajuda-pedidos');
 const avaliacoes = require('./avaliacoes');
 const instrumentacao = require('./instrumentacao');
 const medicao = require('./medicao');
+const fluxoAcolhimento = require('./fluxo-acolhimento');
 const preparo = require('./preparo');
 const dadosAcesso = require('./dadosAcesso');
 const certificado = require('./certificado');
@@ -131,6 +132,8 @@ app.post('/api/admin/sync-from-matriculados', async (req, res) => {
 
 // Área de simulado (oculta): respostas discursivas passam de 20 KB; o upload usa corpo bruto na rota.
 app.use('/api/simulado', express.json({ limit: '300kb' }));
+// Fluxo do Acolhimento (admin): o desenho inteiro vai num PUT só e pode passar de 20 KB.
+app.use('/api/admin/fluxo-acolhimento', express.json({ limit: '300kb' }));
 app.use(express.json({ limit: '20kb' }));
 
 app.get('/health', async (req, res) => {
@@ -1802,6 +1805,9 @@ app.get('/api/admin/medicao', requireAdmin, async (req, res) => {
     return res.status(500).json({ success: false, message: 'Não foi possível carregar a Medição.' });
   }
 });
+// Fluxo do Acolhimento: desenho editável das mensagens Comercial → Acolhimento. Só desenho, não dispara nada.
+fluxoAcolhimento.registrarRotas(app, { getPool: () => pool, requireAdmin });
+
 // Acesso em preparação (aluno sem RGM): o polo cria a conta e depois informa o RGM.
 preparo.registrar(app, { pool, requireAdmin });
 // Dados de acesso à faculdade (RGM, curso, e-mail acadêmico): o polo sobe; o aluno consulta.
