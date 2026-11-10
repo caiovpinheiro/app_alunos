@@ -1,0 +1,26 @@
+/* Artes do enxoval do calouro (1080 x 1350, formato retrato do WhatsApp). Mesmas cores da Aula Inaugural. */
+@import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;700&family=Poppins:wght@600;700&display=swap");
+:root{--bg:#eef4fb;--fg:#0b1f38;--muted:#45566e;--line:#d3dfee;--accent:#0a4fa6;--accent-soft:#e3edfc;
+  --solid:#00356b;--hero-2:#0b56b0;--xp:#ffc72c;--xp-2:#f59a00;--on-xp:#2b1d00;--ok:#13795b;--ok-soft:#e2f4ec;--warn-soft:#fff4d6;
+  --display:"Poppins","Segoe UI",system-ui,sans-serif;--body:"Atkinson Hyperlegible Next","Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif}
+*{box-sizing:border-box;margin:0}
+html,body{width:1080px;height:1350px;overflow:hidden}
+body{background:var(--bg);color:var(--fg);font:400 36px/1.4 var(--body);display:flex;flex-direction:column}
+.topo{background:linear-gradient(135deg,var(--solid),var(--hero-2));color:#fff;padding:64px 72px 56px;border-radius:0 0 48px 48px}
+.tag{display:inline-block;font:700 26px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;background:var(--xp);color:var(--on-xp);padding:14px 22px;border-radius:999px}
+h1{font:700 80px/1.08 var(--display);margin-top:28px;letter-spacing:-.01em}
+.topo p{margin-top:18px;font-size:38px;color:#d4e3f7}
+main{flex:1;min-height:0;padding:44px 72px 0;display:flex;flex-direction:column;gap:28px}
+.cartao{background:#fff;border:2px solid var(--line);border-radius:36px;padding:36px 40px}
+.cartao h2{font:700 44px/1.15 var(--display)}
+.cartao p{margin-top:10px;color:var(--muted)}
+.rodape{display:flex;align-items:center;justify-content:space-between;padding:32px 72px 48px;color:var(--muted);font-size:28px}
+.rodape img{height:64px;width:auto}
+.passos{display:flex;flex-direction:column;gap:22px}
+.passo{display:grid;grid-template-columns:84px 1fr;gap:28px;align-items:center;background:#fff;border:2px solid var(--line);border-radius:32px;padding:24px 34px}
+.passo .n{width:84px;height:84px;border-radius:24px;background:var(--accent-soft);color:var(--accent);font:700 46px/84px var(--display);text-align:center}
+.passo b{display:block;font:700 40px/1.2 var(--display)}
+.passo span{display:block;color:var(--muted);font-size:34px;margin-top:4px}
+.destaque{background:var(--warn-soft);border:2px solid #f3d27a;border-radius:32px;padding:28px 36px;font-size:34px}
+.destaque b{font-weight:700}
+mark{background:var(--xp);color:var(--on-xp);padding:0 10px;border-radius:10px}

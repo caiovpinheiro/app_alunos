@@ -1,0 +1,28 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><link rel="stylesheet" href="arte.css">
+<style>
+.formula{display:flex;align-items:stretch;justify-content:center;gap:14px;margin-top:22px}
+.peca{flex:1;text-align:center;border-radius:26px;padding:22px 8px 18px;background:var(--accent-soft)}
+.peca code{display:block;font:700 54px/1.1 ui-monospace,Menlo,monospace;color:var(--accent)}
+.peca small{display:block;font-size:24px;line-height:1.2;color:var(--muted);margin-top:10px}
+.peca.arroba{flex:.55;background:var(--xp)}.peca.arroba code{color:var(--on-xp)}.peca.arroba small{color:var(--on-xp)}
+.resultado{margin-top:26px;text-align:center;font-size:34px;color:var(--muted)}
+.resultado code{display:block;margin-top:8px;font:700 76px/1.1 ui-monospace,Menlo,monospace;color:var(--fg);letter-spacing:.02em}
+</style></head><body>
+<header class="topo"><span class="tag">Passo 2 · Primeiro acesso</span>
+<h1>Sua primeira senha</h1><p>Você mesmo monta, com o nome, o RGM e o CPF.</p></header>
+<main>
+  <div class="cartao">
+    <h2>Exemplo: Ana Souza</h2>
+    <p>RGM 512… · CPF 9876…</p>
+    <div class="formula">
+      <div class="peca"><code>Ana</code><small>3 letras do nome, 1ª maiúscula</small></div>
+      <div class="peca arroba"><code>@</code><small>arroba</small></div>
+      <div class="peca"><code>512</code><small>3 primeiros números do RGM</small></div>
+      <div class="peca"><code>9876</code><small>4 primeiros números do CPF</small></div>
+    </div>
+    <p class="resultado">Primeira senha<code>Ana@5129876</code></p>
+  </div>
+  <div class="destaque">📧 Para descobrir o seu <b>e-mail acadêmico</b>, use o link da mensagem abaixo e digite o seu CPF. Anote o e-mail e a senha num papel.</div>
+</main>
+<footer class="rodape"><img src="../../public/assets/logo-csv.webp" alt="Cruzeiro do Sul Virtual"><span>Enxoval do calouro · 2 de 5</span></footer>
+</body></html>

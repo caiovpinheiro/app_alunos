@@ -1998,11 +1998,6 @@ app.get('/a/:token', (req, res) => {
 app.get(['/como-funciona', '/como-funciona.html'], (req, res) => {
   res.sendFile('como-funciona.html', { root: PUBLIC_DIR });
 });
-// Página aberta, sem login: enxoval do calouro (primeiro acesso, onde fica cada coisa, lista da semana, ajuda),
-// para quem ainda não quer entrar no app ou não respondeu a régua. Links com ?o=enxoval.
-app.get(['/enxoval', '/enxoval.html'], (req, res) => {
-  res.sendFile('enxoval.html', { root: PUBLIC_DIR });
-});
 
 // Grupo de estudo do curso (GRUPO_ESTUDO_ATIVA_PARA): rotas próprias em server/grupo-estudo.js.
 require('./grupo-estudo').montar(app, { pool, authMiddleware, requireAdmin, ensureAcompanhamento, enviarIndex });

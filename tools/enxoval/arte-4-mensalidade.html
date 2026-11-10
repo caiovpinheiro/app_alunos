@@ -1,0 +1,27 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><link rel="stylesheet" href="arte.css">
+<style>
+.faixas{display:flex;flex-direction:column;gap:14px}
+main{gap:22px}
+.destaque,.pagar{font-size:31px;padding:24px 34px}
+.faixa{display:grid;grid-template-columns:300px 1fr;align-items:center;border-radius:30px;padding:22px 34px;background:#fff;border:2px solid var(--line)}
+.faixa .dias{font:700 40px/1.15 var(--display)}
+.faixa .val{font:700 54px/1 var(--display);text-align:right}
+.faixa.melhor{background:var(--ok-soft);border-color:#9fd8bf}.faixa.melhor .val{color:var(--ok)}
+.faixa.bom .val{color:var(--accent)}
+.faixa.depois .val{font-size:34px;color:var(--muted);font-family:var(--body);line-height:1.25}
+.pagar{font-size:33px}
+.pagar b{font-weight:700}
+</style></head><body>
+<header class="topo"><span class="tag">Mensalidade</span>
+<h1>Vence todo dia 25</h1><p>Pagar cedo sai mais barato.</p></header>
+<main>
+  <div class="faixas">
+    <div class="faixa melhor"><span class="dias">Até o dia 10</span><span class="val">25% de desconto</span></div>
+    <div class="faixa bom"><span class="dias">Do dia 11 ao 25</span><span class="val">15% de desconto</span></div>
+    <div class="faixa depois"><span class="dias">Depois do 25</span><span class="val">Perde só o desconto de pontualidade. A bolsa continua.</span></div>
+  </div>
+  <div class="destaque"><b>1ª mensalidade:</b> o desconto maior vale até o dia 25. Dia 10 caiu no fim de semana ou feriado? Os 25% valem até o dia útil seguinte.</div>
+  <div class="cartao pagar"><b>Como pagar:</b> Área do Aluno › Pagar Mensalidade. PIX, cartão ou boleto. Use sempre o <b>último</b> boleto ou código gerado e confira valor e data antes de pagar.</div>
+</main>
+<footer class="rodape"><img src="../../public/assets/logo-csv.webp" alt="Cruzeiro do Sul Virtual"><span>Enxoval do calouro · 4 de 5</span></footer>
+</body></html>
