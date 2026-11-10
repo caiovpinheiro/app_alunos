@@ -1,0 +1,237 @@
+{
+  "nodes": [
+    {
+      "id": "start",
+      "title": "Início",
+      "content": "Matrícula concluída",
+      "type": "trigger",
+      "x": 80,
+      "y": 350
+    },
+    {
+      "id": "validate",
+      "title": "Validação",
+      "content": "RGM e formação preenchidos?",
+      "type": "decision",
+      "x": 360,
+      "y": 350
+    },
+    {
+      "id": "missing",
+      "title": "Pendência de dados",
+      "content": "Criar nota interna e interromper disparos",
+      "type": "action",
+      "x": 650,
+      "y": 90
+    },
+    {
+      "id": "welcome",
+      "title": "Comercial · mensagem 1",
+      "content": "🎓 *Sua matrícula está confirmada!*\n\nParabéns por essa conquista! 💙\n\nSeu RGM: {{dealCustomFields.rgm}}\n\n🚀 *Seu acesso estará disponível em instantes!*\n\nNossa equipe vai ajudar você a começar.",
+      "type": "message",
+      "x": 650,
+      "y": 400
+    },
+    {
+      "id": "financial",
+      "title": "Comercial · orientação financeira",
+      "content": "💳 Para manter o maior desconto previsto na matrícula, realize o pagamento até o dia 10 de cada mês.\n\nConfira o desconto e o valor final no boleto.",
+      "type": "message",
+      "x": 940,
+      "y": 400
+    },
+    {
+      "id": "invite",
+      "title": "Comercial · convite ao acolhimento",
+      "content": "💙 *Que tal dar seu primeiro passo agora?*\n\nNosso Time de Acolhimento pode mostrar como acessar a plataforma e encontrar suas aulas, aqui mesmo neste WhatsApp.\n\n*Podemos começar?*\n✅ Sim, agora\n🕒 Prefiro depois",
+      "type": "message",
+      "x": 1230,
+      "y": 400
+    },
+    {
+      "id": "choice",
+      "title": "Resposta do aluno",
+      "content": "Qual opção o aluno escolheu?",
+      "type": "decision",
+      "x": 1530,
+      "y": 400
+    },
+    {
+      "id": "now",
+      "title": "Sim, agora",
+      "content": "Confirmar escolha e transferir para acolhimento imediatamente",
+      "type": "action",
+      "x": 1840,
+      "y": 130
+    },
+    {
+      "id": "later",
+      "title": "Prefiro depois",
+      "content": "Perguntar melhor período: manhã / tarde / noite",
+      "type": "message",
+      "x": 1840,
+      "y": 410
+    },
+    {
+      "id": "silent",
+      "title": "Sem resposta",
+      "content": "Aguardar janela definida e enviar lembrete moderado",
+      "type": "action",
+      "x": 1840,
+      "y": 690
+    },
+    {
+      "id": "schedule",
+      "title": "Agendamento",
+      "content": "Registrar preferência e criar tarefa para acolhimento",
+      "type": "action",
+      "x": 2150,
+      "y": 410
+    },
+    {
+      "id": "retry",
+      "title": "Nova tentativa",
+      "content": "Oferecer orientação novamente; limitar tentativas",
+      "type": "message",
+      "x": 2150,
+      "y": 690
+    },
+    {
+      "id": "handoff",
+      "title": "Transferência interna",
+      "content": "Manter mesmo WhatsApp, histórico e dados; atribuir à equipe de acolhimento",
+      "type": "action",
+      "x": 2450,
+      "y": 180
+    },
+    {
+      "id": "intro",
+      "title": "Acolhimento · apresentação",
+      "content": "Oi! 😊 Sou {{nome_atendente}}, do Time de Acolhimento Acadêmico. 💙\n\nRecebi seu atendimento e vou ajudar você a acessar a plataforma e encontrar suas aulas.\n\n*Vamos fazer seu primeiro acesso juntos?*",
+      "type": "message",
+      "x": 2750,
+      "y": 180
+    },
+    {
+      "id": "check",
+      "title": "Verificar primeiro acesso",
+      "content": "Aluno conseguiu entrar na plataforma?",
+      "type": "decision",
+      "x": 3070,
+      "y": 180
+    },
+    {
+      "id": "success",
+      "title": "Acesso confirmado",
+      "content": "Registrar primeiro_acesso_confirmado_em e concluir acolhimento inicial",
+      "type": "success",
+      "x": 3380,
+      "y": 40
+    },
+    {
+      "id": "support",
+      "title": "Precisa de ajuda",
+      "content": "Diagnosticar erro, orientar e acompanhar até solução",
+      "type": "action",
+      "x": 3380,
+      "y": 320
+    }
+  ],
+  "edges": [
+    {
+      "from": "start",
+      "to": "validate",
+      "label": ""
+    },
+    {
+      "from": "validate",
+      "to": "missing",
+      "label": "Não"
+    },
+    {
+      "from": "validate",
+      "to": "welcome",
+      "label": "Sim"
+    },
+    {
+      "from": "welcome",
+      "to": "financial",
+      "label": ""
+    },
+    {
+      "from": "financial",
+      "to": "invite",
+      "label": ""
+    },
+    {
+      "from": "invite",
+      "to": "choice",
+      "label": ""
+    },
+    {
+      "from": "choice",
+      "to": "now",
+      "label": "Agora"
+    },
+    {
+      "from": "choice",
+      "to": "later",
+      "label": "Depois"
+    },
+    {
+      "from": "choice",
+      "to": "silent",
+      "label": "Sem resposta"
+    },
+    {
+      "from": "now",
+      "to": "handoff",
+      "label": ""
+    },
+    {
+      "from": "later",
+      "to": "schedule",
+      "label": ""
+    },
+    {
+      "from": "schedule",
+      "to": "handoff",
+      "label": "No horário combinado"
+    },
+    {
+      "from": "silent",
+      "to": "retry",
+      "label": ""
+    },
+    {
+      "from": "retry",
+      "to": "choice",
+      "label": "Se responder"
+    },
+    {
+      "from": "handoff",
+      "to": "intro",
+      "label": ""
+    },
+    {
+      "from": "intro",
+      "to": "check",
+      "label": ""
+    },
+    {
+      "from": "check",
+      "to": "success",
+      "label": "Sim"
+    },
+    {
+      "from": "check",
+      "to": "support",
+      "label": "Não"
+    },
+    {
+      "from": "support",
+      "to": "check",
+      "label": "Após suporte"
+    }
+  ]
+}
