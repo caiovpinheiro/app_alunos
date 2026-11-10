@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<style>
+/* Base equivalente à da página publicada como Artifact (padding de área segura, reset). */
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;font-size:14px;font-family:system-ui,sans-serif}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<title>Régua do Comercial</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head><body>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Atkinson+Hyperlegible+Next:wght@400;700&display=swap">
+<style>
+/* Layout: protótipo do celular à esquerda (o que o aluno vê) e, ao lado, a leitura da régua (o que está acontecendo e por quê). */
+:root{
+  --bg:#eef3f9; --surface:#ffffff; --fg:#0b1f38; --muted:#4b5d75; --line:#d5e0ee;
+  --brand:#00356b; --brand-2:#0b56b0; --accent:#ffc72c; --on-accent:#2b1d00;
+  --ok:#13795b; --ok-soft:#e2f4ec; --info:#0a4fa6; --info-soft:#e3edfc; --warn:#8a5a00; --warn-soft:#fff4d6;
+  --wa-bg:#efe7dd; --wa-in:#ffffff; --wa-out:#d9fdd3; --wa-ink:#111b21; --wa-meta:#667781; --wa-head:#008069; --wa-link:#027eb5;
+  --display:"Poppins","Segoe UI",system-ui,sans-serif; --body:"Atkinson Hyperlegible Next","Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0b1522; --surface:#122133; --fg:#e8eef6; --muted:#9fb1c7; --line:#24364c;
+  --brand:#9cc3ff; --brand-2:#5c95e6; --accent:#ffc72c; --on-accent:#2b1d00;
+  --ok:#5fd3a5; --ok-soft:#0f3329; --info:#8fb8ff; --info-soft:#14294a; --warn:#ffd36b; --warn-soft:#3a2d0c;
+  --wa-bg:#0b141a; --wa-in:#202c33; --wa-out:#005c4b; --wa-ink:#e9edef; --wa-meta:#8696a0; --wa-head:#202c33; --wa-link:#53bdeb;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0b1522; --surface:#122133; --fg:#e8eef6; --muted:#9fb1c7; --line:#24364c;
+  --brand:#9cc3ff; --brand-2:#5c95e6; --accent:#ffc72c; --on-accent:#2b1d00;
+  --ok:#5fd3a5; --ok-soft:#0f3329; --info:#8fb8ff; --info-soft:#14294a; --warn:#ffd36b; --warn-soft:#3a2d0c;
+  --wa-bg:#0b141a; --wa-in:#202c33; --wa-out:#005c4b; --wa-ink:#e9edef; --wa-meta:#8696a0; --wa-head:#202c33; --wa-link:#53bdeb;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:400 16px/1.5 var(--body);margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
+a{color:var(--info)}
+button{font:inherit}
+button:focus-visible,.bubble img:focus-visible,.doc:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+/* Cabeçalho */
+.topo{display:flex;flex-wrap:wrap;gap:16px 28px;align-items:flex-end;justify-content:space-between}
+.eyebrow{font:700 12px/1 var(--body);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.topo h1{font-size:clamp(28px,4.4vw,40px);line-height:1.08;margin-top:8px;color:var(--fg)}
+.topo p{margin:10px 0 0;color:var(--muted);max-width:62ch}
+.status{display:flex;flex-wrap:wrap;gap:8px}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 12px;font-size:13px;font-weight:700;border:1px solid var(--line);background:var(--surface);color:var(--muted)}
+.pill .dot{width:8px;height:8px;border-radius:50%;background:var(--warn)}
+.pill.ok .dot{background:var(--ok)}
+
+/* Grade principal */
+.grade{display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:32px;margin-top:28px;align-items:start}
+@media (max-width:860px){.grade{grid-template-columns:minmax(0,1fr)}}
+
+/* Celular */
+.fone{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);justify-self:center;width:100%;max-width:400px}
+.moldura{background:#0e1116;border-radius:44px;padding:12px;box-shadow:0 30px 60px -30px rgba(0,30,70,.55)}
+.tela{border-radius:34px;overflow:hidden;background:var(--wa-bg);display:flex;flex-direction:column;height:min(760px,calc(100vh - 120px));min-height:560px}
+.wa-topo{background:var(--wa-head);color:#fff;display:flex;align-items:center;gap:10px;padding:16px 14px 12px}
+.wa-topo .av{width:38px;height:38px;border-radius:50%;background:#fff;display:grid;place-items:center;overflow:hidden;flex:none}
+.wa-topo .av img{width:30px;height:auto}
+.wa-topo b{display:block;font:600 15px/1.2 var(--body)}
+.wa-topo small{display:block;opacity:.85;font-size:12px}
+.wa-topo .verif{display:inline-block;width:14px;height:14px;border-radius:50%;background:#25d366;vertical-align:-2px;margin-left:4px;position:relative}
+.wa-topo .verif::after{content:"";position:absolute;left:4px;top:2px;width:4px;height:7px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.chat{flex:1;overflow-y:auto;padding:12px 10px 16px;display:flex;flex-direction:column;gap:6px;scroll-behavior:smooth}
+.dia{align-self:center;background:var(--wa-in);color:var(--wa-meta);font-size:12px;padding:4px 10px;border-radius:7px;margin:4px 0}
+.bubble{max-width:86%;background:var(--wa-in);color:var(--wa-ink);border-radius:9px;padding:6px 8px 4px;box-shadow:0 1px .5px rgba(0,0,0,.13);align-self:flex-start;font-size:14.5px;line-height:1.38}
+.bubble.eu{background:var(--wa-out);align-self:flex-end}
+.bubble p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.bubble a{color:var(--wa-link);font-weight:400}
+.bubble .h{display:block;text-align:right;font-size:11px;color:var(--wa-meta);margin-top:2px}
+.bubble img,.bubble video{display:block;width:100%;border-radius:6px;margin-bottom:4px;background:#000}
+.bubble img{cursor:zoom-in}
+.bubble video{aspect-ratio:9/16;object-fit:cover}
+.doc{display:flex;gap:10px;align-items:center;background:rgba(127,127,127,.12);border-radius:6px;padding:10px;margin-bottom:4px;cursor:pointer;border:0;width:100%;text-align:left;color:inherit}
+.doc .ic{width:30px;height:38px;background:#e53935;border-radius:4px;color:#fff;font-size:9px;font-weight:700;display:flex;align-items:flex-end;justify-content:center;padding-bottom:3px;flex:none}
+.doc small{display:block;color:var(--wa-meta);font-size:12px}
+.botoes{align-self:flex-start;width:86%;display:flex;flex-direction:column;gap:2px;margin-top:-3px}
+.botoes button{background:var(--wa-in);color:var(--wa-link);border:0;border-radius:9px;padding:10px;min-height:44px;font-weight:600;font-size:14.5px;cursor:pointer;box-shadow:0 1px .5px rgba(0,0,0,.13)}
+.botoes button:hover:not(:disabled){filter:brightness(.97)}
+.botoes button:disabled{cursor:default;opacity:.55}
+.botoes button.escolhido{opacity:1;outline:2px solid var(--wa-link);outline-offset:-2px}
+.digitando{align-self:flex-start;background:var(--wa-in);border-radius:9px;padding:10px 12px;display:flex;gap:4px}
+.digitando i{width:7px;height:7px;border-radius:50%;background:var(--wa-meta);animation:pulo 1s infinite}
+.digitando i:nth-child(2){animation-delay:.15s}.digitando i:nth-child(3){animation-delay:.3s}
+@keyframes pulo{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-4px);opacity:1}}
+.controles{display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:10px 16px;min-height:44px;font-weight:700;cursor:pointer}
+.btn.prim{background:var(--brand);border-color:var(--brand);color:var(--surface)}
+
+/* Painel */
+.painel{display:flex;flex-direction:column;gap:20px;min-width:0}
+.cartao{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px 22px}
+.cartao h2{font-size:19px;color:var(--fg)}
+.regras{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:12px}
+.regras li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:12px;align-items:start}
+.regras .n{width:28px;height:28px;border-radius:8px;background:var(--info-soft);color:var(--info);font:700 14px/28px var(--display);text-align:center}
+.regras b{display:block}
+.regras span{color:var(--muted);font-size:14.5px}
+.numero{display:inline-flex;align-items:center;gap:8px;margin-top:6px;background:var(--ok-soft);color:var(--ok);border-radius:8px;padding:4px 10px;font-weight:700;font-variant-numeric:tabular-nums}
+.copiar{border:0;background:transparent;color:inherit;text-decoration:underline;cursor:pointer;font-weight:700;min-height:32px}
+.linha-tempo{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:10px}
+.linha-tempo li{display:grid;grid-template-columns:minmax(0,1fr);gap:4px;border-left:3px solid var(--line);padding:2px 0 2px 14px}
+.linha-tempo li.atual{border-left-color:var(--accent)}
+.linha-tempo .cab{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.linha-tempo .cab b{font-family:var(--display);font-size:15px}
+.chip{font-size:12px;font-weight:700;border-radius:999px;padding:2px 9px;letter-spacing:.02em}
+.chip.tpl{background:var(--warn-soft);color:var(--warn)}
+.chip.livre{background:var(--info-soft);color:var(--info)}
+.chip.acao{background:var(--ok-soft);color:var(--ok)}
+.linha-tempo p{margin:0;color:var(--muted);font-size:14.5px}
+.vazio{color:var(--muted);font-size:14.5px;margin:10px 0 0}
+.caminhos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}
+@media (max-width:520px){.caminhos{grid-template-columns:minmax(0,1fr)}}
+.caminho{border:1px solid var(--line);border-radius:12px;padding:14px}
+.caminho h3{font-size:15px}
+.caminho ol{margin:8px 0 0;padding-left:18px;color:var(--muted);font-size:14px;display:grid;gap:4px}
+.pecas{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:14px}
+.pecas button{border:0;padding:0;background:none;cursor:zoom-in;border-radius:8px;overflow:hidden}
+.pecas img{display:block;width:100%;aspect-ratio:4/5;object-fit:cover}
+@media (max-width:520px){.pecas{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.nota{color:var(--muted);font-size:13.5px;margin:12px 0 0}
+
+/* Lupa */
+.lupa{position:fixed;inset:0;background:rgba(5,12,22,.86);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));z-index:20}
+.lupa[hidden],[hidden]{display:none!important}
+.lupa .caixa{max-width:min(860px,100%);max-height:100%;overflow:auto;display:grid;gap:12px}
+.lupa img{display:block;width:100%;height:auto;border-radius:8px}
+.lupa .fechar{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);right:calc(env(safe-area-inset-right,0px) + 12px);background:var(--surface);color:var(--fg);border:0;border-radius:999px;min-height:44px;padding:0 18px;font-weight:700;cursor:pointer}
+@media (prefers-reduced-motion:reduce){.chat{scroll-behavior:auto}.digitando i{animation:none}}
+</style>
+
+<div class="wrap">
+  <header class="topo">
+    <div>
+      <div class="eyebrow">Proposta · Comercial → Acolhimento · Graduação EaD</div>
+      <h1>Régua do Comercial</h1>
+      <p>O que o calouro recebe no WhatsApp logo depois da matrícula. Toque nos botões do celular como se você fosse o aluno: as mensagens, as imagens, os vídeos e o guia são os reais. Nada é enviado a ninguém.</p>
+    </div>
+    <div class="status">
+      <span class="pill"><span class="dot"></span>Proposta, nada ligado</span>
+      <span class="pill ok"><span class="dot"></span>Testada no WhatsApp em 10/11</span>
+    </div>
+  </header>
+
+  <div class="grade">
+    <div class="fone">
+      <div class="moldura">
+        <div class="tela">
+          <div class="wa-topo">
+            <span class="av"><img src="midia/logo.webp" alt=""></span>
+            <div><b>Cruzeiro do Sul · Acadêmico<span class="verif" aria-label="conta verificada"></span></b><small>Conta comercial oficial</small></div>
+          </div>
+          <div class="chat" id="chat" aria-live="polite"></div>
+        </div>
+      </div>
+      <div class="controles">
+        <button class="btn prim" id="recomecar" type="button">Recomeçar</button>
+        <button class="btn" id="rapido" type="button" aria-pressed="false">Sem pausas</button>
+      </div>
+    </div>
+
+    <div class="painel">
+      <section class="cartao" aria-labelledby="t-agora">
+        <h2 id="t-agora">O que está acontecendo</h2>
+        <p class="vazio" id="vazio">Comece pelo celular: a primeira mensagem já chegou. Cada mensagem aparece aqui com o tipo de envio e o motivo.</p>
+        <ol class="linha-tempo" id="linha"></ol>
+      </section>
+
+      <section class="cartao" aria-labelledby="t-regras">
+        <h2 id="t-regras">Regras da régua</h2>
+        <ul class="regras">
+          <li><span class="n">1</span><div><b>A boas-vindas é um template aprovado</b><span>O aluno ainda não escreveu, então a janela de 24 h do WhatsApp está fechada e só sai mensagem aprovada pela Meta. Texto a fechar com o comercial e enviar à aprovação.</span></div></li>
+          <li><span class="n">2</span><div><b>Depois do primeiro toque, tudo é mensagem comum</b><span>O toque num botão abre a janela de 24 h. Imagens, vídeos e o guia saem sem depender da Meta.</span></div></li>
+          <li><span class="n">3</span><div><b>O Acolhimento só atende quem escolhe ajuda</b><span>Quem toca em "Quero ajuda agora" vai para uma pessoa do Time de Acolhimento, no mesmo WhatsApp.</span></div></li>
+          <li><span class="n">4</span><div><b>Quem escolhe "Agora não" fala com o atendimento oficial</b><span>CSV atendimento - Oficial, no WhatsApp:</span><br><span class="numero"><span id="num">(11) 91518-4535</span><button class="copiar" type="button" id="copiar">Copiar</button></span></div></li>
+          <li><span class="n">5</span><div><b>O foco é o aluno entrar</b><span>O primeiro acesso, a mensalidade e o polo são o essencial. O resto, a Aula Inaugural do App do Aluno ensina, e ela vale certificado de 4 horas.</span></div></li>
+        </ul>
+      </section>
+
+      <section class="cartao" aria-labelledby="t-caminhos">
+        <h2 id="t-caminhos">Os dois caminhos</h2>
+        <div class="caminhos">
+          <div class="caminho">
+            <h3>Quero ajuda agora</h3>
+            <ol><li>Confirmação imediata</li><li>Passa para o Time de Acolhimento</li><li>Primeiro acesso feito junto com o aluno</li></ol>
+          </div>
+          <div class="caminho">
+            <h3>Agora não</h3>
+            <ol><li>5 imagens com o essencial</li><li>Menu: ver os vídeos, já consegui ou preciso de ajuda</li><li>5 vídeos curtos, um passo por vez</li><li>Guia em PDF para guardar</li></ol>
+          </div>
+        </div>
+        <p class="nota">O CRM manda até 3 botões por mensagem; por isso o menu e a navegação dos vídeos usam botões, e não a lista de opções do WhatsApp.</p>
+      </section>
+
+      <section class="cartao" aria-labelledby="t-pecas">
+        <h2 id="t-pecas">As peças</h2>
+        <div class="pecas" id="pecas"></div>
+        <p class="nota">Imagens de 1080 × 1350 px. Vídeos verticais de 27 a 45 s, com a capa já no primeiro quadro. Guia em PDF de 4 páginas. Os fatos vêm da Aula Inaugural do App do Aluno.</p>
+      </section>
+    </div>
+  </div>
+</div>
+
+<div class="lupa" id="lupa" hidden role="dialog" aria-modal="true" aria-label="Peça ampliada">
+  <button class="fechar" id="fechar" type="button">Fechar</button>
+  <div class="caixa" id="caixa"></div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var NUM = 'https://wa.me/5511915184535';
+  var PDF = ['midia/guia-1.jpg','midia/guia-2.jpg','midia/guia-3.jpg','midia/guia-4.jpg'];
+  var ARTES = ['midia/arte-1.jpg','midia/arte-2.jpg','midia/arte-3.jpg','midia/arte-4.jpg','midia/arte-5.jpg'];
+  var NOMES_ARTE = ['Aplicativos','Primeira senha','Entrar e achar as aulas','Mensalidade','Seu polo'];
+
+  // A régua, passo a passo (igual à automação de teste do CRM).
+  var R = {
+    boas: { tipo:'botoes', texto:'🎓 *Sua matrícula está confirmada, Ana!*\n\nParabéns por essa conquista! 💙\n\n🪪 *Seu RGM:* 12345678\n📌 *Principais orientações para começar:* https://app.cruzeiroead.com.br/como-funciona\n\nA partir de agora, o nosso Time de Acolhimento está aqui para te ajudar. *Quer ajuda agora?*',
+      botoes:[['Quero ajuda agora','ajuda'],['Agora não','m1']],
+      nota:{t:'Boas-vindas do comercial', c:'tpl', l:'Template aprovado', p:'Confirma a matrícula, mostra o RGM e o link das orientações e oferece o Time de Acolhimento.'} },
+    ajuda: { tipo:'texto', texto:'Combinado! 🙌 Já estou chamando o Time de Acolhimento. Em instantes uma pessoa fala com você aqui mesmo.', prox:'fimAjuda',
+      nota:{t:'Quero ajuda agora', c:'acao', l:'Vai para o Acolhimento', p:'A conversa passa para uma pessoa do Time de Acolhimento, que faz o primeiro acesso junto com o aluno.'} },
+    fimAjuda: { tipo:'fim', aviso:'Daqui em diante, uma pessoa do Acolhimento conversa com o aluno. Toque em Recomeçar para ver o caminho "Agora não".' },
+    m1: { tipo:'texto', texto:'Tudo bem! 😊 Separei o essencial para você começar:', prox:'a1',
+      nota:{t:'Agora não', c:'livre', l:'Mensagem comum', p:'O aluno prefere fazer sozinho. A janela de 24 h está aberta pelo toque, então o resto sai sem template.'} },
+    a1: { tipo:'imagem', src:ARTES[0], prox:'a2', nota:{t:'5 imagens com o essencial', c:'livre', l:'Mensagem comum', p:'Aplicativos, primeira senha, entrar, mensalidade e polo. Sem legenda, menos a da senha, que leva o link do e-mail acadêmico.'} },
+    a2: { tipo:'imagem', src:ARTES[1], legenda:'Descubra o seu e-mail: emailacademico.cruzeiroead.com.br/descobrir', prox:'a3' },
+    a3: { tipo:'imagem', src:ARTES[2], prox:'a4' },
+    a4: { tipo:'imagem', src:ARTES[3], prox:'a5' },
+    a5: { tipo:'imagem', src:ARTES[4], prox:'menu' },
+    menu: { tipo:'botoes', texto:'Quer ver o primeiro acesso em vídeo, passo a passo? São 5 vídeos curtos.', botoes:[['Ver os vídeos','v1'],['Já consegui entrar','ok'],['Preciso de ajuda','ajuda2']],
+      nota:{t:'Menu', c:'livre', l:'Mensagem com botões', p:'O aluno escolhe: ver os vídeos, dizer que já entrou ou pedir ajuda.'} },
+    ok: { tipo:'texto', texto:'Que ótimo! 🎉 Agora entre no App do Aluno e faça a Aula Inaugural: ela vale certificado de 4 horas. Deixo aqui o seu guia para guardar 👇', prox:'pdf',
+      nota:{t:'Já consegui entrar', c:'livre', l:'Mensagem comum', p:'Leva o aluno para a Aula Inaugural do App do Aluno e entrega o guia.'} },
+    ajuda2: { tipo:'texto', texto:'Sem problema! 😊 Para tirar dúvidas, fale com o nosso atendimento oficial no WhatsApp:\n\n💬 *CSV atendimento - Oficial*\n👉 '+NUM+'\n\nDeixo também o seu guia para guardar 👇', prox:'pdf',
+      nota:{t:'Preciso de ajuda', c:'acao', l:'Atendimento oficial', p:'Quem escolheu "Agora não" não vai para o Acolhimento: recebe o número do CSV atendimento - Oficial, (11) 91518-4535.'} },
+    pdf: { tipo:'doc', legenda:'📘 Seus primeiros passos: App do Aluno, primeiro acesso, mensalidade e polo.', prox:'fim',
+      nota:{t:'Guia em PDF', c:'livre', l:'Mensagem comum', p:'4 páginas: App do Aluno e Aula Inaugural com certificado, primeiro acesso, mensalidade, polo, documentos e ajuda.'} },
+    fim: { tipo:'fim', aviso:'Fim da régua. Toque em Recomeçar para ver o outro caminho.' }
+  };
+  var TITULOS = ['Baixe os 2 aplicativos','Descubra o seu e-mail','Monte a primeira senha','Crie a sua senha','Entre no Duda'];
+  for (var n = 1; n <= 5; n++) {
+    R['v'+n] = { tipo:'video', src:'midia/video-'+n+'.mp4', poster:'midia/video-'+n+'.jpg', legenda:n+'/5 · '+TITULOS[n-1], prox:'pv'+n,
+      nota: n === 1 ? {t:'Vídeos em sequência', c:'livre', l:'Mensagem comum', p:'Um vídeo por passo, com legenda curta. Depois de cada um, o aluno escolhe seguir, dizer que já entrou ou pedir ajuda.'} : null };
+    R['pv'+n] = n < 5
+      ? { tipo:'botoes', texto:'Passo '+n+' de 5 ✅', botoes:[['Próximo passo','v'+(n+1)],['Já consegui entrar','ok'],['Preciso de ajuda','ajuda2']] }
+      : { tipo:'botoes', texto:'Pronto, esse era o último passo! 🎉', botoes:[['Já consegui entrar','ok'],['Preciso de ajuda','ajuda2']] };
+  }
+
+  var chat = document.getElementById('chat'), linha = document.getElementById('linha'), vazio = document.getElementById('vazio');
+  var rapido = false, geracao = 0, relogio = 12 * 60 + 58;
+  try { rapido = localStorage.getItem('regua-rapido') === '1'; } catch (e) {}
+  var reduz = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function hora() { var h = Math.floor(relogio / 60), m = relogio % 60; return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m; }
+  function esc(t) { return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function formatar(t) {
+    return esc(t)
+      .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>')
+      .replace(/\*([^*\n]+)\*/g, '<b>$1</b>')
+      .replace(/(^|\s)_([^_\n]+)_/g, '$1<i>$2</i>');
+  }
+  function rolar() { chat.scrollTop = chat.scrollHeight; }
+  function el(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
+
+  function anotar(nota) {
+    if (!nota) return;
+    vazio.hidden = true;
+    var antigos = linha.querySelectorAll('li.atual');
+    for (var i = 0; i < antigos.length; i++) antigos[i].classList.remove('atual');
+    var li = el('li', 'atual');
+    li.innerHTML = '<div class="cab"><b>' + esc(nota.t) + '</b><span class="chip ' + nota.c + '">' + esc(nota.l) + '</span></div><p>' + esc(nota.p) + '</p>';
+    linha.appendChild(li);
+  }
+
+  function bolha(passo) {
+    var b = el('div', 'bubble');
+    var corpo = '';
+    if (passo.tipo === 'imagem') corpo = '<img src="' + passo.src + '" alt="Imagem enviada ao aluno" tabindex="0" data-lupa="' + passo.src + '">' + (passo.legenda ? '<p>' + formatar(passo.legenda) + '</p>' : '');
+    else if (passo.tipo === 'video') corpo = '<video src="' + passo.src + '" poster="' + passo.poster + '" controls playsinline preload="none"></video><p>' + formatar(passo.legenda) + '</p>';
+    else if (passo.tipo === 'doc') corpo = '<button class="doc" type="button" data-pdf="1"><span class="ic">PDF</span><span><b>guia-do-calouro.pdf</b><small>4 páginas · toque para abrir</small></span></button><p>' + formatar(passo.legenda) + '</p>';
+    else corpo = '<p>' + formatar(passo.texto) + '</p>';
+    b.innerHTML = corpo + '<span class="h">' + hora() + '</span>';
+    return b;
+  }
+
+  function mostrar(id, g) {
+    if (g !== geracao) return;
+    var passo = R[id];
+    if (!passo) return;
+    if (passo.tipo === 'fim') {
+      chat.appendChild(el('div', 'dia', esc(passo.aviso)));
+      rolar();
+      return;
+    }
+    var espera = (rapido || reduz) ? 0 : (passo.tipo === 'botoes' || passo.tipo === 'texto' ? 650 : 900);
+    var dig = null;
+    if (espera) { dig = el('div', 'digitando', '<i></i><i></i><i></i>'); chat.appendChild(dig); rolar(); }
+    setTimeout(function () {
+      if (g !== geracao) return;
+      if (dig) dig.remove();
+      chat.appendChild(bolha(passo));
+      anotar(passo.nota);
+      if (passo.tipo === 'botoes') {
+        var caixa = el('div', 'botoes');
+        passo.botoes.forEach(function (bt) {
+          var x = el('button', '', esc(bt[0])); x.type = 'button';
+          x.addEventListener('click', function () { escolher(caixa, x, bt[0], bt[1]); });
+          caixa.appendChild(x);
+        });
+        chat.appendChild(caixa);
+        rolar();
+        return;
+      }
+      rolar();
+      if (passo.prox) setTimeout(function () { mostrar(passo.prox, g); }, (rapido || reduz) ? 60 : 350);
+    }, espera);
+  }
+
+  function escolher(caixa, botao, texto, destino) {
+    var bs = caixa.querySelectorAll('button');
+    for (var i = 0; i < bs.length; i++) bs[i].disabled = true;
+    botao.classList.add('escolhido');
+    relogio += 1;
+    var b = el('div', 'bubble eu', '<p>' + esc(texto) + '</p><span class="h">' + hora() + ' ✓✓</span>');
+    chat.appendChild(b); rolar();
+    mostrar(destino, geracao);
+  }
+
+  function comecar() {
+    geracao++; relogio = 12 * 60 + 58;
+    chat.innerHTML = ''; linha.innerHTML = ''; vazio.hidden = false;
+    chat.appendChild(el('div', 'dia', 'HOJE'));
+    mostrar('boas', geracao);
+  }
+
+  // Lupa: imagens e guia.
+  var lupa = document.getElementById('lupa'), caixaLupa = document.getElementById('caixa'), ultimoFoco = null;
+  function abrir(srcs) {
+    ultimoFoco = document.activeElement;
+    caixaLupa.innerHTML = srcs.map(function (s, i) { return '<img src="' + s + '" alt="Página ' + (i + 1) + '">'; }).join('');
+    lupa.hidden = false; caixaLupa.scrollTop = 0;
+    document.getElementById('fechar').focus();
+  }
+  function fechar() { lupa.hidden = true; caixaLupa.innerHTML = ''; if (ultimoFoco) ultimoFoco.focus(); }
+  document.getElementById('fechar').addEventListener('click', fechar);
+  lupa.addEventListener('click', function (e) { if (e.target === lupa) fechar(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !lupa.hidden) fechar(); });
+  function abrirDe(e) {
+    var t = e.target.closest('[data-lupa],[data-pdf]');
+    if (!t) return;
+    if (t.hasAttribute('data-pdf')) abrir(PDF); else abrir([t.getAttribute('data-lupa')]);
+  }
+  chat.addEventListener('click', abrirDe);
+  chat.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-lupa]')) { e.preventDefault(); abrirDe(e); } });
+
+  // Galeria das peças.
+  var pecas = document.getElementById('pecas');
+  ARTES.forEach(function (s, i) {
+    var b = el('button', '', '<img src="' + s + '" alt="' + esc(NOMES_ARTE[i]) + '">'); b.type = 'button';
+    b.addEventListener('click', function () { abrir([s]); }); pecas.appendChild(b);
+  });
+  var g = el('button', '', '<img src="' + PDF[0] + '" alt="Guia em PDF, capa">'); g.type = 'button';
+  g.addEventListener('click', function () { abrir(PDF); });
+  pecas.appendChild(g);
+  for (var v = 1; v <= 4; v++) (function (k) {
+    var b = el('button', '', '<img src="midia/video-' + k + '.jpg" alt="Vídeo ' + k + ', capa">'); b.type = 'button';
+    b.addEventListener('click', function () { abrir(['midia/video-' + k + '.jpg']); }); pecas.appendChild(b);
+  })(v);
+
+  // Controles.
+  var bRapido = document.getElementById('rapido');
+  function marcarRapido() { bRapido.setAttribute('aria-pressed', rapido ? 'true' : 'false'); bRapido.textContent = rapido ? 'Com pausas' : 'Sem pausas'; }
+  bRapido.addEventListener('click', function () { rapido = !rapido; try { localStorage.setItem('regua-rapido', rapido ? '1' : '0'); } catch (e) {} marcarRapido(); });
+  marcarRapido();
+  document.getElementById('recomecar').addEventListener('click', comecar);
+  document.getElementById('copiar').addEventListener('click', function () {
+    var b = this, t = document.getElementById('num').textContent;
+    var ok = function () { b.textContent = 'Copiado'; setTimeout(function () { b.textContent = 'Copiar'; }, 1500); };
+    try { navigator.clipboard.writeText(t).then(ok, function () { selecionar(); }); } catch (e) { selecionar(); }
+    function selecionar() { var r = document.createRange(); r.selectNodeContents(document.getElementById('num')); var s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+  });
+
+  comecar();
+})();
+</script>
+</body></html>
