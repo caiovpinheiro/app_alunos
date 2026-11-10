@@ -139,7 +139,7 @@ button:focus-visible,.bubble img:focus-visible,.doc:focus-visible{outline:3px so
 @media (max-width:520px){.regras-curtas li{grid-template-columns:minmax(0,1fr);gap:4px}.regras-curtas .chip{justify-self:start}}
 h2.sec{font-size:20px;color:var(--fg);display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin:0 0 10px}
 h2.sec small{font:400 14px/1.3 var(--body);color:var(--muted)}
-.artes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.artes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;max-width:560px}
 @media (max-width:620px){.artes{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .peca{border:0;padding:0;background:none;cursor:zoom-in;text-align:left;color:var(--fg);display:grid;gap:6px;min-width:0}
 .peca img{display:block;width:100%;border-radius:10px;border:1px solid var(--line);aspect-ratio:4/5;object-fit:cover;background:var(--surface)}
@@ -203,7 +203,7 @@ h2.sec small{font:400 14px/1.3 var(--body);color:var(--muted)}
       </ul>
 
       <section aria-labelledby="t-artes">
-        <h2 class="sec" id="t-artes">5 imagens <small>o essencial para entrar</small></h2>
+        <h2 class="sec" id="t-artes">2 imagens <small>as dúvidas mais comuns</small></h2>
         <div class="artes" id="artes"></div>
       </section>
       <section aria-labelledby="t-videos">
@@ -228,8 +228,8 @@ h2.sec small{font:400 14px/1.3 var(--body);color:var(--muted)}
   'use strict';
   var NUM = 'https://wa.me/5511915184535';
   var PDF = ['midia/guia-1.jpg','midia/guia-2.jpg','midia/guia-3.jpg','midia/guia-4.jpg'];
-  var ARTES = ['midia/arte-1.jpg','midia/arte-2.jpg','midia/arte-3.jpg','midia/arte-4.jpg','midia/arte-5.jpg'];
-  var NOMES_ARTE = ['Aplicativos','Primeira senha','Entrar e achar as aulas','Mensalidade','Seu polo'];
+  var ARTES = ['midia/arte-4.jpg','midia/arte-5.jpg'];
+  var NOMES_ARTE = ['Mensalidade','Seu polo'];
 
   // A régua, passo a passo (igual à automação de teste do CRM).
   var R = {
@@ -239,13 +239,10 @@ h2.sec small{font:400 14px/1.3 var(--body);color:var(--muted)}
     ajuda: { tipo:'texto', texto:'Combinado! 🙌 Já estou chamando o Time de Acolhimento. Em instantes uma pessoa fala com você aqui mesmo.', prox:'fimAjuda',
       nota:{t:'Quero ajuda agora', c:'acao', l:'Vai para o Acolhimento', p:'A conversa passa para uma pessoa do Time de Acolhimento, que faz o primeiro acesso junto com o aluno.'} },
     fimAjuda: { tipo:'fim', aviso:'Daqui em diante, uma pessoa do Acolhimento conversa com o aluno. Toque em Recomeçar para ver o caminho "Agora não".' },
-    m1: { tipo:'texto', texto:'Tudo bem! 😊 Separei o essencial para você começar:', prox:'a1',
+    m1: { tipo:'texto', texto:'Tudo bem! 😊 Antes de tudo, duas coisas importantes:', prox:'a4',
       nota:{t:'Agora não', c:'livre', l:'Mensagem comum', p:'O aluno prefere fazer sozinho. A janela de 24 h está aberta pelo toque, então o resto sai sem template.'} },
-    a1: { tipo:'imagem', src:ARTES[0], prox:'a2', nota:{t:'5 imagens com o essencial', c:'livre', l:'Mensagem comum', p:'Aplicativos, primeira senha, entrar, mensalidade e polo. Sem legenda, menos a da senha, que leva o link do e-mail acadêmico.'} },
-    a2: { tipo:'imagem', src:ARTES[1], legenda:'Descubra o seu e-mail: emailacademico.cruzeiroead.com.br/descobrir', prox:'a3' },
-    a3: { tipo:'imagem', src:ARTES[2], prox:'a4' },
-    a4: { tipo:'imagem', src:ARTES[3], prox:'a5' },
-    a5: { tipo:'imagem', src:ARTES[4], prox:'menu' },
+    a4: { tipo:'imagem', src:ARTES[0], prox:'a5', nota:{t:'2 imagens', c:'livre', l:'Mensagem comum', p:'Mensalidade e polo, as dúvidas mais comuns. O primeiro acesso vem nos vídeos e no guia.'} },
+    a5: { tipo:'imagem', src:ARTES[1], prox:'menu' },
     menu: { tipo:'botoes', texto:'Quer ver o primeiro acesso em vídeo, passo a passo? São 5 vídeos curtos.', botoes:[['Ver os vídeos','v1'],['Já consegui entrar','ok'],['Preciso de ajuda','ajuda2']],
       nota:{t:'Menu', c:'livre', l:'Mensagem com botões', p:'O aluno escolhe: ver os vídeos, dizer que já entrou ou pedir ajuda.'} },
     ok: { tipo:'texto', texto:'Que ótimo! 🎉 Agora entre no App do Aluno e faça a Aula Inaugural: ela vale certificado de 4 horas. Deixo aqui o seu guia para guardar 👇', prox:'pdf',
