@@ -73,7 +73,7 @@ Em paralelo, no CRM:
 
 ## Templates
 
-Todos de utilidade e aprovados em 07/11/2026: `bv_app2`, `matricula_canal_oficial`, `fup_bv_calouros`, `email_academico_ativo`, `certificado_aula_disponivel`, `certificado_aula_corrigido`. Se algum virar marketing, sai do WhatsApp de quem bloqueou marketing: a vigia confere.
+Todos de utilidade e aprovados em 07/11/2026: `bv_app2`, `matricula_canal_oficial`, `fup_bv_calouros`, `email_academico_ativo`, `certificado_aula_disponivel`, `certificado_aula_corrigido`. Enviados em 10/11/2026, aguardando a Meta: `enxoval_calouro` (imagem) e `enxoval_guia` (PDF), do enxoval do calouro. Se algum virar marketing, sai do WhatsApp de quem bloqueou marketing: a vigia confere.
 
 ## Campos do negócio usados
 

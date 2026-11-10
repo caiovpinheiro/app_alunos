@@ -2,7 +2,7 @@
 
 Atualizado em 10/11/2026. Kit para o calouro de Graduação EaD que **não quer entrar no app agora** ou **não responde** a régua de boas-vindas (`docs/regua-calouro.md`). Chega pelo WhatsApp em peças curtas: mensagens intercaladas com 5 artes e um guia em PDF para guardar.
 
-**Estado:** as artes e o PDF estão prontos neste PR. Os textos das mensagens e dos templates estão escritos, mas os templates ainda não foram enviados para aprovação da Meta e nenhum gatilho está ligado. O primeiro envio é só para o dono do projeto, como teste.
+**Estado (10/11/2026):** as artes e o PDF estão no ar. Os dois templates foram enviados à Meta como utilidade e esperam aprovação. Nenhum gatilho está ligado. O primeiro envio é só para o dono do projeto, como teste.
 
 ## Peças
 
@@ -63,11 +63,11 @@ Sai 3 dias depois, só se o aluno ainda não entrou na faculdade nem no app. A c
 
 Cabeçalho: documento `guia-do-calouro.pdf`.
 
-> {{1}}, deixamos aqui o seu guia do calouro, com o primeiro acesso, a mensalidade e as disciplinas. Guarde para quando for a hora. Se travou em algum passo, responda esta mensagem contando onde parou.
+> Olá, {{1}}! Deixamos aqui o seu guia do calouro, com o primeiro acesso, a mensalidade e as disciplinas. Guarde para quando for a hora. Se travou em algum passo, responda esta mensagem contando onde parou.
 
 Botões (resposta rápida): **Preciso de ajuda** · **Já consegui**.
 
-Os dois templates são de **utilidade**: falam da matrícula que já existe, sem oferta nem promoção. `{{1}}` é o primeiro nome.
+Os dois templates são de **utilidade**: falam da matrícula que já existe, sem oferta nem promoção. `{{1}}` é o primeiro nome. A Meta recusa corpo que começa ou termina com a variável, por isso os dois abrem com "Olá, {{1}}!". Foram criados pela tela Configurações › Modelos de mensagem do CRM, no canal oficial, com a mídia de exemplo das peças publicadas.
 
 ## Gatilhos possíveis (nenhum ligado)
 
@@ -83,7 +83,7 @@ O link do app no PDF leva a origem `?o=enxoval_pdf`, e a entrada aparece na aba 
 
 ## Próximos passos
 
-1. Publicar as peças (este PR), para elas terem endereço público.
-2. Mandar `enxoval_calouro` e `enxoval_guia` para aprovação da Meta pelo CRM.
+1. ~~Publicar as peças~~ (PR #17, 10/11).
+2. ~~Mandar `enxoval_calouro` e `enxoval_guia` para aprovação da Meta~~ (10/11, aguardando).
 3. Teste só com o número do dono do projeto: uma automação desligada para os alunos e disparada à mão.
 4. Escolher os gatilhos e ligar, com cópia da automação antes da mudança (regra do `docs/regua-calouro.md`).
