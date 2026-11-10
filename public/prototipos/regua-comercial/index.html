@@ -130,6 +130,31 @@ button:focus-visible,.bubble img:focus-visible,.doc:focus-visible{outline:3px so
 @media (max-width:520px){.pecas{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .nota{color:var(--muted);font-size:13.5px;margin:12px 0 0}
 
+/* Painel enxuto: regras em 3 linhas e peças em destaque */
+.agora{margin:12px auto 0;max-width:400px;text-align:center;color:var(--muted);font-size:14px;min-height:42px}
+.agora b{color:var(--fg)}
+.regras-curtas{list-style:none;margin:0;padding:14px 16px;display:grid;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.regras-curtas li{display:grid;grid-template-columns:104px minmax(0,1fr);gap:10px;align-items:baseline;font-size:14.5px}
+.regras-curtas .chip{text-align:center}
+@media (max-width:520px){.regras-curtas li{grid-template-columns:minmax(0,1fr);gap:4px}.regras-curtas .chip{justify-self:start}}
+h2.sec{font-size:20px;color:var(--fg);display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin:0 0 10px}
+h2.sec small{font:400 14px/1.3 var(--body);color:var(--muted)}
+.artes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:620px){.artes{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.peca{border:0;padding:0;background:none;cursor:zoom-in;text-align:left;color:var(--fg);display:grid;gap:6px;min-width:0}
+.peca img{display:block;width:100%;border-radius:10px;border:1px solid var(--line);aspect-ratio:4/5;object-fit:cover;background:var(--surface)}
+.peca span{font-size:13.5px;font-weight:700}
+.peca.video{position:relative}
+.peca.video img{aspect-ratio:9/16}
+.peca.video::after{content:"▶";position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;display:grid;place-items:center;font-size:16px;padding-left:3px;box-sizing:border-box}
+.peca.pag img{aspect-ratio:210/297}
+.faixa-pecas{display:grid;gap:10px}
+.faixa-pecas.cinco{grid-template-columns:repeat(5,minmax(0,1fr))}
+.faixa-pecas.quatro{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:620px){.faixa-pecas.cinco{grid-template-columns:repeat(3,minmax(0,1fr))}.faixa-pecas.quatro{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.painel section{display:block}
+.lupa video{display:block;max-height:calc(100vh - 96px);max-width:100%;margin:0 auto;border-radius:10px;background:#000}
+
 /* Lupa */
 .lupa{position:fixed;inset:0;background:rgba(5,12,22,.86);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));z-index:20}
 .lupa[hidden],[hidden]{display:none!important}
@@ -144,7 +169,7 @@ button:focus-visible,.bubble img:focus-visible,.doc:focus-visible{outline:3px so
     <div>
       <div class="eyebrow">Proposta · Comercial → Acolhimento · Graduação EaD</div>
       <h1>Régua do Comercial</h1>
-      <p>O que o calouro recebe no WhatsApp logo depois da matrícula. Toque nos botões do celular como se você fosse o aluno: as mensagens, as imagens, os vídeos e o guia são os reais. Nada é enviado a ninguém.</p>
+      <p>O que o calouro recebe no WhatsApp depois da matrícula. Toque nos botões como se fosse o aluno; nada é enviado.</p>
     </div>
     <div class="status">
       <span class="pill"><span class="dot"></span>Proposta, nada ligado</span>
@@ -167,45 +192,27 @@ button:focus-visible,.bubble img:focus-visible,.doc:focus-visible{outline:3px so
         <button class="btn prim" id="recomecar" type="button">Recomeçar</button>
         <button class="btn" id="rapido" type="button" aria-pressed="false">Sem pausas</button>
       </div>
+      <p class="agora" id="agora" aria-live="polite"></p>
     </div>
 
     <div class="painel">
-      <section class="cartao" aria-labelledby="t-agora">
-        <h2 id="t-agora">O que está acontecendo</h2>
-        <p class="vazio" id="vazio">Comece pelo celular: a primeira mensagem já chegou. Cada mensagem aparece aqui com o tipo de envio e o motivo.</p>
-        <ol class="linha-tempo" id="linha"></ol>
-      </section>
+      <ul class="regras-curtas" aria-label="Regras da régua">
+        <li><span class="chip tpl">Template</span><span>A boas-vindas é um template aprovado. Depois do primeiro toque, tudo é mensagem comum.</span></li>
+        <li><span class="chip acao">Ajuda agora</span><span>Quem toca em "Quero ajuda agora" vai para o Time de Acolhimento.</span></li>
+        <li><span class="chip livre">Agora não</span><span>Recebe as peças abaixo. Se precisar de ajuda: atendimento oficial <b id="num">(11) 91518-4535</b> <button class="copiar" type="button" id="copiar">Copiar</button></span></li>
+      </ul>
 
-      <section class="cartao" aria-labelledby="t-regras">
-        <h2 id="t-regras">Regras da régua</h2>
-        <ul class="regras">
-          <li><span class="n">1</span><div><b>A boas-vindas é um template aprovado</b><span>O aluno ainda não escreveu, então a janela de 24 h do WhatsApp está fechada e só sai mensagem aprovada pela Meta. Texto a fechar com o comercial e enviar à aprovação.</span></div></li>
-          <li><span class="n">2</span><div><b>Depois do primeiro toque, tudo é mensagem comum</b><span>O toque num botão abre a janela de 24 h. Imagens, vídeos e o guia saem sem depender da Meta.</span></div></li>
-          <li><span class="n">3</span><div><b>O Acolhimento só atende quem escolhe ajuda</b><span>Quem toca em "Quero ajuda agora" vai para uma pessoa do Time de Acolhimento, no mesmo WhatsApp.</span></div></li>
-          <li><span class="n">4</span><div><b>Quem escolhe "Agora não" fala com o atendimento oficial</b><span>CSV atendimento - Oficial, no WhatsApp:</span><br><span class="numero"><span id="num">(11) 91518-4535</span><button class="copiar" type="button" id="copiar">Copiar</button></span></div></li>
-          <li><span class="n">5</span><div><b>O foco é o aluno entrar</b><span>O primeiro acesso, a mensalidade e o polo são o essencial. O resto, a Aula Inaugural do App do Aluno ensina, e ela vale certificado de 4 horas.</span></div></li>
-        </ul>
+      <section aria-labelledby="t-artes">
+        <h2 class="sec" id="t-artes">5 imagens <small>o essencial para entrar</small></h2>
+        <div class="artes" id="artes"></div>
       </section>
-
-      <section class="cartao" aria-labelledby="t-caminhos">
-        <h2 id="t-caminhos">Os dois caminhos</h2>
-        <div class="caminhos">
-          <div class="caminho">
-            <h3>Quero ajuda agora</h3>
-            <ol><li>Confirmação imediata</li><li>Passa para o Time de Acolhimento</li><li>Primeiro acesso feito junto com o aluno</li></ol>
-          </div>
-          <div class="caminho">
-            <h3>Agora não</h3>
-            <ol><li>5 imagens com o essencial</li><li>Menu: ver os vídeos, já consegui ou preciso de ajuda</li><li>5 vídeos curtos, um passo por vez</li><li>Guia em PDF para guardar</li></ol>
-          </div>
-        </div>
-        <p class="nota">O CRM manda até 3 botões por mensagem; por isso o menu e a navegação dos vídeos usam botões, e não a lista de opções do WhatsApp.</p>
+      <section aria-labelledby="t-videos">
+        <h2 class="sec" id="t-videos">5 vídeos <small>um passo por vez, de 27 a 45 s</small></h2>
+        <div class="faixa-pecas cinco" id="videos"></div>
       </section>
-
-      <section class="cartao" aria-labelledby="t-pecas">
-        <h2 id="t-pecas">As peças</h2>
-        <div class="pecas" id="pecas"></div>
-        <p class="nota">Imagens de 1080 × 1350 px. Vídeos verticais de 27 a 45 s, com a capa já no primeiro quadro. Guia em PDF de 4 páginas. Os fatos vêm da Aula Inaugural do App do Aluno.</p>
+      <section aria-labelledby="t-guia">
+        <h2 class="sec" id="t-guia">Guia em PDF <small>4 páginas para guardar</small></h2>
+        <div class="faixa-pecas quatro" id="guia"></div>
       </section>
     </div>
   </div>
@@ -258,7 +265,7 @@ button:focus-visible,.bubble img:focus-visible,.doc:focus-visible{outline:3px so
       : { tipo:'botoes', texto:'Pronto, esse era o último passo! 🎉', botoes:[['Já consegui entrar','ok'],['Preciso de ajuda','ajuda2']] };
   }
 
-  var chat = document.getElementById('chat'), linha = document.getElementById('linha'), vazio = document.getElementById('vazio');
+  var chat = document.getElementById('chat'), agora = document.getElementById('agora');
   var rapido = false, geracao = 0, relogio = 12 * 60 + 58;
   try { rapido = localStorage.getItem('regua-rapido') === '1'; } catch (e) {}
   var reduz = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -276,12 +283,7 @@ button:focus-visible,.bubble img:focus-visible,.doc:focus-visible{outline:3px so
 
   function anotar(nota) {
     if (!nota) return;
-    vazio.hidden = true;
-    var antigos = linha.querySelectorAll('li.atual');
-    for (var i = 0; i < antigos.length; i++) antigos[i].classList.remove('atual');
-    var li = el('li', 'atual');
-    li.innerHTML = '<div class="cab"><b>' + esc(nota.t) + '</b><span class="chip ' + nota.c + '">' + esc(nota.l) + '</span></div><p>' + esc(nota.p) + '</p>';
-    linha.appendChild(li);
+    agora.innerHTML = '<span class="chip ' + nota.c + '">' + esc(nota.l) + '</span> <b>' + esc(nota.t) + ':</b> ' + esc(nota.p);
   }
 
   function bolha(passo) {
@@ -340,16 +342,18 @@ button:focus-visible,.bubble img:focus-visible,.doc:focus-visible{outline:3px so
 
   function comecar() {
     geracao++; relogio = 12 * 60 + 58;
-    chat.innerHTML = ''; linha.innerHTML = ''; vazio.hidden = false;
+    chat.innerHTML = ''; agora.innerHTML = '';
     chat.appendChild(el('div', 'dia', 'HOJE'));
     mostrar('boas', geracao);
   }
 
   // Lupa: imagens e guia.
   var lupa = document.getElementById('lupa'), caixaLupa = document.getElementById('caixa'), ultimoFoco = null;
-  function abrir(srcs) {
+  function abrir(srcs, video) {
     ultimoFoco = document.activeElement;
-    caixaLupa.innerHTML = srcs.map(function (s, i) { return '<img src="' + s + '" alt="Página ' + (i + 1) + '">'; }).join('');
+    caixaLupa.innerHTML = video
+      ? '<video src="' + video + '" poster="' + srcs[0] + '" controls autoplay playsinline></video>'
+      : srcs.map(function (s, i) { return '<img src="' + s + '" alt="Página ' + (i + 1) + '">'; }).join('');
     lupa.hidden = false; caixaLupa.scrollTop = 0;
     document.getElementById('fechar').focus();
   }
@@ -365,19 +369,17 @@ button:focus-visible,.bubble img:focus-visible,.doc:focus-visible{outline:3px so
   chat.addEventListener('click', abrirDe);
   chat.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-lupa]')) { e.preventDefault(); abrirDe(e); } });
 
-  // Galeria das peças.
-  var pecas = document.getElementById('pecas');
-  ARTES.forEach(function (s, i) {
-    var b = el('button', '', '<img src="' + s + '" alt="' + esc(NOMES_ARTE[i]) + '">'); b.type = 'button';
-    b.addEventListener('click', function () { abrir([s]); }); pecas.appendChild(b);
-  });
-  var g = el('button', '', '<img src="' + PDF[0] + '" alt="Guia em PDF, capa">'); g.type = 'button';
-  g.addEventListener('click', function () { abrir(PDF); });
-  pecas.appendChild(g);
-  for (var v = 1; v <= 4; v++) (function (k) {
-    var b = el('button', '', '<img src="midia/video-' + k + '.jpg" alt="Vídeo ' + k + ', capa">'); b.type = 'button';
-    b.addEventListener('click', function () { abrir(['midia/video-' + k + '.jpg']); }); pecas.appendChild(b);
-  })(v);
+  // Peças em destaque.
+  function peca(cls, img, nome, onclick) {
+    var b = el('button', 'peca ' + cls, '<img src="' + img + '" alt="' + esc(nome) + '" loading="lazy"><span>' + esc(nome) + '</span>'); b.type = 'button';
+    b.addEventListener('click', onclick); return b;
+  }
+  var artes = document.getElementById('artes');
+  ARTES.forEach(function (s, i) { artes.appendChild(peca('', s, NOMES_ARTE[i], function () { abrir([s]); })); });
+  var vids = document.getElementById('videos');
+  TITULOS.forEach(function (t, i) { var k = i + 1; vids.appendChild(peca('video', 'midia/video-' + k + '.jpg', k + '. ' + t, function () { abrir(['midia/video-' + k + '.jpg'], 'midia/video-' + k + '.mp4'); })); });
+  var guia = document.getElementById('guia');
+  PDF.forEach(function (s, i) { guia.appendChild(peca('pag', s, 'Página ' + (i + 1), function () { abrir(PDF); })); });
 
   // Controles.
   var bRapido = document.getElementById('rapido');
