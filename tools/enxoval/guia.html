@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Guia do calouro | Cruzeiro do Sul Virtual</title>
+<style>
+/* Guia do calouro em PDF (A4), gerado por tools/enxoval/render.sh. Conteúdo da Aula Inaugural (legendas cap_01 a cap_07). */
+@import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;700&family=Poppins:wght@600;700&display=swap");
+@page{size:A4;margin:16mm 16mm 18mm}
+:root{--fg:#0b1f38;--muted:#45566e;--line:#d3dfee;--accent:#0a4fa6;--accent-soft:#e3edfc;--solid:#00356b;--hero-2:#0b56b0;
+  --xp:#ffc72c;--on-xp:#2b1d00;--ok:#13795b;--ok-soft:#e2f4ec;--warn-soft:#fff4d6;
+  --display:"Poppins","Segoe UI",system-ui,sans-serif;--body:"Atkinson Hyperlegible Next","Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif}
+*{box-sizing:border-box}
+html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{margin:0;color:var(--fg);font:400 11.5pt/1.5 var(--body)}
+a{color:var(--accent);font-weight:700}
+.capa{background:linear-gradient(135deg,var(--solid),var(--hero-2));color:#fff;border-radius:6mm;padding:14mm 12mm 12mm;margin-bottom:8mm}
+.capa img{height:12mm;background:#fff;border-radius:2mm;padding:1.5mm 3mm}
+.tag{display:inline-block;font:700 8.5pt/1 var(--body);letter-spacing:.08em;text-transform:uppercase;background:var(--xp);color:var(--on-xp);padding:2mm 3.5mm;border-radius:99px;margin-top:8mm}
+h1{font:700 30pt/1.1 var(--display);margin:4mm 0 3mm}
+.capa p{margin:0;color:#d4e3f7;font-size:12.5pt;max-width:150mm}
+.indice{display:grid;grid-template-columns:1fr 1fr;gap:2mm 8mm;margin:6mm 0 0;padding:0;list-style:none;font-size:11pt}
+.indice a{color:#fff;text-decoration:none}
+h2{font:700 17pt/1.2 var(--display);margin:0 0 3mm;color:var(--solid);display:flex;align-items:center;gap:3mm}
+h2 .num{display:inline-flex;align-items:center;justify-content:center;width:9mm;height:9mm;border-radius:2.5mm;background:var(--accent-soft);color:var(--accent);font-size:13pt}
+h3{font:700 12.5pt/1.25 var(--display);margin:4mm 0 1mm}
+section{margin-bottom:7mm}
+h2,h3{break-after:avoid}
+.caixa,tr,li,.dois,.capa{break-inside:avoid}
+table{break-inside:auto}
+p{margin:0 0 2mm}
+ul,ol{margin:0 0 2mm;padding-left:5.5mm}
+li{margin-bottom:1.2mm}
+.caixa{border:1px solid var(--line);border-radius:4mm;padding:4mm 5mm;margin:2mm 0 3mm}
+.alerta{background:var(--warn-soft);border-color:#f3d27a}
+.ok{background:var(--ok-soft);border-color:#9fd8bf}
+.dois{display:grid;grid-template-columns:1fr 1fr;gap:4mm}
+.senha{font:700 15pt/1.2 ui-monospace,Menlo,monospace;color:var(--fg)}
+table{width:100%;border-collapse:collapse;margin:2mm 0 3mm;font-size:11pt}
+th,td{text-align:left;padding:2.2mm 3mm;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--display);font-weight:700;color:var(--muted);font-size:9.5pt;text-transform:uppercase;letter-spacing:.05em}
+td.forte{font-weight:700;white-space:nowrap}
+.check{list-style:none;padding:0}
+.check li{padding-left:8mm;position:relative}
+.check li::before{content:"";position:absolute;left:0;top:.7mm;width:4.5mm;height:4.5mm;border:1.5px solid var(--accent);border-radius:1.2mm}
+.pe{color:var(--muted);font-size:9.5pt;border-top:1px solid var(--line);padding-top:3mm;margin-top:6mm}
+</style>
+</head>
+<body>
+
+<div class="capa">
+  <img src="../../public/assets/logo-csv.webp" alt="Cruzeiro do Sul Virtual">
+  <div class="tag">Enxoval do calouro · Graduação EaD</div>
+  <h1>Guia do calouro</h1>
+  <p>Tudo o que você precisa para começar: primeiro acesso, onde fica cada coisa, disciplinas, notas e mensalidade. Guarde este arquivo e volte quando precisar.</p>
+  <ul class="indice">
+    <li><a href="#acesso">1. Primeiro acesso</a></li>
+    <li><a href="#lugares">2. Onde fica cada coisa</a></li>
+    <li><a href="#area">3. Área do Aluno</a></li>
+    <li><a href="#disciplinas">4. Disciplinas</a></li>
+    <li><a href="#notas">5. Notas e provas</a></li>
+    <li><a href="#tutor">6. Tutor e estudo</a></li>
+    <li><a href="#mensalidade">7. Mensalidade</a></li>
+    <li><a href="#ajuda">8. Ajuda e primeira semana</a></li>
+  </ul>
+</div>
+
+<section id="acesso">
+  <h2><span class="num">1</span>Primeiro acesso</h2>
+  <p>Leva uns 10 minutos. Tenha o seu CPF e o seu RGM (o número da matrícula) por perto.</p>
+  <h3>a. Baixe os dois aplicativos</h3>
+  <div class="dois">
+    <div class="caixa"><b>Duda</b>: a porta de entrada da faculdade.<br>
+      <a href="https://apps.apple.com/br/app/duda/id6451416655">iPhone</a> · <a href="https://play.google.com/store/apps/details?id=br.com.cruzeirodosulvirtual">Android</a></div>
+    <div class="caixa"><b>Microsoft Authenticator</b>: o do cadeado azul, confirma que é você.<br>
+      <a href="https://apps.apple.com/br/app/microsoft-authenticator/id983156458">iPhone</a> · <a href="https://play.google.com/store/apps/details?id=com.azure.authenticator">Android</a></div>
+  </div>
+  <h3>b. Descubra o seu e-mail acadêmico</h3>
+  <p>Abra <a href="https://emailacademico.cruzeiroead.com.br/descobrir">emailacademico.cruzeiroead.com.br/descobrir</a>, digite o CPF e toque em Continuar. Anote o e-mail num papel.</p>
+  <h3>c. Monte a primeira senha</h3>
+  <div class="caixa">As 3 primeiras letras do nome (a primeira maiúscula) + <b>@</b> + os 3 primeiros números do RGM + os 4 primeiros do CPF.<br>
+    Exemplo: Ana Souza, RGM 512…, CPF 9876… → <span class="senha">Ana@5129876</span></div>
+  <h3>d. Crie a sua senha e ligue o Authenticator</h3>
+  <p>Na tela da Microsoft, entre com o e-mail acadêmico e a primeira senha. Crie uma senha só sua e anote: ela vale para o curso inteiro. Siga a tela para ligar o Authenticator.</p>
+  <h3>e. Entre no Duda</h3>
+  <p>Digite o CPF e toque em <b>Fazer login</b>. Vai aparecer um número: abra o Authenticator, digite o número e toque em <b>SIM</b>. No Duda, o botão <b>Acessar Blackboard</b> abre as suas aulas.</p>
+  <div class="caixa alerta">A senha da faculdade é diferente da senha do app do aluno.</div>
+</section>
+
+<section id="lugares">
+  <h2><span class="num">2</span>Onde fica cada coisa</h2>
+  <table>
+    <tr><th>Lugar</th><th>Para quê</th></tr>
+    <tr><td class="forte">App Duda</td><td>A porta de entrada, no celular. Por ele você chega às aulas.</td></tr>
+    <tr><td class="forte">AVA (Blackboard)</td><td>Aulas, atividades e avisos do tutor. São dois nomes para a mesma coisa. <a href="https://ava.cruzeirodosul.edu.br/">ava.cruzeirodosul.edu.br</a></td></tr>
+    <tr><td class="forte">Área do Aluno</td><td>O site da sua matrícula: notas, calendário, provas, documentos e pagamentos. <a href="https://novoportal.cruzeirodosul.edu.br/">novoportal.cruzeirodosul.edu.br</a></td></tr>
+    <tr><td class="forte">App do aluno</td><td>A Aula Inaugural, que vale certificado de 4 horas, e vídeos de ajuda. <a href="https://app.cruzeiroead.com.br/?o=enxoval_pdf">app.cruzeiroead.com.br</a></td></tr>
+  </table>
+</section>
+
+<section id="area">
+  <h2><span class="num">3</span>Área do Aluno</h2>
+  <p>É como a pasta onde você guarda os papéis importantes, só que na internet.</p>
+  <table>
+    <tr><td class="forte">Vida Acadêmica</td><td>As suas notas, o Calendário Acadêmico (datas de provas e prazos: vale olhar todo mês) e a Plataforma de Prova.</td></tr>
+    <tr><td class="forte">Documentos Pendentes</td><td>Tudo precisa estar como entregue. Envie foto nítida ou PDF de até 5 MB. A conferência pode levar até 90 dias, então confira hoje.</td></tr>
+    <tr><td class="forte">CAA Online</td><td>Atendimento por escrito. Cada pedido gera um número de protocolo para você acompanhar.</td></tr>
+    <tr><td class="forte">Emissão de Documentos</td><td>Declaração de matrícula e histórico.</td></tr>
+    <tr><td class="forte">Minha Conta</td><td>Atualize telefone, endereço e e-mail.</td></tr>
+  </table>
+  <div class="caixa alerta"><b>Atenção:</b> documento faltando pode cancelar o curso.</div>
+</section>
+
+<section id="disciplinas">
+  <h2><span class="num">4</span>Disciplinas</h2>
+  <ul>
+    <li>Cada matéria dura <b>um mês</b>. Às vezes há mais de uma no mesmo mês.</li>
+    <li>A primeira é a <b>Ambientação Digital</b>, que ensina a usar o AVA. Ela aparece em até <b>3 dias</b> depois da matrícula: lista vazia antes disso é normal.</li>
+    <li>No Duda, toque em Acessar Blackboard e depois em Disciplinas. Não use filtros nem favoritos na lista: eles podem esconder uma matéria.</li>
+    <li>O conteúdo vem em unidades. Cada uma tem um texto, uma videoaula e uma atividade de sistematização, que vale nota.</li>
+  </ul>
+  <div class="caixa ok"><b>Guarde esta:</b> o prazo das atividades é sempre o <b>dia 1º do mês seguinte</b>.</div>
+</section>
+
+<section id="notas">
+  <h2><span class="num">5</span>Notas e provas</h2>
+  <table>
+    <tr><th>Parte</th><th>Vale</th><th>Como funciona</th></tr>
+    <tr><td class="forte">A2</td><td>até 4 pontos</td><td>Atividades do mês no AVA. Cada uma tem 3 tentativas e fica a maior nota.</td></tr>
+    <tr><td class="forte">A1</td><td>até 6 pontos</td><td>Prova no mês seguinte ao da matéria, hoje pela internet, na Plataforma de Prova (Vida Acadêmica). As datas estão no Calendário Acadêmico.</td></tr>
+    <tr><td class="forte">Média</td><td>6 ou mais</td><td>Aprovado. Abaixo de 6, tem a Avaliação Final no fim do semestre: se a nota dela for maior que a da A1, ela entra no lugar.</td></tr>
+  </table>
+  <p>A nota não aparece na hora: ela é divulgada nas datas do Calendário Acadêmico, em Vida Acadêmica › Minhas Notas - Detalhado. Estágio e projetos duram o semestre e têm regras próprias; o tutor explica. Mudanças no formato das provas serão comunicadas com antecedência.</p>
+</section>
+
+<section id="tutor">
+  <h2><span class="num">6</span>Tutor e estudo</h2>
+  <ul>
+    <li>Cada matéria tem um <b>tutor</b>, o professor que acompanha você do começo ao fim.</li>
+    <li>Dúvida? Dentro da matéria, toque em <b>Fale com a Tutoria</b> e diga a matéria, a unidade e o que não entendeu.</li>
+    <li>Leia sempre os <b>avisos da matéria</b>: é o canal oficial do tutor, com recados de atividades e notas.</li>
+    <li>Em Recursos Gerais tem a <b>Biblioteca A</b>, com livros digitais de graça, que o próprio site lê em voz alta.</li>
+    <li>Separe um horário fixo, mesmo curto: 20 minutos no almoço ou meia hora antes de dormir. O importante é não deixar acumular.</li>
+  </ul>
+</section>
+
+<section id="mensalidade">
+  <h2><span class="num">7</span>Mensalidade</h2>
+  <p>A mensalidade vence todo <b>dia 25</b>. Pagar cedo sai mais barato.</p>
+  <table>
+    <tr><th>Quando paga</th><th>Desconto de pontualidade</th></tr>
+    <tr><td class="forte">Até o dia 10</td><td><b>25%</b>. Se o dia 10 cair em fim de semana ou feriado, vale até o próximo dia útil.</td></tr>
+    <tr><td class="forte">Do dia 11 ao 25</td><td><b>15%</b></td></tr>
+    <tr><td class="forte">Depois do 25</td><td>Perde só o desconto de pontualidade. A bolsa e os outros descontos continuam.</td></tr>
+  </table>
+  <div class="caixa ok"><b>1ª mensalidade:</b> o desconto total vale até o dia 25.</div>
+  <p><b>Como pagar:</b> Área do Aluno › Pagar Mensalidade. Marque o mês e confira o total. Dá para pagar com PIX, cartão ou boleto. Use sempre o <b>último</b> boleto ou código que você gerou: os antigos não valem mais. Confira sempre o valor e a data no sistema antes de pagar.</p>
+</section>
+
+<section id="ajuda">
+  <h2><span class="num">8</span>Ajuda e primeira semana</h2>
+  <p>Travou em algum passo? Responda a mensagem do <b>WhatsApp oficial do Atendimento ao Aluno</b> em que você recebeu este guia e conte onde parou. A Cruzeiro do Sul nunca pede a sua senha nem pagamento fora dos canais oficiais.</p>
+  <h3>Lista da primeira semana</h3>
+  <ul class="check">
+    <li>Baixei o Duda e o Authenticator</li>
+    <li>Descobri o meu e-mail acadêmico</li>
+    <li>Criei a minha senha e anotei num lugar seguro</li>
+    <li>Entrei no Duda e abri o AVA</li>
+    <li>Conferi os Documentos Pendentes na Área do Aluno</li>
+    <li>Olhei o Calendário Acadêmico</li>
+    <li>Comecei a Ambientação Digital</li>
+    <li>Fiz a Aula Inaugural no app do aluno</li>
+  </ul>
+  <p class="pe">Vale o que está no Manual do Aluno e no Calendário Acadêmico do seu curso. Confira sempre datas e valores no sistema.</p>
+</section>
+
+</body>
+</html>
