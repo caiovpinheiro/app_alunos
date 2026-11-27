@@ -63,6 +63,68 @@ window.Trilha = (function () {
   // Mesmo corte do trilha.css para o celular (faixa do placar, extras fechados).
   function celular() { return !!(window.matchMedia && matchMedia('(max-width: 759.98px)').matches); }
 
+  // ---------- Vídeos da Aula ----------
+  // Os capítulos da Aula (/trilha-midia/aula/) têm uma versão leve em 720p (<base>-720.mp4, gerada por
+  // tools/video-720.sh), que vem primeiro; o original fica de reserva para o navegador usar se a leve não
+  // existir. Os vídeos opcionais ("passo a passo") seguem só com o original. Não há <track>: a legenda já
+  // vem gravada na imagem dos vídeos, e ligar o .vtt mostraria a legenda duas vezes. `data-base`
+  // identifica o vídeo para a retomada (ver `ligarRetomada`).
+  function fontesVideo(base) {
+    var b = esc(base);
+    var leve = /\/trilha-midia\/aula\//.test(base) ? '<source src="' + b + '-720.mp4" type="video/mp4">' : '';
+    return leve + '<source src="' + b + '.mp4" type="video/mp4">';
+  }
+  function videoTag(base, preload) {
+    return '<video controls playsinline preload="' + (preload || 'metadata') + '" poster="' + esc(base) + '.jpg" data-base="' + esc(base) + '">' + fontesVideo(base) + '</video>';
+  }
+  function trocarVideo(v, base) {
+    v.setAttribute('data-base', base);
+    v.innerHTML = fontesVideo(base);
+    v.poster = base + '.jpg';
+    v.load();
+  }
+
+  // Retomada: guarda no aparelho o ponto de cada vídeo e, no primeiro play, volta para 3 s antes de onde
+  // o aluno parou. Vídeo visto até o fim recomeça do início. Sem storage, só não retoma.
+  var POS_KEY = 'csu-aula-video-pos';
+  var POS_MIN = 5; // s: antes disso não vale a pena retomar
+  function posLer() {
+    try { return JSON.parse(localStorage.getItem(POS_KEY) || '{}') || {}; } catch (e) { return {}; }
+  }
+  function posGravar(base, t) {
+    try {
+      var m = posLer();
+      if (t == null) delete m[base]; else m[base] = Math.round(t);
+      localStorage.setItem(POS_KEY, JSON.stringify(m));
+    } catch (e) { /* sem storage */ }
+  }
+  function ligarRetomada(root) {
+    root.querySelectorAll('video[data-base]').forEach(function (v) {
+      if (v.dataset.retomada) return;
+      v.dataset.retomada = '1';
+      var retomou = null; var ultimo = 0;
+      v.addEventListener('play', function () {
+        var base = v.getAttribute('data-base');
+        if (retomou === base) return;
+        retomou = base;
+        var t = posLer()[base];
+        var ir = function () {
+          if (t > POS_MIN && v.duration && t < v.duration - POS_MIN && v.currentTime < 1) {
+            try { v.currentTime = Math.max(0, t - 3); } catch (e) { /* segue do início */ }
+          }
+        };
+        if (v.readyState >= 1) ir(); else v.addEventListener('loadedmetadata', ir, { once: true });
+      });
+      v.addEventListener('timeupdate', function () {
+        var agora = Date.now();
+        if (agora - ultimo < 3000 || v.currentTime < POS_MIN) return;
+        ultimo = agora;
+        posGravar(v.getAttribute('data-base'), v.currentTime);
+      });
+      v.addEventListener('ended', function () { posGravar(v.getAttribute('data-base'), null); });
+    });
+  }
+
   // ---------- estado ----------
 
   function fromServer(prog) {
@@ -246,7 +308,7 @@ window.Trilha = (function () {
       txt = 'Falta só emitir.'; btn = 'Ir para o certificado';
     } else if (!mexeu) {
       estado = 'comecar'; k = 'Comece por aqui'; tit = 'Módulo 1 de ' + tot + ': ' + L()[0].t;
-      txt = 'São cerca de 30 minutos no total, e você pode parar e voltar quando quiser.'; btn = 'Começar agora';
+      txt = 'São ' + tot + ' módulos curtos. Os vídeos somam cerca de 10 minutos, e você pode parar e voltar quando quiser.'; btn = 'Começar agora';
     } else {
       var faltam = tot - d;
       estado = 'continuar'; k = 'Continue de onde parou'; tit = 'Módulo ' + (cur + 1) + ' de ' + tot + ': ' + L()[cur].t;
@@ -365,7 +427,7 @@ window.Trilha = (function () {
 
   // Player simples de capítulos sem pontos (abertura e encerramento): troca o vídeo pelo botão do capítulo.
   function capsPlayer(caps, id) {
-    var h = '<div class="tcaps" data-caps="' + id + '"><div class="player"><video controls playsinline preload="metadata" poster="' + esc(caps[0].v) + '.jpg"><source src="' + esc(caps[0].v) + '.mp4" type="video/mp4"></video></div>';
+    var h = '<div class="tcaps" data-caps="' + id + '"><div class="player">' + videoTag(caps[0].v) + '</div>';
     if (caps.length === 1 && id === 'tAb') {
       h += '<div class="tcaps-info"><b>' + esc(caps[0].t) + (caps[0].duracao ? ' · ' + esc(caps[0].duracao) : '') + '</b>' +
         '<p>Um recado rápido antes de começar: como funciona o estudo, os 7 módulos, os pontos e o certificado de ' + horas() + ' horas.</p>' +
@@ -387,7 +449,7 @@ window.Trilha = (function () {
       b.addEventListener('click', function () {
         btns.forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
         var src = b.getAttribute('data-cap-v');
-        v.querySelector('source').setAttribute('src', src + '.mp4'); v.poster = src + '.jpg'; v.load();
+        trocarVideo(v, src);
         var pr = v.play(); if (pr && pr.catch) pr.catch(function () {});
       });
     });
@@ -470,7 +532,7 @@ window.Trilha = (function () {
       : 'Assista ao vídeo';
     h += '<div class="step s1"><div class="part"><span class="pn">1</span><span class="pt">' + capsTxt + '</span></div>';
     var vb = l.parts ? l.parts[0].v : l.video;
-    h += '<div class="player"><video controls playsinline preload="metadata" poster="' + esc(vb) + '.jpg"><source src="' + esc(vb) + '.mp4" type="video/mp4"></video></div>';
+    h += '<div class="player">' + videoTag(vb) + '</div>';
     if (l.parts) {
       h += '<div class="parts" role="group" aria-label="Capítulos do módulo">' + l.parts.map(function (p, k) {
         return '<button type="button" class="pbtn" data-k="' + k + '" aria-pressed="' + (k ? 'false' : 'true') + '"><span class="pk">' + (k + 1) + '</span><span>' + esc(p.t) + '</span><span class="pok" aria-hidden="true">✓</span></button>';
@@ -520,7 +582,7 @@ window.Trilha = (function () {
         (passo.length > 1 ? '<div class="parts" role="group" aria-label="Vídeos curtos">' + passo.map(function (p, k) {
           return '<button type="button" class="pbtn" data-passo-v="' + esc(p.v) + '" aria-pressed="' + (k ? 'false' : 'true') + '"><span class="pk">' + (k + 1) + '</span><span>' + esc(p.t) + '</span></button>';
         }).join('') + '</div>' : '') +
-        '<div class="player"><video controls playsinline preload="none" poster="' + esc(passo[0].v) + '.jpg"><source src="' + esc(passo[0].v) + '.mp4" type="video/mp4"></video></div></div></details>';
+        '<div class="player">' + videoTag(passo[0].v, 'none') + '</div></div></details>';
     }
     if (l.topicos && l.topicos.length) {
       h += '<details class="more resumo-full"><summary><span>Ver resumo completo<small>' + l.learn.length + ' tópicos, com os detalhes</small></span></summary><div class="inner"><ul class="learn">' + l.learn.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul></div></details>';
@@ -553,7 +615,7 @@ window.Trilha = (function () {
       b.addEventListener('click', function () {
         sec.querySelectorAll('[data-passo-v]').forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
         var src = b.getAttribute('data-passo-v');
-        pv.querySelector('source').setAttribute('src', src + '.mp4'); pv.poster = src + '.jpg'; pv.load();
+        trocarVideo(pv, src);
         var pr = pv.play(); if (pr && pr.catch) pr.catch(function () {});
       });
     });
@@ -619,7 +681,7 @@ window.Trilha = (function () {
       };
       var go = function (k, play) {
         cur = k; var p = l.parts[k];
-        v.querySelector('source').setAttribute('src', p.v + '.mp4'); v.poster = p.v + '.jpg'; v.load();
+        trocarVideo(v, p.v);
         if (play) { var pr = v.play(); if (pr && pr.catch) pr.catch(function () {}); }
         pn.hidden = true; tb.dataset.src = p.v + '.txt'; delete tb.dataset.loaded; tb.open = false; paintParts();
       };
@@ -792,6 +854,7 @@ window.Trilha = (function () {
       lv.appendChild(sec);
     });
     root.querySelectorAll('[data-caps]').forEach(bindCaps);
+    ligarRetomada(root);
     // Palavras do EaD (A2, AF, DP, RGM…): tocar na palavra sublinhada mostra o que ela quer dizer.
     if (window.Glossario) window.Glossario.marcar(root, C.glossario);
     // "Rever os módulos" (card de conclusão): volta para a lista de módulos.
@@ -818,6 +881,7 @@ window.Trilha = (function () {
       }
       clearTimeout(armed); armed = null; rs.textContent = 'Começar de novo';
       window.Api.trilhaPost('reiniciar', {}).then(function (res) {
+        try { localStorage.removeItem(POS_KEY); } catch (e) { /* sem storage */ }
         S = fromServer(res.progresso); lastXp = null; build(); window.scrollTo(0, 0);
       }).catch(function () { rs.textContent = 'Não deu certo. Tente de novo'; });
     });

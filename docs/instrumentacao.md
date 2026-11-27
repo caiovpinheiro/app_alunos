@@ -45,6 +45,12 @@ Rótulos do percurso do aluno em `public/js/admin-acompanhamento.js` (`NOMES_EVE
 | `ajuda_oferecida`, `ajuda_recusada`, `ajuda_aceita`, `pedido_ajuda` | oferta "Quer falar com a equipe?" | `origem` (inclui **`nao_funcionou`**), `nivel`, `automatica`, `protocolo` |
 | `certificado_gerado`, `certificado_erro`, `aviso_lido`, `whatsapp_clicado` | — | — |
 
+### Vídeos da Aula: versão leve e retomada (27/11/2026)
+
+- Os capítulos em `public/trilha-midia/aula/` têm uma versão leve em 720p (`<nome>-720.mp4`, gerada por `tools/video-720.sh`). A Aula serve a leve primeiro e o original como reserva. Nos eventos `video_*`, o nome registrado continua o do original (`aula/cap_02`), sem o sufixo.
+- A Aula guarda no aparelho (`localStorage`, chave `csu-aula-video-pos`) o ponto de cada vídeo e, no primeiro play, volta para 3 s antes de onde o aluno parou. Vídeo visto até o fim recomeça do início; "Começar de novo" apaga os pontos. Nada disso vai para o servidor. Na volta, os marcos `video_progresso` já passados são registrados de novo nesse acesso.
+- As legendas já vêm gravadas na imagem dos vídeos. Os arquivos `.vtt` não são ligados ao player, para a legenda não aparecer duas vezes.
+
 ### Destinos de `saida_externa`
 
 Lista única em `public/js/rastreio.js` (`DESTINOS`), testada contra os links de `meu-semestre.js`, `apps.js`, `index.html`, `trilha.json` e `faq.json`:

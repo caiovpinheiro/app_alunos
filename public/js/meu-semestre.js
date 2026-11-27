@@ -665,7 +665,7 @@ window.MeuSemestre = (function () {
       var novo = !r.comecou && !r.concluidos;
       var faltam = total - (r.concluidos || 0);
       box.innerHTML = '<div><strong>' + (novo ? 'Falta a sua Aula Inaugural' : 'Continue a sua Aula Inaugural') + '</strong>' +
-        '<p>' + (novo ? 'São cerca de 30 minutos e vale certificado de ' + horas + ' horas.'
+        '<p>' + (novo ? 'São ' + total + ' módulos curtos, com cerca de 10 minutos de vídeo, e vale certificado de ' + horas + ' horas.'
           : (faltam === 1 ? 'Falta 1 módulo' : 'Faltam ' + faltam + ' módulos') + ' para o certificado de ' + horas + ' horas.') + '</p></div>' +
         '<button type="button" class="portal-btn portal-btn--primary" data-open-trilha="">' + (novo ? 'Começar a Aula' : 'Continuar') + '</button>';
       box.hidden = false;
