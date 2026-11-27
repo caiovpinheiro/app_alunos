@@ -65,7 +65,7 @@
 
   // Navegação: cada aba tem endereço próprio (#trilha, #trilha/onde-trava, #config...),
   // então dá para mandar o link de uma tela e usar Voltar/Avançar do navegador.
-  var ABAS = ['painel', 'aovivo', 'acompanhamento', 'trilha', 'avaliacoes', 'medicao', 'grupos', 'alunos', 'indicacoes', 'avisos', 'tutoriais', 'contatos', 'planos', 'config'];
+  var ABAS = ['painel', 'aovivo', 'acompanhamento', 'trilha', 'avaliacoes', 'medicao', 'vigia', 'grupos', 'alunos', 'indicacoes', 'avisos', 'tutoriais', 'contatos', 'planos', 'config'];
   var SUBABAS = { trilha: ['resumo', 'onde-trava', 'por-aluno', 'uso'], medicao: ['retencao', 'resultado', 'saidas', 'ajuda', 'entrada'] };
   var abaAtual = null;
 
@@ -134,6 +134,7 @@
     if (name === 'trilha') loadTrilha();
     if (name === 'avaliacoes' && window.AdminAvaliacoes) window.AdminAvaliacoes.load();
     if (name === 'medicao' && window.AdminMedicao) window.AdminMedicao.load();
+    if (name === 'vigia' && window.AdminVigia) window.AdminVigia.load();
     if (name === 'config' && window.AdminAcomp) window.AdminAcomp.loadConfig();
     if (name === 'config' && window.AdminPainel) window.AdminPainel.loadFaixas();
   }

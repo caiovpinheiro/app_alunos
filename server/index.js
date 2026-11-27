@@ -38,6 +38,7 @@ const certificado = require('./certificado');
 const simulado = require('./simulado');
 const senha = require('./senha');
 const linkAcesso = require('./link-acesso');
+const vigia = require('./vigia');
 const app = express();
 app.set('trust proxy', 1);
 const PORT = Number(process.env.PORT) || 80;
@@ -1802,6 +1803,8 @@ app.get('/api/admin/medicao', requireAdmin, async (req, res) => {
     return res.status(500).json({ success: false, message: 'Não foi possível carregar a Medição.' });
   }
 });
+// Aba Vigia: retrato de 2 em 2 horas do app, do n8n e do CRM, com alertas para a equipe (server/vigia.js).
+vigia.registrarRotas(app, { getPool: () => pool, requireAdmin });
 // Acesso em preparação (aluno sem RGM): o polo cria a conta e depois informa o RGM.
 preparo.registrar(app, { pool, requireAdmin });
 // Dados de acesso à faculdade (RGM, curso, e-mail acadêmico): o polo sobe; o aluno consulta.
@@ -2024,6 +2027,8 @@ async function start() {
     console.error('Servidor no ar sem banco: confira DATABASE_* no Environment do EasyPanel.');
     return;
   }
+  // Vigia (VIGIA_LIGADO=true): confere a cada 5 min se a faixa de 2 h já tem retrato.
+  if (vigia.iniciar(() => pool)) console.log('Vigia ligado: retrato de 2 em 2 horas.');
   // Pedidos de ajuda que não chegaram ao CRM (fora do ar): nova tentativa a cada 10 min.
   setInterval(() => { ensureAjuda().then(() => ajudaPedidos.reenviarPendentes(pool)).catch(() => {}); }, 10 * 60 * 1000);
 
