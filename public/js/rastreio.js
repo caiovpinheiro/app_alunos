@@ -172,7 +172,8 @@ window.Rastreio = (function () {
   var marcos = new WeakMap();
   function nomeVideo(v) {
     var src = v.currentSrc || (v.querySelector('source') && v.querySelector('source').src) || '';
-    var arq = src.split('?')[0].split('/').slice(-2).join('/').replace(/\.mp4$/, '');
+    // A Aula serve uma versão leve (<nome>-720.mp4): o nome registrado continua o do vídeo original.
+    var arq = src.split('?')[0].split('/').slice(-2).join('/').replace(/\.mp4$/, '').replace(/-720$/, '');
     var titulo = '';
     var modal = v.closest('#c-modal');
     if (modal) { var h = modal.querySelector('#c-mtitle'); titulo = h ? h.textContent : ''; }

@@ -228,7 +228,7 @@
    "rank": "Sei estudar no AVA",
    "topicos": [
     "O <b>AVA</b> (ou Blackboard) é onde ficam as aulas.",
-    "Cada matéria dura <b>um mês</b>; veja em Disciplinas.",
+    "Em geral são <b>1 ou 2 matérias por mês</b>; veja em Disciplinas.",
     "Comece pela <b>Ambientação Digital</b>: aparece em até 3 dias.",
     "Cada Unidade tem texto, videoaula e um <b>exercício que vale nota</b>.",
     "Dúvida? <b>Fale com a Tutoria</b> e leia sempre os Avisos."
@@ -236,7 +236,7 @@
    "learn": [
     "O <b>AVA</b> é o site onde ficam as aulas. Às vezes ele aparece com o nome <b>Blackboard</b>: é a mesma coisa.",
     "Como entrar: na Área do Aluno, toque em <b>Acesso ao Ambiente Virtual</b>. Ou, no app Duda, toque em <b>Acessar Blackboard</b>. Pelo navegador: <a href=\"https://ava.cruzeirodosul.edu.br/\" target=\"_blank\" rel=\"noopener\">ava.cruzeirodosul.edu.br</a>.",
-    "Cada matéria (o AVA chama de disciplina) dura <b>um mês</b>. Toque em <b>Disciplinas</b> para ver as matérias do mês. Às vezes tem mais de uma no mesmo mês.",
+    "Em geral você tem <b>1 ou 2 matérias por mês</b> (o AVA chama de disciplina), e algumas duram o semestre todo. Toque em <b>Disciplinas</b> para ver as matérias do mês.",
     "A primeira matéria se chama <b>Ambientação Digital</b> e ensina a usar o AVA. Ela aparece em até <b>3 dias (72 horas)</b> depois da matrícula. Comece por ela.",
     "Dentro da matéria, o conteúdo vem em partes chamadas <b>Unidades</b>. Cada uma tem um texto, uma videoaula e uma <b>Atividade de Sistematização</b>, que é um exercício que vale nota.",
     "Ficou com dúvida? Toque em <b>Fale com a Tutoria</b> e mande uma mensagem. O tutor é o professor que acompanha você.",
@@ -728,7 +728,7 @@
   ],
   [
    "Disciplina",
-   "Matéria. Cada uma dura um mês.",
+   "Matéria. Em geral são 1 ou 2 por mês; algumas duram o semestre todo.",
    ["disciplinas", "disciplina"]
   ],
   [
