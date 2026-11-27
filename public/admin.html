@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="/css/ds-painel.css?v=7">
   <link rel="stylesheet" href="/css/ds-aovivo.css?v=2">
   <link rel="stylesheet" href="/css/ds-medicao.css?v=3">
+  <link rel="stylesheet" href="/css/ds-fluxo.css?v=1">
   <link rel="stylesheet" href="/css/admin-grupos.css?v=3">
 </head>
 <body class="bg-slate-50">
@@ -77,6 +78,7 @@
         </div>
         <div class="admin-nav-group">
           <p class="admin-nav-title">Ferramentas</p>
+          <button type="button" class="admin-tab" data-tab="fluxo">Fluxo do Acolhimento</button>
           <button type="button" class="admin-tab" data-tab="planos">Imagens dos planos</button>
           <button type="button" class="admin-tab" data-tab="config">Configurações</button>
         </div>
@@ -296,6 +298,25 @@
       <!-- Grupos de estudo: fila de moderação (admin-grupos.js). O botão do menu só aparece com GRUPO_ESTUDO_ATIVA_PARA. -->
       <div id="tab-grupos" class="admin-panel hidden"></div>
 
+      <!-- Fluxo do Acolhimento (admin-fluxo.js, GET/PUT /api/admin/fluxo-acolhimento): desenho editável das mensagens
+           Comercial → Acolhimento. Só desenho: salvar não envia mensagem nem mexe no CRM ou no n8n. -->
+      <div id="tab-fluxo" class="admin-panel hidden">
+        <div class="admin-panel-head">
+          <h2 class="text-xl font-bold">Fluxo do Acolhimento</h2>
+          <p class="admin-panel-desc">As mensagens da passagem do Comercial para o Acolhimento: etapas, textos, botões e saídas. É só o desenho para a equipe combinar o fluxo. Salvar aqui não envia mensagem nem muda nada no CRM.</p>
+        </div>
+        <div id="fluxo-barra" class="fx-barra"></div>
+        <p id="fluxo-msg" class="fx-msg" role="status" aria-live="polite"></p>
+        <div class="admin-subtabs fx-subtabs" role="group" aria-label="Como ver o fluxo">
+          <button type="button" class="admin-subtab is-active" data-subtab="lista" aria-pressed="true">Lista<span>Passo a passo, bom no celular</span></button>
+          <button type="button" class="admin-subtab" data-subtab="mapa" aria-pressed="false">Mapa<span>Diagrama com setas, arraste os cartões</span></button>
+        </div>
+        <p class="fx-legenda" aria-label="Legenda das cores"><span class="fx-leg fx-t-message">Mensagem ao aluno</span><span class="fx-leg fx-t-decision">Decisão</span><span class="fx-leg fx-t-action">Ação interna</span><span class="fx-leg fx-t-success">Conclusão</span><span class="fx-leg fx-t-trigger">Início</span></p>
+        <section data-subpanel="lista" id="fluxo-lista" class="fx-lista" aria-label="Fluxo em lista"></section>
+        <section data-subpanel="mapa" id="fluxo-mapa" class="fx-mapa-box" aria-label="Fluxo em mapa" hidden></section>
+        <dialog id="fluxo-editor" class="fx-dialog" aria-labelledby="fluxo-editor-h"></dialog>
+      </div>
+
       <div id="tab-config" class="admin-panel hidden">
         <div class="admin-panel-head">
           <h2 class="text-xl font-bold">Configurações</h2>
@@ -447,7 +468,7 @@
     </div>
   </div>
 
-  <script src="/js/admin.js?v=33"></script>
+  <script src="/js/admin.js?v=34"></script>
   <script src="/js/admin-base.js?v=2"></script>
   <script src="/js/admin-resultado.js?v=1"></script>
   <script src="/js/admin-acompanhamento.js?v=14"></script>
@@ -458,6 +479,7 @@
   <script src="/js/admin-avaliacoes.js?v=2"></script>
   <script src="/js/admin-medicao.js?v=3"></script>
   <script src="/js/admin-grupos.js?v=3"></script>
+  <script src="/js/admin-fluxo.js?v=1"></script>
   <script src="/js/admin-preparo.js?v=1" defer></script>
   <script src="/js/admin-alunos.js?v=3" defer></script>
 </body>
