@@ -7,6 +7,18 @@
 - Push em `main` dispara `.github/workflows/deploy.yml`: publica `ghcr.io/caiovpinheiro/app_alunos:latest` e chama o webhook do EasyPanel (`secrets.EASYPANEL_DEPLOY_APP`).
 - Não invente outro fluxo de deploy (n8n, branch de homologação, etc.) sem pedido explícito.
 
+### 2026-11-11 - Login no Duda é com o e-mail acadêmico, não com o CPF
+
+**Decisão**
+- Parte 4 do módulo 1 (`server/assets/trilha.json`), arte 3 e guia do calouro (`tools/enxoval/`, com `public/enxoval/arte-3-entrar.png` e `guia-do-calouro.pdf` gerados de novo): o texto passa a dizer que o aluno toca em Fazer login e entra com o e-mail acadêmico e a senha que criou. O CPF fica só como a tela inicial do Duda ("se ele pedir") e na descoberta do e-mail.
+
+**Motivo**
+- Os três textos diziam "digite o CPF e toque em Fazer login" e davam a entender que o login é pelo CPF. O vídeo da parte 4 já mostrava a sequência certa. O dono do projeto confirmou em 11/11: o acesso é sempre pelo e-mail acadêmico.
+
+**Impacto**
+- A arte e o PDF foram gerados no Windows (Chrome sem janela), não pelo `render.sh` do Mac: o exemplo de senha do PDF saiu em Consolas no lugar de Menlo. Para voltar à fonte anterior, rode `tools/enxoval/render.sh` no Mac.
+- Pendente fora do repositório: o guia novo enviado pela régua do comercial (capa com foto, passo 5 "Entre no Duda") e as páginas em `public/prototipos/regua-comercial/midia/guia-3.jpg` ainda trazem a frase antiga; a fonte desse PDF não está no repositório.
+
 ### 2026-11-09 - Certificado sai sozinho para quem concluiu a Aula e não clicou
 
 **Decisão**
