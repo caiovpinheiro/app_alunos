@@ -1,0 +1,68 @@
+           corte            |            faixa            | leads | vendas | pct_venda | mediana_min 
+----------------------------+-----------------------------+-------+--------+-----------+-------------
+ dia_semana                 | 1                           |  2545 |    195 |      7.66 |       110.6
+ dia_semana                 | 2                           |  2870 |    235 |      8.19 |        69.2
+ dia_semana                 | 3                           |  2686 |    229 |      8.53 |        82.5
+ dia_semana                 | 4                           |  3205 |    250 |      7.80 |        53.2
+ dia_semana                 | 5                           |  2244 |    193 |      8.60 |        48.5
+ dia_semana                 | 6                           |  1849 |     96 |      5.19 |      2095.3
+ dia_semana                 | 7                           |  1644 |     88 |      5.35 |      1304.6
+ hora_1a_msg                | 00h                         |   320 |     15 |      4.69 |       591.8
+ hora_1a_msg                | 01h                         |   177 |     12 |      6.78 |       526.9
+ hora_1a_msg                | 02h                         |    79 |      4 |      5.06 |       495.4
+ hora_1a_msg                | 03h                         |    54 |      2 |      3.70 |       416.0
+ hora_1a_msg                | 04h                         |    66 |     10 |     15.15 |       328.6
+ hora_1a_msg                | 05h                         |   117 |      6 |      5.13 |       281.5
+ hora_1a_msg                | 06h                         |   244 |     10 |      4.10 |       214.9
+ hora_1a_msg                | 07h                         |   460 |     39 |      8.48 |       157.6
+ hora_1a_msg                | 08h                         |   689 |     49 |      7.11 |       110.9
+ hora_1a_msg                | 09h                         |   969 |     73 |      7.53 |        54.6
+ hora_1a_msg                | 10h                         |  1122 |     89 |      7.93 |        35.5
+ hora_1a_msg                | 11h                         |  1176 |    105 |      8.93 |        27.2
+ hora_1a_msg                | 12h                         |  1131 |     87 |      7.69 |        37.1
+ hora_1a_msg                | 13h                         |  1087 |     89 |      8.19 |        38.7
+ hora_1a_msg                | 14h                         |  1016 |     96 |      9.45 |        37.2
+ hora_1a_msg                | 15h                         |   974 |     87 |      8.93 |        23.8
+ hora_1a_msg                | 16h                         |   976 |     76 |      7.79 |        20.3
+ hora_1a_msg                | 17h                         |   981 |     84 |      8.56 |        37.6
+ hora_1a_msg                | 18h                         |   912 |     63 |      6.91 |       905.7
+ hora_1a_msg                | 19h                         |   965 |     59 |      6.11 |       864.6
+ hora_1a_msg                | 20h                         |  1012 |     60 |      5.93 |       805.7
+ hora_1a_msg                | 21h                         |   964 |     63 |      6.54 |       752.3
+ hora_1a_msg                | 22h                         |   865 |     61 |      7.05 |       700.1
+ hora_1a_msg                | 23h                         |   687 |     47 |      6.84 |       648.6
+ origem                     | form-cruzeiro               | 13715 |    695 |      5.07 |       184.8
+ origem                     | form-eadeduit               |    30 |      2 |      6.67 |        57.4
+ origem                     | form-eduit                  |   888 |     40 |      4.50 |       107.3
+ origem                     | Lp Pos - Google BR          |    10 |      0 |      0.00 |        40.6
+ origem                     | Lp Pos - Google Inter       |     5 |      0 |      0.00 |      2038.4
+ origem                     | Lp Pos - Google SP          |     1 |      0 |      0.00 |         7.4
+ origem                     | SIAA                        |   119 |     31 |     26.05 |         4.9
+ origem                     | (vazio)                     |  5340 |    388 |      7.27 |        71.2
+ origem                     | Vocacional                  |  2913 |      5 |      0.17 |       151.1
+ origem                     | Whatsapp                    |  2504 |    158 |      6.31 |       152.3
+ quem_primeiro              | lead não escreveu           |  8482 |     33 |      0.39 |            
+ quem_primeiro              | ninguém                     |   149 |      2 |      1.34 |            
+ quem_primeiro              | pessoa                      | 14614 |   1145 |      7.83 |       121.9
+ quem_primeiro              | robô                        |  2280 |    139 |      6.10 |       105.7
+ resposta_fora_do_horario   | a) < 5 min                  |   296 |     27 |      9.12 |         2.4
+ resposta_fora_do_horario   | b) 5–30 min                 |   535 |     53 |      9.91 |        14.0
+ resposta_fora_do_horario   | c) 30 min–2 h               |   843 |     55 |      6.52 |        70.6
+ resposta_fora_do_horario   | d) 2–24 h                   |  5400 |    369 |      6.83 |       733.8
+ resposta_fora_do_horario   | e) > 24 h                   |  1908 |     92 |      4.82 |      2462.0
+ resposta_fora_do_horario   | y) nenhuma pessoa respondeu |   170 |      1 |      0.59 |            
+ resposta_horario_comercial | a) < 5 min                  |  1159 |    148 |     12.77 |         2.4
+ resposta_horario_comercial | b) 5–30 min                 |  2686 |    258 |      9.61 |        15.0
+ resposta_horario_comercial | c) 30 min–2 h               |  2615 |    213 |      8.15 |        51.5
+ resposta_horario_comercial | d) 2–24 h                   |   642 |     47 |      7.32 |       252.5
+ resposta_horario_comercial | e) > 24 h                   |   145 |     17 |     11.72 |      2678.5
+ resposta_horario_comercial | y) nenhuma pessoa respondeu |   157 |      1 |      0.64 |            
+ resposta_pessoa            | a) < 5 min                  |  1524 |    175 |     11.48 |         2.4
+ resposta_pessoa            | b) 5–30 min                 |  3298 |    312 |      9.46 |        14.9
+ resposta_pessoa            | c) 30 min–2 h               |  3544 |    270 |      7.62 |        54.2
+ resposta_pessoa            | d) 2–24 h                   |  6223 |    417 |      6.70 |       731.4
+ resposta_pessoa            | e) > 24 h                   |  2117 |    110 |      5.20 |      2468.1
+ resposta_pessoa            | y) nenhuma pessoa respondeu |   337 |      2 |      0.59 |            
+ resposta_pessoa            | z) lead não escreveu        |  8482 |     33 |      0.39 |            
+(64 linhas)
+

@@ -1,0 +1,138 @@
+== 1. Mapa da jornada (coorte de vendas)
+                etapa                 |  n  | pct  |  mediana  
+--------------------------------------+-----+------+-----------
+ vendas                               | 367 |      | 
+ lead → venda (leads criados ≥ 28/09) | 350 |      | 27.0 h
+ venda → negócio no Acadêmico         | 364 | 99.2 | 0.0 min
+ negócio → BV enviada                 | 325 | 88.6 | 0.1 min
+ BV → aluno respondeu (pediu acesso)  | 301 | 82.0 | 7.8 min
+ venda → conta no app                 | 356 | 97.0 | -0.1 min
+ BV → 1ª entrada no app               | 200 | 54.5 | 0.5 h
+ 1ª entrada → começou a Aula          | 110 | 30.0 | 17.7 min
+ começou → concluiu (7 módulos)       |  66 | 18.0 | 25.2 min
+ concluiu → certificado               |  36 |  9.8 | 195.7 min
+ venda → certificado (total)          |  36 |      | 29.4 h
+(11 linhas)
+
+== 2. Onde se perde, por corte (taxas sobre as vendas do grupo)
+           corte           |                faixa                |  n  | bv  | entrou | comecou | concluiu | cert 
+---------------------------+-------------------------------------+-----+-----+--------+---------+----------+------
+ aparelho (só quem entrou) | celular                             | 151 |     |    100 |      54 |       30 |   19
+ aparelho (só quem entrou) | computador                          |  47 |     |    100 |      57 |       40 |   15
+ aparelho (só quem entrou) | tablet                              |   2 |     |    100 |      50 |       50 |   50
+ BV                        | a) sem negócio no Acadêmico         |   3 |   0 |      0 |       0 |        0 |    0
+ BV                        | b) não disparou: negócio já existia |  21 |   0 |     24 |      19 |        5 |    5
+ BV                        | c) não disparou: outro motivo       |   6 |   0 |     17 |       0 |        0 |    0
+ BV                        | d) disparou, envio falhou           |  12 |   0 |      0 |       0 |        0 |    0
+ BV                        | e) enviada                          | 325 | 100 |     60 |      33 |       20 |   11
+ curso (≥10)               | ?                                   |  35 |  89 |     66 |      49 |       37 |   14
+ curso (≥10)               | Administração                       |  14 |  86 |     43 |      29 |       21 |   21
+ curso (≥10)               | Biomedicina                         |  11 |  91 |     36 |      36 |       27 |   18
+ curso (≥10)               | Ciências Contábeis                  |  15 | 100 |     47 |       7 |        0 |    0
+ curso (≥10)               | CST em Gestão de Recursos Humanos   |  14 |  86 |     64 |      14 |       14 |   14
+ curso (≥10)               | CST em Logística                    |  10 |  60 |     10 |      10 |       10 |    0
+ curso (≥10)               | Pedagogia                           |  25 |  76 |     56 |      24 |        8 |    4
+ dia da venda (1=seg)      | 1                                   |   4 | 100 |     50 |      25 |       25 |    0
+ dia da venda (1=seg)      | 2                                   |  83 |  90 |     52 |      22 |       13 |    5
+ dia da venda (1=seg)      | 3                                   |  64 |  84 |     66 |      50 |       27 |   17
+ dia da venda (1=seg)      | 4                                   | 148 |  87 |     51 |      26 |       15 |    7
+ dia da venda (1=seg)      | 5                                   |  47 |  91 |     49 |      32 |       26 |   19
+ dia da venda (1=seg)      | 6                                   |  21 |  95 |     71 |      29 |       14 |   10
+ hora da venda             | a) até 11h                          |  38 |  87 |     53 |      34 |       24 |   16
+ hora da venda             | b) 12–13h                           |  71 |  83 |     45 |      30 |       21 |   13
+ hora da venda             | c) 14–17h                           | 123 |  87 |     55 |      27 |       19 |    9
+ hora da venda             | d) 18–20h                           |  93 |  91 |     59 |      31 |       14 |    5
+ hora da venda             | e) 21–23h                           |  42 |  98 |     60 |      33 |       14 |   12
+ nivel                     | ?                                   |   4 |   0 |      0 |       0 |        0 |    0
+ nivel                     | Graduação                           | 332 |  90 |     56 |      30 |       17 |    9
+ nivel                     | Graduação                           |   5 |  80 |     60 |      20 |       20 |   20
+ nivel                     | Pós-Graduação                       |  25 |  84 |     40 |      36 |       36 |   20
+ nivel                     | Pós-Grduação                        |   1 | 100 |      0 |       0 |        0 |    0
+ origem                    | (vazio)                             |  36 |  81 |     53 |      33 |       22 |   11
+ origem                    | form-cruzeiro                       | 205 |  93 |     57 |      28 |       18 |    9
+ origem                    | form-eduit                          |   7 | 100 |     86 |      86 |       43 |   14
+ origem                    | Lp Pos - Google BR                  |   1 | 100 |      0 |       0 |        0 |    0
+ origem                    | SIAA                                |  12 |  83 |     17 |      17 |       17 |   17
+ origem                    | Whatsapp                            | 106 |  82 |     53 |      30 |       16 |    9
+ polo (≥10)                | ?                                   | 102 |  94 |     64 |      39 |       22 |   10
+ polo (≥10)                | Barra Funda                         | 137 |  88 |     53 |      23 |       16 |   10
+ polo (≥10)                | Ibirapuera (indianópolis)           |  16 |  81 |     56 |      13 |        0 |    0
+ polo (≥10)                | Santana 2                           |  14 |  93 |     29 |      14 |       14 |    0
+ polo (≥10)                | Sapopemba (vila Ema)                |  48 |  77 |     54 |      42 |       21 |   13
+ polo (≥10)                | Taboão DA Serra Jardim Mituzi       |  10 | 100 |     70 |      40 |       20 |   20
+ polo (≥10)                | Vila Prudente                       |  12 |  83 |     42 |      25 |       17 |   17
+ senha no negócio          | false                               |  32 |  47 |     19 |      13 |        3 |    3
+ senha no negócio          | true                                | 335 |  93 |     58 |      32 |       19 |   10
+ tipo_inscricao            | ?                                   |  18 |  83 |     33 |      28 |       22 |   17
+ tipo_inscricao            | ENEM                                |  50 |  96 |     64 |      32 |       20 |   10
+ tipo_inscricao            | Pós ou MBA                          |   1 | 100 |      0 |       0 |        0 |    0
+ tipo_inscricao            | PÓS ou MBA                          |  21 |  86 |     43 |      38 |       38 |   19
+ tipo_inscricao            | Regresso                            |   8 |  25 |     25 |      13 |        0 |    0
+ tipo_inscricao            | Segunda Graduação                   |  14 |  93 |     43 |      14 |        7 |    7
+ tipo_inscricao            | Transferência                       |   9 |  56 |     33 |      22 |       11 |    0
+ tipo_inscricao            | Vestibular Múltipla Escolha         | 227 |  90 |     58 |      30 |       17 |    9
+ tipo_inscricao            | Vestibular Redação                  |  19 |  95 |     58 |      42 |       21 |   11
+(55 linhas)
+
+== 2b. Começou a Aula e parou: módulos concluídos
+ modulos | count 
+---------+-------
+       0 |    32
+       1 |     4
+       2 |     1
+       3 |     3
+       4 |     1
+       5 |     1
+       6 |     2
+(7 linhas)
+
+== 3. Acadêmico: quem respondeu primeiro à 1ª mensagem do aluno
+        quem        |  n  | mediana_min | entrou | comecou | cert 
+--------------------+-----+-------------+--------+---------+------
+ robô (fluxo da BV) | 283 |         0.0 |     67 |      37 |   12
+ IA de acolhimento  |  36 |         0.3 |     14 |      11 |    3
+ pessoa             |  10 |         5.5 |     40 |      20 |    0
+(3 linhas)
+
+       quem        |  n  | mediana_min 
+-------------------+-----+-------------
+ IA de acolhimento | 179 |        31.2
+ pessoa            | 127 |       737.7
+(2 linhas)
+
+== 3b. Comercial: 1ª resposta de uma pessoa ao lead x app
+        faixa         |  n  | entrou | comecou | cert 
+----------------------+-----+--------+---------+------
+ a) < 5 min           |  53 |     60 |      38 |   15
+ b) 5–30 min          |  91 |     53 |      31 |   10
+ c) 30 min–2 h        |  48 |     58 |      33 |   10
+ d) 2–24 h            | 130 |     57 |      27 |    8
+ e) > 24 h            |  37 |     46 |      27 |    8
+ y) sem pessoa        |   1 |      0 |       0 |    0
+ z) lead não escreveu |   7 |     14 |      14 |   14
+(7 linhas)
+
+== 4. Evolução por dia da 1ª entrada (efeito das mudanças no app)
+    dia     | entraram | comecou | concluiu | cert 
+------------+----------+---------+----------+------
+ 2026-10-29 |       12 |      33 |       17 |    0
+ 2026-10-30 |       19 |      74 |       53 |   37
+ 2026-10-31 |       18 |      50 |       33 |   28
+ 2026-11-02 |        5 |      60 |       20 |    0
+ 2026-11-03 |       34 |      41 |       26 |    9
+ 2026-11-04 |       49 |      63 |       35 |   22
+ 2026-11-05 |       55 |      60 |       35 |   16
+ 2026-11-06 |       10 |      30 |       20 |   10
+(8 linhas)
+
+== 5. Semanas de venda: BV e entrada no app (todo o período extraído)
+   semana   | vendas | bv | respondeu | entrou | comecou | cert 
+------------+--------+----+-----------+--------+---------+------
+ 2026-09-28 |    180 | 88 |        60 |      1 |       1 |    0
+ 2026-10-05 |    394 | 87 |        63 |      2 |       0 |    2
+ 2026-10-12 |    371 | 86 |        81 |      1 |       0 |    1
+ 2026-10-19 |    399 | 86 |        76 |      6 |       1 |    1
+ 2026-10-26 |    259 | 86 |        79 |     30 |      14 |    7
+ 2026-11-02 |    233 | 90 |        82 |     59 |      33 |    9
+(6 linhas)
+
